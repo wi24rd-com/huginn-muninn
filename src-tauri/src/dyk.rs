@@ -837,7 +837,7 @@ pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
         };
         RegelHoved {
             navn: navn.to_string(),
-            produkt: r.produkt,
+            produkt: teknologi::vist_produkt(&r.produkt),
             type_: r.type_,
             cve: r.cve,
             art: art.to_string(),
@@ -2037,7 +2037,7 @@ mod tests {
             .map(|n| fw(&d(1), [n, "PL", "N", "/", "WAW", "GET", "firewallManaged", "block"], 2).1)
             .collect();
         let a = crate::overblik::angreb(&rows, NU);
-        let wp = a.top.iter().find(|t| t.navn == "Wordpress").unwrap();
+        let wp = a.top.iter().find(|t| t.navn == "WordPress").unwrap();
         assert_eq!(wp.regler, ["Wordpress - SQL Injection", "Wordpress - Broken Access Control"]);
         assert_eq!(a.top.iter().find(|t| t.regler == [REACT]).unwrap().n, 2);
     }
@@ -2166,6 +2166,27 @@ mod tests {
             "netværk står ikke i de gemte"
         );
         assert!(kald(vec![filter(Dim::Handling, "blokeret")], None).is_empty());
+    }
+
+    /// Regelkortets og dyk-hovedets etiket er det samme navn som i teknologilisten, selv om Cloudflare staver det anderledes.
+    #[test]
+    fn regelkortets_etiket_er_navnet_fra_teknologilisten() {
+        let mut l = laest();
+        l.rows = ["Wordpress - X", "Magento 2 - Y", "Typo3 - Z"]
+            .iter()
+            .map(|r| fw(&d(2), [r, "US", "N", "/", "CPH", "GET", "firewallManaged", "block"], 5))
+            .collect();
+        let u = regn(&spoerg(Vec::new(), Periode::D30, None), &l, NU);
+        assert_eq!(u.regler.len(), 3);
+        for rg in &u.regler {
+            let liste = teknologi::navn(&teknologi::af_regel(&rg.navn).unwrap());
+            assert_eq!(rg.produkt, liste, "{}", rg.navn);
+            assert!(u.rettet_mod.iter().any(|x| teknologi::navn(&x.tek) == rg.produkt), "{}", rg.navn);
+            let hoved = regn(&spoerg(vec![filter(Dim::Regel, &rg.navn)], Periode::D30, None), &l, NU)
+                .regel
+                .unwrap();
+            assert_eq!(hoved.produkt, liste, "{}", rg.navn);
+        }
     }
 
     #[test]

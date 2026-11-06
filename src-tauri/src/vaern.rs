@@ -1214,7 +1214,7 @@ pub(crate) fn regelkort(mut kort: Vec<KortSum>) -> Vec<Regel> {
             let bic = k.navn == "Browser Integrity Check";
             let info = regel(if bic { "" } else { &k.navn }, if bic { "bic" } else { "" });
             Regel {
-                produkt: info.produkt,
+                produkt: crate::teknologi::vist_produkt(&info.produkt),
                 type_: info.type_,
                 cve: info.cve,
                 n7: k.h7,

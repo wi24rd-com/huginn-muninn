@@ -3053,17 +3053,17 @@ const DOMV = (fravalgte = [], x) => {
   const vks = side('#vaernet?samlet=1', DYK({ vaern_samlet_cache: { vaern: vaernUd(), valgte: [], domaener: 1, med_tal: 1 }, vurdering: VURD })), vkp = side('#dyk?' + dykQ({ periode: '7' }), DYK({ vurdering: VURD }));
   await sov(260);
   const vb = vk.d.querySelector('.vurdering'), vl = id => vb?.querySelector(`li[data-id="${id}"]`), tegnet = id => vl(id)?.querySelector('.vurd-tegn').textContent;
-  tjek('Vurdering: i Angreb for i går, foldet sammen og med spørgsmålet', vb && !vb.open && vb.querySelector('summary').textContent === 'Hvorfor står der (ikke) »Ligner målrettet« eller »Ligner rekognoscering«?' && vk.kald.some(k => k[0] === 'vurdering' && k[1].zone === 'z1'), vb?.outerHTML.slice(0, 120));
+  tjek('Vurdering: i Angreb for i går, foldet sammen og med spørgsmålet', vb && !vb.open && vb.querySelector('summary').textContent === 'Hvorfor fik dagen (ikke) et mærke?' && vk.kald.some(k => k[0] === 'vurdering' && k[1].zone === 'z1'), vb?.outerHTML.slice(0, 120));
   tjek('Vurdering: ✓ og ✗ følger Rust, og – ved det, der ikke kan vurderes', tegnet('stigning') === '✓' && tegnet('net_andre') === '✗' && tegnet('efter') === '✗' && tegnet('radar') === '–' && tegnet('stier') === '✗' && tegnet('faktor') === '✓', ['stigning', 'net_andre', 'radar'].map(tegnet).join());
   tjek('Vurdering: tegnene siges også i ord', vl('net_andre')?.querySelector('.sr-only').textContent === 'Ikke opfyldt: ' && vl('stigning')?.querySelector('.sr-only').textContent === 'Opfyldt: ' && vl('radar')?.querySelector('.sr-only').textContent === 'Tæller ikke med: ');
   tjek('Vurdering: tallene i klarsprog', vl('stigning')?.textContent.includes('Stigning: 1.800 angreb mod snit 1,3') && vl('netvaerk')?.textContent.includes('Ét netværk står for mindst 60 %: Mal Hosting Ltd 100 %') && vl('net_andre')?.textContent.includes('900 på andre valgte domæner ±1 dag mod 1.800 her') && vl('radar')?.textContent.includes('Radar har ikke tal for dagen'), vb?.textContent);
-  tjek('Vurdering: overskrifterne siger udfaldet', [...(vb?.querySelectorAll('h4') || [])].map(h => h.textContent).join() === 'Ligner målrettet: står ikke,Ligner rekognoscering: står ikke', vb?.textContent.slice(0, 200));
+  tjek('Vurdering: overskrifterne siger udfaldet', [...(vb?.querySelectorAll('h4') || [])].map(h => h.textContent).join() === 'Ligner målrettet: nej,Ligner rekognoscering: nej', vb?.textContent.slice(0, 200));
   const q1 = new URLSearchParams(vl('netvaerk')?.querySelector('[data-dyk]')?.dataset.dyk), q2 = new URLSearchParams(vl('net_andre')?.querySelector('[data-dyk]')?.dataset.dyk), q3 = new URLSearchParams(vl('stigning')?.querySelector('[data-dyk]')?.dataset.dyk);
   tjek('Vurdering: tal med data bag kan åbnes', q1.get('netvaerk') === 'Mal Hosting Ltd' && q1.get('zone') === 'z1' && q2.get('zone') === 'z2' && q2.get('netvaerk') === 'Mal Hosting Ltd' && q3.get('slags') === 'angreb' && vl('valgte')?.querySelector('[data-gaa]')?.dataset.gaa === 'indstillinger?afsnit=domaener', [...q1, ...q2].join());
   tjek('Vurdering: det uden data bag kan ikke klikkes', !vl('radar')?.querySelector('button') && !vb?.querySelector('li[data-id="faktor"] button'));
   const db = vkd.d.querySelector('.vurdering');
   tjek('Vurdering: i dyk for én dag, med dagen', db && vkd.kald.some(k => k[0] === 'vurdering' && k[1].dag === '2026-11-05') && db.textContent.includes('for 5. november'), db?.textContent.slice(0, 200));
-  tjek('Vurdering: engelsk, og foreløbig siges', vke.d.querySelector('.vurdering summary')?.textContent.startsWith('Why does it (not) say') && vke.d.querySelector('.vurdering h4')?.textContent === 'Looks targeted: shown as preliminary', vke.d.querySelector('.vurdering')?.textContent.slice(0, 200));
+  tjek('Vurdering: engelsk, og foreløbig siges', vke.d.querySelector('.vurdering summary')?.textContent === 'Why did the day (not) get a label?' && vke.d.querySelector('.vurdering h4')?.textContent === 'Looks targeted: yes, for now — decided when the next day is fetched', vke.d.querySelector('.vurdering')?.textContent.slice(0, 200));
   tjek('Vurdering: ikke i det samlede Angreb og ikke for en periode', !vks.d.querySelector('.vurdering') && !vkp.d.querySelector('.vurdering'));
 
   /* Trafikken */
@@ -4047,17 +4047,17 @@ const DOMV = (fravalgte = [], x) => {
 
   // ── ──
   {
-  /* `none` er ikke et læk, og teksten siger kun det, Cloudflare kan stå inde for. */
+  /* `none` er ikke et læk, og linjen siger det med almindelige ord. */
   const LN = { ...LOGIN_UD, laek_andet: [{ v: 'none', n: 1234 }, { v: 'ukendt', n: 3 }, { v: 'username_leaked', n: 2 }] };
   const n1 = side('#login?zone=z1&navn=wi24rd.com', DYK({ ...VIS, login: LN })), n2 = side('#login?zone=z1&navn=wi24rd.com', DYK({ ...VIS, login: LN }), 'en');
   await sov(120);
   const rodN = x => x.d.getElementById('login-rod').textContent;
-  tjek('none: "none" står med Cloudflares svar og tallet', rodN(n1).includes('Cloudflare svarede »none«: forespørgslen blev ikke tjekket for lækkede kodeord: 1.234.'), rodN(n1).slice(0, 300));
+  tjek('none: linjen siger, at det ikke er et login-forsøg, med tallet', rodN(n1).includes('Ikke et login-forsøg (intet kodeord sendt): 1.234') && !rodN(n1).includes('ifølge Cloudflare') && !rodN(n1).includes('»none«'), rodN(n1).slice(0, 300));
   tjek('none: tom værdi har sin egen linje', rodN(n1).includes('Uden svar fra tjekket: 3.'));
-  tjek('none: aldrig "ukendt: none" og aldrig "login-forsøg" om det', !rodN(n1).includes('ukendt: none') && !rodN(n1).includes('(1.234)') && !n1.d.querySelector('.login-laek-none').textContent.includes('login'));
+  tjek('none: aldrig "ukendt: none", og linjen kalder det ikke et læk', !rodN(n1).includes('ukendt: none') && !rodN(n1).includes('(1.234)') && !/læk/i.test(n1.d.querySelector('.login-laek-none').textContent));
   tjek('none: de andre svar står stadig', rodN(n1).includes('Andre svar fra tjekket: kun brugernavnet stod i et læk (2).'));
   tjek('none: "none" tæller ikke i læk-tallet', rodN(n1).includes('Kodeord fra kendte læk: ingen forsøg i perioden.') && !n1.d.querySelector('.login-laek-linje'));
-  tjek('none: engelsk', rodN(n2).includes('Cloudflare answered “none”: the request was not checked for leaked passwords: 1,234.') && rodN(n2).includes('No answer from the check: 3.'));
+  tjek('none: engelsk', rodN(n2).includes('Not a login attempt (no password sent): 1,234') && rodN(n2).includes('No answer from the check: 3.'));
 
   /* Ét Tab-stop pr. kolonne. */
   const m1 = side('#teknologi', TS());
@@ -4094,12 +4094,12 @@ const DOMV = (fravalgte = [], x) => {
   await sov(40);
   const li = id => boks.querySelector(`li[data-id="${id}"]`);
   tjek('DNS og DMARC: Vurdering viser ✗ og ✓ med tallene', li('dns_nx')?.textContent === '✗Ikke opfyldt: Opslag på navne, der ikke findes: 41 (skal være mindst 100)' && li('dns_navne')?.textContent === '✓Opfyldt: Forskellige navne, der ikke findes: 300 (skal være mindst 100), fx vpn.a.wi24rd.com, mail2.a.wi24rd.com', li('dns_nx')?.textContent + ' | ' + li('dns_navne')?.textContent);
-  tjek('DNS og DMARC: Vurdering siger, om mærket står', [...boks.querySelectorAll('h4')].some(h => h.textContent === 'Ligner DNS-rekognoscering: står'));
+  tjek('DNS og DMARC: Vurdering siger ja, når et af tallene er opfyldt', [...boks.querySelectorAll('h4')].some(h => h.textContent === 'Ligner DNS-rekognoscering: ja'));
   const vn = side('#overblik', { ...MED_SIDEN, overblik: OD, vurdering: { ...VD, dns_ja: false, dns: VD.dns.map(b => ({ ...b, ok: false, navn: null })) } });
   await sov(120);
   const boks2 = vn.w.hmTegn.vurderingBoks({ zone: 'z1', navn: 'a.wi24rd.com', dag: '2026-11-02' });
   await sov(40);
-  tjek('DNS og DMARC: står ikke, når ingen af dem er opfyldt', [...boks2.querySelectorAll('h4')].some(h => h.textContent === 'Ligner DNS-rekognoscering: står ikke') && boks2.querySelectorAll('.vurd-nej').length === 2);
+  tjek('DNS og DMARC: nej, når ingen af dem er opfyldt', [...boks2.querySelectorAll('h4')].some(h => h.textContent === 'Ligner DNS-rekognoscering: nej') && boks2.querySelectorAll('.vurd-nej').length === 2);
   tjek('DNS og DMARC: notifikationen gælder også DNS', o1.w.hmSprog.T.notifRekogNote.includes('Ligner DNS-rekognoscering'));
 
   /* DMARC. */
@@ -4111,9 +4111,9 @@ const DOMV = (fravalgte = [], x) => {
   const e9 = side('#vaernet?zone=z1&navn=wi24rd.com', em({ ...EM, fejlet: 3, afsendere: 1, liste: EM.liste.slice(0, 1) }));
   await sov(200);
   const pl = x => x.d.querySelector('[data-plads="email"]');
-  tjek('DNS og DMARC: linjen med tal', pl(e1)?.querySelector('.email-linje')?.textContent === 'Mails sendt i dit domænes navn: 1.200 · heraf ikke godkendt (DMARC fejlede): 41 fra 2 afsendere', pl(e1)?.textContent.slice(0, 200));
-  tjek('DNS og DMARC: ental', pl(e9).querySelector('.email-linje').textContent.endsWith('3 fra 1 afsender'), pl(e9).querySelector('.email-linje').textContent);
-  tjek('DNS og DMARC: engelsk', pl(e2).querySelector('.email-linje').textContent === 'Mail sent in your domain’s name: 1,200 · not approved (failed DMARC): 41 from 2 senders');
+  tjek('DNS og DMARC: linjen med tal', pl(e1)?.querySelector('.email-linje')?.textContent === '1.200 mails · 41 ikke godkendt fra 2 afsendere', pl(e1)?.textContent.slice(0, 200));
+  tjek('DNS og DMARC: ental', pl(e9).querySelector('.email-linje').textContent.endsWith('3 ikke godkendt fra 1 afsender'), pl(e9).querySelector('.email-linje').textContent);
+  tjek('DNS og DMARC: engelsk', pl(e2).querySelector('.email-linje').textContent === '1,200 emails · 41 not approved from 2 senders');
   const er = [...pl(e1).querySelectorAll('tbody tr')].map(r => [...r.cells].map(c => c.textContent).join('|'));
   tjek('DNS og DMARC: listen over afsendere, der fejlede', er.join(';') === 'Ond Afsender|RU|40|40;Ukendt afsender|–|1|9', er.join(';'));
   tjek('DNS og DMARC: rækkerne har intet bag sig, så de ser ikke klikbare ud', !pl(e1).querySelector('tbody button, tbody a, tbody [data-dyk]'));
@@ -4122,7 +4122,39 @@ const DOMV = (fravalgte = [], x) => {
   tjek('DNS og DMARC: tom tilstand med Cloudflares ord og guide', pl(e3).querySelector('.email-tom').textContent === 'Cloudflare har ingen DMARC-rapporter for domænet — DMARC Management er måske ikke slået til.' && pl(e3).querySelector('details')?.textContent.includes('Email → DMARC Management') && pl(e3).querySelector('details')?.textContent.includes('Enable DMARC Management'), pl(e3).textContent.slice(0, 200));
   tjek('DNS og DMARC: ikke hentet endnu er noget andet end tomt', pl(e4).querySelector('.email-tom').textContent === 'DMARC-tallene er ikke hentet endnu.' && !pl(e4).querySelector('details'));
   tjek('DNS og DMARC: en fejl står ved afsnittet med Cloudflares ord', pl(e5).textContent.includes('Cloudflare svarede ikke på DMARC-tallene: does not have access to the field') && !pl(e5).querySelector('details'));
-  tjek('DNS og DMARC: alle godkendt', pl(e6).querySelector('.email-linje').textContent === 'Mails sendt i dit domænes navn: 1.200 · alle godkendt' && !pl(e6).querySelector('table'));
+  tjek('DNS og DMARC: alle godkendt', pl(e6).querySelector('.email-linje').textContent === '1.200 mails · alle godkendt' && !pl(e6).querySelector('table'));
+  /* Mails: linjen gentager ikke overskriften, og ental og flertal følger tallene. */
+  const e10 = side('#vaernet?zone=z1&navn=wi24rd.com', em({ ...EM, mails: 1, fejlet: 0, afsendere: 0, liste: [] })), e11 = side('#vaernet?zone=z1&navn=wi24rd.com', em({ ...EM, mails: 1, fejlet: 0, afsendere: 0, liste: [] }), 'en');
+  const e12 = side('#vaernet?zone=z1&navn=wi24rd.com', em({ ...EM, mails: 1, fejlet: 1, afsendere: 1, liste: EM.liste.slice(0, 1) })), e13 = side('#vaernet?zone=z1&navn=wi24rd.com', em({ ...EM, mails: 2, fejlet: 1, afsendere: 1, liste: EM.liste.slice(0, 1) }), 'en');
+  await sov(200);
+  const emailTekst = x => pl(x)?.querySelector('.email-linje')?.textContent;
+  tjek('Mails: ental, alle godkendt', emailTekst(e10) === '1 mail · alle godkendt' && emailTekst(e11) === '1 email · all approved', [emailTekst(e10), emailTekst(e11)].join('|'));
+  tjek('Mails: ental og flertal, ikke godkendt', emailTekst(e12) === '1 mail · 1 ikke godkendt fra 1 afsender' && emailTekst(e13) === '2 emails · 1 not approved from 1 sender', [emailTekst(e12), emailTekst(e13)].join('|'));
+  tjek('Mails: linjen gentager ikke overskriften', [e1, e6, e10, e12].every(x => !emailTekst(x).includes(x.w.hmSprog.T.emailH)) && [e2, e11, e13].every(x => !emailTekst(x).includes(x.w.hmSprog.T.emailH)));
+
+  /* Vurdering: status pr. mærke, grænser som hele tal og betingelser uden noget at sammenligne med. */
+  const bet = (id, ok, n, m, x = {}) => ({ id, ok, n, m, navn: null, domaener: [], ...x });
+  const vurd = (x = {}) => ({ dag: '2026-11-02', maal: [bet('stigning', true, 40, 12.4)], maal_ja: false, foreloebig: false, rekog: [bet('stier', true, 120, 100), bet('faktor', true, 120, 4.5)], rekog_ja: false, dns: [bet('dns_nx', false, 10, 1671.4), bet('dns_navne', false, 1, 160)], dns_ja: false, ...x });
+  const vurdBoks = async (v, sprog) => { const s = side('#overblik', { ...MED_SIDEN, overblik: OD, vurdering: v }, sprog); await sov(120); const k = s.w.hmTegn.vurderingBoks({ zone: 'z1', navn: 'a.wi24rd.com', dag: '2026-11-02' }); await sov(40); return { k, T: s.w.hmSprog.T }; };
+  const vLinje = (k, id) => k.querySelector(`li[data-id="${id}"]`), vH = k => [...k.querySelectorAll('h4')].map(h => h.textContent);
+  const hel = await vurdBoks(vurd());
+  tjek('Vurdering: en grænse med decimal rundes op til et helt tal', vLinje(hel.k, 'dns_nx').textContent.endsWith('10 (skal være mindst 1.672)') && vLinje(hel.k, 'dns_navne').textContent.endsWith('1 (skal være mindst 160)') && vLinje(hel.k, 'faktor').textContent.endsWith('120 (grænsen er 5)'), hel.k.textContent);
+  tjek('Vurdering: et snit er ikke en grænse og beholder decimalen', vLinje(hel.k, 'stigning').textContent.includes('mod snit 12,4'), vLinje(hel.k, 'stigning').textContent);
+  tjek('Vurdering: nej ved alle tre mærker', vH(hel.k).join('|') === 'Ligner målrettet: nej|Ligner rekognoscering: nej|Ligner DNS-rekognoscering: nej', vH(hel.k).join('|'));
+  const ja = await vurdBoks(vurd({ maal_ja: true, rekog_ja: true, dns_ja: true })), for1 = await vurdBoks(vurd({ maal_ja: true, foreloebig: true }));
+  tjek('Vurdering: ja ved alle tre mærker', vH(ja.k).join('|') === 'Ligner målrettet: ja|Ligner rekognoscering: ja|Ligner DNS-rekognoscering: ja', vH(ja.k).join('|'));
+  tjek('Vurdering: foreløbigt siger, hvad der mangler', vH(for1.k)[0] === 'Ligner målrettet: ja, foreløbigt — afgøres, når dagen efter er hentet', vH(for1.k)[0]);
+  const enJa = await vurdBoks(vurd({ rekog_ja: true, dns_ja: true }), 'en');
+  tjek('Vurdering: engelsk status', vH(enJa.k).join('|') === 'Looks targeted: no|Looks like reconnaissance: yes|Looks like DNS reconnaissance: yes', vH(enJa.k).join('|'));
+  const uklart = /står ikke|står som|: står|not shown|shown as/;
+  tjek('Vurdering: de uklare ord om mærker er væk i begge sprog', [hel, ja, for1, enJa].every(x => !uklart.test(x.k.textContent) && !Object.keys(x.T).some(n => n.startsWith('vurd') && typeof x.T[n] === 'string' && uklart.test(x.T[n]))) && !/Mærket står/.test(hel.T.notifRekogNote), hel.k.textContent.slice(0, 200));
+  const nul = await vurdBoks(vurd({ rekog: [bet('stier', false, 0, 100), bet('faktor', true, 0, 0, { uden_normal: true })] }));
+  const ln = vLinje(nul.k, 'faktor');
+  tjek('Vurdering: uden flueben, når det normale er 0', ln.textContent === '–Tæller ikke med: Det normale: 0 (ingen sammenligning)' && ln.classList.contains('vurd-ikke') && !ln.classList.contains('vurd-ja'), ln.outerHTML.slice(0, 200));
+  tjek('Vurdering: en betingelse med noget at sammenligne med beholder fluebenet', vLinje(hel.k, 'faktor').querySelector('.vurd-tegn').textContent === '✓' && vLinje(hel.k, 'faktor').classList.contains('vurd-ja'));
+  const faa = await vurdBoks(vurd({ dns: [bet('dns_nx', false, 10, 100, { uden_normal: true }), bet('dns_navne', false, 1, 100, { uden_normal: true })] })), faaEn = await vurdBoks(vurd({ dns: [bet('dns_nx', false, 10, 100, { uden_normal: true })] }), 'en');
+  tjek('Vurdering: uden kryds, når der er for få dage', vLinje(faa.k, 'dns_nx').textContent === '–Tæller ikke med: Opslag på navne, der ikke findes: 10. Det normale: for få dage (ingen sammenligning)' && vLinje(faa.k, 'dns_navne').textContent === '–Tæller ikke med: Forskellige navne, der ikke findes: 1. Det normale: for få dage (ingen sammenligning)' && !faa.k.querySelector('li[data-id^="dns"].vurd-nej'), vLinje(faa.k, 'dns_nx').textContent);
+  tjek('Vurdering: uden sammenligning på engelsk', vLinje(faaEn.k, 'dns_nx').textContent === '–Does not count: Lookups of names that do not exist: 10. Normal: too few days (no comparison)', vLinje(faaEn.k, 'dns_nx').textContent);
   tjek('DNS og DMARC: fejler opslaget, står afsnittet ikke, og resten af Angreb gør', pl(e7) && !pl(e7).children.length && e7.d.querySelectorAll('.rettet-linje').length === 4);
   tjek('DNS og DMARC: kun for ét domæne', !pl(e8) && !e8.kald.some(k => k[0] === 'email_oversigt'));
   tjek('DNS og DMARC: spørger om domænet', e1.kald.find(k => k[0] === 'email_oversigt')[1].zone === 'z1');

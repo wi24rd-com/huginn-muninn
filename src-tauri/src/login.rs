@@ -3,7 +3,9 @@
 //! Svar 200 og 302 siger ikke, at nogen kom ind: det kan lige så godt være en fejlside, og teksten skal sige det. Stierne vælger
 //! brugeren pr. domæne (J2): en fast startliste plus forslag fra data, aldrig et gæt på teknologi. Ingen IP-adresser.
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::LazyLock;
 
+use regex::RegexSet;
 use serde::{Deserialize, Serialize};
 
 use crate::adgang::LAEK_IKKE_TJEKKET;
@@ -36,6 +38,18 @@ const FORSLAG_MAKS: usize = 8;
 pub const LOGIN_ORD: &[&str] = &[
     "login", "signin", "sign-in", "logon", "auth", "session", "account", "admin", "wp-login", "user",
 ];
+/// Ord fra `LOGIN_ORD`, der kun tæller som et helt ord i stien: `auth` står også inde i `/authors`.
+const HELE_ORD: &[&str] = &["auth"];
+/// Stier, der ligner et login på navnet, men ikke er det (mønstre på stien i små bogstaver): WordPress' AJAX- og formularindgang, forfatterarkivet, hvor brugernavnet er en del af stien, og REST-ruterne
+/// for brugere. Gælder kun forslag fra navnet: en sti, hvor tjekket har set et kodeord, kan stadig foreslås (`forslag`).
+pub const IKKE_LOGIN: &[&str] = &[
+    r"/wp-admin/admin-ajax\.php$",
+    r"/wp-admin/admin-post\.php$",
+    r"(^|/)authors?(/|$)",
+    r"/wp-json/(.*/)?users(/|$)",
+];
+static IKKE_LOGIN_MOENSTRE: LazyLock<RegexSet> =
+    LazyLock::new(|| RegexSet::new(IKKE_LOGIN).expect("mønstrene for det, der ikke er et login"));
 
 /// En sti: `/`, højst `MAKS_VAERDI` tegn, uden mellemrum og styretegn, og uden forespørgsel (`clientRequestPath` har ingen).
 pub fn tjek_sti(sti: &str) -> Result<String, Fejl> {
@@ -451,10 +465,14 @@ pub fn regn(periode: &Periode, f: &Filter, l: &Laest, nu: i64) -> LoginUd {
     }
 }
 
-/// Ligner stien et login? Ren funktion.
+/// Ligner stien et login på navnet? Ren funktion.
 fn ligner_login(sti: &str) -> bool {
     let sti = sti.to_lowercase();
-    LOGIN_ORD.iter().any(|o| sti.contains(o))
+    let helt_ord = |o: &str| sti.split(|c: char| !c.is_alphanumeric()).any(|d| d == o);
+    !IKKE_LOGIN_MOENSTRE.is_match(&sti)
+        && LOGIN_ORD
+            .iter()
+            .any(|o| if HELE_ORD.contains(o) { helt_ord(o) } else { sti.contains(o) })
 }
 
 /// Stier, hvor lækket-tjekket har set et kodeord: alt andet end `none` og det ukendte. Ren funktion.
@@ -918,6 +936,69 @@ mod tests {
             forslag(&rows, &HashSet::new()),
             ["/Sign-In/Ny", "/indgang", "/mit-logon", "/portal"]
         );
+    }
+
+    #[test]
+    fn stier_der_ligner_et_login_paa_navnet() {
+        for sti in [
+            "/auth",
+            "/auth/",
+            "/AUTH",
+            "/api/auth/session",
+            "/auth.php",
+            "/jwt-auth/v1/token",
+            "/user/login",
+            "/wp-login.php",
+            "/wp-admin/",
+            "/my-account",
+            "/blog/wp-login.php",
+        ] {
+            assert!(ligner_login(sti), "{sti}");
+        }
+    }
+
+    #[test]
+    fn stier_der_ikke_er_et_login() {
+        for sti in [
+            "/wp-admin/admin-ajax.php",
+            "/WP-ADMIN/admin-ajax.php",
+            "/blog/wp-admin/admin-ajax.php",
+            "/wp-admin/admin-post.php",
+            "/author",
+            "/author/",
+            "/author/admin",
+            "/authors",
+            "/authors/admin/",
+            "/da/author/admin",
+            "/wp-json/wp/v2/users",
+            "/wp-json/wp/v2/users/1",
+            "/wp-json/wp/v2/users/me",
+            "/wp-json/users",
+            "/authority",
+            "/coauthored",
+        ] {
+            assert!(!ligner_login(sti), "{sti}");
+        }
+    }
+
+    /// Hvert mønster fanger noget, og de rammer ikke indgangene på startlisten.
+    #[test]
+    fn undtagelserne_rammer_ikke_startlisten() {
+        assert_eq!(IKKE_LOGIN.len(), IKKE_LOGIN_MOENSTRE.len());
+        for sti in STARTLISTE {
+            assert!(!IKKE_LOGIN_MOENSTRE.is_match(sti), "{sti}");
+        }
+    }
+
+    /// Undtagelsen gælder kun navnet: har tjekket set et kodeord på stien, kan den stadig foreslås.
+    #[test]
+    fn undtagelsen_gaelder_kun_forslag_fra_navnet() {
+        let p = |dag: &str, sti: &str| rk(dag, "post", &[sti, "200", "200", "PL", ""].join("\t"), 3).1;
+        let tre = |sti: &str| vec![p(&d(1), sti), p(&d(2), sti), p(&d(3), sti)];
+        let mut rows = [tre("/wp-admin/admin-ajax.php"), tre("/authors/admin"), tre("/api/auth/session")].concat();
+        assert_eq!(forslag(&rows, &HashSet::new()), ["/api/auth/session"]);
+        rows.push(rk(&d(1), "laek_ren", "/wp-admin/admin-ajax.php", 2).1);
+        assert_eq!(forslag(&rows, &HashSet::new()), ["/api/auth/session", "/wp-admin/admin-ajax.php"]);
     }
 
     #[test]

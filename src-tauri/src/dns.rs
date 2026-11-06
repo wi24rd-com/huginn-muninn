@@ -110,8 +110,8 @@ fn navne(rows: &[Raekke], dag: &str) -> i64 {
     rows.iter().filter(|r| r.art == "dns_navne" && r.dag == dag).map(|r| r.n).sum()
 }
 
-/// (døgnets tal, snittet før, slår det til?) for ét mål. Ren funktion.
-fn maal(rows: &[Raekke], dag: &str, f: &dyn Fn(&[Raekke], &str) -> i64) -> (i64, f64, bool) {
+/// (døgnets tal, snittet før, slår det til?, er der dage nok til et snit?) for ét mål. Ren funktion.
+fn maal(rows: &[Raekke], dag: &str, f: &dyn Fn(&[Raekke], &str) -> i64) -> (i64, f64, bool, bool) {
     let foer: Vec<i64> = (1..=DNS_BASIS)
         .map(|i| dag_foer(dag, i))
         .filter(|d| har_tal(rows, d))
@@ -123,18 +123,20 @@ fn maal(rows: &[Raekke], dag: &str, f: &dyn Fn(&[Raekke], &str) -> i64) -> (i64,
         foer.iter().sum::<i64>() as f64 / foer.len() as f64
     };
     let nu = f(rows, dag);
-    let ok = har_tal(rows, dag) && foer.len() >= DNS_BASIS_MIN && nu >= DNS_MIN && nu as f64 >= DNS_FAKTOR * snit;
-    (nu, snit, ok)
+    let nok = foer.len() >= DNS_BASIS_MIN;
+    let ok = har_tal(rows, dag) && nok && nu >= DNS_MIN && nu as f64 >= DNS_FAKTOR * snit;
+    (nu, snit, ok, nok)
 }
 
 /// De to betingelser i boksen "Vurdering": én af dem er nok. Mærket afgøres af de samme tal. Ren funktion.
 pub fn vurder(rows: &[Raekke], dag: &str) -> Vec<Betingelse> {
-    let linje = |id: &'static str, (nu, snit, ok): (i64, f64, bool), navn: Option<String>| Betingelse {
+    let linje = |id: &'static str, (nu, snit, ok, nok): (i64, f64, bool, bool), navn: Option<String>| Betingelse {
         id,
         ok: Some(ok),
         n: nu as f64,
         m: (DNS_FAKTOR * snit).max(DNS_MIN as f64),
         navn,
+        uden_normal: !nok,
         ..Betingelse::default()
     };
     let eksempler: Vec<&str> = rows
@@ -270,5 +272,28 @@ mod tests {
         assert_eq!(v[1].navn.as_deref(), Some("vpn.a.wi24rd.com, mail2.a.wi24rd.com"));
         let nej = vurder(&[uge(40, 2), doegn(1, 41, 3)].concat(), &d(1));
         assert_eq!(nej.iter().map(|b| b.ok).collect::<Vec<_>>(), [Some(false), Some(false)]);
+        assert!(v.iter().chain(&nej).all(|b| !b.uden_normal));
+    }
+
+    /// For få dage til et snit: ingen sammenligning i visningen, og mærket slår stadig ikke til.
+    #[test]
+    fn for_faa_dage_er_ingen_sammenligning() {
+        let rows = [doegn(3, 10, 2), doegn(2, 10, 2), doegn(1, 500, 150)].concat();
+        let v = vurder(&rows, &d(1));
+        assert_eq!(
+            v.iter().map(|b| (b.id, b.ok, b.uden_normal)).collect::<Vec<_>>(),
+            [("dns_nx", Some(false), true), ("dns_navne", Some(false), true)]
+        );
+        assert_eq!(signal(&rows, &d(1)), None);
+    }
+
+    /// Normalt 0 med dage nok: gulvet er stadig en rigtig grænse, så linjen beholder sit tegn.
+    #[test]
+    fn normalt_nul_med_dage_nok_beholder_gulvet() {
+        let v = vurder(&[uge(0, 0), doegn(1, 500, 150)].concat(), &d(1));
+        assert_eq!(
+            v.iter().map(|b| (b.ok, b.m, b.uden_normal)).collect::<Vec<_>>(),
+            [(Some(true), 100.0, false), (Some(true), 100.0, false)]
+        );
     }
 }

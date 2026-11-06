@@ -1630,6 +1630,28 @@ mod tests {
         r(id, &format!("{id}.wi24rd.com"), Status::Groen, 3, 2.0)
     }
 
+    /// Hvert domæne står under sit eget mærke i statuslinjen, og et foreløbigt "Ligner målrettet" er ikke med.
+    #[test]
+    fn statuslinjens_maerker_foelger_raekkernes_slags() {
+        let mut foreloebig = med(groen("d"), MoensterSlags::Maalrettet);
+        foreloebig.afgjort = None;
+        let rk = [
+            med(groen("a"), MoensterSlags::Maalrettet),
+            med(groen("b"), MoensterSlags::Rekognoscering),
+            med(groen("c"), MoensterSlags::DnsRekognoscering),
+            foreloebig,
+            groen("e"),
+        ];
+        assert_eq!(
+            crate::agent::Maerker::af(&rk),
+            crate::agent::Maerker {
+                maalrettet: vec!["a.wi24rd.com".into()],
+                rekognoscering: vec!["b.wi24rd.com".into()],
+                dns: vec!["c.wi24rd.com".into()],
+            }
+        );
+    }
+
     #[test]
     fn maalrettet_melder_som_standard_ogsaa_paa_groen() {
         let g = med(groen("a"), MoensterSlags::Maalrettet);

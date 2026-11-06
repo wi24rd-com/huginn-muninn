@@ -1300,9 +1300,7 @@ fn vurder(app: &AppHandle) {
     let mut besked = || -> Result<Option<(String, String)>, Fejl> {
         let rk = byg_overblik(&lager, nu)?;
         if let Some(a) = app.try_state::<agent::Agent>() {
-            let navne = |f: &dyn Fn(&overblik::Raekke1) -> bool| rk.iter().filter(|r| f(r)).map(|r| r.navn.clone()).collect();
-            let rekog = |r: &overblik::Raekke1| r.moenster.as_ref().is_some_and(|m| m.slags.er_rekognoscering());
-            a.saet_maerker(navne(&|r| r.afgjort.is_some()), navne(&rekog));
+            a.saet_maerker(agent::Maerker::af(&rk));
             let vist = lager.indstilling(notify::VIST)?;
             let nye = notify::nye(&rk, lager.indstilling(notify::VIST_AFTRYK)?.as_deref(), nu).len()
                 + robotter::nye_robotter(&lager, vist.as_deref(), nu)?.len();

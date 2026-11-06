@@ -204,6 +204,22 @@ pub fn navn(tek: &str) -> String {
     )
 }
 
+/// Produktet, som det vises på regelkort og i Overblik: katalogets skrivemåde, når Cloudflares navn er det samme navn stavet anderledes eller med et løbenummer. Et andet navn for produktet og alt uden for
+/// kataloget står, som Cloudflare skriver det: det siger mere end katalogets gruppe. Ren funktion.
+pub fn vist_produkt(produkt: &str) -> String {
+    let tegn = |s: &str| {
+        s.chars()
+            .filter(|c| c.is_alphanumeric())
+            .flat_map(char::to_lowercase)
+            .collect::<String>()
+    };
+    let n = tegn(&normaliser(produkt));
+    KATALOG
+        .iter()
+        .find(|k| tegn(k.1) == n)
+        .map_or_else(|| produkt.to_string(), |k| k.1.to_string())
+}
+
 /// Gruppen i "Alle teknologier". Alt uden for kataloget er "andet".
 pub fn gruppe(tek: &str) -> &'static str {
     KATALOG.iter().find(|k| k.0 == tek).map_or("andet", |k| k.2)
@@ -640,6 +656,38 @@ mod tests {
 
     fn d(i: i64) -> String {
         dag_noegle(NU - i * DOEGN_MS)
+    }
+
+    #[test]
+    fn produktet_staves_som_i_kataloget() {
+        for k in KATALOG {
+            assert_eq!(vist_produkt(k.1), k.1);
+            assert_eq!(vist_produkt(&k.1.to_lowercase()), k.1);
+            assert_eq!(vist_produkt(&k.1.to_uppercase()), k.1);
+        }
+        for (cloudflare, vist) in [
+            ("Wordpress", "WordPress"),
+            ("Nextjs", "Next.js"),
+            ("Typo3", "TYPO3"),
+            ("Magento 2", "Magento"),
+        ] {
+            assert_eq!(vist_produkt(cloudflare), vist);
+        }
+    }
+
+    /// Et andet navn for produktet siger mere end katalogets gruppe, og alt uden for kataloget står, som Cloudflare skriver det.
+    #[test]
+    fn andre_produktnavne_er_uaendrede() {
+        for navn in [
+            "Apache Struts",
+            "Adobe Commerce",
+            "Generic Rules",
+            "SonicWall SSLVPN 2",
+            "Yeti Platform",
+            "",
+        ] {
+            assert_eq!(vist_produkt(navn), navn);
+        }
     }
 
     fn fw(i: i64, regel: &str, sti: &str, kilde: &str, handling: &str, n: i64) -> Raekke {

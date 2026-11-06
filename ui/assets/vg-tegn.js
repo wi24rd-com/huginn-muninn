@@ -248,14 +248,16 @@
     b.setAttribute('aria-label', t);
     return b;
   }
-  /* Boksen "Vurdering": hvorfor et mærke står eller ikke står for én dag, foldet sammen. Hver linje er en betingelse fra Rust med det tal, mærket afgøres af. o: zone, navn og dag. */
+  /* Boksen "Vurdering": hvorfor dagen fik eller ikke fik hvert mærke, foldet sammen. Hver linje er en betingelse fra Rust med det tal, mærket afgøres af. uden_normal: der er intet at sammenligne med, så linjen får hverken ✓ eller ✗. o: zone, navn og dag. */
   function vurderingBoks(o) {
     const boks = el('details', { className: 'vurdering' }, el('summary', { textContent: T.vurdSpoerg }));
     boks.dataset.noegle = 'vurdering';
     const q = x => new URLSearchParams({ zone: o.zone, navn: o.navn, dag: o.dag, ...x }).toString();
     const procent = v => String(tal(Math.round(v * 10) / 10));
     const tekst = b => {
-      const v = { n: tal(Math.round(b.n * 10) / 10), m: tal(Math.round(b.m * 10) / 10), navn: b.navn || '' };
+      /* En grænse er rundet op: tallene er hele, så "mindst 1.671,4" og "mindst 1.672" er det samme. Et snit er ikke en grænse og beholder decimalen. */
+      const v = { n: tal(Math.round(b.n * 10) / 10), m: tal(b.id === 'stigning' ? Math.round(b.m * 10) / 10 : Math.ceil(b.m)), navn: b.navn || '' };
+      if (b.uden_normal) return b.id === 'faktor' ? T.vurd.normalNul : fmt(T.vurd[`${b.id}Uden`], v);
       if (b.id === 'netvaerk' && !b.navn) return fmt(T.vurd.netvaerkIngen, v);
       if (b.id === 'radar') return b.ok === null ? T.vurd.radarIngen : fmt(T.vurd.radar, { n: procent(b.n), m: procent(b.m) });
       if (b.id === 'efter') return b.ok ? T.vurd.efter : T.vurd.efterNej;
@@ -273,16 +275,17 @@
     };
     const domaene = (b, d) => knap(b.id === 'net_andre' ? `${d.navn} (${tal(d.n)})` : d.navn, new URLSearchParams({ zone: d.zone, navn: d.navn, dag: o.dag, ...(b.id === 'net_andre' && b.navn ? { netvaerk: b.navn } : {}) }).toString(), 'link dyk-celle', fmt(T.vurdAabnDomaene, { navn: d.navn }));
     const linje = b => {
-      const [tegn, klasse, ord] = b.ok === null ? ['–', 'vurd-ikke', T.vurdIkke] : b.ok ? ['✓', 'vurd-ja', T.vurdJa] : ['✗', 'vurd-nej', T.vurdNej], m = maal(b);
+      const [tegn, klasse, ord] = b.ok === null || b.uden_normal ? ['–', 'vurd-ikke', T.vurdIkke] : b.ok ? ['✓', 'vurd-ja', T.vurdJa] : ['✗', 'vurd-nej', T.vurdNej], m = maal(b);
       const li = el('li', { className: klasse }, el('span', { className: 'vurd-tegn', textContent: tegn }), el('span', { className: 'sr-only', textContent: `${ord}: ` }), m ? knap(tekst(b), m[0], 'link dyk-celle', m[1]) : tekst(b));
       li.dataset.id = b.id;
       if (b.domaener.length) li.append(': ', ...b.domaener.flatMap((d, i) => [...(i ? [', '] : []), domaene(b, d)]));
       return li;
     };
     const gruppe = (h, b) => [el('h4', { textContent: h }), el('ul', { className: 'vurd-liste' }, ...b.map(linje))];
+    const status = (m, ja, foreloebig) => fmt(foreloebig ? T.vurdStatusForeloebig : ja ? T.vurdStatusJa : T.vurdStatusNej, { m });
     R.invoke('vurdering', { zone: o.zone, dag: o.dag }).then(v => {
       boks.append(el('p', { className: 'vg-note', textContent: fmt(T.vurdIntro, { d: datoLang(v.dag) }) }),
-        ...gruppe(v.foreloebig ? T.vurdMaalForeloebig : v.maal_ja ? T.vurdMaalJa : T.vurdMaalNej, v.maal), ...gruppe(v.rekog_ja ? T.vurdRekogJa : T.vurdRekogNej, v.rekog), ...(v.dns && v.dns.length ? gruppe(v.dns_ja ? T.vurdDnsJa : T.vurdDnsNej, v.dns) : []));
+        ...gruppe(status(T.maerkeMaal, v.maal_ja, v.foreloebig), v.maal), ...gruppe(status(T.maerkeRekog, v.rekog_ja), v.rekog), ...(v.dns && v.dns.length ? gruppe(status(T.maerkeDns, v.dns_ja), v.dns) : []));
     }).catch(() => { boks.hidden = true; });
     return boks;
   }

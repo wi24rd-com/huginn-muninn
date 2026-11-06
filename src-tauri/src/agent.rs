@@ -12,6 +12,7 @@ use tauri::{AppHandle, Wry};
 use crate::cf::Fejl;
 use crate::koe::{Fase, KoeStatus};
 use crate::notify::flertal;
+use crate::overblik::{MoensterSlags, Raekke1};
 use crate::vaern::parse_iso;
 
 pub const AABN: &str = "aabn";
@@ -81,17 +82,50 @@ fn om(kl: Option<&str>, nu: i64, da: bool) -> String {
     }
 }
 
-/// Mærkerne i statuslinjen: (målrettede, rekognosceringer, det første navn). Målrettet står forrest. Tom uden mærker. Ren funktion.
-pub fn maerke_tekst(maalrettet: &[String], rekognoscering: &[String], sprog: Sprog) -> String {
+/// Domænerne med et mærke i statuslinjen.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Maerker {
+    pub maalrettet: Vec<String>,
+    pub rekognoscering: Vec<String>,
+    pub dns: Vec<String>,
+}
+
+impl Maerker {
+    /// Rækkernes mærker: "Ligner målrettet" først, når det er afgjort. Ren funktion.
+    pub fn af(rk: &[Raekke1]) -> Maerker {
+        let navne = |f: &dyn Fn(&Raekke1) -> bool| rk.iter().filter(|r| f(r)).map(|r| r.navn.clone()).collect();
+        let slags = |s: MoensterSlags| move |r: &Raekke1| r.moenster.as_ref().is_some_and(|m| m.slags == s);
+        Maerker {
+            maalrettet: navne(&|r| r.afgjort.is_some()),
+            rekognoscering: navne(&slags(MoensterSlags::Rekognoscering)),
+            dns: navne(&slags(MoensterSlags::DnsRekognoscering)),
+        }
+    }
+}
+
+/// Mærket i statuslinjen med det første navn eller antallet. Målrettet står forrest og DNS sidst, som på rækkerne. Tom uden mærker. Ren funktion.
+pub fn maerke_tekst(m: &Maerker, sprog: Sprog) -> String {
     let da = sprog == Sprog::Da;
-    let (ord, liste) = match (maalrettet.is_empty(), rekognoscering.is_empty(), da) {
-        (false, _, true) => ("Ligner målrettet", maalrettet),
-        (false, _, false) => ("Looks targeted", maalrettet),
-        (true, false, true) => ("Ligner rekognoscering", rekognoscering),
-        (true, false, false) => ("Looks like reconnaissance", rekognoscering),
-        (true, true, _) => return String::new(),
+    let (ord, liste) = if !m.maalrettet.is_empty() {
+        (if da { "Ligner målrettet" } else { "Looks targeted" }, &m.maalrettet)
+    } else if !m.rekognoscering.is_empty() {
+        (
+            if da { "Ligner rekognoscering" } else { "Looks like reconnaissance" },
+            &m.rekognoscering,
+        )
+    } else if !m.dns.is_empty() {
+        (
+            if da {
+                "Ligner DNS-rekognoscering"
+            } else {
+                "Looks like DNS reconnaissance"
+            },
+            &m.dns,
+        )
+    } else {
+        return String::new();
     };
-    match liste {
+    match liste.as_slice() {
         [navn] => format!(" · {ord}: {navn}"),
         _ if da => format!(" · {ord}: {} domæner", liste.len()),
         _ => format!(" · {ord}: {} domains", liste.len()),
@@ -163,8 +197,8 @@ pub struct Agent {
     status: MenuItem<Wry>,
     sprog: Mutex<Sprog>,
     faerdig_kl: Mutex<Option<i64>>,
-    /// Domænerne med mærket "Ligner målrettet" og "Ligner rekognoscering".
-    maerker: Mutex<(Vec<String>, Vec<String>)>,
+    /// Domænerne med et mærke.
+    maerker: Mutex<Maerker>,
     /// Nyt siden Siden sidst blev åbnet: antal og hvornår (lokal time og minut).
     nye: Mutex<(usize, Option<(i64, i64)>)>,
 }
@@ -211,7 +245,7 @@ impl Agent {
             status,
             sprog: Mutex::new(sprog),
             faerdig_kl: Mutex::new(None),
-            maerker: Mutex::new((Vec::new(), Vec::new())),
+            maerker: Mutex::new(Maerker::default()),
             nye: Mutex::new((0, None)),
         })
     }
@@ -223,22 +257,22 @@ impl Agent {
     /// Viser køens status i statuslinjen og tooltippen.
     pub fn vis(&self, status: Option<&KoeStatus>, nu: i64) {
         let faerdig = *self.faerdig_kl.lock().unwrap_or_else(|e| e.into_inner());
-        let (maal, rekog) = self.maerker.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let maerker = self.maerker.lock().unwrap_or_else(|e| e.into_inner()).clone();
         let sprog = self.sprog();
         let (nye, kl) = *self.nye.lock().unwrap_or_else(|e| e.into_inner());
         let tekst = format!(
             "{}{}{}",
             menulinje_tekst(status, faerdig, nu, sprog),
-            maerke_tekst(&maal, &rekog, sprog),
+            maerke_tekst(&maerker, sprog),
             nye_tekst(nye, kl, sprog)
         );
         let _ = self.status.set_text(&tekst);
         let _ = self.ikon.set_tooltip(Some(&tekst));
     }
 
-    /// Domænerne med et mærke: målrettede og rekognosceringer.
-    pub fn saet_maerker(&self, maalrettet: Vec<String>, rekognoscering: Vec<String>) {
-        *self.maerker.lock().unwrap_or_else(|e| e.into_inner()) = (maalrettet, rekognoscering);
+    /// Domænerne med et mærke.
+    pub fn saet_maerker(&self, maerker: Maerker) {
+        *self.maerker.lock().unwrap_or_else(|e| e.into_inner()) = maerker;
     }
 
     /// Nyt i Siden sidst, og hvornår kortet sidst blev åbnet (lokal time og minut).
@@ -310,11 +344,32 @@ mod tests {
             vec!["a.wi24rd.com".to_string()],
             vec!["b.wi24rd.com".to_string(), "c.wi24rd.com".to_string()],
         );
-        assert_eq!(maerke_tekst(&[], &[], Sprog::Da), "");
-        assert_eq!(maerke_tekst(&a, &b, Sprog::Da), " · Ligner målrettet: a.wi24rd.com");
-        assert_eq!(maerke_tekst(&[], &b, Sprog::Da), " · Ligner rekognoscering: 2 domæner");
-        assert_eq!(maerke_tekst(&a, &[], Sprog::En), " · Looks targeted: a.wi24rd.com");
-        assert_eq!(maerke_tekst(&[], &b, Sprog::En), " · Looks like reconnaissance: 2 domains");
+        let m = |maalrettet: &[String], rekognoscering: &[String], dns: &[String]| Maerker {
+            maalrettet: maalrettet.to_vec(),
+            rekognoscering: rekognoscering.to_vec(),
+            dns: dns.to_vec(),
+        };
+        assert_eq!(maerke_tekst(&m(&[], &[], &[]), Sprog::Da), "");
+        assert_eq!(maerke_tekst(&m(&a, &b, &b), Sprog::Da), " · Ligner målrettet: a.wi24rd.com");
+        assert_eq!(maerke_tekst(&m(&[], &b, &a), Sprog::Da), " · Ligner rekognoscering: 2 domæner");
+        assert_eq!(maerke_tekst(&m(&a, &[], &[]), Sprog::En), " · Looks targeted: a.wi24rd.com");
+        assert_eq!(maerke_tekst(&m(&[], &b, &[]), Sprog::En), " · Looks like reconnaissance: 2 domains");
+    }
+
+    #[test]
+    fn statuslinjen_skelner_dns_fra_rekognoscering() {
+        let (a, b) = (
+            vec!["a.wi24rd.com".to_string()],
+            vec!["b.wi24rd.com".to_string(), "c.wi24rd.com".to_string()],
+        );
+        let dns = |dns: &[String]| Maerker {
+            dns: dns.to_vec(),
+            ..Maerker::default()
+        };
+        assert_eq!(maerke_tekst(&dns(&a), Sprog::Da), " · Ligner DNS-rekognoscering: a.wi24rd.com");
+        assert_eq!(maerke_tekst(&dns(&b), Sprog::Da), " · Ligner DNS-rekognoscering: 2 domæner");
+        assert_eq!(maerke_tekst(&dns(&a), Sprog::En), " · Looks like DNS reconnaissance: a.wi24rd.com");
+        assert_eq!(maerke_tekst(&dns(&b), Sprog::En), " · Looks like DNS reconnaissance: 2 domains");
     }
 
     #[test]

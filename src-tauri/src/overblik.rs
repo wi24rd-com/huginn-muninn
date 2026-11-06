@@ -327,15 +327,20 @@ impl Angreb {
 }
 
 /// Regelnavnet, som Værnets regelkort viser det: produkt og type med CVE ("React RCE (CVE-2025-55182)"), ellers kun
-/// produktet ("Wordpress"); regler uden " - "-opdeling (egne regler, browsertjekket) med deres fulde navn.
-pub fn kort_regelnavn(navn: &str) -> String {
+/// produktet ("WordPress"); regler uden " - "-opdeling (egne regler, browsertjekket) med deres fulde navn. Produktet staves som i kataloget, men en egen regel beholder det navn, brugeren gav den.
+pub fn kort_regelnavn(navn: &str, egen: bool) -> String {
     let bic = navn == "Browser Integrity Check";
     let r = regel(if bic { "" } else { navn }, if bic { "bic" } else { "" });
+    let produkt = if egen {
+        r.produkt.clone()
+    } else {
+        teknologi::vist_produkt(&r.produkt)
+    };
     match (&r.cve, r.produkt.is_empty()) {
         (_, true) => r.navn,
-        (Some(cve), false) if !r.type_.is_empty() => format!("{} {} ({cve})", r.produkt, r.type_),
-        (Some(cve), false) => format!("{} ({cve})", r.produkt),
-        (None, false) => r.produkt,
+        (Some(cve), false) if !r.type_.is_empty() => format!("{produkt} {} ({cve})", r.type_),
+        (Some(cve), false) => format!("{produkt} ({cve})"),
+        (None, false) => produkt,
     }
 }
 
@@ -357,8 +362,8 @@ pub fn angreb(rows: &[Raekke], nu: i64) -> Angreb {
         if dag == d1 {
             a.i_gaar += r.n;
             a.fordeling.tael(felt(7), r.n);
-            let navn = kort_regelnavn(felt(0));
             let egen = EGNE_KILDER.contains(&felt(6));
+            let navn = kort_regelnavn(felt(0), egen);
             let fuldt = felt(0).to_string();
             match typer.iter_mut().find(|t| t.navn == navn) {
                 Some(t) => {
@@ -617,6 +622,7 @@ fn r1_vurder(rows: &[Raekke], dag: &str, p: &Profil) -> Vec<Betingelse> {
             ok: Some(nu as f64 >= REKOG_FAKTOR * m),
             n: nu as f64,
             m: REKOG_FAKTOR * m,
+            uden_normal: m == 0.0,
             ..Betingelse::default()
         },
     ]
@@ -664,6 +670,8 @@ pub struct Betingelse {
     pub m: f64,
     pub navn: Option<String>,
     pub domaener: Vec<DomaeneTal>,
+    /// Der er intet normalt at sammenligne med (det normale er 0, eller der er for få dage). Ændrer kun visningen: `ok` afgør stadig mærket.
+    pub uden_normal: bool,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
@@ -775,6 +783,7 @@ fn m4_vurder(dag: &str, rows: &[Raekke], p: &Profil, andre: &[&Signal], r_ref: O
             m: n as f64,
             navn: Some(top.to_string()).filter(|x| !x.is_empty()),
             domaener: paa_andre,
+            ..Betingelse::default()
         },
         Betingelse {
             id: "gule",
@@ -1778,6 +1787,24 @@ mod tests {
         assert!(!er_forgaars("2026-11-02", "2026-11-02"), "vest for UTC");
     }
 
+    /// Uden noget normalt er betingelsen uden indhold i visningen, men mærket afgøres som før.
+    #[test]
+    fn normalt_nul_er_ingen_sammenligning_og_aendrer_ikke_maerket() {
+        let (ro, p) = (stille(), Profil::new());
+        let faktor = |v: &Vurdering| v.rekog.iter().find(|b| b.id == "faktor").unwrap().clone();
+        let scan = stier(1, "a", 100);
+        let v = vurdering(&d(1), &scan, &p, &sig(&scan), &[&ro], None);
+        let b = faktor(&v);
+        assert_eq!((b.uden_normal, b.ok, b.m, v.rekog_ja), (true, Some(true), 0.0, true));
+        assert!(maerke(&scan, &p, &[&ro], None).is_some(), "mærket står uændret");
+        let tomt: Vec<Raekke> = Vec::new();
+        let v = vurdering(&d(1), &tomt, &p, &sig(&tomt), &[&ro], None);
+        assert_eq!((faktor(&v).uden_normal, faktor(&v).ok, v.rekog_ja), (true, Some(true), false));
+        let med: Vec<Raekke> = (2..=8).flat_map(|i| stier(i, "b", 40)).chain(stier(1, "a", 120)).collect();
+        let v = vurdering(&d(1), &med, &p, &sig(&med), &[&ro], None);
+        assert_eq!((faktor(&v).uden_normal, faktor(&v).m), (false, 120.0));
+    }
+
     #[test]
     fn rekognoscering_taersklerne_og_episoder() {
         let (ro, p) = (stille(), Profil::new());
@@ -2345,17 +2372,27 @@ mod tests {
 
     #[test]
     fn kort_regelnavn_som_regelkortet() {
-        assert_eq!(kort_regelnavn("React - RCE - CVE:CVE-2025-55182"), "React RCE (CVE-2025-55182)");
-        assert_eq!(kort_regelnavn("Wordpress - Broken Access Control, File Inclusion"), "Wordpress");
         assert_eq!(
-            kort_regelnavn("Wordpress - Remote Code Execution - CVE:CVE-2026-63030"),
-            "Wordpress Remote Code Execution (CVE-2026-63030)"
+            kort_regelnavn("React - RCE - CVE:CVE-2025-55182", false),
+            "React RCE (CVE-2025-55182)"
         );
-        assert_eq!(kort_regelnavn("Apache Struts - CVE:CVE-2017-5638"), "Apache Struts (CVE-2017-5638)");
+        assert_eq!(
+            kort_regelnavn("Wordpress - Broken Access Control, File Inclusion", false),
+            "WordPress"
+        );
+        assert_eq!(
+            kort_regelnavn("Wordpress - Remote Code Execution - CVE:CVE-2026-63030", false),
+            "WordPress Remote Code Execution (CVE-2026-63030)"
+        );
+        assert_eq!(
+            kort_regelnavn("Apache Struts - CVE:CVE-2017-5638", false),
+            "Apache Struts (CVE-2017-5638)"
+        );
         // Egne regler uden " - " og browsertjekket står med det fulde navn.
         let egen = "min-regel: max 100 kald pr. minut pr. IP (20 pr. 10 s)";
-        assert_eq!(kort_regelnavn(egen), egen);
-        assert_eq!(kort_regelnavn("Browser Integrity Check"), "Browser Integrity Check");
+        assert_eq!(kort_regelnavn(egen, true), egen);
+        assert_eq!(kort_regelnavn("wordpress", true), "wordpress", "en egen regel beholder sit navn");
+        assert_eq!(kort_regelnavn("Browser Integrity Check", false), "Browser Integrity Check");
     }
 
     /// Eksempel, i går: 35 React, 49 + 3 + 1 Wordpress, 2 min-regel, 1.200 labyrint (rutine).
@@ -2400,9 +2437,9 @@ mod tests {
         assert_eq!(
             typer(&a.top),
             [
-                ("Wordpress", 53),
+                ("WordPress", 53),
                 ("React RCE (CVE-2025-55182)", 35),
-                ("Wordpress Remote Code Execution (CVE-2026-63030)", 3)
+                ("WordPress Remote Code Execution (CVE-2026-63030)", 3)
             ],
             "samme korte navn lægges sammen; rutine og andre døgn tæller ikke; højst 3"
         );
