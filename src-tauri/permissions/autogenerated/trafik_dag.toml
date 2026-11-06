@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-trafik-dag"
+description = "Enables the trafik_dag command without any pre-configured scope."
+commands.allow = ["trafik_dag"]
+
+[[permission]]
+identifier = "deny-trafik-dag"
+description = "Denies the trafik_dag command without any pre-configured scope."
+commands.deny = ["trafik_dag"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-teknologi-oversigt"
+description = "Enables the teknologi_oversigt command without any pre-configured scope."
+commands.allow = ["teknologi_oversigt"]
+
+[[permission]]
+identifier = "deny-teknologi-oversigt"
+description = "Denies the teknologi_oversigt command without any pre-configured scope."
+commands.deny = ["teknologi_oversigt"]

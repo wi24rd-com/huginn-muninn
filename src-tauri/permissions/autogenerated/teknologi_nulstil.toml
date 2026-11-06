@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-teknologi-nulstil"
+description = "Enables the teknologi_nulstil command without any pre-configured scope."
+commands.allow = ["teknologi_nulstil"]
+
+[[permission]]
+identifier = "deny-teknologi-nulstil"
+description = "Denies the teknologi_nulstil command without any pre-configured scope."
+commands.deny = ["teknologi_nulstil"]

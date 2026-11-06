@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-login-sti-saet"
+description = "Enables the login_sti_saet command without any pre-configured scope."
+commands.allow = ["login_sti_saet"]
+
+[[permission]]
+identifier = "deny-login-sti-saet"
+description = "Denies the login_sti_saet command without any pre-configured scope."
+commands.deny = ["login_sti_saet"]

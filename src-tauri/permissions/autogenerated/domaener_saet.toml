@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-domaener-saet"
+description = "Enables the domaener_saet command without any pre-configured scope."
+commands.allow = ["domaener_saet"]
+
+[[permission]]
+identifier = "deny-domaener-saet"
+description = "Denies the domaener_saet command without any pre-configured scope."
+commands.deny = ["domaener_saet"]

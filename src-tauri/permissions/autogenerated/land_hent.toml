@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-land-hent"
+description = "Enables the land_hent command without any pre-configured scope."
+commands.allow = ["land_hent"]
+
+[[permission]]
+identifier = "deny-land-hent"
+description = "Denies the land_hent command without any pre-configured scope."
+commands.deny = ["land_hent"]

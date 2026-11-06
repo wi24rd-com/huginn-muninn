@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-valg-hent"
+description = "Enables the valg_hent command without any pre-configured scope."
+commands.allow = ["valg_hent"]
+
+[[permission]]
+identifier = "deny-valg-hent"
+description = "Denies the valg_hent command without any pre-configured scope."
+commands.deny = ["valg_hent"]

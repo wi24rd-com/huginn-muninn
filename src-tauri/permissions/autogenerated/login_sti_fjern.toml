@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-login-sti-fjern"
+description = "Enables the login_sti_fjern command without any pre-configured scope."
+commands.allow = ["login_sti_fjern"]
+
+[[permission]]
+identifier = "deny-login-sti-fjern"
+description = "Denies the login_sti_fjern command without any pre-configured scope."
+commands.deny = ["login_sti_fjern"]

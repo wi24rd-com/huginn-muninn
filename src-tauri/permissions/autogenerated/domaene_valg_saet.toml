@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-domaene-valg-saet"
+description = "Enables the domaene_valg_saet command without any pre-configured scope."
+commands.allow = ["domaene_valg_saet"]
+
+[[permission]]
+identifier = "deny-domaene-valg-saet"
+description = "Denies the domaene_valg_saet command without any pre-configured scope."
+commands.deny = ["domaene_valg_saet"]

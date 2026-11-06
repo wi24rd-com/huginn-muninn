@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-aabn-cve"
+description = "Enables the aabn_cve command without any pre-configured scope."
+commands.allow = ["aabn_cve"]
+
+[[permission]]
+identifier = "deny-aabn-cve"
+description = "Denies the aabn_cve command without any pre-configured scope."
+commands.deny = ["aabn_cve"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-kortdata"
+description = "Enables the kortdata command without any pre-configured scope."
+commands.allow = ["kortdata"]
+
+[[permission]]
+identifier = "deny-kortdata"
+description = "Denies the kortdata command without any pre-configured scope."
+commands.deny = ["kortdata"]

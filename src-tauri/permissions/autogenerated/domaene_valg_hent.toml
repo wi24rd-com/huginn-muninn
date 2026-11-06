@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-domaene-valg-hent"
+description = "Enables the domaene_valg_hent command without any pre-configured scope."
+commands.allow = ["domaene_valg_hent"]
+
+[[permission]]
+identifier = "deny-domaene-valg-hent"
+description = "Denies the domaene_valg_hent command without any pre-configured scope."
+commands.deny = ["domaene_valg_hent"]

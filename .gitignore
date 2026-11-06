@@ -1,0 +1,46 @@
+# Lokalt arbejdsområde
+/claude_*/
+
+# Secrets: never commit
+.env
+.env.*
+.dev.vars
+*.pem
+*.key
+*.p12
+*.pfx
+*.secret
+tauri-signing*.key
+
+# Build
+node_modules/
+dist/
+target/
+src-tauri/target/
+src-tauri/gen/schemas/
+.DS_Store
+
+# Lokale værktøjsindstillinger
+/.claude/
+
+# Arbejdsfiler: beslutninger, idéer og research
+/docs/
+/AGENTS.md
+/CLAUDE.md
+
+# Afleveringer og undersøgelser
+*-HANDOFF.md
+HANDOFF-*.md
+INVESTIGATION-*.md
+/b*.md
+
+# Nøgler, systemfiler og lokale databaser
+id_rsa*
+Thumbs.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Filer, programmet, testene og bygningen ikke bruger
+/design/brand/menulinje-forenklet.png
+/tools/fast-tid.sh

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-nulstil-historik"
+description = "Enables the nulstil_historik command without any pre-configured scope."
+commands.allow = ["nulstil_historik"]
+
+[[permission]]
+identifier = "deny-nulstil-historik"
+description = "Denies the nulstil_historik command without any pre-configured scope."
+commands.deny = ["nulstil_historik"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-vaern-samlet-cache"
+description = "Enables the vaern_samlet_cache command without any pre-configured scope."
+commands.allow = ["vaern_samlet_cache"]
+
+[[permission]]
+identifier = "deny-vaern-samlet-cache"
+description = "Denies the vaern_samlet_cache command without any pre-configured scope."
+commands.deny = ["vaern_samlet_cache"]

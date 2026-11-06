@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-dato-format-saet"
+description = "Enables the dato_format_saet command without any pre-configured scope."
+commands.allow = ["dato_format_saet"]
+
+[[permission]]
+identifier = "deny-dato-format-saet"
+description = "Denies the dato_format_saet command without any pre-configured scope."
+commands.deny = ["dato_format_saet"]

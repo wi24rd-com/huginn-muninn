@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-hul-luk"
+description = "Enables the hul_luk command without any pre-configured scope."
+commands.allow = ["hul_luk"]
+
+[[permission]]
+identifier = "deny-hul-luk"
+description = "Denies the hul_luk command without any pre-configured scope."
+commands.deny = ["hul_luk"]

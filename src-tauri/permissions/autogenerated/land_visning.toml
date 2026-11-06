@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-land-visning"
+description = "Enables the land_visning command without any pre-configured scope."
+commands.allow = ["land_visning"]
+
+[[permission]]
+identifier = "deny-land-visning"
+description = "Denies the land_visning command without any pre-configured scope."
+commands.deny = ["land_visning"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-teknologi-tilfoej"
+description = "Enables the teknologi_tilfoej command without any pre-configured scope."
+commands.allow = ["teknologi_tilfoej"]
+
+[[permission]]
+identifier = "deny-teknologi-tilfoej"
+description = "Denies the teknologi_tilfoej command without any pre-configured scope."
+commands.deny = ["teknologi_tilfoej"]

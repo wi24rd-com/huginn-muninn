@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-vaern-oversigt"
+description = "Enables the vaern_oversigt command without any pre-configured scope."
+commands.allow = ["vaern_oversigt"]
+
+[[permission]]
+identifier = "deny-vaern-oversigt"
+description = "Denies the vaern_oversigt command without any pre-configured scope."
+commands.deny = ["vaern_oversigt"]

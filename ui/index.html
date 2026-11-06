@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wi24rd Huginn and Muninn</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/vagt.css">
+<script src="assets/tema.js"></script>
+<script src="assets/sprog.js" defer></script>
+<script src="assets/genforsoeg.js" defer></script>
+<script src="assets/ramme.js" defer></script>
+<script src="assets/vg-tegn.js" defer></script>
+<script src="assets/velkomst.js" defer></script>
+<script src="assets/visning-overblik.js" defer></script>
+<script src="assets/visning-siden.js" defer></script>
+<script src="assets/visning-vaernet.js" defer></script>
+<script src="assets/visning-dyk.js" defer></script>
+<script src="assets/visning-robotter.js" defer></script>
+<script src="assets/visning-login.js" defer></script>
+<script src="assets/visning-land.js" defer></script>
+<script src="assets/visning-teknologi.js" defer></script>
+<script src="assets/visning-indstillinger.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#indhold" id="skip" data-t="skip">Gå til indhold</a>
+
+<header class="band" data-tauri-drag-region="deep">
+  <svg class="band-boelge" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true"><path class="b1" d="M0,50 C200,14 420,80 640,42 C820,14 1000,58 1200,28 L1200,0 L0,0 Z"/><path class="b2" d="M0,60 C260,28 520,72 780,36 C960,12 1100,42 1200,20 L1200,60 Z"/><path class="b3" d="M300,60 C500,22 700,66 900,34 C1050,12 1150,38 1200,30 L1200,0 L300,0 Z"/></svg>
+  <div class="band-nav">
+    <button class="bknap" type="button" id="hist-tilbage" disabled><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="bknap" type="button" id="hist-frem" disabled><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+  <div class="band-logo">
+    <img class="flise" src="assets/flise-76.png" srcset="assets/flise-38.png 38w, assets/flise-76.png 76w, assets/flise-114.png 114w" sizes="38px" alt="">
+    <span class="band-navn"><b><span class="band-wi">Wi<em>24</em>rd </span>Huginn and Muninn</b><small data-t="under">for Cloudflare®</small></span>
+  </div>
+  <label class="band-vaelger" id="band-zone" hidden><span class="sr-only" data-t="vaelgDomaene">Domæne</span><select id="vg-zone"></select></label>
+  <label class="band-vaelger" id="band-land" hidden><span class="sr-only" data-t="landVaelg">Land</span><select id="vg-land"></select></label>
+  <div class="band-hoejre">
+    <span class="sr-only" id="koe-tekst" role="status" aria-live="polite"></span>
+    <button class="pille" type="button" id="koe" data-gaa="overblik" hidden><span class="pille-ikon" aria-hidden="true"></span><span id="koe-kort" aria-hidden="true"></span><progress class="pille-bar" id="koe-fremskridt" max="1" value="0"></progress></button>
+    <button class="bknap" type="button" id="hent-nu"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span data-t="hentNu">Hent nu</span></button>
+    <span class="hent-status" id="hent-status" role="status" aria-live="polite"></span>
+    <button class="bknap" type="button" id="hjaelp-knap" aria-controls="hjaelp" aria-expanded="false"><span aria-hidden="true">?</span><span class="sr-only" data-t="hjaelpKnap">Hjælp</span></button>
+  </div>
+</header>
+
+<div class="krop">
+<nav class="side" id="side" aria-labelledby="side-h">
+  <h2 class="sr-only" id="side-h" data-t="navH">Visninger</h2>
+  <ul class="nav">
+    <li><a href="#overblik" data-visning="overblik"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span data-t="navOverblik">Overblik</span><kbd data-genvej="1"></kbd></a></li>
+    <li><a href="#siden-sidst" data-visning="siden-sidst"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span data-t="navSiden">Siden sidst</span><span class="tal" id="siden-tal" hidden></span><kbd data-genvej="2"></kbd></a></li>
+    <li><a href="#vaernet" data-visning="vaernet"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/></svg><span data-t="navVaernet">Angreb</span><kbd data-genvej="3"></kbd></a></li>
+    <li><a href="#robotter" data-visning="robotter"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 4v4M9 13h.01M15 13h.01"/></svg><span data-t="navRobotter">Robotter</span><kbd data-genvej="4"></kbd></a></li>
+    <li><a href="#login" data-visning="login"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-t="navLogin">Login</span><kbd data-genvej="5"></kbd></a></li>
+    <li><a href="#land" data-visning="land"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span id="nav-land" data-t="navLand">Land lige nu</span><kbd data-genvej="6"></kbd></a></li>
+  </ul>
+  <ul class="nav fod">
+    <li><a href="#indstillinger" data-visning="indstillinger"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span data-t="navIndst">Indstillinger</span><kbd data-genvej=","></kbd></a></li>
+  </ul>
+</nav>
+
+<main class="hovedomr" id="indhold" tabindex="-1">
+  <p class="r6-status" id="zone-status" role="status" aria-live="polite"></p>
+  <div class="hm-genforsoeg" id="genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="knap" type="button" data-t="proevNu">Prøv igen nu</button></div>
+  <p class="r6-status" id="koe-besked" aria-live="polite"></p>
+
+  <section class="visning" id="visning-opsaetning" data-visning="opsaetning" aria-labelledby="opsaetning-h" hidden>
+    <div data-velkomst="opsaetning-top"></div>
+    <div class="opsaetning-krop">
+    <div class="opsaetning-flow">
+    <div class="titelrad"><h1 id="opsaetning-h" data-t="tokenH">Forbind med Cloudflare</h1></div>
+    <p class="lead" data-t="tokenP">Indsæt et API Token, der kun kan læse.</p>
+    <div class="token-hjaelp" data-token-hjaelp></div>
+    <p class="note token-it" data-t="tokenItFirma">Har du fået et API Token af dit IT-firma? Indsæt det her.</p>
+    <form class="hm-form" id="token-form" autocomplete="off">
+      <label><span data-t="tokenFelt">API Token (kun læsning)</span><input id="token" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" required></label>
+      <button class="knap primaer" type="submit" id="token-knap" data-t="tokenKnap">Gem og forbind</button>
+    </form>
+    <p class="r6-status" id="token-status" role="status" aria-live="polite"></p>
+    <fieldset class="hm-niveau" id="opsaet-niveau" aria-describedby="opsaet-niveau-p">
+      <legend data-t="niveauH">Notifikationer</legend>
+      <p class="note" id="opsaet-niveau-p" data-t="opsaetNiveauP"></p>
+      <label class="hm-valgmulighed"><input type="radio" name="opsaet-niveau" value="rolig"><span data-t="niveauRolig"></span></label>
+      <label class="hm-valgmulighed"><input type="radio" name="opsaet-niveau" value="standard" checked><span data-t="niveauStandard"></span></label>
+      <label class="hm-valgmulighed"><input type="radio" name="opsaet-niveau" value="alt"><span data-t="niveauAlt"></span></label>
+    </fieldset>
+    </div>
+    <div class="opsaetning-punkter" data-velkomst="opsaetning-punkter"></div>
+    <div class="opsaetning-filosofi" data-velkomst="filosofi"></div>
+    </div>
+  </section>
+
+  <section class="visning" id="visning-overblik" data-visning="overblik" aria-labelledby="overblik-h" hidden>
+    <div class="titelrad">
+      <h1 id="overblik-h" data-t="zonerH">Overblik</h1><span class="under" id="overblik-antal" aria-live="polite"></span>
+      <div class="hoejre"><button class="knap primaer" type="button" id="samlet" disabled></button></div>
+    </div>
+    <div id="hul-linjer"></div>
+    <p class="server-linje" id="server-linje" hidden></p>
+    <div class="dom" id="dom" hidden>
+      <div class="dom-tekst"><b class="dom-overskrift" id="dom-h"></b><p id="dom-p"></p></div>
+      <div class="dom-handling"><button class="link" type="button" id="dom-hjaelp" data-t="domHjaelp">Hvad betyder det? →</button><button class="luk" type="button" id="dom-luk"><span aria-hidden="true">×</span><span class="sr-only" data-t="domLuk">Skjul</span></button></div>
+    </div>
+    <p class="nye-domaener" id="nye-domaener" role="status" hidden></p>
+    <div id="overblik-tom" data-velkomst="intet-valgt" hidden></div>
+    <div class="tabel-rul" id="overblik-rul" tabindex="0" role="region" aria-labelledby="overblik-h">
+      <table class="tabel" id="overblik-tabel">
+        <caption class="sr-only" data-t="tabelTitel">Dine domæner</caption>
+        <colgroup span="3"></colgroup><colgroup span="3"></colgroup><colgroup span="2"></colgroup><colgroup></colgroup>
+        <thead><tr>
+          <th class="v" scope="col" rowspan="2" data-t="thDomaene">Domæne</th>
+          <th class="v" scope="col" rowspan="2" data-t="thStatus">Status</th>
+          <th class="v" scope="col" rowspan="2" data-t="thHvorfor">Hvorfor</th>
+          <th class="sep gruppe" scope="colgroup" colspan="3" data-t="thAfvist">Afvist</th>
+          <th class="sep gruppe" scope="colgroup" colspan="2" data-t="thAngreb">Angreb</th>
+          <th class="chev" scope="col" rowspan="2"><span class="sr-only" data-t="thAabn">Åbn</span></th>
+        </tr><tr>
+          <th class="tal-kol sep" scope="col" data-t="thIGaar">i går</th>
+          <th class="tal-kol" scope="col" data-t="th7">7 dage</th>
+          <th class="tal-kol" scope="col" data-t="th30">30 dage</th>
+          <th class="tal-kol sep" scope="col" data-t="thUgen">denne uge</th>
+          <th class="tal-kol" scope="col" data-t="thSidsteUge">sidste uge</th>
+        </tr></thead>
+        <tbody id="overblik-raekker"></tbody>
+      </table>
+    </div>
+    <p class="fodnote" id="overblik-note" data-t="fodnote"></p>
+    <p class="fodnote"><button class="link" type="button" id="fravalgt-note" data-gaa="indstillinger?afsnit=domaener" hidden></button></p>
+  </section>
+
+  <section class="visning" id="visning-siden" data-visning="siden-sidst" aria-labelledby="siden-sidst-h" hidden>
+    <div class="titelrad"><h1 id="siden-sidst-h" data-t="sidenH" tabindex="-1">Siden sidst</h1></div>
+    <p class="lead" id="siden-vist"></p>
+    <div id="siden-huller"></div>
+    <ul class="hm-siden" id="siden-liste"></ul>
+    <button class="knap" type="button" id="siden-skjul" data-t="sidenSkjul">Til overblikket</button>
+  </section>
+
+  <section class="visning" id="visning-vaernet" data-visning="vaernet" aria-labelledby="vaernet-h" hidden>
+    <div class="titelrad">
+      <h1 id="vaernet-h" data-t="vaernetH">Angreb</h1><span class="under" id="vaernet-under"></span>
+    </div>
+    <div class="hm-valgte" id="valgte" hidden></div>
+    <div class="hm-genforsoeg" id="vg-genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="knap" type="button" data-t="proevNu">Prøv igen nu</button></div>
+    <div class="vg" id="vagt" data-vagt="vaern"></div>
+  </section>
+
+  <section class="visning" id="visning-dyk" data-visning="dyk" aria-labelledby="dyk-h" hidden>
+    <div class="dyk-tilbage" id="dyk-tilbage"></div>
+    <div class="titelrad">
+      <h1 id="dyk-h" tabindex="-1"></h1><span class="dyk-udsnit" id="dyk-udsnit" data-t="dykUdsnit">Udsnit</span><span class="under" id="dyk-under"></span>
+    </div>
+    <div class="titelrad dyk-raekke">
+      <nav class="dyk-filtre" id="dyk-filtre" hidden></nav>
+      <div class="hoejre" id="dyk-periode"></div>
+    </div>
+    <div class="vg" id="dyk-rod"></div>
+  </section>
+
+  <section class="visning" id="visning-robotter" data-visning="robotter" aria-labelledby="robotter-h" hidden>
+    <div class="titelrad"><h1 id="robotter-h" tabindex="-1" data-t="navRobotter">Robotter</h1><span class="under" id="robotter-under"></span><div class="hoejre" id="robotter-periode"></div></div>
+    <div class="vg" id="robotter-rod"></div>
+  </section>
+
+  <section class="visning" id="visning-login" data-visning="login" aria-labelledby="login-h" hidden>
+    <div class="titelrad"><h1 id="login-h" tabindex="-1" data-t="navLogin">Login</h1><span class="under" id="login-under"></span><div class="hoejre" id="login-periode"></div></div>
+    <div class="vg" id="login-rod"></div>
+  </section>
+
+  <section class="visning" id="visning-land" data-visning="land" aria-labelledby="land-h" hidden>
+    <div class="titelrad"><h1 id="land-h" tabindex="-1"></h1><span class="under" data-t="landRadar"></span><span class="under" id="land-kig"></span><div class="hoejre" id="land-faner"></div></div>
+    <div class="vg" id="land-rod"></div>
+  </section>
+
+  <section class="visning" id="visning-teknologi" data-visning="teknologi" aria-labelledby="teknologi-h" hidden>
+    <div class="titelrad"><h1 id="teknologi-h" tabindex="-1" data-t="tekSideH">Teknologi pr. domæne</h1><div class="hoejre" id="teknologi-faner"></div></div>
+    <div class="vg" id="teknologi-rod"></div>
+  </section>
+
+  <section class="visning" id="visning-indstillinger" data-visning="indstillinger" aria-labelledby="indstillinger-h" hidden>
+    <div class="titelrad"><h1 id="indstillinger-h" data-t="indstH">Indstillinger</h1></div>
+    <p class="r6-status" id="indst-status" role="status" aria-live="polite"></p>
+    <div class="autostart-banner" id="autostart-banner" hidden><p><b data-t="autostartBanner">Programmet starter ikke ved login.</b> <span data-t="autostartHul"></span></p><button class="knap" type="button" id="autostart-til" data-t="autostartSlaaTil">Slå Start ved login til</button></div>
+    <div class="indst">
+      <h2><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span data-t="grpGenerelt">Generelt</span></h2>
+      <div class="kort">
+        <div class="raekke"><label class="etik" for="sprog" data-t="sprog">Sprog</label>
+          <select id="sprog"><option value="auto" data-t="sprogAuto">Systemets sprog</option><option value="da">Dansk</option><option value="en">English</option></select></div>
+        <div class="raekke"><label class="etik" for="dato-format"><span data-t="datoFormat">Datoformat</span><small data-t="datoFormatNote"></small></label>
+          <select id="dato-format"><option value="sprog" data-t="datoFormatSprog">Følg sproget</option><option value="system" data-t="datoFormatSystem">Følg systemet</option><option value="iso" data-t="datoFormatIso">ISO (2026-11-04)</option></select></div>
+        <div class="raekke"><label class="etik" for="indst-land"><span data-t="landVaelg">Land</span><small id="indst-land-note"></small></label>
+          <div class="raekke-knapper"><button class="knap" type="button" id="indst-land-tilbage" hidden></button><button class="knap" type="button" id="indst-land-forslag" hidden></button><select id="indst-land"></select></div></div>
+        <div class="raekke"><span class="etik" id="tema-h"><span data-t="tema">Udseende</span><small data-t="temaNote"></small></span>
+          <div class="segment" id="tema" role="radiogroup" aria-labelledby="tema-h">
+            <label><input type="radio" name="tema" value="system"><span data-t="temaSystem">System</span></label>
+            <label><input type="radio" name="tema" value="light"><span data-t="temaLys">Lys</span></label>
+            <label><input type="radio" name="tema" value="dark"><span data-t="temaMoerk">Mørk</span></label>
+          </div></div>
+        <div class="raekke"><span class="etik" id="tekst-h"><span data-t="tekst">Tekststørrelse</span><small data-t="tekstNote"></small></span>
+          <div class="segment" id="tekst" role="radiogroup" aria-labelledby="tekst-h">
+            <label><input type="radio" name="tekst" value="compact"><span data-t="tekstLille">Lille</span></label>
+            <label><input type="radio" name="tekst" value="normal"><span data-t="tekstMellem">Normal</span></label>
+            <label><input type="radio" name="tekst" value="large"><span data-t="tekstStor">Stor</span></label>
+          </div></div>
+        <div class="raekke"><label class="etik" for="autostart"><span data-t="autostart">Start ved login</span><small id="autostart-note" data-t="autostartKort"></small></label>
+          <input class="kontakt" type="checkbox" role="switch" id="autostart" aria-describedby="autostart-note"></div>
+        <p class="note kort-note autostart-note" id="autostart-hul" data-t="autostartHulKort" hidden></p>
+      </div>
+
+      <h2 id="indst-domaener"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span data-t="domaenerH">Domæner</span></h2>
+      <div class="kort">
+        <div class="raekke"><span class="etik"><span data-t="domaenerVis">Vis i Huginn</span><small data-t="domaenerP"></small></span>
+          <div class="raekke-knapper"><button class="knap" type="button" id="domaener-alle-til" data-t="domaenerAlleTil">Vælg alle</button><button class="knap" type="button" id="domaener-alle-fra" data-t="domaenerAlleFra">Fravælg alle</button></div></div>
+        <table class="mini" aria-labelledby="indst-domaener"><thead class="sr-only"><tr><th scope="col" data-t="thDomaene">Domæne</th><th scope="col" data-t="domaenerVis">Vis i Huginn</th></tr></thead><tbody id="domaener-liste"></tbody></table>
+        <p class="note kort-note" id="domaener-ser" hidden></p>
+        <div class="tek-blok" id="tek-blok" hidden>
+          <p class="etik"><span data-t="domTekH">Teknologi pr. domæne</span><small id="tek-linje"></small></p>
+          <p class="tek-alle-raekke"><button class="knap" type="button" id="tek-aabn" data-gaa="teknologi" data-t="domTekAabn">Teknologi pr. domæne →</button> <span id="tek-raekke" hidden><button class="knap" type="button" id="tek-nulstil-alle" data-t="domTekAlle">Nulstil for alle domæner</button></span></p>
+        </div>
+        <p class="r6-status kort-status" id="domaener-status" role="status" aria-live="polite"></p>
+      </div>
+
+      <h2><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span data-t="niveauH">Notifikationer</span></h2>
+      <div class="kort">
+        <div class="raekke top"><span class="etik" id="indst-niveau-h"><span data-t="niveauSp">Hvornår vil du have besked?</span><small data-t="niveauSpNote"></small></span>
+          <div class="radiol" id="indst-niveau" role="radiogroup" aria-labelledby="indst-niveau-h">
+            <label><input type="radio" name="indst-niveau" value="rolig"><span data-t="niveauRolig"></span></label>
+            <label><input type="radio" name="indst-niveau" value="standard" checked><span data-t="niveauStandard"></span></label>
+            <label><input type="radio" name="indst-niveau" value="alt"><span data-t="niveauAlt"></span></label>
+          </div></div>
+        <div class="raekke"><label class="etik" for="notif-roed" data-t="notifRoed">Giv besked, når et domæne kræver handling</label>
+          <input class="kontakt" type="checkbox" role="switch" id="notif-roed" checked></div>
+        <div class="raekke"><label class="etik" for="notif-rekog"><span data-t="notifRekog">Giv besked ved »Ligner rekognoscering«</span><small data-t="notifRekogNote"></small></label>
+          <input class="kontakt" type="checkbox" role="switch" id="notif-rekog"></div>
+        <div class="raekke blok"><span class="etik" id="pr-domaene-h" data-t="prDomaene">Pr. domæne</span>
+          <table class="mini" aria-labelledby="pr-domaene-h"><thead class="sr-only"><tr><th scope="col" data-t="thDomaene">Domæne</th><th scope="col" data-t="niveauH">Notifikationer</th></tr></thead><tbody id="pr-domaene-liste"></tbody></table></div>
+        <div class="raekke blok" id="indst-login"><span class="etik" id="indst-login-h" data-t="loginStierH">Login-stier pr. domæne</span>
+          <p class="note" data-t="loginStierP"></p>
+          <label class="login-domaene"><span class="sr-only" data-t="vaelgDomaene">Domæne</span><select id="login-domaene"></select></label>
+          <div id="login-panel"></div></div>
+        <p class="note kort-note" data-t="notifSystem"></p>
+      </div>
+
+      <h2><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="5"/><path d="M12 11l8-8M16 7l3 3M18 5l2 2"/></svg><span data-t="grpForbindelse">Forbindelse</span></h2>
+      <div class="kort">
+        <div class="raekke"><span class="etik"><span data-t="forbStatus">Status</span><small id="forb-note" data-t="forbNote"></small></span><button class="chip chip-graa chip-knap bred" type="button" id="forb-chip" disabled></button></div>
+        <div class="raekke"><span class="etik"><span data-t="forbNoegle">API Token til Cloudflare</span><small data-t="forbNoegleNote"></small></span>
+          <div class="raekke-knapper"><button class="knap" type="button" id="skift-noegle" aria-expanded="false" aria-controls="skift-form" data-t="skift">Skift API Token…</button>
+          <button class="knap fare" type="button" id="glem" data-t="glem" hidden>Glem API Token…</button></div></div>
+        <div class="kort-hjaelp token-hjaelp" data-token-hjaelp></div>
+        <form class="hm-form kort-form" id="skift-form" autocomplete="off" hidden>
+          <p class="note token-it" data-t="tokenItFirma"></p>
+          <label><span data-t="tokenFelt">API Token (kun læsning)</span><input id="skift-felt" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" required></label>
+          <button class="knap primaer" type="submit" id="skift-gem" data-t="tokenKnap">Gem og forbind</button>
+          <button class="knap" type="button" id="skift-annuller" data-t="annuller">Annullér</button>
+        </form>
+        <p class="r6-status kort-status" id="skift-status" role="status" aria-live="polite"></p>
+      </div>
+
+      <h2><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg><span data-t="grpData">Data</span></h2>
+      <div class="kort">
+        <div class="raekke"><span class="etik" data-t="dataDb">Lokal database</span><span class="felt-mono" id="data-stoerrelse">–</span></div>
+        <div class="raekke"><span class="etik"><span data-t="dataHist">Historik</span><small id="data-hist-note" data-t="dataHistNote"></small></span><button class="felt-mono felt-knap" type="button" id="data-historik" disabled>–</button></div>
+        <div class="raekke"><span class="etik" data-t="dataAeldste">Ældste dag</span><span class="felt-mono" id="data-aeldste">–</span></div>
+        <div class="raekke" id="data-kilder-raekke" hidden><span class="etik" data-t="dataKilder">Hvad der findes</span><span id="data-kilder"></span></div>
+        <div class="raekke" id="data-kvote-raekke" hidden><span class="etik" data-t="dataKvoteH">Kvote hos Cloudflare</span><span id="data-kvote"></span></div>
+        <div class="raekke"><span class="etik" data-t="dataHuller">Huller</span><button class="felt-mono felt-knap" type="button" id="data-huller" disabled>–</button></div>
+        <div class="raekke"><span class="etik" data-t="dataDomaener">Domæner med tal</span><button class="felt-mono felt-knap" type="button" id="data-domaener" disabled>–</button></div>
+        <div class="raekke"><span class="etik" data-t="dataHent">Hent nye tal nu</span><button class="knap" type="button" id="data-hent"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span data-t="hentNu">Hent nu</span></button> <span class="hent-status" id="data-hent-status" role="status" aria-live="polite"></span></div>
+        <div class="raekke"><span class="etik"><small id="nulstil-note" data-t="nulstilNote"></small></span><button class="knap fare" type="button" id="nulstil" aria-describedby="nulstil-note" data-t="nulstil">Nulstil historik…</button></div>
+      </div>
+
+      <h2 id="indst-om"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span data-t="grpOm">Om</span></h2>
+      <div class="kort">
+        <div data-velkomst="om"></div>
+        <div class="om">
+          <div>
+            <p id="om-version"></p>
+            <p data-t="omLinje"></p>
+            <p data-t="om3"></p>
+            <p data-t="om2"></p>
+            <p class="om-kilde" id="om-kilde" hidden></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <dialog class="dialog" id="glem-dialog" aria-labelledby="glem-h" aria-describedby="glem-p">
+      <h2 id="glem-h" data-t="glemH">Glem API Tokenet?</h2>
+      <p id="glem-p" data-t="glemP"></p>
+      <div class="dialog-knapper"><button class="knap" type="button" id="glem-nej" data-t="annuller" autofocus>Annullér</button><button class="knap fare" type="button" id="glem-ja" data-t="glemJa">Glem</button></div>
+    </dialog>
+    <dialog class="dialog" id="nulstil-dialog" aria-labelledby="nulstil-h" aria-describedby="nulstil-p">
+      <h2 id="nulstil-h" data-t="nulstilH">Nulstil historikken?</h2>
+      <p id="nulstil-p"></p>
+      <div class="dialog-knapper"><button class="knap" type="button" id="nulstil-nej" data-t="annuller" autofocus>Annullér</button><button class="knap fare" type="button" id="nulstil-ja" data-t="nulstilJa">Slet og hent forfra</button></div>
+    </dialog>
+  </section>
+  <dialog class="dialog" id="bekraeft-dialog" aria-labelledby="bekraeft-h" aria-describedby="bekraeft-p">
+    <h2 id="bekraeft-h" data-t="bekraeftTekH">Nulstil teknologi-valg?</h2>
+    <p id="bekraeft-p"></p>
+    <div class="dialog-knapper"><button class="knap" type="button" id="bekraeft-nej" data-t="annuller" autofocus>Annullér</button><button class="knap fare" type="button" id="bekraeft-ja" data-t="bekraeftJa">Nulstil</button></div>
+  </dialog>
+</main>
+
+<aside class="hjaelp" id="hjaelp" aria-labelledby="hjaelp-h" hidden>
+  <div class="hjaelp-top"><h2 id="hjaelp-h" data-t="hjaelpH">Hjælp</h2><button class="luk" type="button" id="hjaelp-luk"><span aria-hidden="true">×</span><span class="sr-only" data-t="hjaelpLuk">Luk hjælpen</span></button></div>
+  <div class="guide-ramme" id="hjaelp-guide" hidden></div>
+  <div id="hjaelp-generelt">
+  <div class="hjaelp-del" data-hjaelp="opsaetning">
+    <p data-t="tokenP"></p>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="overblik">
+    <ul><li data-t="hjOverblik1"></li><li data-t="hjOverblik2"></li><li data-t="hjOverblik3"></li><li data-t="hjOverblik4"></li></ul>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="siden-sidst">
+    <p data-t="hjSiden"></p>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="vaernet">
+    <p data-t="lead"></p>
+    <h3 data-t="edgeH">Edge – første forsvarslinje</h3>
+    <p data-t="edgeP"></p>
+    <h3 id="metode-h" data-t="metodeH">Sådan tælles der</h3>
+    <ol class="vg-kaede" aria-labelledby="metode-h"><li data-t="k1">GraphQL Analytics API</li><li data-t="k2">Programmets Rust-del</li><li data-t="k3">SQLite på din computer</li><li data-t="k4">Dette vindue</li></ol>
+    <div class="vg-metode">
+      <div><h3 data-t="m1H">Kilden</h3><p data-t="m1"></p></div>
+      <div><h3 data-t="m2H">Når du åbner siden</h3><p data-t="m2"></p></div>
+      <div><h3 data-t="m3H">Hukommelsen</h3><p data-t="m3"></p></div>
+      <div><h3 data-t="m4H">Det, der ikke gemmes</h3><p data-t="m4"></p></div>
+    </div>
+    <p data-t="kilder">Landenes midtpunkter: world-countries (ODbL). Landkonturer: Natural Earth (public domain).</p>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="dyk">
+    <p data-t="hjDyk1"></p>
+    <p data-t="hjDyk2"></p>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="robotter">
+    <p data-t="hjRobotter"></p>
+    <dl class="hm-ord" id="ord-robotter"></dl>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="login">
+    <p data-t="hjLogin"></p>
+    <dl class="hm-ord" id="ord-login"></dl>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="land">
+    <p data-t="hjLand"></p>
+    <dl class="hm-ord" id="ord-land"></dl>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="teknologi">
+    <p data-t="tekP"></p>
+    <p data-t="tekGruppeNote"></p>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="indstillinger">
+    <p data-t="nulstilNote"></p>
+    <p data-t="autostartNote"></p>
+    <p data-t="notifNote"></p>
+  </div>
+  <h3 data-t="genvejeH">Genveje</h3>
+  <dl class="genveje" id="genveje"></dl>
+  <p data-t="hjCve">Et klik på et CVE-nummer åbner cve.org i din browser.</p>
+  <p data-t="hjOm">Version, licenser og varemærke står under Indstillinger → Om.</p>
+  </div>
+</aside>
+</div>
+</body>
+</html>

@@ -1,0 +1,1842 @@
+{
+ "_": "Testorakel genereret af W worker/src/features/vagt.js (byggCrawlere, filArt) med node v22.22.2; NU = 2026-10-29T05:00:00Z. Ikke håndredigeret.",
+ "rows": [
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tDE\t\t/.git/HEAD\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tRU\tGoogle LLC\t/.git/HEAD\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "securitylevel\tDK\t\t/…\tEWR\tGET\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tRU\t\t/.env\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tRU\t\t/admin/\tEWR\tPOST\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tSG\tGoogle LLC\t/wp-login.php\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\t\t/wp-login.php\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tUS\tGoogle LLC\t/api/v1/../../etc/passwd\tAMS\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tDK\tGoogle LLC\t/.git/HEAD\tEWR\tGET\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "securitylevel\tUS\t\t/\tEWR\tPOST\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDK\tGoogle LLC\t/.env\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "firewallCustom\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-login.php\tEWR\tGET\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/admin/\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "firewallCustom\tDK\tGoogle LLC\t/…\tEWR\tPOST\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "firewallCustom\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\t\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "securitylevel\tSG\t\t/admin/\tEWR\tGET\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tRU\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "securitylevel\tXX\tDigitalOcean, LLC\t/api/v1/../../etc/passwd\tEWR\t\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\t\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "securitylevel\tDK\tGoogle LLC\t/\tEWR\tGET\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tRU\t\t/\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tRU\tGoogle LLC\t/.git/HEAD\tEWR\t\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.git/HEAD\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/admin/\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tRU\tGoogle LLC\t/wp-admin/RING MIG\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tRU\t\t/.git/HEAD\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "firewallCustom\tSG\t\t/wp-login.php\tEWR\t\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tDE\t\t/wp-admin/RING MIG\tEWR\tGET\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "alle",
+   "noegle": "",
+   "n": 33752
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/om/index.md\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tSearch Engine Crawler\t/assets/x.css\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "bot",
+   "noegle": "ClaudeBot\tAnthropic\tSearch Engine Crawler\t/om/index.md\t200",
+   "n": 1
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "bot",
+   "noegle": "Applebot-Extended\tApple\tSearch Engine Crawler\t/\t200",
+   "n": 31
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/sitemap.xml\t200",
+   "n": 41
+  },
+  {
+   "dag": "2026-09-30",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/\t200",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tUS\tGoogle LLC\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tRU\tGoogle LLC\t/xmlrpc.php\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tUS\t\t/.env\tEWR\t\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "fw",
+   "noegle": "securitylevel\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\tGET\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "fw",
+   "noegle": "firewallCustom\tUS\t\t/xmlrpc.php\tEWR\t\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tSG\tGoogle LLC\t/\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "fw",
+   "noegle": "securitylevel\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "alle",
+   "noegle": "",
+   "n": 6984
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/om/index.md\t200",
+   "n": 22
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+   "n": 52
+  },
+  {
+   "dag": "2026-10-05",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/robots.txt\t200",
+   "n": 21
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "fw",
+   "noegle": "firewallCustom\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/admin/\tEWR\t\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tDK\t\t/…\tEWR\t\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "fw",
+   "noegle": "securitylevel\tRU\t\t/.env\tEWR\tPOST\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tDE\t\t/xmlrpc.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "fw",
+   "noegle": "securitylevel\tDE\t\t/wp-admin/RING MIG\tEWR\tPOST\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "alle",
+   "noegle": "",
+   "n": 25464
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tSearch Engine Crawler\t/robots.txt\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-10-15",
+   "art": "bot",
+   "noegle": "Applebot-Extended\tApple\tSearch Engine Crawler\t/sitemap.xml\t200",
+   "n": 41
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-login.php\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "fw",
+   "noegle": "securitylevel\tDE\t\t/.git/HEAD\tEWR\t\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDK\tGoogle LLC\t/admin/\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tRU\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\tGoogle LLC\t/wp-login.php\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "alle",
+   "noegle": "",
+   "n": 0
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "bot",
+   "noegle": "ClaudeBot\tAnthropic\tSearch Engine Crawler\t/sitemap.xml\t200",
+   "n": 41
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/sitemap.xml\t200",
+   "n": 21
+  },
+  {
+   "dag": "2026-10-21",
+   "art": "falsk",
+   "noegle": "Applebot-Extended\tefterligning",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-22",
+   "art": "alle",
+   "noegle": "",
+   "n": 21624
+  },
+  {
+   "dag": "2026-10-22",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-10-22",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/sitemap.xml\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-10-22",
+   "art": "falsk",
+   "noegle": "Lighthouse\tuverificeret",
+   "n": 41
+  },
+  {
+   "dag": "2026-10-22",
+   "art": "falsk",
+   "noegle": "AwarioBot\tuverificeret",
+   "n": 21
+  },
+  {
+   "dag": "2026-10-23",
+   "art": "alle",
+   "noegle": "",
+   "n": 4520
+  },
+  {
+   "dag": "2026-10-23",
+   "art": "bot",
+   "noegle": "Lighthouse\tGoogle\tSearch Engine Crawler\t/om/index.md\t200",
+   "n": 41
+  },
+  {
+   "dag": "2026-10-23",
+   "art": "bot",
+   "noegle": "ClaudeBot\tAnthropic\tSearch Engine Crawler\t/assets/x.css\t200",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-23",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/robots.txt\t200",
+   "n": 42
+  },
+  {
+   "dag": "2026-10-23",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+   "n": 2
+  },
+  {
+   "dag": "2026-10-23",
+   "art": "falsk",
+   "noegle": "Applebot-Extended\tefterligning",
+   "n": 21
+  },
+  {
+   "dag": "2026-10-23",
+   "art": "falsk",
+   "noegle": "bleBot\tuverificeret",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "securitylevel\tDK\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\t\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tRU\t\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "securitylevel\tRU\tGoogle LLC\t/wp-admin/RING MIG\tEWR\tGET\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tSG\t\t/.env\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "securitylevel\tUS\tGoogle LLC\t/.env\tEWR\t\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDK\t\t/admin/\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tDK\tGoogle LLC\t/.git/HEAD\tEWR\t\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "firewallCustom\tDE\t\t/.env\tEWR\t\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\tPOST\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tRU\tGoogle LLC\t/admin/\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tRU\t\t/wp-admin/RING MIG\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\t\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tSG\tGoogle LLC\t/…\tEWR\tPOST\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tDK\t\t/\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tDK\t\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "securitylevel\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.git/HEAD\tEWR\tGET\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tRU\t\t/.env\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tSG\t\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDK\t\t/wp-login.php\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tSG\tGoogle LLC\t/…\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tUS\t\t/.env\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tSG\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\tGET\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tRU\t\t/wp-admin/RING MIG\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDK\tGoogle LLC\t/wp-admin/RING MIG\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tDK\t\t/.env\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\t\t/…\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tUS\tGoogle LLC\t/admin/\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDK\tGoogle LLC\t/.env\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDE\tGoogle LLC\t/…\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "alle",
+   "noegle": "",
+   "n": 36168
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/\t200",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+   "n": 42
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "bot",
+   "noegle": "Facebook\tMeta\tSearch Engine Crawler\t/\t200",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-25",
+   "art": "falsk",
+   "noegle": "ZoominfoBot\tuverificeret",
+   "n": 31
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\tGoogle LLC\t/admin/\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-login.php\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDE\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tUS\t\t/…\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tDE\t\t/xmlrpc.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "securitylevel\tUS\t\t/admin/\tEWR\t\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tUS\t\t/.git/HEAD\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-admin/RING MIG\tEWR\tGET\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "securitylevel\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\tPOST\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "securitylevel\tSG\t\t/.env\tEWR\tGET\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDK\t\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tUS\tGoogle LLC\t/admin/\tEWR\tPOST\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "fw",
+   "noegle": "firewallCustom\tSG\tGoogle LLC\t/…\tEWR\tGET\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "alle",
+   "noegle": "",
+   "n": 27400
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "falsk",
+   "noegle": "Ukendt bot\tuverificeret",
+   "n": 41
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "falsk",
+   "noegle": "some-spider.v2\tuverificeret",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "alle",
+   "noegle": "",
+   "n": 2408
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "Lighthouse\tGoogle\tSearch Engine Crawler\t/assets/x.css\t200",
+   "n": 31
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "ClaudeBot\tAnthropic\tSearch Engine Crawler\t/om/index.md\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "Googlebot-Image\tGoogle\tSearch Engine Crawler\t/\t200",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tSearch Engine Crawler\t/om/index.md\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "Applebot-Extended\tApple\tSearch Engine Crawler\t/robots.txt\t200",
+   "n": 31
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDE\tGoogle LLC\t/.git/HEAD\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "securitylevel\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\tPOST\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "firewallCustom\tSG\t\t/.env\tEWR\tPOST\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tSG\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tRU\tGoogle LLC\t/\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Wordpress - Broken Access Control, File Inclusion\tDK\tGoogle LLC\t/xmlrpc.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-admin/RING MIG\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tNL\tGoogle LLC\t/…\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tSG\t\t/.env\tEWR\tGET\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "firewallCustom\tRU\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\t\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tDE\t\t/.git/HEAD\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tRU\t\t/wp-admin/RING MIG\tEWR\tPOST\tfirewallManaged\tmanaged_challenge",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "firewallCustom\tUS\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\t\t/.git/HEAD\tEWR\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "PHP - Code Injection - CVE:CVE-2024-4577\tUS\tGoogle LLC\t/.env\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "securitylevel\tSG\tGoogle LLC\t/xmlrpc.php\tEWR\t\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "React - RCE - CVE:CVE-2025-55182\tRU\t\t/wp-login.php\tEWR\tPOST\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "firewallCustom\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\t\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\t\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tUS\t\t/.git/HEAD\tEWR\t\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "firewallCustom\tDE\t\t/.env\tEWR\tPOST\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tRU\tGoogle LLC\t/…\tEWR\tPOST\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tUS\t\t/…\tEWR\tPOST\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tRU\t\t/\tEWR\t\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "securitylevel\tRU\t\t/wp-login.php\tEWR\tPOST\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "securitylevel\tUS\t\t/.git/HEAD\tEWR\tPOST\tsecuritylevel\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "firewallCustom\tSG\t\t/wp-login.php\tEWR\t\tfirewallCustom\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Browser Integrity Check\tRU\t\t/…\tEWR\tPOST\tbic\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Anomaly:Header:User-Agent - Missing\tSG\t\t/.git/HEAD\tAMS\tGET\tfirewallManaged\tblock",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "fw",
+   "noegle": "Ukendt regel\tXX\t\t/\t\t\t\t",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "alle",
+   "noegle": "",
+   "n": 35992
+  },
+  {
+   "dag": "2026-10-29",
+   "art": "falsk",
+   "noegle": "Ukendt bot\tuverificeret",
+   "n": 41
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/robots.txt\t404",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/robots.txt\t200",
+   "n": 11
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/sitemap.xml\t200",
+   "n": 2
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/sitemap.xml\t200",
+   "n": 10
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/llms.txt\t404",
+   "n": 3
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/llms.txt\t200",
+   "n": 9
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/.well-known/security.txt\t200",
+   "n": 4
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/.well-known/security.txt\t200",
+   "n": 8
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/blog/index.md\t404",
+   "n": 5
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/blog/index.md\t200",
+   "n": 7
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/assets/a.css\t200",
+   "n": 6
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/assets/a.css\t200",
+   "n": 6
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/cf-fonts/x\t404",
+   "n": 7
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/cf-fonts/x\t200",
+   "n": 5
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/x.PNG\t200",
+   "n": 8
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/x.PNG\t200",
+   "n": 4
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/api/v1\t404",
+   "n": 9
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/api/v1\t200",
+   "n": 3
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/priser/\t200",
+   "n": 10
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/priser/\t200",
+   "n": 2
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "GPTBot\tOpenAI\tAI Crawler\t/\t404",
+   "n": 11
+  },
+  {
+   "dag": "2026-10-27",
+   "art": "bot",
+   "noegle": "Googlebot\tGoogle\tSearch Engine Crawler\t/\t200",
+   "n": 1
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "Tie A\t\tPage Preview\t/\t200",
+   "n": 5
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "bot",
+   "noegle": "Tie B\t\tPage Preview\t/\t301",
+   "n": 5
+  },
+  {
+   "dag": "2026-10-10",
+   "art": "bot",
+   "noegle": "Gammel\t\tMonitoring & Analytics\t/\t200",
+   "n": 9
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "falsk",
+   "noegle": "Googlebot\tefterligning",
+   "n": 7
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "falsk",
+   "noegle": "FooBot\tuverificeret",
+   "n": 3
+  },
+  {
+   "dag": "2026-10-10",
+   "art": "falsk",
+   "noegle": "Googlebot\tefterligning",
+   "n": 100
+  },
+  {
+   "dag": "2026-10-28",
+   "art": "alle",
+   "noegle": "",
+   "n": 1000
+  },
+  {
+   "dag": "2026-10-10",
+   "art": "alle",
+   "noegle": "",
+   "n": 5000
+  }
+ ],
+ "filArt": [
+  [
+   "/robots.txt",
+   "robots"
+  ],
+  [
+   "/sitemap.xml",
+   "sitemap"
+  ],
+  [
+   "/llms.txt",
+   "llms"
+  ],
+  [
+   "/.well-known/security.txt",
+   "security"
+  ],
+  [
+   "/blog/index.md",
+   "markdown"
+  ],
+  [
+   "/index.md",
+   "markdown"
+  ],
+  [
+   "/assets/x",
+   "assets"
+  ],
+  [
+   "/cf-fonts/y",
+   "assets"
+  ],
+  [
+   "/a.woff2",
+   "assets"
+  ],
+  [
+   "/a.woff",
+   "assets"
+  ],
+  [
+   "/a.JS",
+   "assets"
+  ],
+  [
+   "/a.css",
+   "assets"
+  ],
+  [
+   "/a.jpeg",
+   "assets"
+  ],
+  [
+   "/a.jpg",
+   "assets"
+  ],
+  [
+   "/a.webp",
+   "assets"
+  ],
+  [
+   "/a.avif",
+   "assets"
+  ],
+  [
+   "/a.gif",
+   "assets"
+  ],
+  [
+   "/a.svg",
+   "assets"
+  ],
+  [
+   "/a.ico",
+   "assets"
+  ],
+  [
+   "/a.webmanifest",
+   "assets"
+  ],
+  [
+   "/a.mp3",
+   "assets"
+  ],
+  [
+   "/a.pcm",
+   "assets"
+  ],
+  [
+   "/api/x",
+   "api"
+  ],
+  [
+   "/apix",
+   "sider"
+  ],
+  [
+   "/",
+   "sider"
+  ],
+  [
+   "/priser/",
+   "sider"
+  ],
+  [
+   "/robots.txt/",
+   "sider"
+  ],
+  [
+   "/assetsx/a",
+   "sider"
+  ]
+ ],
+ "byggCrawlere": {
+  "genereret": "2026-10-29T05:00:00.000Z",
+  "iAlt": {
+   "bots7": 358,
+   "bots30": 705,
+   "alle7": 107488,
+   "botNavne": 10,
+   "falske7": 28
+  },
+  "kategorier": [
+   {
+    "kat": "Search Engine Crawler",
+    "n": 282
+   },
+   {
+    "kat": "AI Crawler",
+    "n": 66
+   },
+   {
+    "kat": "Page Preview",
+    "n": 10
+   }
+  ],
+  "dage": [
+   {
+    "dag": "2026-09-30",
+    "kat": {
+     "Search Engine Crawler": 96
+    }
+   },
+   {
+    "dag": "2026-10-01",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-02",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-03",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-04",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-05",
+    "kat": {
+     "Search Engine Crawler": 106
+    }
+   },
+   {
+    "dag": "2026-10-06",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-07",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-08",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-09",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-10",
+    "kat": {
+     "Monitoring & Analytics": 9
+    }
+   },
+   {
+    "dag": "2026-10-11",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-12",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-13",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-14",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-15",
+    "kat": {
+     "Search Engine Crawler": 52
+    }
+   },
+   {
+    "dag": "2026-10-16",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-17",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-18",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-19",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-20",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-21",
+    "kat": {
+     "Search Engine Crawler": 62
+    }
+   },
+   {
+    "dag": "2026-10-22",
+    "kat": {
+     "Search Engine Crawler": 22
+    }
+   },
+   {
+    "dag": "2026-10-23",
+    "kat": {
+     "Search Engine Crawler": 86
+    }
+   },
+   {
+    "dag": "2026-10-24",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-25",
+    "kat": {
+     "Search Engine Crawler": 44
+    }
+   },
+   {
+    "dag": "2026-10-26",
+    "kat": {}
+   },
+   {
+    "dag": "2026-10-27",
+    "kat": {
+     "Search Engine Crawler": 66
+    }
+   },
+   {
+    "dag": "2026-10-28",
+    "kat": {
+     "Search Engine Crawler": 86,
+     "AI Crawler": 66,
+     "Page Preview": 10
+    }
+   },
+   {
+    "dag": "2026-10-29",
+    "kat": {}
+   }
+  ],
+  "bots": [
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": "",
+    "kat": "Search Engine Crawler",
+    "n7": 88,
+    "sider": [
+     {
+      "sti": "/",
+      "n": 1
+     }
+    ],
+    "status": {
+     "200": 88
+    },
+    "filer": {
+     "robots": 42,
+     "assets": 45,
+     "sider": 1
+    }
+   },
+   {
+    "navn": "GPTBot",
+    "firma": "OpenAI",
+    "kat": "Search Engine Crawler",
+    "n7": 77,
+    "sider": [
+     {
+      "sti": "/",
+      "n": 11
+     },
+     {
+      "sti": "/priser/",
+      "n": 10
+     }
+    ],
+    "status": {
+     "200": 41,
+     "404": 36
+    },
+    "filer": {
+     "markdown": 16,
+     "robots": 1,
+     "sitemap": 2,
+     "llms": 3,
+     "security": 4,
+     "assets": 21,
+     "api": 9,
+     "sider": 21
+    }
+   },
+   {
+    "navn": "Lighthouse",
+    "firma": "Google",
+    "kat": "Search Engine Crawler",
+    "n7": 72,
+    "sider": [],
+    "status": {
+     "200": 72
+    },
+    "filer": {
+     "markdown": 41,
+     "assets": 31
+    }
+   },
+   {
+    "navn": "Googlebot",
+    "firma": "Google",
+    "kat": "Search Engine Crawler",
+    "n7": 66,
+    "sider": [
+     {
+      "sti": "/priser/",
+      "n": 2
+     },
+     {
+      "sti": "/",
+      "n": 1
+     }
+    ],
+    "status": {
+     "200": 66
+    },
+    "filer": {
+     "robots": 11,
+     "sitemap": 10,
+     "llms": 9,
+     "security": 8,
+     "markdown": 7,
+     "assets": 15,
+     "api": 3,
+     "sider": 3
+    }
+   },
+   {
+    "navn": "Applebot-Extended",
+    "firma": "Apple",
+    "kat": "Search Engine Crawler",
+    "n7": 31,
+    "sider": [],
+    "status": {
+     "200": 31
+    },
+    "filer": {
+     "robots": 31
+    }
+   },
+   {
+    "navn": "ClaudeBot",
+    "firma": "Anthropic",
+    "kat": "Search Engine Crawler",
+    "n7": 12,
+    "sider": [],
+    "status": {
+     "200": 12
+    },
+    "filer": {
+     "assets": 1,
+     "markdown": 11
+    }
+   },
+   {
+    "navn": "Tie A",
+    "firma": "",
+    "kat": "Page Preview",
+    "n7": 5,
+    "sider": [
+     {
+      "sti": "/",
+      "n": 5
+     }
+    ],
+    "status": {
+     "200": 5
+    },
+    "filer": {
+     "sider": 5
+    }
+   },
+   {
+    "navn": "Tie B",
+    "firma": "",
+    "kat": "Page Preview",
+    "n7": 5,
+    "sider": [
+     {
+      "sti": "/",
+      "n": 5
+     }
+    ],
+    "status": {
+     "301": 5
+    },
+    "filer": {
+     "sider": 5
+    }
+   },
+   {
+    "navn": "Facebook",
+    "firma": "Meta",
+    "kat": "Search Engine Crawler",
+    "n7": 1,
+    "sider": [
+     {
+      "sti": "/",
+      "n": 1
+     }
+    ],
+    "status": {
+     "200": 1
+    },
+    "filer": {
+     "sider": 1
+    }
+   },
+   {
+    "navn": "Googlebot-Image",
+    "firma": "Google",
+    "kat": "Search Engine Crawler",
+    "n7": 1,
+    "sider": [
+     {
+      "sti": "/",
+      "n": 1
+     }
+    ],
+    "status": {
+     "200": 1
+    },
+    "filer": {
+     "sider": 1
+    }
+   }
+  ],
+  "filer": {
+   "markdown": 75,
+   "assets": 113,
+   "robots": 85,
+   "sider": 37,
+   "sitemap": 12,
+   "llms": 12,
+   "security": 12,
+   "api": 12
+  },
+  "status": {
+   "200": 317,
+   "301": 5,
+   "404": 36
+  },
+  "falske": [
+   {
+    "navn": "Applebot-Extended",
+    "n": 21
+   },
+   {
+    "navn": "Googlebot",
+    "n": 7
+   }
+  ],
+  "uverificerede": [
+   {
+    "navn": "Ukendt bot",
+    "n": 82
+   },
+   {
+    "navn": "ZoominfoBot",
+    "n": 31
+   },
+   {
+    "navn": "FooBot",
+    "n": 3
+   },
+   {
+    "navn": "bleBot",
+    "n": 1
+   },
+   {
+    "navn": "some-spider.v2",
+    "n": 1
+   }
+  ]
+ }
+}

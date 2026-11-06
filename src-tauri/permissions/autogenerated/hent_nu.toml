@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-hent-nu"
+description = "Enables the hent_nu command without any pre-configured scope."
+commands.allow = ["hent_nu"]
+
+[[permission]]
+identifier = "deny-hent-nu"
+description = "Denies the hent_nu command without any pre-configured scope."
+commands.deny = ["hent_nu"]

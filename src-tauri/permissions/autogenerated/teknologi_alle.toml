@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-teknologi-alle"
+description = "Enables the teknologi_alle command without any pre-configured scope."
+commands.allow = ["teknologi_alle"]
+
+[[permission]]
+identifier = "deny-teknologi-alle"
+description = "Denies the teknologi_alle command without any pre-configured scope."
+commands.deny = ["teknologi_alle"]

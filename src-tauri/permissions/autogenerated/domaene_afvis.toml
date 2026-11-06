@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-domaene-afvis"
+description = "Enables the domaene_afvis command without any pre-configured scope."
+commands.allow = ["domaene_afvis"]
+
+[[permission]]
+identifier = "deny-domaene-afvis"
+description = "Denies the domaene_afvis command without any pre-configured scope."
+commands.deny = ["domaene_afvis"]

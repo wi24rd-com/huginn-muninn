@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-dyk"
+description = "Enables the dyk command without any pre-configured scope."
+commands.allow = ["dyk"]
+
+[[permission]]
+identifier = "deny-dyk"
+description = "Denies the dyk command without any pre-configured scope."
+commands.deny = ["dyk"]

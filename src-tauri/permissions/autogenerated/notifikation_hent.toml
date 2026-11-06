@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-notifikation-hent"
+description = "Enables the notifikation_hent command without any pre-configured scope."
+commands.allow = ["notifikation_hent"]
+
+[[permission]]
+identifier = "deny-notifikation-hent"
+description = "Denies the notifikation_hent command without any pre-configured scope."
+commands.deny = ["notifikation_hent"]

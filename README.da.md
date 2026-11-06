@@ -1,0 +1,79 @@
+# Wi24rd Huginn and Muninn
+<sub>for Cloudflare®</sub>
+
+*Sikkerhed er ikke noget, man køber. Det er noget, man forstår.*
+
+Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne** Cloudflare-domæner — i klart sprog, på tværs af alle dine zoner og med en lokal historik, der rækker længere end Cloudflares 31 dage.
+
+- **Huginn (tanke):** det, der sker nu — angrebene, hvad der blev stoppet og hvordan.
+- **Muninn (hukommelse):** det, der er sket — hver færdig dag gemmes lokalt.
+
+**Privatliv:** programmet taler kun med `api.cloudflare.com` med dit eget API Token, der kun kan læse, gemt i styresystemets nøglering. Intet sendes til Wi24rd. Ingen telemetri.
+
+**Status:** tidlig prototype (udviklings-builds på macOS). Ikke udgivet endnu.
+
+## Programmet
+- **Ét vindue:** øverst et blåt bånd med programmets navn, en statuspille ("Henter 3 af 7", "Opdateret 08.01"), **Hent nu** og **?** (hjælp: forklaringerne til visningen, genvejene og Om). På macOS sidder trafiklysene i båndet, og båndet kan trækkes som en titellinje.
+- **Sidebjælken:** **Overblik** · **Siden sidst** · **Angreb** · **Robotter** · **Login** · **Danmark lige nu** (navnet følger dit land) · **Indstillinger** nederst. Uden API Token står opsætningen i vinduet, og kun Indstillinger kan åbnes.
+- **Domæner** er et tilvalg. Når du har forbundet, er ingen domæner valgt, medmindre API Tokenet ser præcis ét, som så vælges for dig. Under **Indstillinger → Domæner** vælger du dem, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere, vises ingen steder og giver ingen notifikationer; dets tal bliver liggende, og vælger du det igen, hentes det, der mangler, højst de seneste 30 dage. Et nyt domæne på kontoen er ikke valgt: en diskret linje i Overblik tilbyder **Vælg** eller **Ikke nu**.
+- **Overblik:** en domslinje øverst ("1 domæne kræver handling" / "Intet at gøre") og én række pr. domæne med status (**Handl**, **Hold øje**, **Roligt**, **Ukendt**), hvorfor, afviste forespørgsler (i går, 7 og 30 dage) og angreb denne og sidste uge. Klik på en række (eller Enter) for at se domænets angreb; **Angreb for alle** viser dem samlet.
+- **Genveje:** macOS ⌘1 Overblik · ⌘2 Siden sidst · ⌘3 Angreb · ⌘, Indstillinger · ⌘R Hent nu (også i menuen **Vis**). Windows: de samme med Ctrl, og F5 = Hent nu.
+- **CVE-numre** (fx CVE-2025-55182 i Angreb og i "Hvad gør jeg?") kan klikkes: de åbner CVE'ens side på cve.org i din browser. Programmet selv henter intet derfra.
+- **Lys og mørk** følger systemet. Farverne kommer fra Wi24rds UI-kit (`design/wi24rd-tokens.json`).
+- **Tekststørrelse:** Lille, Normal eller Stor under **Indstillinger → Generelt**, eller ⌘+ ⌘− ⌘0 (Windows: Ctrl). Valget huskes.
+- **Nulstil historik** under **Indstillinger → Data** sletter alle tal på din computer og henter dem forfra. Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år — alt ældre er væk for altid; dialogen siger hvilke datoer, og hvor mange dage der forsvinder.
+
+## Dit land lige nu og Verden
+- **Danmark lige nu** (⌘6; navnet følger det land, du vælger) viser angrebene på dine domæner ved siden af verden fra Cloudflare Radar, som et indeks, hvor 100 er periodens gennemsnit. Kurverne viser stigninger og fald, ikke antal.
+- Angreb vises fra målsiden, for et kildeland kan skyldes VPN eller lejede servere. **De største kilder til angreb mod Danmark** står som andel af angrebene mod landet ved siden af **Hvor angreb mod dine domæner kom fra** for de seneste 7 dage eller 4 uger, og lande, der fylder meget mere hos dig, er mærket "Særligt hos dig".
+- **Danmark som mål** viser landets andel af alle angreb, Cloudflare så, som tal og dag for dag. Det er en målt andel, ikke et antal.
+- **Et års trafik:** Huginn henter et års daglige trafiktal for hvert valgt domæne. **Hele historikken** og datovælgeren i dyk går så langt tilbage for trafik. Cloudflare gemmer sikkerhedshændelser i en måned, og det står tydeligt, hvor de begynder.
+- **Vurdering:** i Angreb og i dyk for én dag kan du folde ud, hvorfor der står eller ikke står "Ligner målrettet" eller "Ligner rekognoscering", med hver betingelse og tallet.
+- **Mails sendt i dit domænes navn:** Angreb viser for ét domæne, hvor mange mails der blev sendt i domænets navn, hvor mange der fejlede DMARC, og fra hvilke afsendere. Det kræver, at DMARC Management er slået til i Cloudflare. En ny afsender, der fejler, eller en markant større andel giver Hold øje. Der gemmes aldrig IP-adresser.
+- **Ligner DNS-rekognoscering:** et mærke, når nogen spørger efter mange navne under domænet, der ikke findes. Det følger notifikationen for "Ligner rekognoscering".
+- **Domænets tilstand:** Overblik og notifikationerne siger det, hvis et domæne er sat på pause, ikke er aktivt, er mistænkt for phishing eller står i udviklertilstand.
+- **Internetforstyrrelser** viser det, Radar har registreret i landet de seneste 30 dage, og fanen Verden viser dem for hele verden.
+- **Verden** er en fane med de mest ramte lande, flest angreb fra, hvad der stoppede dem, robottrafik, kvantesikre forbindelser og AI-robotter efter formål og navn.
+- Landet tages fra din tidszone første gang, derefter fra systemets sprog, og du kan skifte det i båndet eller under Indstillinger. Kommer mindst halvdelen af dine besøgende tydeligt fra et andet land, tilbyder Indstillinger **Skift til** det land; robotter og trafikspring tæller ikke med.
+- I Overblik kan **Hvorfor** sige "Følger den globale tendens" eller "Verden var normal i går, så stigningen er din egen" (kun når dit døgn er mindst tre gange dit snit). Det sammenligner WAF-angreb generelt, aldrig en bestemt regel, og det ændrer ikke status.
+- Radar kræver ingen ekstra rettighed, og en fejl hos Radar rammer kun disse visninger. Kilde: Cloudflare Radar, CC BY-NC 4.0.
+
+## Robotter og Login
+- **Robotter** (⌘4) viser, hvem der læser dit site, i syv grupper fra Cloudflares verificerede kategorier: AI-træning, AI-søgning og assistenter, Søgemaskiner, Sociale medier og link-previews, SEO-værktøjer, Overvågning og Ukendt. Hver gruppe siger, hvad der kan ske, hvis du blokerer den. Blokering laver du selv hos Cloudflare: programmet læser kun.
+- Du ser også de mest crawlede sider, de udklædte (noget, der kalder sig fx Googlebot uden at være det), hvilke robotter der blev stoppet ved Edge, og hvilke der blev lokket ind i labyrinten. Labyrinten stopper ikke robotten; den viser falske sider.
+- **Login** (⌘5) viser, hvad der skete på de login-stier, du selv slår til pr. domæne, i visningen eller under **Indstillinger → Notifikationer → Login-stier pr. domæne**. Der er en fast startliste og forslag fra dine egne data, men programmet gætter aldrig på, hvad sitet kører.
+- **Kodeord fra kendte læk:** Login viser pr. dag og sti, hvor mange login-forsøg der brugte et kodeord fra et kendt læk. Det giver mindst Hold øje, og Handl, hvis din server svarede 2xx eller 302. Kodeord gemmes aldrig, og stien står aldrig i en notifikation.
+- Login har tre tal fra hver sin kilde, som aldrig lægges sammen: **stoppet ved Edge**, **fik 404** og **nåede din server**. Svar 200 eller 302 fra din server kan være et login, men kan lige så godt være en fejlside. Programmet ser ingen IP-adresser, og Cloudflare kan bruge stikprøver.
+- Tallene til Login og "stoppet ved Edge" pr. robot hentes særskilt, i langsomt tempo efter den normale hentning, og kun for færdige dage. Første gang tager det op til en time for 30 dage. Har en plan ikke felterne, står der "ikke tilgængelig", og resten virker.
+
+## I menulinjen og ved login
+- **Lukker du vinduet, kører programmet videre** i menulinjen (Windows: notifikationsområdet) og henter dine tal i baggrunden. Dock-ikonet forsvinder, til vinduet åbnes igen.
+- **Menuen ved ravne-ikonet:** Åbn Huginn · Siden sidst · Hent nu · en statuslinje ("Henter 3/16", "Hentet for 12 min. siden") · Afslut.
+- **Afslut** i menuen (eller ⌘Q, mens vinduet er åbent) lukker programmet helt.
+- **Start ved login** slås til første gang, en færdigbygget udgave starter (ikke under `npm run tauri dev`). Programmet starter så uden vindue, kun i menulinjen. Slå det fra under **Indstillinger** i programmet. Programmet slår det aldrig til igen af sig selv.
+- **Før du sletter programmet:** slå Start ved login fra i Indstillinger. Ellers bliver filen `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` liggende (Windows: værdien under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`) og peger på et program, der ikke findes længere. Den kan også slettes i hånden.
+- Programmet kører kun én gang ad gangen; starter du det igen, vises det vindue, der allerede findes.
+
+## "Siden sidst" og notifikationer
+- **Siden sidst** er en visning: status for i går på alle dine domæner (Handl, Hold øje, Roligt) med én linje hver, og hvad der er nyt, siden du kiggede sidst. Den åbner af sig selv fra menulinjen (**Siden sidst**) eller ved et klik på en notifikation.
+- **Notifikationerne kommer fra din egen computer** (systemets lokale notifikationstjeneste), aldrig fra en server, mail eller webhook. Vælg under **Indstillinger** (og når du forbinder API Tokenet): **Rolig** (højst én besked om dagen, kun når et domæne kræver handling), **Standard** (besked, når et domæne kræver handling, forvalgt) eller **Alt** (også ved Hold øje). Hvert domæne kan også sættes til Følg standard, Alvorligt og hold øje, Kun alvorligt eller Aldrig, og **Giv besked, når et domæne kræver handling** kan slås fra.
+- **Ligner målrettet og Ligner rekognoscering** er mærker oven på status: de siger noget om mønsteret, ikke om mængden, og altid som "ligner", aldrig som en sikker dom. "Ligner målrettet" giver besked som standard; "Ligner rekognoscering" kan slås til under **Indstillinger → Notifikationer**. "Ligner målrettet" sammenligner kun med dine valgte domæner, kræver mindst 3 og giver først besked, når døgnet efter er hentet.
+- **Datoformat** vælges under **Indstillinger → Generelt**: Følg sproget, Følg systemet eller ISO. Det gælder alle datoer, også i notifikationerne.
+- Handl betyder usædvanligt mange angreb i går i forhold til ugen før. Cloudflares rutine (labyrinten, Bot Fight Mode, browsertjekket) og gamle tal giver aldrig besked, og hvert domæne meldes højst én gang om dagen.
+- macOS spørger om lov første gang, en notifikation vises. **Slå dem helt fra:** Systemindstillinger → Notifikationer → Huginn and Muninn.
+
+## Byg (udvikling)
+```
+npm install
+npm run tauri dev
+npm run test:ui              # UI-røgtesten (jsdom)
+node design/build-tokens.mjs # tokens.css (og XAML) fra design/wi24rd-tokens.json
+```
+Kræver Rust (rustup) og Node 20+.
+
+## Licens
+Apache-2.0 — se [LICENSE](LICENSE) og [NOTICE](NOTICE). Tredjepartskomponenter: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+Cloudflare is a registered trademark of Cloudflare, Inc. Huginn and Muninn er ikke tilknyttet Cloudflare, Inc.
+
+[English](README.md)

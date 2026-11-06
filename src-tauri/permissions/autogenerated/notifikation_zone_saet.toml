@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-notifikation-zone-saet"
+description = "Enables the notifikation_zone_saet command without any pre-configured scope."
+commands.allow = ["notifikation_zone_saet"]
+
+[[permission]]
+identifier = "deny-notifikation-zone-saet"
+description = "Denies the notifikation_zone_saet command without any pre-configured scope."
+commands.deny = ["notifikation_zone_saet"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-aabn-radar"
+description = "Enables the aabn_radar command without any pre-configured scope."
+commands.allow = ["aabn_radar"]
+
+[[permission]]
+identifier = "deny-aabn-radar"
+description = "Denies the aabn_radar command without any pre-configured scope."
+commands.deny = ["aabn_radar"]

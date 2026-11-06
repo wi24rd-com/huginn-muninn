@@ -1,0 +1,5656 @@
+{
+ "_": "Testorakel genereret af W worker/src/features/vagt.js (W-commit 80f559b) med node v22.22.2; NU = 2026-10-29T05:00:00Z. Domænerne i brugeragenterne er erstattet bagefter.",
+ "renSti": [
+  [
+   "/wp-config.php?x=hemmelig",
+   "/wp-config.php"
+  ],
+  [
+   "admin\u0000/x",
+   "/admin/x"
+  ],
+  [
+   "/.well-known/acme-challenge/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "/.well-known/acme-challenge/…"
+  ],
+  [
+   "/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/",
+   "/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x"
+  ],
+  [
+   "no-slash",
+   "/no-slash"
+  ],
+  [
+   "/a\t\tb  c",
+   "/ab c"
+  ],
+  [
+   "/ø-ring-mig",
+   "/ø-ring-mig"
+  ],
+  [
+   "/x  y",
+   "/x y"
+  ],
+  [
+   "/ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-",
+   "/…"
+  ],
+  [
+   "/😀bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+   "/😀…"
+  ],
+  [
+   "",
+   "/"
+  ],
+  [
+   "?q=1",
+   "/"
+  ],
+  [
+   "/a b c﻿d",
+   "/a b c d"
+  ],
+  [
+   "/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ/YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
+   "/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ/…"
+  ]
+ ],
+ "offentligSti": [
+  [
+   "/wp-admin/install.php",
+   "/wp-admin/install.php"
+  ],
+  [
+   "/.env",
+   "/.env"
+  ],
+  [
+   "/wp-admin/RING-WI24RD-SUPPORT-+45-12 34 56 78",
+   "[wordpress]"
+  ],
+  [
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  ],
+  [
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "[andet]"
+  ],
+  [
+   "/ø-ring-mig",
+   "[andet]"
+  ],
+  [
+   "[andet]",
+   "[andet]"
+  ],
+  [
+   "[Andet]",
+   "[andet]"
+  ],
+  [
+   "/x y",
+   "[andet]"
+  ],
+  [
+   "/favicon.ico extra",
+   "[andet]"
+  ],
+  [
+   "",
+   "[andet]"
+  ],
+  [
+   "abc",
+   "[andet]"
+  ],
+  [
+   "/…",
+   "[andet]"
+  ],
+  [
+   "/a_b.c-d/e",
+   "/a_b.c-d/e"
+  ]
+ ],
+ "forsoegKategori": [
+  [
+   "/.env.production",
+   "hemmeligheder"
+  ],
+  [
+   "/appsettings.Production.json",
+   "hemmeligheder"
+  ],
+  [
+   "/.git/config",
+   "kildekode"
+  ],
+  [
+   "/wp-login.php",
+   "wordpress"
+  ],
+  [
+   "/_profiler/phpinfo",
+   "php"
+  ],
+  [
+   "/actuator/env",
+   "adgang"
+  ],
+  [
+   "/favicon.ico",
+   null
+  ],
+  [
+   "/blog/",
+   "andet"
+  ],
+  [
+   "/FAVICON.ICO",
+   null
+  ],
+  [
+   "/apple-touch-icon-120x120-precomposed.png",
+   null
+  ],
+  [
+   "/config.yaml",
+   "hemmeligheder"
+  ],
+  [
+   "/.git",
+   "kildekode"
+  ],
+  [
+   "/.gitignore",
+   "andet"
+  ],
+  [
+   "/xmlrpc.php",
+   "wordpress"
+  ],
+  [
+   "/index.php",
+   "php"
+  ],
+  [
+   "/cgi-bin/luci",
+   "adgang"
+  ],
+  [
+   "/boaform/admin/formLogin",
+   "adgang"
+  ],
+  [
+   "/HNAP1/",
+   "adgang"
+  ],
+  [
+   "/İstanbul",
+   "andet"
+  ],
+  [
+   "/.DS_Store",
+   "kildekode"
+  ],
+  [
+   "/robots.txt",
+   null
+  ],
+  [
+   "/sitemap.xml?x",
+   "andet"
+  ],
+  [
+   "/id_rsa.pub",
+   "hemmeligheder"
+  ],
+  [
+   "/phpMyAdmin/",
+   "php"
+  ]
+ ],
+ "botNavn": [
+  [
+   "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@wi24rd.com)",
+   "",
+   {
+    "navn": "ClaudeBot",
+    "firma": "Anthropic"
+   }
+  ],
+  [
+   "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@wi24rd.com)",
+   "AI Assistant",
+   {
+    "navn": "ClaudeBot",
+    "firma": "Anthropic"
+   }
+  ],
+  [
+   "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@wi24rd.com)",
+   "Monitoring & Analytics",
+   {
+    "navn": "ClaudeBot",
+    "firma": "Anthropic"
+   }
+  ],
+  [
+   "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@wi24rd.com)",
+   "Search Engine Crawler",
+   {
+    "navn": "ClaudeBot",
+    "firma": "Anthropic"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Googlebot/2.1; +https://wi24rd.com/bot.html)",
+   "",
+   {
+    "navn": "Googlebot",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Googlebot/2.1; +https://wi24rd.com/bot.html)",
+   "AI Assistant",
+   {
+    "navn": "Googlebot",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Googlebot/2.1; +https://wi24rd.com/bot.html)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Googlebot",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Googlebot/2.1; +https://wi24rd.com/bot.html)",
+   "Search Engine Crawler",
+   {
+    "navn": "Googlebot",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Googlebot-Image/1.0",
+   "",
+   {
+    "navn": "Googlebot-Image",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Googlebot-Image/1.0",
+   "AI Assistant",
+   {
+    "navn": "Googlebot-Image",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Googlebot-Image/1.0",
+   "Monitoring & Analytics",
+   {
+    "navn": "Googlebot-Image",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Googlebot-Image/1.0",
+   "Search Engine Crawler",
+   {
+    "navn": "Googlebot-Image",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Mozilla/5.0 (Windows NT 10.0) Chrome/141",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (Windows NT 10.0) Chrome/141",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (Windows NT 10.0) Chrome/141",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (Windows NT 10.0) Chrome/141",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (X11) Chrome/141",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (X11) Chrome/141",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (X11) Chrome/141",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (X11) Chrome/141",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; DeepSeekBot/1.0)",
+   "",
+   {
+    "navn": "DeepSeekBot",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; DeepSeekBot/1.0)",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; DeepSeekBot/1.0)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; DeepSeekBot/1.0)",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "curl/8.0",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "curl/8.0",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "curl/8.0",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "curl/8.0",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; YandexImages/3.0)",
+   "",
+   {
+    "navn": "YandexBot",
+    "firma": "Yandex"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; YandexImages/3.0)",
+   "AI Assistant",
+   {
+    "navn": "YandexBot",
+    "firma": "Yandex"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; YandexImages/3.0)",
+   "Monitoring & Analytics",
+   {
+    "navn": "YandexBot",
+    "firma": "Yandex"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; YandexImages/3.0)",
+   "Search Engine Crawler",
+   {
+    "navn": "YandexBot",
+    "firma": "Yandex"
+   }
+  ],
+  [
+   "facebookexternalhit/1.1",
+   "",
+   {
+    "navn": "Facebook",
+    "firma": "Meta"
+   }
+  ],
+  [
+   "facebookexternalhit/1.1",
+   "AI Assistant",
+   {
+    "navn": "Facebook",
+    "firma": "Meta"
+   }
+  ],
+  [
+   "facebookexternalhit/1.1",
+   "Monitoring & Analytics",
+   {
+    "navn": "Facebook",
+    "firma": "Meta"
+   }
+  ],
+  [
+   "facebookexternalhit/1.1",
+   "Search Engine Crawler",
+   {
+    "navn": "Facebook",
+    "firma": "Meta"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; SemrushBot/7~bl)",
+   "",
+   {
+    "navn": "SemrushBot",
+    "firma": "Semrush"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; SemrushBot/7~bl)",
+   "AI Assistant",
+   {
+    "navn": "SemrushBot",
+    "firma": "Semrush"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; SemrushBot/7~bl)",
+   "Monitoring & Analytics",
+   {
+    "navn": "SemrushBot",
+    "firma": "Semrush"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; SemrushBot/7~bl)",
+   "Search Engine Crawler",
+   {
+    "navn": "SemrushBot",
+    "firma": "Semrush"
+   }
+  ],
+  [
+   "python-requests/2.31",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "python-requests/2.31",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "python-requests/2.31",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "python-requests/2.31",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; MyCustomCrawler/2.0)",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; MyCustomCrawler/2.0)",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; MyCustomCrawler/2.0)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; MyCustomCrawler/2.0)",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "some-spider.v2/1.0",
+   "",
+   {
+    "navn": "some-spider.v2",
+    "firma": ""
+   }
+  ],
+  [
+   "some-spider.v2/1.0",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "some-spider.v2/1.0",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "some-spider.v2/1.0",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Bot",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "Bot",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "Bot",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "Bot",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "xbot",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "xbot",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "xbot",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "xbot",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Ab",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "Ab",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "Ab",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "Ab",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Barkrowler/0.9)",
+   "",
+   {
+    "navn": "Ukendt bot",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Barkrowler/0.9)",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Barkrowler/0.9)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Barkrowler/0.9)",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "ZoominfoBot (zoominfobot at zoominfo dot com)",
+   "",
+   {
+    "navn": "ZoominfoBot",
+    "firma": ""
+   }
+  ],
+  [
+   "ZoominfoBot (zoominfobot at zoominfo dot com)",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "ZoominfoBot (zoominfobot at zoominfo dot com)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "ZoominfoBot (zoominfobot at zoominfo dot com)",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; HeadlessChrome/120)",
+   "",
+   {
+    "navn": "Headless Chrome",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; HeadlessChrome/120)",
+   "AI Assistant",
+   {
+    "navn": "Headless Chrome",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; HeadlessChrome/120)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Headless Chrome",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; HeadlessChrome/120)",
+   "Search Engine Crawler",
+   {
+    "navn": "Headless Chrome",
+    "firma": ""
+   }
+  ],
+  [
+   "Chrome-Lighthouse",
+   "",
+   {
+    "navn": "Lighthouse",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Chrome-Lighthouse",
+   "AI Assistant",
+   {
+    "navn": "Lighthouse",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Chrome-Lighthouse",
+   "Monitoring & Analytics",
+   {
+    "navn": "Lighthouse",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Chrome-Lighthouse",
+   "Search Engine Crawler",
+   {
+    "navn": "Lighthouse",
+    "firma": "Google"
+   }
+  ],
+  [
+   "Cloudflare-Radar",
+   "",
+   {
+    "navn": "Cloudflare",
+    "firma": "Cloudflare"
+   }
+  ],
+  [
+   "Cloudflare-Radar",
+   "AI Assistant",
+   {
+    "navn": "Cloudflare",
+    "firma": "Cloudflare"
+   }
+  ],
+  [
+   "Cloudflare-Radar",
+   "Monitoring & Analytics",
+   {
+    "navn": "Cloudflare",
+    "firma": "Cloudflare"
+   }
+  ],
+  [
+   "Cloudflare-Radar",
+   "Search Engine Crawler",
+   {
+    "navn": "Cloudflare",
+    "firma": "Cloudflare"
+   }
+  ],
+  [
+   "GPTBOT/1.1",
+   "",
+   {
+    "navn": "GPTBot",
+    "firma": "OpenAI"
+   }
+  ],
+  [
+   "GPTBOT/1.1",
+   "AI Assistant",
+   {
+    "navn": "GPTBot",
+    "firma": "OpenAI"
+   }
+  ],
+  [
+   "GPTBOT/1.1",
+   "Monitoring & Analytics",
+   {
+    "navn": "GPTBot",
+    "firma": "OpenAI"
+   }
+  ],
+  [
+   "GPTBOT/1.1",
+   "Search Engine Crawler",
+   {
+    "navn": "GPTBot",
+    "firma": "OpenAI"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; archive.org_bot +https://wi24rd.com/bot.html)",
+   "",
+   {
+    "navn": "archive.org_bot",
+    "firma": "Internet Archive"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; archive.org_bot +https://wi24rd.com/bot.html)",
+   "AI Assistant",
+   {
+    "navn": "archive.org_bot",
+    "firma": "Internet Archive"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; archive.org_bot +https://wi24rd.com/bot.html)",
+   "Monitoring & Analytics",
+   {
+    "navn": "archive.org_bot",
+    "firma": "Internet Archive"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; archive.org_bot +https://wi24rd.com/bot.html)",
+   "Search Engine Crawler",
+   {
+    "navn": "archive.org_bot",
+    "firma": "Internet Archive"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Applebot-Extended/0.1)",
+   "",
+   {
+    "navn": "Applebot-Extended",
+    "firma": "Apple"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Applebot-Extended/0.1)",
+   "AI Assistant",
+   {
+    "navn": "Applebot-Extended",
+    "firma": "Apple"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Applebot-Extended/0.1)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Applebot-Extended",
+    "firma": "Apple"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Applebot-Extended/0.1)",
+   "Search Engine Crawler",
+   {
+    "navn": "Applebot-Extended",
+    "firma": "Apple"
+   }
+  ],
+  [
+   "meta-externalagent/1.1",
+   "",
+   {
+    "navn": "Meta-ExternalAgent",
+    "firma": "Meta"
+   }
+  ],
+  [
+   "meta-externalagent/1.1",
+   "AI Assistant",
+   {
+    "navn": "Meta-ExternalAgent",
+    "firma": "Meta"
+   }
+  ],
+  [
+   "meta-externalagent/1.1",
+   "Monitoring & Analytics",
+   {
+    "navn": "Meta-ExternalAgent",
+    "firma": "Meta"
+   }
+  ],
+  [
+   "meta-externalagent/1.1",
+   "Search Engine Crawler",
+   {
+    "navn": "Meta-ExternalAgent",
+    "firma": "Meta"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; AwarioBot/1.0; +https://wi24rd.com/bots.html)",
+   "",
+   {
+    "navn": "AwarioBot",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; AwarioBot/1.0; +https://wi24rd.com/bots.html)",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; AwarioBot/1.0; +https://wi24rd.com/bots.html)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; AwarioBot/1.0; +https://wi24rd.com/bots.html)",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcrawler",
+   "",
+   {
+    "navn": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcrawler",
+    "firma": ""
+   }
+  ],
+  [
+   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcrawler",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcrawler",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcrawler",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "ÆbleBot/1.0",
+   "",
+   {
+    "navn": "bleBot",
+    "firma": ""
+   }
+  ],
+  [
+   "ÆbleBot/1.0",
+   "AI Assistant",
+   {
+    "navn": "AI-assistent i en browser",
+    "firma": ""
+   }
+  ],
+  [
+   "ÆbleBot/1.0",
+   "Monitoring & Analytics",
+   {
+    "navn": "Verificeret (Monitoring & Analytics)",
+    "firma": ""
+   }
+  ],
+  [
+   "ÆbleBot/1.0",
+   "Search Engine Crawler",
+   {
+    "navn": "Verificeret (Search Engine Crawler)",
+    "firma": ""
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Qwantify/1.0)",
+   "",
+   {
+    "navn": "Qwantbot",
+    "firma": "Qwant"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Qwantify/1.0)",
+   "AI Assistant",
+   {
+    "navn": "Qwantbot",
+    "firma": "Qwant"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Qwantify/1.0)",
+   "Monitoring & Analytics",
+   {
+    "navn": "Qwantbot",
+    "firma": "Qwant"
+   }
+  ],
+  [
+   "Mozilla/5.0 (compatible; Qwantify/1.0)",
+   "Search Engine Crawler",
+   {
+    "navn": "Qwantbot",
+    "firma": "Qwant"
+   }
+  ]
+ ],
+ "efterligning": [
+  [
+   "Googlebot",
+   true
+  ],
+  [
+   "DeepSeekBot",
+   false
+  ],
+  [
+   "Facebook",
+   true
+  ],
+  [
+   "googlebot",
+   false
+  ],
+  [
+   "Ukendt bot",
+   false
+  ]
+ ],
+ "regel": [
+  [
+   "React - RCE - CVE:CVE-2025-55182",
+   "firewallManaged",
+   {
+    "navn": "React - RCE - CVE:CVE-2025-55182",
+    "produkt": "React",
+    "type": "RCE",
+    "cve": "CVE-2025-55182"
+   }
+  ],
+  [
+   "Wordpress - Broken Access Control, File Inclusion",
+   "",
+   {
+    "navn": "Wordpress - Broken Access Control, File Inclusion",
+    "produkt": "Wordpress",
+    "type": "Broken Access Control, File Inclusion",
+    "cve": null
+   }
+  ],
+  [
+   "",
+   "bic",
+   {
+    "navn": "Browser Integrity Check",
+    "produkt": "",
+    "type": "bic",
+    "cve": null
+   }
+  ],
+  [
+   "SQLi - Comment - CVE:cve-2021-1234567",
+   "firewallManaged",
+   {
+    "navn": "SQLi - Comment - CVE:cve-2021-1234567",
+    "produkt": "SQLi",
+    "type": "Comment",
+    "cve": "CVE-2021-1234567"
+   }
+  ],
+  [
+   "  Anomaly:Header:User-Agent  ",
+   "firewallManaged",
+   {
+    "navn": "Anomaly:Header:User-Agent",
+    "produkt": "Anomaly:Header:User-Agent",
+    "type": "",
+    "cve": null
+   }
+  ],
+  [
+   "Drupal - Anomaly:Header:X-Forwarded-For",
+   "",
+   {
+    "navn": "Drupal - Anomaly:Header:X-Forwarded-For",
+    "produkt": "Drupal",
+    "type": "Anomaly:Header:X-Forwarded-For",
+    "cve": null
+   }
+  ],
+  [
+   "",
+   "firewallCustom",
+   {
+    "navn": "firewallCustom",
+    "produkt": "",
+    "type": "",
+    "cve": null
+   }
+  ],
+  [
+   "",
+   "",
+   {
+    "navn": "Ukendt regel",
+    "produkt": "",
+    "type": "",
+    "cve": null
+   }
+  ],
+  [
+   "Log4j Headers - CVE:CVE-2021-44228 - extra",
+   "",
+   {
+    "navn": "Log4j Headers - CVE:CVE-2021-44228 - extra",
+    "produkt": "Log4j Headers",
+    "type": "extra",
+    "cve": "CVE-2021-44228"
+   }
+  ],
+  [
+   "A - B - C - D",
+   "",
+   {
+    "navn": "A - B - C - D",
+    "produkt": "A",
+    "type": "B – C – D",
+    "cve": null
+   }
+  ],
+  [
+   "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX - YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
+   "",
+   {
+    "navn": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX - YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
+    "produkt": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "type": "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
+    "cve": null
+   }
+  ],
+  [
+   "Apache Struts - Code Injection -CVE:CVE-2017-5638",
+   "",
+   {
+    "navn": "Apache Struts - Code Injection -CVE:CVE-2017-5638",
+    "produkt": "Apache Struts",
+    "type": "Code Injection",
+    "cve": "CVE-2017-5638"
+   }
+  ],
+  [
+   "Only product",
+   "",
+   {
+    "navn": "Only product",
+    "produkt": "Only product",
+    "type": "",
+    "cve": null
+   }
+  ],
+  [
+   " - leading",
+   "",
+   {
+    "navn": "- leading",
+    "produkt": "- leading",
+    "type": "",
+    "cve": null
+   }
+  ]
+ ],
+ "tilTimen": [
+  [
+   "2026-11-02T05:17:34Z",
+   "2026-11-02T05:00:00Z"
+  ],
+  [
+   "ikke en tid",
+   null
+  ],
+  [
+   "2026-11-02T05:00:00Z",
+   "2026-11-02T05:00:00Z"
+  ],
+  [
+   "2026-11-02T23:59:59.999Z",
+   "2026-11-02T23:00:00Z"
+  ],
+  [
+   "2026-10-29T00:00:00.5Z",
+   "2026-10-29T00:00:00Z"
+  ],
+  [
+   "2024-02-29T12:30:00Z",
+   "2024-02-29T12:00:00Z"
+  ]
+ ],
+ "dagNoegle": [
+  [
+   1793250000000,
+   "2026-10-29"
+  ],
+  [
+   1790744400000,
+   "2026-09-30"
+  ],
+  [
+   1709251199999,
+   "2024-02-29"
+  ]
+ ],
+ "forespoergsel": "{ viewer { zones(filter:{zoneTag:\"abc\"}) {\n    fw: firewallEventsAdaptive(limit:10000, filter:{datetime_geq:\"2026-10-28T00:00:00Z\", datetime_lt:\"2026-10-29T00:00:00Z\"}, orderBy:[datetime_DESC]) { action source description clientCountryName clientRequestPath clientRequestHTTPMethodName clientASNDescription edgeColoName datetime }\n    alle: httpRequestsAdaptiveGroups(limit:1, filter:{datetime_geq:\"2026-10-28T00:00:00Z\", datetime_lt:\"2026-10-29T00:00:00Z\"}, orderBy:[count_DESC]) { count dimensions { date } }\n    probes: httpRequestsAdaptiveGroups(limit:400, filter:{datetime_geq:\"2026-10-28T00:00:00Z\", datetime_lt:\"2026-10-29T00:00:00Z\", edgeResponseStatus:404}, orderBy:[count_DESC]) { count dimensions { clientRequestPath } }\n    bots: httpRequestsAdaptiveGroups(limit:1500, filter:{datetime_geq:\"2026-10-28T00:00:00Z\", datetime_lt:\"2026-10-29T00:00:00Z\", verifiedBotCategory_neq:\"\"}, orderBy:[count_DESC]) { count dimensions { verifiedBotCategory userAgent clientRequestPath edgeResponseStatus } }\n    f1: httpRequestsAdaptiveGroups(limit:300, filter:{datetime_geq:\"2026-10-28T00:00:00Z\", datetime_lt:\"2026-10-29T00:00:00Z\", verifiedBotCategory:\"\", userAgent_like:\"%bot%\"}, orderBy:[count_DESC]) { count dimensions { userAgent } }\n    f2: httpRequestsAdaptiveGroups(limit:300, filter:{datetime_geq:\"2026-10-28T00:00:00Z\", datetime_lt:\"2026-10-29T00:00:00Z\", verifiedBotCategory:\"\", userAgent_like:\"%Bot%\"}, orderBy:[count_DESC]) { count dimensions { userAgent } }\n    f3: httpRequestsAdaptiveGroups(limit:200, filter:{datetime_geq:\"2026-10-28T00:00:00Z\", datetime_lt:\"2026-10-29T00:00:00Z\", verifiedBotCategory:\"\", userAgent_like:\"%crawler%\"}, orderBy:[count_DESC]) { count dimensions { userAgent } }\n  } } }",
+ "doegn": {
+  "2026-09-30": {
+   "fw": [
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T23:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T22:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T21:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T20:00:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T19:00:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T18:24:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "US",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T17:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T16:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T15:32:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T14:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "US",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "AMS",
+     "datetime": "2026-09-30T13:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T12:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T11:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T10:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "US",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T09:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T08:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T07:36:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T06:48:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T05:48:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T04:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T03:00:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T02:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T01:48:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "DigitalOcean, LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T00:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T23:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T22:28:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T21:52:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T20:28:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T19:00:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T18:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T17:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "US",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T16:20:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T15:00:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T14:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T13:28:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-09-30T12:00:00Z"
+    }
+   ],
+   "alle": [
+    {
+     "count": 33752,
+     "dimensions": {
+      "date": "2026-09-30"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [
+    {
+     "count": 11,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "curl/8.0",
+      "clientRequestPath": "/om/index.md",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 11,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "GPTBOT/1.1",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@wi24rd.com)",
+      "clientRequestPath": "/om/index.md",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 31,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 (compatible; Applebot-Extended/0.1)",
+      "clientRequestPath": "/",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 41,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "",
+      "clientRequestPath": "/sitemap.xml",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "ÆbleBot/1.0",
+      "clientRequestPath": "/",
+      "edgeResponseStatus": 200
+     }
+    }
+   ],
+   "f1": [],
+   "f2": [],
+   "f3": []
+  },
+  "2026-10-05": {
+   "fw": [
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "US",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-05T23:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-05T22:28:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-05T21:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-05T20:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "US",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-05T19:48:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-05T18:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-05T17:20:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-05T16:12:00Z"
+    }
+   ],
+   "alle": [
+    {
+     "count": 6984,
+     "dimensions": {
+      "date": "2026-10-05"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "ÆbleBot/1.0",
+      "clientRequestPath": "/om/index.md",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 21,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "xbot",
+      "clientRequestPath": "/om/index.md",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 11,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "",
+      "clientRequestPath": "/",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 31,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "curl/8.0",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 21,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "python-requests/2.31",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 21,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 (compatible; AwarioBot/1.0; +https://wi24rd.com/bots.html)",
+      "clientRequestPath": "/robots.txt",
+      "edgeResponseStatus": 200
+     }
+    }
+   ],
+   "f1": [],
+   "f2": [],
+   "f3": []
+  },
+  "2026-10-15": {
+   "fw": [
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-15T23:24:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-15T22:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-15T21:48:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "US",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-15T20:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-15T19:20:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-15T18:20:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-15T17:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-15T16:04:00Z"
+    }
+   ],
+   "alle": [
+    {
+     "count": 25464,
+     "dimensions": {
+      "date": "2026-10-15"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [
+    {
+     "count": 11,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "GPTBOT/1.1",
+      "clientRequestPath": "/robots.txt",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 41,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 (compatible; Applebot-Extended/0.1)",
+      "clientRequestPath": "/sitemap.xml",
+      "edgeResponseStatus": 200
+     }
+    }
+   ],
+   "f1": [],
+   "f2": [],
+   "f3": []
+  },
+  "2026-10-21": {
+   "fw": [
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-21T23:52:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-21T22:16:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-21T21:36:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-21T20:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-21T19:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-21T18:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-21T17:20:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-21T16:40:00Z"
+    }
+   ],
+   "alle": [],
+   "probes": [],
+   "bots": [
+    {
+     "count": 41,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@wi24rd.com)",
+      "clientRequestPath": "/sitemap.xml",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 21,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "xbot",
+      "clientRequestPath": "/sitemap.xml",
+      "edgeResponseStatus": 200
+     }
+    }
+   ],
+   "f1": [],
+   "f2": [
+    {
+     "count": 1,
+     "dimensions": {
+      "userAgent": "Mozilla/5.0 (compatible; Applebot-Extended/0.1)"
+     }
+    }
+   ],
+   "f3": []
+  },
+  "2026-10-22": {
+   "fw": [],
+   "alle": [
+    {
+     "count": 21624,
+     "dimensions": {
+      "date": "2026-10-22"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [
+    {
+     "count": 11,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "ZoominfoBot (zoominfobot at zoominfo dot com)",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 11,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "ÆbleBot/1.0",
+      "clientRequestPath": "/sitemap.xml",
+      "edgeResponseStatus": 200
+     }
+    }
+   ],
+   "f1": [],
+   "f2": [
+    {
+     "count": 41,
+     "dimensions": {
+      "userAgent": "Chrome-Lighthouse"
+     }
+    },
+    {
+     "count": 21,
+     "dimensions": {
+      "userAgent": "Mozilla/5.0 (compatible; AwarioBot/1.0; +https://wi24rd.com/bots.html)"
+     }
+    }
+   ],
+   "f3": []
+  },
+  "2026-10-23": {
+   "fw": [],
+   "alle": [
+    {
+     "count": 4520,
+     "dimensions": {
+      "date": "2026-10-23"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [
+    {
+     "count": 41,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Chrome-Lighthouse",
+      "clientRequestPath": "/om/index.md",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@wi24rd.com)",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 (X11) Chrome/141",
+      "clientRequestPath": "/robots.txt",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 (compatible; AwarioBot/1.0; +https://wi24rd.com/bots.html)",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 (compatible; AwarioBot/1.0; +https://wi24rd.com/bots.html)",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 41,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "python-requests/2.31",
+      "clientRequestPath": "/robots.txt",
+      "edgeResponseStatus": 200
+     }
+    }
+   ],
+   "f1": [],
+   "f2": [
+    {
+     "count": 21,
+     "dimensions": {
+      "userAgent": "Mozilla/5.0 (compatible; Applebot-Extended/0.1)"
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "userAgent": "ÆbleBot/1.0"
+     }
+    }
+   ],
+   "f3": []
+  },
+  "2026-10-25": {
+   "fw": [
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T23:32:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T22:32:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T21:32:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T20:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T19:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T18:24:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T17:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T16:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T15:48:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T14:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T13:00:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T12:52:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T11:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T10:16:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T09:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T08:24:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T07:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T06:36:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T05:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T04:48:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T03:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T02:20:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T01:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T00:32:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T23:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T22:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T21:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T20:32:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T19:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "US",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T18:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T17:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-25T16:36:00Z"
+    }
+   ],
+   "alle": [
+    {
+     "count": 36168,
+     "dimensions": {
+      "date": "2026-10-25"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "curl/8.0",
+      "clientRequestPath": "/",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "curl/8.0",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "facebookexternalhit/1.1",
+      "clientRequestPath": "/",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 41,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    }
+   ],
+   "f1": [],
+   "f2": [
+    {
+     "count": 31,
+     "dimensions": {
+      "userAgent": "ZoominfoBot (zoominfobot at zoominfo dot com)"
+     }
+    }
+   ],
+   "f3": []
+  },
+  "2026-10-27": {
+   "fw": [
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T23:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T22:56:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T21:24:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "US",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T20:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T19:48:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T18:00:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T17:16:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T16:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T15:36:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T14:20:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T13:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T12:20:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T11:24:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/admin/",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T10:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T09:36:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-27T08:52:00Z"
+    }
+   ],
+   "alle": [
+    {
+     "count": 27400,
+     "dimensions": {
+      "date": "2026-10-27"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [],
+   "f1": [],
+   "f2": [
+    {
+     "count": 41,
+     "dimensions": {
+      "userAgent": ""
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "userAgent": "some-spider.v2/1.0"
+     }
+    }
+   ],
+   "f3": []
+  },
+  "2026-10-28": {
+   "fw": [],
+   "alle": [
+    {
+     "count": 2408,
+     "dimensions": {
+      "date": "2026-10-28"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [
+    {
+     "count": 31,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Chrome-Lighthouse",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 11,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@wi24rd.com)",
+      "clientRequestPath": "/om/index.md",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Googlebot-Image/1.0",
+      "clientRequestPath": "/",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 1,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "some-spider.v2/1.0",
+      "clientRequestPath": "/assets/x.css",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 11,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "GPTBOT/1.1",
+      "clientRequestPath": "/om/index.md",
+      "edgeResponseStatus": 200
+     }
+    },
+    {
+     "count": 31,
+     "dimensions": {
+      "verifiedBotCategory": "Search Engine Crawler",
+      "userAgent": "Mozilla/5.0 (compatible; Applebot-Extended/0.1)",
+      "clientRequestPath": "/robots.txt",
+      "edgeResponseStatus": 200
+     }
+    }
+   ],
+   "f1": [],
+   "f2": [],
+   "f3": []
+  },
+  "2026-10-29": {
+   "fw": [
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T23:52:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T22:40:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T21:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T20:52:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T19:36:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T18:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T17:28:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T16:24:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Wordpress - Broken Access Control, File Inclusion",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T15:32:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "US",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T14:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "NL",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T13:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T12:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T11:04:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T10:52:00Z"
+    },
+    {
+     "action": "managed_challenge",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/wp-admin/RING MIG",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T09:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/api/v1/../../etc/passwd",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T08:28:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T07:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "PHP - Code Injection - CVE:CVE-2024-4577",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T06:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T05:00:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "React - RCE - CVE:CVE-2025-55182",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T04:44:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "DK",
+     "clientRequestPath": "/xmlrpc.php?rsd",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T03:16:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T02:28:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T01:36:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "DE",
+     "clientRequestPath": "/.env",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T00:24:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "Google LLC",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T23:52:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T22:16:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T21:32:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T20:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "securitylevel",
+     "description": "",
+     "clientCountryName": "US",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T19:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallCustom",
+     "description": "",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/wp-login.php",
+     "clientRequestHTTPMethodName": "",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T18:12:00Z"
+    },
+    {
+     "action": "block",
+     "source": "bic",
+     "description": "",
+     "clientCountryName": "RU",
+     "clientRequestPath": "/qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+     "clientRequestHTTPMethodName": "POST",
+     "clientASNDescription": "",
+     "edgeColoName": "EWR",
+     "datetime": "2026-10-29T17:08:00Z"
+    },
+    {
+     "action": "block",
+     "source": "firewallManaged",
+     "description": "Anomaly:Header:User-Agent - Missing",
+     "clientCountryName": "SG",
+     "clientRequestPath": "/.git/HEAD",
+     "clientRequestHTTPMethodName": "GET",
+     "clientASNDescription": "",
+     "edgeColoName": "AMS",
+     "datetime": "2026-10-29T16:32:00Z"
+    },
+    {
+     "action": null,
+     "source": null,
+     "description": null,
+     "clientCountryName": null,
+     "clientRequestPath": null,
+     "clientRequestHTTPMethodName": null,
+     "clientASNDescription": null,
+     "edgeColoName": null,
+     "datetime": null
+    }
+   ],
+   "alle": [
+    {
+     "count": 35992,
+     "dimensions": {
+      "date": "2026-10-29"
+     }
+    }
+   ],
+   "probes": [],
+   "bots": [],
+   "f1": [],
+   "f2": [
+    {
+     "count": 41,
+     "dimensions": {
+      "userAgent": "python-requests/2.31"
+     }
+    }
+   ],
+   "f3": []
+  }
+ },
+ "raekker": {
+  "2026-09-30": [
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tDE\t\t/.git/HEAD\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tRU\tGoogle LLC\t/.git/HEAD\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tDK\t\t/…\tEWR\tGET\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tRU\t\t/.env\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tRU\t\t/admin/\tEWR\tPOST\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tSG\tGoogle LLC\t/wp-login.php\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\t\t/wp-login.php\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tUS\tGoogle LLC\t/api/v1/../../etc/passwd\tAMS\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tDK\tGoogle LLC\t/.git/HEAD\tEWR\tGET\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tUS\t\t/\tEWR\tPOST\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDK\tGoogle LLC\t/.env\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-login.php\tEWR\tGET\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/admin/\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tDK\tGoogle LLC\t/…\tEWR\tPOST\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\t\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tSG\t\t/admin/\tEWR\tGET\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tRU\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tXX\tDigitalOcean, LLC\t/api/v1/../../etc/passwd\tEWR\t\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\t\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tDK\tGoogle LLC\t/\tEWR\tGET\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tRU\t\t/\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tRU\tGoogle LLC\t/.git/HEAD\tEWR\t\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.git/HEAD\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/admin/\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tRU\tGoogle LLC\t/wp-admin/RING MIG\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tRU\t\t/.git/HEAD\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tSG\t\t/wp-login.php\tEWR\t\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tDE\t\t/wp-admin/RING MIG\tEWR\tGET\tbic\tblock",
+    1
+   ],
+   [
+    "alle",
+    "",
+    33752
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/om/index.md\t200",
+    11
+   ],
+   [
+    "bot",
+    "GPTBot\tOpenAI\tSearch Engine Crawler\t/assets/x.css\t200",
+    11
+   ],
+   [
+    "bot",
+    "ClaudeBot\tAnthropic\tSearch Engine Crawler\t/om/index.md\t200",
+    1
+   ],
+   [
+    "bot",
+    "Applebot-Extended\tApple\tSearch Engine Crawler\t/\t200",
+    31
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/sitemap.xml\t200",
+    41
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/\t200",
+    1
+   ]
+  ],
+  "2026-10-05": [
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tUS\tGoogle LLC\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tRU\tGoogle LLC\t/xmlrpc.php\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tUS\t\t/.env\tEWR\t\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\tGET\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tUS\t\t/xmlrpc.php\tEWR\t\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tSG\tGoogle LLC\t/\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "alle",
+    "",
+    6984
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/om/index.md\t200",
+    22
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/\t200",
+    11
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+    52
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/robots.txt\t200",
+    21
+   ]
+  ],
+  "2026-10-15": [
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/admin/\tEWR\t\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tDK\t\t/…\tEWR\t\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tRU\t\t/.env\tEWR\tPOST\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tDE\t\t/xmlrpc.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tDE\t\t/wp-admin/RING MIG\tEWR\tPOST\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "alle",
+    "",
+    25464
+   ],
+   [
+    "bot",
+    "GPTBot\tOpenAI\tSearch Engine Crawler\t/robots.txt\t200",
+    11
+   ],
+   [
+    "bot",
+    "Applebot-Extended\tApple\tSearch Engine Crawler\t/sitemap.xml\t200",
+    41
+   ]
+  ],
+  "2026-10-21": [
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-login.php\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tDE\t\t/.git/HEAD\tEWR\t\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDK\tGoogle LLC\t/admin/\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tRU\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\tGoogle LLC\t/wp-login.php\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "alle",
+    "",
+    0
+   ],
+   [
+    "bot",
+    "ClaudeBot\tAnthropic\tSearch Engine Crawler\t/sitemap.xml\t200",
+    41
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/sitemap.xml\t200",
+    21
+   ],
+   [
+    "falsk",
+    "Applebot-Extended\tefterligning",
+    1
+   ]
+  ],
+  "2026-10-22": [
+   [
+    "alle",
+    "",
+    21624
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+    11
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/sitemap.xml\t200",
+    11
+   ],
+   [
+    "falsk",
+    "Lighthouse\tuverificeret",
+    41
+   ],
+   [
+    "falsk",
+    "AwarioBot\tuverificeret",
+    21
+   ]
+  ],
+  "2026-10-23": [
+   [
+    "alle",
+    "",
+    4520
+   ],
+   [
+    "bot",
+    "Lighthouse\tGoogle\tSearch Engine Crawler\t/om/index.md\t200",
+    41
+   ],
+   [
+    "bot",
+    "ClaudeBot\tAnthropic\tSearch Engine Crawler\t/assets/x.css\t200",
+    1
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/robots.txt\t200",
+    42
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+    2
+   ],
+   [
+    "falsk",
+    "Applebot-Extended\tefterligning",
+    21
+   ],
+   [
+    "falsk",
+    "bleBot\tuverificeret",
+    1
+   ]
+  ],
+  "2026-10-25": [
+   [
+    "fw",
+    "securitylevel\tDK\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\t\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tRU\t\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tRU\tGoogle LLC\t/wp-admin/RING MIG\tEWR\tGET\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tSG\t\t/.env\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tUS\tGoogle LLC\t/.env\tEWR\t\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDK\t\t/admin/\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tDK\tGoogle LLC\t/.git/HEAD\tEWR\t\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tDE\t\t/.env\tEWR\t\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\tPOST\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tRU\tGoogle LLC\t/admin/\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tRU\t\t/wp-admin/RING MIG\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\t\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tSG\tGoogle LLC\t/…\tEWR\tPOST\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tDK\t\t/\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tDK\t\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.git/HEAD\tEWR\tGET\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tRU\t\t/.env\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tSG\t\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDK\t\t/wp-login.php\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tSG\tGoogle LLC\t/…\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tUS\t\t/.env\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tSG\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\tGET\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tRU\t\t/wp-admin/RING MIG\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDK\tGoogle LLC\t/wp-admin/RING MIG\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tDK\t\t/.env\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\t\t/…\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tUS\tGoogle LLC\t/admin/\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDK\tGoogle LLC\t/.env\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDE\tGoogle LLC\t/…\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "alle",
+    "",
+    36168
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/\t200",
+    1
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+    42
+   ],
+   [
+    "bot",
+    "Facebook\tMeta\tSearch Engine Crawler\t/\t200",
+    1
+   ],
+   [
+    "falsk",
+    "ZoominfoBot\tuverificeret",
+    31
+   ]
+  ],
+  "2026-10-27": [
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\tGoogle LLC\t/admin/\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-login.php\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDE\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tUS\t\t/…\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tDE\t\t/xmlrpc.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tUS\t\t/admin/\tEWR\t\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tUS\t\t/.git/HEAD\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tDE\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-admin/RING MIG\tEWR\tGET\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/\tEWR\tPOST\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tSG\t\t/.env\tEWR\tGET\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDK\t\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tUS\tGoogle LLC\t/admin/\tEWR\tPOST\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tSG\tGoogle LLC\t/…\tEWR\tGET\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "alle",
+    "",
+    27400
+   ],
+   [
+    "falsk",
+    "Ukendt bot\tuverificeret",
+    41
+   ],
+   [
+    "falsk",
+    "some-spider.v2\tuverificeret",
+    1
+   ]
+  ],
+  "2026-10-28": [
+   [
+    "alle",
+    "",
+    2408
+   ],
+   [
+    "bot",
+    "Lighthouse\tGoogle\tSearch Engine Crawler\t/assets/x.css\t200",
+    31
+   ],
+   [
+    "bot",
+    "ClaudeBot\tAnthropic\tSearch Engine Crawler\t/om/index.md\t200",
+    11
+   ],
+   [
+    "bot",
+    "Googlebot-Image\tGoogle\tSearch Engine Crawler\t/\t200",
+    1
+   ],
+   [
+    "bot",
+    "Verificeret (Search Engine Crawler)\t\tSearch Engine Crawler\t/assets/x.css\t200",
+    1
+   ],
+   [
+    "bot",
+    "GPTBot\tOpenAI\tSearch Engine Crawler\t/om/index.md\t200",
+    11
+   ],
+   [
+    "bot",
+    "Applebot-Extended\tApple\tSearch Engine Crawler\t/robots.txt\t200",
+    31
+   ]
+  ],
+  "2026-10-29": [
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDE\tGoogle LLC\t/.git/HEAD\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/…\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/.env\tEWR\tPOST\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tSG\t\t/.env\tEWR\tPOST\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tSG\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tRU\tGoogle LLC\t/\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Wordpress - Broken Access Control, File Inclusion\tDK\tGoogle LLC\t/xmlrpc.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tUS\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/wp-admin/RING MIG\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tNL\tGoogle LLC\t/…\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tSG\t\t/.env\tEWR\tGET\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tRU\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\t\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tDE\t\t/.git/HEAD\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tRU\t\t/wp-admin/RING MIG\tEWR\tPOST\tfirewallManaged\tmanaged_challenge",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tUS\tGoogle LLC\t/api/v1/../../etc/passwd\tEWR\tGET\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\t\t/.git/HEAD\tEWR\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "PHP - Code Injection - CVE:CVE-2024-4577\tUS\tGoogle LLC\t/.env\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tSG\tGoogle LLC\t/xmlrpc.php\tEWR\t\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "React - RCE - CVE:CVE-2025-55182\tRU\t\t/wp-login.php\tEWR\tPOST\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tDK\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\t/xmlrpc.php\tEWR\t\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\t\t/wp-login.php\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tUS\t\t/.git/HEAD\tEWR\t\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tDE\t\t/.env\tEWR\tPOST\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tRU\tGoogle LLC\t/…\tEWR\tPOST\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tUS\t\t/…\tEWR\tPOST\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tRU\t\t/\tEWR\t\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tRU\t\t/wp-login.php\tEWR\tPOST\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "securitylevel\tUS\t\t/.git/HEAD\tEWR\tPOST\tsecuritylevel\tblock",
+    1
+   ],
+   [
+    "fw",
+    "firewallCustom\tSG\t\t/wp-login.php\tEWR\t\tfirewallCustom\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Browser Integrity Check\tRU\t\t/…\tEWR\tPOST\tbic\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Anomaly:Header:User-Agent - Missing\tSG\t\t/.git/HEAD\tAMS\tGET\tfirewallManaged\tblock",
+    1
+   ],
+   [
+    "fw",
+    "Ukendt regel\tXX\t\t/\t\t\t\t",
+    1
+   ],
+   [
+    "alle",
+    "",
+    35992
+   ],
+   [
+    "falsk",
+    "Ukendt bot\tuverificeret",
+    41
+   ]
+  ]
+ },
+ "byggVaern": {
+  "genereret": "2026-10-29T05:00:00.000Z",
+  "perioder": {
+   "d1": 33,
+   "d7": 81,
+   "d30": 141
+  },
+  "alle": {
+   "d7": 106488,
+   "d30": 194312
+  },
+  "dage": [
+   {
+    "dag": "2026-09-30",
+    "n": 36,
+    "alle": 33752
+   },
+   {
+    "dag": "2026-10-01",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-02",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-03",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-04",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-05",
+    "n": 8,
+    "alle": 6984
+   },
+   {
+    "dag": "2026-10-06",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-07",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-08",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-09",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-10",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-11",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-12",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-13",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-14",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-15",
+    "n": 8,
+    "alle": 25464
+   },
+   {
+    "dag": "2026-10-16",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-17",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-18",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-19",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-20",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-21",
+    "n": 8,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-22",
+    "n": 0,
+    "alle": 21624
+   },
+   {
+    "dag": "2026-10-23",
+    "n": 0,
+    "alle": 4520
+   },
+   {
+    "dag": "2026-10-24",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-25",
+    "n": 32,
+    "alle": 36168
+   },
+   {
+    "dag": "2026-10-26",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-27",
+    "n": 16,
+    "alle": 27400
+   },
+   {
+    "dag": "2026-10-28",
+    "n": 0,
+    "alle": 2408
+   },
+   {
+    "dag": "2026-10-29",
+    "n": 33,
+    "alle": 35992
+   }
+  ],
+  "regler": [
+   {
+    "navn": "Anomaly:Header:User-Agent - Missing",
+    "produkt": "Anomaly:Header:User-Agent",
+    "type": "Missing",
+    "cve": null,
+    "n7": 13,
+    "n30": 27,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/.git/HEAD",
+      "n": 5
+     },
+     {
+      "sti": "/wp-login.php",
+      "n": 5
+     },
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 5
+     }
+    ],
+    "lande": [
+     {
+      "kode": "SG",
+      "n": 9
+     },
+     {
+      "kode": "RU",
+      "n": 7
+     },
+     {
+      "kode": "US",
+      "n": 4
+     }
+    ]
+   },
+   {
+    "navn": "React - RCE - CVE:CVE-2025-55182",
+    "produkt": "React",
+    "type": "RCE",
+    "cve": "CVE-2025-55182",
+    "n7": 16,
+    "n30": 24,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/…",
+      "n": 5
+     },
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 4
+     },
+     {
+      "sti": "/admin/",
+      "n": 4
+     }
+    ],
+    "lande": [
+     {
+      "kode": "DK",
+      "n": 8
+     },
+     {
+      "kode": "DE",
+      "n": 6
+     },
+     {
+      "kode": "US",
+      "n": 4
+     }
+    ]
+   },
+   {
+    "navn": "securitylevel",
+    "produkt": "securitylevel",
+    "type": "",
+    "cve": null,
+    "n7": 11,
+    "n30": 21,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/.env",
+      "n": 4
+     },
+     {
+      "sti": "/",
+      "n": 3
+     },
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "DK",
+      "n": 6
+     },
+     {
+      "kode": "US",
+      "n": 4
+     },
+     {
+      "kode": "SG",
+      "n": 4
+     }
+    ]
+   },
+   {
+    "navn": "Browser Integrity Check",
+    "produkt": "",
+    "type": "bic",
+    "cve": null,
+    "n7": 12,
+    "n30": 19,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/…",
+      "n": 6
+     },
+     {
+      "sti": "/.env",
+      "n": 4
+     },
+     {
+      "sti": "/.git/HEAD",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "RU",
+      "n": 5
+     },
+     {
+      "kode": "DK",
+      "n": 4
+     },
+     {
+      "kode": "US",
+      "n": 4
+     }
+    ]
+   },
+   {
+    "navn": "Wordpress - Broken Access Control, File Inclusion",
+    "produkt": "Wordpress",
+    "type": "Broken Access Control, File Inclusion",
+    "cve": null,
+    "n7": 11,
+    "n30": 18,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/wp-login.php",
+      "n": 4
+     },
+     {
+      "sti": "/.env",
+      "n": 4
+     },
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "DK",
+      "n": 6
+     },
+     {
+      "kode": "SG",
+      "n": 5
+     },
+     {
+      "kode": "US",
+      "n": 3
+     }
+    ]
+   },
+   {
+    "navn": "PHP - Code Injection - CVE:CVE-2024-4577",
+    "produkt": "PHP",
+    "type": "Code Injection",
+    "cve": "CVE-2024-4577",
+    "n7": 9,
+    "n30": 17,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 4
+     },
+     {
+      "sti": "/",
+      "n": 3
+     },
+     {
+      "sti": "/.env",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "RU",
+      "n": 5
+     },
+     {
+      "kode": "US",
+      "n": 4
+     },
+     {
+      "kode": "DE",
+      "n": 3
+     }
+    ]
+   },
+   {
+    "navn": "firewallCustom",
+    "produkt": "firewallCustom",
+    "type": "",
+    "cve": null,
+    "n7": 8,
+    "n30": 14,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/wp-login.php",
+      "n": 3
+     },
+     {
+      "sti": "/xmlrpc.php",
+      "n": 3
+     },
+     {
+      "sti": "/.env",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "SG",
+      "n": 5
+     },
+     {
+      "kode": "DK",
+      "n": 4
+     },
+     {
+      "kode": "US",
+      "n": 2
+     }
+    ]
+   },
+   {
+    "navn": "Ukendt regel",
+    "produkt": "Ukendt regel",
+    "type": "",
+    "cve": null,
+    "n7": 1,
+    "n30": 1,
+    "foerst": "2026-10-29",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/",
+      "n": 1
+     }
+    ],
+    "lande": [
+     {
+      "kode": "XX",
+      "n": 1
+     }
+    ]
+   }
+  ],
+  "lande": [
+   {
+    "kode": "DK",
+    "n": 34
+   },
+   {
+    "kode": "SG",
+    "n": 31
+   },
+   {
+    "kode": "RU",
+    "n": 25
+   },
+   {
+    "kode": "US",
+    "n": 25
+   },
+   {
+    "kode": "DE",
+    "n": 23
+   },
+   {
+    "kode": "XX",
+    "n": 2
+   },
+   {
+    "kode": "NL",
+    "n": 1
+   }
+  ],
+  "netvaerk": [
+   {
+    "navn": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "n": 44
+   },
+   {
+    "navn": "Google LLC",
+    "n": 41
+   },
+   {
+    "navn": "DigitalOcean, LLC",
+    "n": 1
+   }
+  ],
+  "stier": [
+   {
+    "sti": "/.env",
+    "n": 22
+   },
+   {
+    "sti": "/…",
+    "n": 21
+   },
+   {
+    "sti": "/api/v1/../../etc/passwd",
+    "n": 20
+   },
+   {
+    "sti": "/.git/HEAD",
+    "n": 16
+   },
+   {
+    "sti": "/wp-login.php",
+    "n": 16
+   },
+   {
+    "sti": "/",
+    "n": 13
+   },
+   {
+    "sti": "/admin/",
+    "n": 12
+   },
+   {
+    "sti": "/xmlrpc.php",
+    "n": 11
+   },
+   {
+    "sti": "/wp-admin/RING MIG",
+    "n": 10
+   }
+  ],
+  "colos": [
+   {
+    "kode": "EWR",
+    "n": 138
+   },
+   {
+    "kode": "AMS",
+    "n": 2
+   }
+  ],
+  "buer": [
+   {
+    "land": "DK",
+    "colo": "EWR",
+    "n": 34
+   },
+   {
+    "land": "SG",
+    "colo": "EWR",
+    "n": 30
+   },
+   {
+    "land": "RU",
+    "colo": "EWR",
+    "n": 25
+   },
+   {
+    "land": "US",
+    "colo": "EWR",
+    "n": 24
+   },
+   {
+    "land": "DE",
+    "colo": "EWR",
+    "n": 23
+   },
+   {
+    "land": "US",
+    "colo": "AMS",
+    "n": 1
+   },
+   {
+    "land": "XX",
+    "colo": "EWR",
+    "n": 1
+   },
+   {
+    "land": "NL",
+    "colo": "EWR",
+    "n": 1
+   },
+   {
+    "land": "SG",
+    "colo": "AMS",
+    "n": 1
+   }
+  ],
+  "metoder": {
+   "POST": 42,
+   "GET": 48
+  },
+  "kilder": {
+   "firewallManaged": 86,
+   "securitylevel": 21,
+   "bic": 19,
+   "firewallCustom": 14,
+   "?": 1
+  },
+  "forsoeg": {
+   "i7": 0,
+   "kategorier": []
+  },
+  "seneste": []
+ },
+ "offentligVaern": {
+  "genereret": "2026-10-29T05:00:00.000Z",
+  "perioder": {
+   "d1": 33,
+   "d7": 81,
+   "d30": 141
+  },
+  "alle": {
+   "d7": 106488,
+   "d30": 194312
+  },
+  "dage": [
+   {
+    "dag": "2026-09-30",
+    "n": 36,
+    "alle": 33752
+   },
+   {
+    "dag": "2026-10-01",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-02",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-03",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-04",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-05",
+    "n": 8,
+    "alle": 6984
+   },
+   {
+    "dag": "2026-10-06",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-07",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-08",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-09",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-10",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-11",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-12",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-13",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-14",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-15",
+    "n": 8,
+    "alle": 25464
+   },
+   {
+    "dag": "2026-10-16",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-17",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-18",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-19",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-20",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-21",
+    "n": 8,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-22",
+    "n": 0,
+    "alle": 21624
+   },
+   {
+    "dag": "2026-10-23",
+    "n": 0,
+    "alle": 4520
+   },
+   {
+    "dag": "2026-10-24",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-25",
+    "n": 32,
+    "alle": 36168
+   },
+   {
+    "dag": "2026-10-26",
+    "n": 0,
+    "alle": 0
+   },
+   {
+    "dag": "2026-10-27",
+    "n": 16,
+    "alle": 27400
+   },
+   {
+    "dag": "2026-10-28",
+    "n": 0,
+    "alle": 2408
+   },
+   {
+    "dag": "2026-10-29",
+    "n": 33,
+    "alle": 35992
+   }
+  ],
+  "regler": [
+   {
+    "navn": "Anomaly:Header:User-Agent - Missing",
+    "produkt": "Anomaly:Header:User-Agent",
+    "type": "Missing",
+    "cve": null,
+    "n7": 13,
+    "n30": 27,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/.git/HEAD",
+      "n": 5
+     },
+     {
+      "sti": "/wp-login.php",
+      "n": 5
+     },
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 5
+     }
+    ],
+    "lande": [
+     {
+      "kode": "SG",
+      "n": 9
+     },
+     {
+      "kode": "RU",
+      "n": 7
+     },
+     {
+      "kode": "US",
+      "n": 4
+     }
+    ]
+   },
+   {
+    "navn": "React - RCE - CVE:CVE-2025-55182",
+    "produkt": "React",
+    "type": "RCE",
+    "cve": "CVE-2025-55182",
+    "n7": 16,
+    "n30": 24,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "[andet]",
+      "n": 5
+     },
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 4
+     },
+     {
+      "sti": "/admin/",
+      "n": 4
+     }
+    ],
+    "lande": [
+     {
+      "kode": "DK",
+      "n": 8
+     },
+     {
+      "kode": "DE",
+      "n": 6
+     },
+     {
+      "kode": "US",
+      "n": 4
+     }
+    ]
+   },
+   {
+    "navn": "securitylevel",
+    "produkt": "securitylevel",
+    "type": "",
+    "cve": null,
+    "n7": 11,
+    "n30": 21,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/.env",
+      "n": 4
+     },
+     {
+      "sti": "/",
+      "n": 3
+     },
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "DK",
+      "n": 6
+     },
+     {
+      "kode": "US",
+      "n": 4
+     },
+     {
+      "kode": "SG",
+      "n": 4
+     }
+    ]
+   },
+   {
+    "navn": "Browser Integrity Check",
+    "produkt": "",
+    "type": "bic",
+    "cve": null,
+    "n7": 12,
+    "n30": 19,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "[andet]",
+      "n": 6
+     },
+     {
+      "sti": "/.env",
+      "n": 4
+     },
+     {
+      "sti": "/.git/HEAD",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "RU",
+      "n": 5
+     },
+     {
+      "kode": "DK",
+      "n": 4
+     },
+     {
+      "kode": "US",
+      "n": 4
+     }
+    ]
+   },
+   {
+    "navn": "Wordpress - Broken Access Control, File Inclusion",
+    "produkt": "Wordpress",
+    "type": "Broken Access Control, File Inclusion",
+    "cve": null,
+    "n7": 11,
+    "n30": 18,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/wp-login.php",
+      "n": 4
+     },
+     {
+      "sti": "/.env",
+      "n": 4
+     },
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "DK",
+      "n": 6
+     },
+     {
+      "kode": "SG",
+      "n": 5
+     },
+     {
+      "kode": "US",
+      "n": 3
+     }
+    ]
+   },
+   {
+    "navn": "PHP - Code Injection - CVE:CVE-2024-4577",
+    "produkt": "PHP",
+    "type": "Code Injection",
+    "cve": "CVE-2024-4577",
+    "n7": 9,
+    "n30": 17,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/api/v1/../../etc/passwd",
+      "n": 4
+     },
+     {
+      "sti": "/",
+      "n": 3
+     },
+     {
+      "sti": "/.env",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "RU",
+      "n": 5
+     },
+     {
+      "kode": "US",
+      "n": 4
+     },
+     {
+      "kode": "DE",
+      "n": 3
+     }
+    ]
+   },
+   {
+    "navn": "firewallCustom",
+    "produkt": "firewallCustom",
+    "type": "",
+    "cve": null,
+    "n7": 8,
+    "n30": 14,
+    "foerst": "2026-09-30",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/wp-login.php",
+      "n": 3
+     },
+     {
+      "sti": "/xmlrpc.php",
+      "n": 3
+     },
+     {
+      "sti": "/.env",
+      "n": 3
+     }
+    ],
+    "lande": [
+     {
+      "kode": "SG",
+      "n": 5
+     },
+     {
+      "kode": "DK",
+      "n": 4
+     },
+     {
+      "kode": "US",
+      "n": 2
+     }
+    ]
+   },
+   {
+    "navn": "Ukendt regel",
+    "produkt": "Ukendt regel",
+    "type": "",
+    "cve": null,
+    "n7": 1,
+    "n30": 1,
+    "foerst": "2026-10-29",
+    "sidst": "2026-10-29",
+    "stier": [
+     {
+      "sti": "/",
+      "n": 1
+     }
+    ],
+    "lande": [
+     {
+      "kode": "XX",
+      "n": 1
+     }
+    ]
+   }
+  ],
+  "lande": [
+   {
+    "kode": "DK",
+    "n": 34
+   },
+   {
+    "kode": "SG",
+    "n": 31
+   },
+   {
+    "kode": "RU",
+    "n": 25
+   },
+   {
+    "kode": "US",
+    "n": 25
+   },
+   {
+    "kode": "DE",
+    "n": 23
+   },
+   {
+    "kode": "XX",
+    "n": 2
+   },
+   {
+    "kode": "NL",
+    "n": 1
+   }
+  ],
+  "netvaerk": [
+   {
+    "navn": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "n": 44
+   },
+   {
+    "navn": "Google LLC",
+    "n": 41
+   },
+   {
+    "navn": "DigitalOcean, LLC",
+    "n": 1
+   }
+  ],
+  "stier": [
+   {
+    "sti": "/.env",
+    "n": 22
+   },
+   {
+    "sti": "[andet]",
+    "n": 21
+   },
+   {
+    "sti": "/api/v1/../../etc/passwd",
+    "n": 20
+   },
+   {
+    "sti": "/.git/HEAD",
+    "n": 16
+   },
+   {
+    "sti": "/wp-login.php",
+    "n": 16
+   },
+   {
+    "sti": "/",
+    "n": 13
+   },
+   {
+    "sti": "/admin/",
+    "n": 12
+   },
+   {
+    "sti": "/xmlrpc.php",
+    "n": 11
+   },
+   {
+    "sti": "[wordpress]",
+    "n": 10
+   }
+  ],
+  "colos": [
+   {
+    "kode": "EWR",
+    "n": 138
+   },
+   {
+    "kode": "AMS",
+    "n": 2
+   }
+  ],
+  "buer": [
+   {
+    "land": "DK",
+    "colo": "EWR",
+    "n": 34
+   },
+   {
+    "land": "SG",
+    "colo": "EWR",
+    "n": 30
+   },
+   {
+    "land": "RU",
+    "colo": "EWR",
+    "n": 25
+   },
+   {
+    "land": "US",
+    "colo": "EWR",
+    "n": 24
+   },
+   {
+    "land": "DE",
+    "colo": "EWR",
+    "n": 23
+   },
+   {
+    "land": "US",
+    "colo": "AMS",
+    "n": 1
+   },
+   {
+    "land": "XX",
+    "colo": "EWR",
+    "n": 1
+   },
+   {
+    "land": "NL",
+    "colo": "EWR",
+    "n": 1
+   },
+   {
+    "land": "SG",
+    "colo": "AMS",
+    "n": 1
+   }
+  ],
+  "metoder": {
+   "POST": 42,
+   "GET": 48
+  },
+  "kilder": {
+   "firewallManaged": 86,
+   "securitylevel": 21,
+   "bic": 19,
+   "firewallCustom": 14,
+   "?": 1
+  },
+  "forsoeg": {
+   "i7": 0,
+   "kategorier": []
+  },
+  "seneste": []
+ }
+}

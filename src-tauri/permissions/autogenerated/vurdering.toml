@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-vurdering"
+description = "Enables the vurdering command without any pre-configured scope."
+commands.allow = ["vurdering"]
+
+[[permission]]
+identifier = "deny-vurdering"
+description = "Denies the vurdering command without any pre-configured scope."
+commands.deny = ["vurdering"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-koe-status"
+description = "Enables the koe_status command without any pre-configured scope."
+commands.allow = ["koe_status"]
+
+[[permission]]
+identifier = "deny-koe-status"
+description = "Denies the koe_status command without any pre-configured scope."
+commands.deny = ["koe_status"]

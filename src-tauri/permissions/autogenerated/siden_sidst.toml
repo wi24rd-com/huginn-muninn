@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-siden-sidst"
+description = "Enables the siden_sidst command without any pre-configured scope."
+commands.allow = ["siden_sidst"]
+
+[[permission]]
+identifier = "deny-siden-sidst"
+description = "Denies the siden_sidst command without any pre-configured scope."
+commands.deny = ["siden_sidst"]

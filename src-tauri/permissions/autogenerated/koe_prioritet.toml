@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-koe-prioritet"
+description = "Enables the koe_prioritet command without any pre-configured scope."
+commands.allow = ["koe_prioritet"]
+
+[[permission]]
+identifier = "deny-koe-prioritet"
+description = "Denies the koe_prioritet command without any pre-configured scope."
+commands.deny = ["koe_prioritet"]

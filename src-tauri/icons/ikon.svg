@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="1024" height="1024">
+  <!-- Huginn og Muninn: to ravne på en gren, vendt mod hinanden. Tegnet til Huginn-Muninn (Apache-2.0). -->
+  <rect x="4" y="4" width="120" height="120" rx="26" fill="#0a1322"/>
+  <g transform="translate(0 30)" fill="#2fe0ff">
+    <g id="ravn">
+      <path d="M2 54 L6 48 L15 44 C19 35 27 30 35 29 C38 24 42 21 47 21 L52 21.5 C56 22 60 24 63 27.5 L54 28.6 L51 29.4 L50.5 32 L48.6 31 L48.2 34 L46.4 33.2 C45.6 39 41.5 44.5 35 47.5 C29 50.2 22 50.6 16 49.6 L7 55 L5 52 Z"/>
+      <circle cx="47.5" cy="24.2" r="1.5" fill="#0a1322"/>
+      <path d="M29 49 V60 M35 47.5 V60" stroke="#2fe0ff" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+    <use href="#ravn" transform="translate(128 0) scale(-1 1)"/>
+    <path d="M8 61 H120" stroke="#2fe0ff" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+  </g>
+</svg>

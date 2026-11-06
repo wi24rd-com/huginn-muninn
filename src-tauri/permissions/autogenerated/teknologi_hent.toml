@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-teknologi-hent"
+description = "Enables the teknologi_hent command without any pre-configured scope."
+commands.allow = ["teknologi_hent"]
+
+[[permission]]
+identifier = "deny-teknologi-hent"
+description = "Denies the teknologi_hent command without any pre-configured scope."
+commands.deny = ["teknologi_hent"]

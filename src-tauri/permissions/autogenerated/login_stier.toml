@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-login-stier"
+description = "Enables the login_stier command without any pre-configured scope."
+commands.allow = ["login_stier"]
+
+[[permission]]
+identifier = "deny-login-stier"
+description = "Denies the login_stier command without any pre-configured scope."
+commands.deny = ["login_stier"]

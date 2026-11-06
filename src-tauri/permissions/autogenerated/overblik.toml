@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-overblik"
+description = "Enables the overblik command without any pre-configured scope."
+commands.allow = ["overblik"]
+
+[[permission]]
+identifier = "deny-overblik"
+description = "Denies the overblik command without any pre-configured scope."
+commands.deny = ["overblik"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-teknologi-vis-saet"
+description = "Enables the teknologi_vis_saet command without any pre-configured scope."
+commands.allow = ["teknologi_vis_saet"]
+
+[[permission]]
+identifier = "deny-teknologi-vis-saet"
+description = "Denies the teknologi_vis_saet command without any pre-configured scope."
+commands.deny = ["teknologi_vis_saet"]

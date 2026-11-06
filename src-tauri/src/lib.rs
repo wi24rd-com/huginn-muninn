@@ -1,0 +1,1981 @@
+//! Wi24rd Huginn and Muninn — for Cloudflare®. Rust-delen: tokenet i nøgleringen, kald til Cloudflare (kun læsning),
+//! lokal cache i SQLite og Værnet. Webvisningen får aldrig tokenet; den kalder kun kommandoerne herunder. Programmet
+//! bliver i menulinjen, når vinduet lukkes (`agent`), og kan starte ved login uden vindue (autostart). Usædvanligt mange
+//! angreb meldes med en lokal notifikation, og visningen "Siden sidst" åbner (`notify`). På macOS har programmet sin egen
+//! programmenu på dansk/engelsk (`programmenu`); vinduet har ingen titellinje, men et blåt bånd med trafiklysene. Cloudflare Radar
+//! hentes uden for køen (`radar`).
+mod adgang;
+mod agent;
+mod cf;
+mod dmarc;
+mod dns;
+mod dyk;
+mod historik;
+mod huller;
+mod koe;
+mod login;
+mod notify;
+mod overblik;
+mod programmenu;
+mod radar;
+mod robotter;
+mod store;
+mod teknologi;
+mod token;
+mod vaern;
+
+use std::collections::{HashMap, HashSet};
+use std::future::Future;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
+
+use serde::Serialize;
+use serde_json::{json, Value};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, State, Url};
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
+
+use cf::{Fejl, Klient, Zone};
+use koe::{Henter, Koe, KoeStatus};
+use store::Store;
+use token::Hemmelig;
+use vaern::Doegnudfald;
+
+struct Tilstand {
+    lager: Mutex<Store>,
+    klient: Klient,
+    laase: Hentelaase,
+    koe: Koe,
+    /// Døgn, Cloudflare ikke længere har data for (zone, dag), med fejlen: de spørges der ikke om igen, mens programmet kører.
+    udenfor: Mutex<HashMap<(String, String), Fejl>>,
+    /// Tokenet i hukommelsen, så nøgleringen ikke spørger ved hver runde (aldrig i log, fejltekst eller IPC-svar).
+    token: token::Huske,
+    /// Menuen eller en notifikation har bedt om "Siden sidst": forsiden viser kortet ved næste `siden_sidst`.
+    siden_sidst: AtomicBool,
+    /// Domæner, hvor Cloudflare afviste et felt i `ADGANG_QUERY`: de hentes uden `clientAsn`, mens programmet kører.
+    uden_asn: Mutex<HashSet<String>>,
+    /// Cloudflare har afvist filteret i `LAEK_QUERY`: resten af kørslen hentes uden det.
+    laek_uden_filter: AtomicBool,
+}
+
+/// Fejl til webvisningen er en fejlkode (`{kode, status?, dag?, detalje?}`, se `cf::Fejl`); teksten vælges i UI'et.
+type Svar<T> = Result<T, Fejl>;
+
+/// Nøglen til zonelistens lås. Zone-id'er er kun ASCII-bogstaver og -tal (`vaern::tjek_zone`), så den kan ikke kollidere.
+const ZONELISTEN: &str = "*zoner";
+/// Nøglen til nøgleringens lås: én læsning ad gangen.
+const NOEGLERINGEN: &str = "*noeglering";
+/// Nøglen til Radars lås: én opdatering ad gangen.
+const RADAR: &str = "*radar";
+/// Databasefilen i app-datamappen.
+const DATABASE: &str = "huginn-muninn.sqlite";
+
+/// Én lås pr. zone (og én for zonelisten), så der aldrig kører to hentninger af det samme på én gang: en ny hentning
+/// venter, til den igangværende er færdig, og starter først derefter. Forskellige zoner blokerer ikke hinanden.
+#[derive(Default)]
+struct Hentelaase(Mutex<HashMap<String, Arc<futures_util::lock::Mutex<()>>>>);
+
+impl Hentelaase {
+    async fn koer<T>(&self, noegle: &str, f: impl Future<Output = T>) -> T {
+        let laas = {
+            let mut m = self.0.lock().unwrap_or_else(|e| e.into_inner());
+            m.entry(noegle.to_string()).or_default().clone()
+        };
+        let _vagt = laas.lock().await;
+        f.await
+    }
+}
+
+fn nu_ms() -> i64 {
+    vaern::ur_ms()
+}
+
+/// Nøgleringen kan blokere (og på macOS spørge brugeren), så den kaldes uden for async-tråden.
+async fn blokerende<T: Send + 'static>(f: impl FnOnce() -> Result<T, Fejl> + Send + 'static) -> Result<T, Fejl> {
+    tauri::async_runtime::spawn_blocking(f).await.map_err(|_| Fejl::Noegle)?
+}
+
+/// Tokenet fra hukommelsen, ellers fra nøgleringen (og så huskes det). Nøgleringen læses af én ad gangen: spørger køen og
+/// siden samtidig (ved start), venter den ene og får tokenet fra hukommelsen, så der kun kommer én dialog. Er tokenet
+/// glemt eller erstattet, mens nøgleringen blev læst, gælder det nye: det læste token bruges ikke.
+async fn gemt_token(t: &Tilstand) -> Result<Hemmelig, Fejl> {
+    if let Ok(h) = t.token.hent() {
+        return Ok(h);
+    }
+    t.laase
+        .koer(NOEGLERINGEN, async {
+            let udgave = match t.token.hent() {
+                Ok(h) => return Ok(h),
+                Err(u) => u,
+            };
+            let h = blokerende(token::hent).await?.ok_or(Fejl::IntetToken)?;
+            t.token.fyld(udgave, &h);
+            t.token.hent().map_err(|_| Fejl::IntetToken)
+        })
+        .await
+}
+
+#[derive(Serialize)]
+struct TokenStatus {
+    sat: bool,
+}
+
+/// Verificerer tokenet hos Cloudflare og gemmer det kun, hvis det er gyldigt. Returnerer aldrig tokenet. Starter køen.
+#[tauri::command]
+async fn token_set(token: Hemmelig, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    token::tjek_form(&token)?;
+    tilstand.klient.verificer(&token).await?;
+    tilstand.klient.tjek_rettigheder(&token, nu_ms()).await?;
+    let gem = token.clone();
+    blokerende(move || token::gem(&gem)).await?;
+    tilstand.token.saet(token);
+    start_koe(&app);
+    Ok(())
+}
+
+#[tauri::command]
+async fn token_status(tilstand: State<'_, Tilstand>) -> Svar<TokenStatus> {
+    match gemt_token(&tilstand).await {
+        Ok(_) => Ok(TokenStatus { sat: true }),
+        Err(Fejl::IntetToken) => Ok(TokenStatus { sat: false }),
+        Err(e) => Err(e),
+    }
+}
+
+/// "Glem tokenet": sletter tokenet i hukommelsen og nøgleringen, den gemte zoneliste og valget, og stopper køen
+/// (menulinjen: "intet token"). Værnets tal og indstillingerne bliver. Rækkefølgen: først nøgleringen, så hukommelsen.
+/// En læsning af nøgleringen, der startede før `glem`, har den gamle udgave, og `fyld` afviser den; en læsning efter
+/// `slet` finder intet. Omvendt kunne en læsning mellem `glem` og `slet` finde det gamle token med den nye udgave og
+/// lægge det tilbage i hukommelsen. Fejler `slet`, huskes tokenet stadig, og fejlen returneres (det er ikke glemt).
+#[tauri::command]
+async fn token_delete(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    tilstand.koe.stop_med(Fejl::IntetToken, &|s| melder(&app, s));
+    blokerende(token::slet).await?;
+    tilstand.token.glem();
+    laas(&tilstand)?.slet_zoner()
+}
+
+fn laas(tilstand: &Tilstand) -> Result<std::sync::MutexGuard<'_, Store>, Fejl> {
+    tilstand.lager.lock().map_err(|_| Fejl::Lager)
+}
+
+/// Zonerne fra Cloudflare. Ved succes erstatter de den gemte liste (`zones_cache`), og køen får besked.
+#[tauri::command]
+async fn zones(tilstand: State<'_, Tilstand>) -> Svar<Vec<Zone>> {
+    let z = tilstand
+        .laase
+        .koer(ZONELISTEN, async {
+            let t = gemt_token(&tilstand).await?;
+            let z = tilstand.klient.zoner(&t).await?;
+            laas(&tilstand)?.gem_zoner(&z, &vaern::iso(nu_ms()))?;
+            Ok::<_, Fejl>(z)
+        })
+        .await?;
+    tilstand.koe.prioriter(None);
+    Ok(z)
+}
+
+#[derive(Serialize)]
+struct ZoneCache {
+    zoner: Vec<Zone>,
+    /// Hvornår listen blev hentet (ISO, UTC); `null`, hvis der ikke er gemt nogen.
+    hentet: Option<String>,
+}
+
+/// Den senest hentede zoneliste fra cachen (intet netværk), så forsiden kan vise zonerne med det samme og uden net.
+#[tauri::command]
+async fn zones_cache(tilstand: State<'_, Tilstand>) -> Svar<ZoneCache> {
+    let (zoner, hentet) = laas(&tilstand)?.zoner()?;
+    Ok(ZoneCache { zoner, hentet })
+}
+
+fn byg(tilstand: &Tilstand, zone: &str, nu: i64) -> Result<Option<vaern::VaernUd>, Fejl> {
+    let lager = laas(tilstand)?;
+    let Some(sidst) = vaern::sidst_hentet(&lager.hentet(zone)?, nu) else {
+        return Ok(None);
+    };
+    let rows = lager.raekker(zone, &overblik::hele_fra(nu))?;
+    let mut ud = vaern::oversigt_ud(&rows, nu, Some(sidst));
+    ud.lister.med_historik(&lager.fw_datoer(&[zone.to_string()])?);
+    ud.med_huller(lager.hentet(zone)?.keys(), nu);
+    Ok(Some(ud))
+}
+
+/// Værnet ud fra cachen alene (intet netværk), så siden kan vise de gemte tal med det samme. `null` hvis intet er hentet.
+#[tauri::command]
+async fn vaern_cache(zone_id: String, tilstand: State<'_, Tilstand>) -> Svar<Option<vaern::VaernUd>> {
+    let zone = vaern::tjek_zone(&zone_id)?;
+    byg(&tilstand, &zone, nu_ms())
+}
+
+/// Henter zonens manglende døgn (i dag, i går og huller) under zonens lås og gemmer hvert døgn. Fælles for
+/// `vaern_oversigt` og køen, så der aldrig hentes dobbelt; `nu` beregnes, når låsen er taget. Døgn uden for Cloudflares
+/// opbevaring noteres og spørges der ikke om igen.
+async fn hent_zone(
+    tilstand: &Tilstand,
+    token: &Hemmelig,
+    zone: &str,
+    paa_doegn: &mut (dyn FnMut(&str, Doegnudfald<'_>) + Send),
+) -> Result<usize, Fejl> {
+    tilstand
+        .laase
+        .koer(zone, async {
+            let nu = nu_ms();
+            let (klient, udenfor) = (&tilstand.klient, &tilstand.udenfor);
+            let hent = move |dag: String| async move {
+                let kendt = udenfor
+                    .lock()
+                    .map_err(|_| Fejl::Lager)?
+                    .get(&(zone.to_string(), dag.clone()))
+                    .cloned();
+                if let Some(f) = kendt {
+                    return Err(f);
+                }
+                let data = klient
+                    .graphql(token, vaern::DOEGN_QUERY, vaern::doegn_variabler(zone, &dag)?)
+                    .await
+                    .map_err(|e| e.for_dag(&dag))?;
+                vaern::doegn_fra_svar(&data)
+            };
+            vaern::opdater(&tilstand.lager, zone, nu, hent, |dag, u| {
+                if let Doegnudfald::UdenFor(f) = u {
+                    if let Ok(mut m) = udenfor.lock() {
+                        m.insert((zone.to_string(), dag.to_string()), f.clone());
+                    }
+                }
+                paa_doegn(dag, u);
+            })
+            .await
+        })
+        .await
+}
+
+/// Henter og gemmer de ekstra tal for ét færdigt døgn. Afviser Cloudflare et felt, prøves der én gang til uden `clientAsn`, og
+/// domænet huskes, så det ikke koster to kald pr. døgn.
+async fn hent_ekstra(tilstand: &Tilstand, token: &Hemmelig, zone: &str, dag: &str) -> Result<(), Fejl> {
+    let stier = adgang::stier_til_hentning(&laas(tilstand)?.login_stier(zone)?);
+    let variabler = adgang::variabler(zone, dag, &stier)?;
+    let uden = tilstand.uden_asn.lock().map_err(|_| Fejl::Lager)?.contains(zone);
+    let mut svar = if uden {
+        tilstand.klient.graphql(token, &adgang::query_uden_asn(), variabler.clone()).await
+    } else {
+        tilstand.klient.graphql(token, adgang::ADGANG_QUERY, variabler.clone()).await
+    };
+    if !uden && svar.as_ref().err().is_some_and(adgang::felt_afvist) {
+        svar = tilstand.klient.graphql(token, &adgang::query_uden_asn(), variabler).await;
+        if svar.is_ok() {
+            tilstand.uden_asn.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string());
+        }
+    }
+    let raekker = adgang::raekker(&adgang::fra_svar(&svar.map_err(|e| e.for_dag(dag))?)?);
+    laas(tilstand)?.gem_ekstra(zone, dag, &raekker, &vaern::iso(nu_ms()))
+}
+
+/// Enkelthændelserne for et gammelt døgn: ét kald med `vaern::ANGREB_QUERY`, kun for færdige døgn og i `ekstra_runde`s tempo.
+async fn hent_angreb(tilstand: &Tilstand, token: &Hemmelig, zone: &str, dag: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, vaern::ANGREB_QUERY, vaern::doegn_variabler(zone, dag)?)
+        .await
+        .map_err(|e| e.for_dag(dag))?;
+    let raekker = vaern::angreb_raekker(&vaern::doegn_fra_svar(&svar)?);
+    laas(tilstand)?.gem_angreb(zone, dag, &raekker, &vaern::iso(nu_ms()))
+}
+
+/// DNS-tallene for ét færdigt døgn: ét kald med `dns::DNS_QUERY`.
+async fn hent_dns(tilstand: &Tilstand, token: &Hemmelig, zone: &str, dag: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, dns::DNS_QUERY, dns::variabler(zone, dag)?)
+        .await
+        .map_err(|e| e.for_dag(dag))?;
+    laas(tilstand)?.gem_dns(zone, dag, &dns::raekker(&svar)?, &vaern::iso(nu_ms()))
+}
+
+/// DMARC-tallene for ét færdigt døgn. Felterne er ikke bekræftet af Cloudflare, så afviser Cloudflare forespørgslen, prøves den enkle én gang.
+async fn hent_dmarc(tilstand: &Tilstand, token: &Hemmelig, zone: &str, dag: &str) -> Result<(), Fejl> {
+    let v = dmarc::variabler(zone, dag)?;
+    let svar = match tilstand.klient.graphql(token, dmarc::DMARC_QUERY, v.clone()).await {
+        Err(e) if dmarc::afvist(&e) => tilstand.klient.graphql(token, &dmarc::query_enkel(), v).await,
+        svar => svar,
+    }
+    .map_err(|e| e.for_dag(dag))?;
+    laas(tilstand)?.gem_dmarc(zone, dag, &dmarc::raekker(&svar)?, &vaern::iso(nu_ms()))
+}
+
+/// Lækkede kodeord for ét færdigt døgn: ét kald med `adgang::LAEK_QUERY`. Afviser Cloudflare filteret, hentes der uden, resten af kørslen.
+async fn hent_laek(tilstand: &Tilstand, token: &Hemmelig, zone: &str, dag: &str) -> Result<(), Fejl> {
+    let v = vaern::doegn_variabler(zone, dag)?;
+    let foerst = if tilstand.laek_uden_filter.load(Ordering::SeqCst) {
+        adgang::LAEK_QUERY_UDEN_FILTER
+    } else {
+        adgang::LAEK_QUERY
+    };
+    let svar = match tilstand.klient.graphql(token, foerst, v.clone()).await {
+        Err(e) if foerst == adgang::LAEK_QUERY && adgang::laek_filter_afvist(&e) => {
+            tilstand.laek_uden_filter.store(true, Ordering::SeqCst);
+            tilstand.klient.graphql(token, adgang::LAEK_QUERY_UDEN_FILTER, v).await
+        }
+        svar => svar,
+    }
+    .map_err(|e| e.for_dag(dag))?;
+    laas(tilstand)?.gem_laek(zone, dag, &adgang::laek_raekker(&svar)?, &vaern::iso(nu_ms()))
+}
+
+/// Årstallene for døgnene `fra`…`til`: ét kald med `historik::HISTORIK_QUERY`, uanset hvor mange døgn der mangler.
+async fn hent_historik(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, historik::HISTORIK_QUERY, historik::variabler(zone, fra, til))
+        .await?;
+    let dage = robotter::dage_i(fra, til);
+    laas(tilstand)?.gem_historik(zone, &dage, &historik::raekker(&svar)?, &vaern::iso(nu_ms()))
+}
+
+/// Zonens tilstand: GET /zones/{id}, Zone Read, som tokenet har i forvejen.
+async fn hent_tilstand(tilstand: &Tilstand, token: &Hemmelig, zone: &str) -> Result<(), Fejl> {
+    let z = tilstand.klient.zone_stand(token, zone).await?;
+    laas(tilstand)?.gem_zone_tilstand(zone, &z, &vaern::iso(nu_ms()))
+}
+
+/// Henter i dag, i går og manglende døgn fra Cloudflare, gemmer dem og returnerer Værnet (W's felter som `data` i W's
+/// /api/maskine/vaern + hele døgn). Fejler hentningen, er de døgn, der nåede at komme hjem, alligevel gemt. Kører der
+/// allerede en hentning for zonen (fra køen), venter denne, til den er færdig (lås pr. zone).
+#[tauri::command]
+async fn vaern_oversigt(zone_id: String, tilstand: State<'_, Tilstand>) -> Svar<vaern::VaernUd> {
+    let zone = vaern::tjek_zone(&zone_id)?;
+    // Kun valgte domæner hentes, heller ikke fra en gammel adresse.
+    if laas(&tilstand)?.valgte()?.contains(&zone) {
+        let token = gemt_token(&tilstand).await?;
+        hent_zone(&tilstand, &token, &zone, &mut |_, _| {}).await?;
+    }
+    byg(&tilstand, &zone, nu_ms())?.ok_or(Fejl::Svar)
+}
+
+fn signal_for(z: &Zone, rows: &[store::Raekke], hentet: &HashMap<String, String>) -> overblik::Signal {
+    let mut s = overblik::signal(rows, hentet);
+    (s.zone, s.navn) = (z.id.clone(), z.navn.clone());
+    s
+}
+
+/// Boksen "Vurdering" for ét domæne og én dag, mod de valgte domæner.
+fn vurdering_for(lager: &Store, zone: &str, dag: &str, nu: i64) -> Result<overblik::Vurdering, Fejl> {
+    let ms = vaern::dag_ms(dag).ok_or(Fejl::UgyldigDato)?;
+    let fra = overblik::hele_fra(nu).min(vaern::dag_noegle(ms - 10 * vaern::DOEGN_MS));
+    let waf = radar::verden_serie(&lager.radar_raekker("", &fra)?, radar::L7_WAF);
+    let navne: HashMap<String, String> = lager.zoner()?.0.into_iter().map(|z| (z.id, z.navn)).collect();
+    let egen_zone = Zone {
+        id: zone.to_string(),
+        navn: navne.get(zone).cloned().unwrap_or_default(),
+    };
+    let rows = lager.raekker_tal(zone, &fra)?;
+    let egen = signal_for(&egen_zone, &rows, &lager.hentet(zone)?);
+    let mut signaler = Vec::new();
+    for z in lager.zoner_til()?.iter().filter(|z| z.id != zone) {
+        signaler.push(signal_for(z, &lager.raekker_tal(&z.id, &fra)?, &lager.hentet(&z.id)?));
+    }
+    let andre: Vec<&overblik::Signal> = signaler.iter().collect();
+    Ok(overblik::vurdering(
+        dag,
+        &rows,
+        &teknologi::profil(lager, zone)?,
+        &egen,
+        &andre,
+        radar::forhold(&waf, dag),
+    ))
+}
+
+/// "Mails sendt i dit domænes navn" for de 30 hele dage, kun fra cachen.
+#[tauri::command]
+async fn email_oversigt(zone: String, tilstand: State<'_, Tilstand>) -> Svar<dmarc::EmailUd> {
+    let zone = vaern::tjek_zone(&zone)?;
+    let lager = laas(&tilstand)?;
+    let rows: Vec<store::Raekke> = lager
+        .raekker_art(std::slice::from_ref(&zone), &["dmarc"], &overblik::hele_fra(nu_ms()))?
+        .into_iter()
+        .map(|(_, r)| r)
+        .collect();
+    let fejl = lager.afsnit_fejl(store::DMARC_FEJL, &zone)?;
+    Ok(dmarc::oversigt(&rows, lager.hentet_dmarc(&zone)?.len(), fejl))
+}
+
+#[tauri::command]
+async fn vurdering(zone: String, dag: String, tilstand: State<'_, Tilstand>) -> Svar<overblik::Vurdering> {
+    let zone = vaern::tjek_zone(&zone)?;
+    vurdering_for(&*laas(&tilstand)?, &zone, &dag, nu_ms())
+}
+
+/// Én række pr. valgt domæne, kun fra cachen (intet netværk). Sorteret rød, gul, grøn, grå. Samme rækker
+/// til overblikket, "Siden sidst" og notifikationerne, så et domæne, der ikke er valgt, er væk alle tre steder.
+fn byg_overblik(lager: &Store, nu: i64) -> Result<Vec<overblik::Raekke1>, Fejl> {
+    let zoner = lager.zoner_til()?;
+    let fra = overblik::hele_fra(nu);
+    let waf = radar::verden_serie(&lager.radar_raekker("", &fra)?, radar::L7_WAF);
+    let land = lager.indstilling(radar::LAND)?.unwrap_or_default();
+    // Uden et valgt land er der intet at sige: rækkerne uden land er hele verdens forstyrrelser.
+    let udfald = if land.is_empty() {
+        Vec::new()
+    } else {
+        lager.radar_raekker(&land, &fra)?
+    };
+    let lokal_dag = notify::tidszone(lager)?.dag(nu);
+    let vurderet = lager.vurderet()?;
+    let (tz, stande) = (notify::tidszone(lager)?, lager.zone_tilstande()?);
+    let mut data = Vec::with_capacity(zoner.len());
+    for z in &zoner {
+        let rows = lager.raekker_tal(&z.id, &fra)?;
+        let profil = teknologi::profil(lager, &z.id)?;
+        let hentet = lager.hentet(&z.id)?;
+        let signal = signal_for(z, &rows, &hentet);
+        data.push((overblik::raekke_med(z, &hentet, &rows, nu, &profil), rows, profil, signal));
+    }
+    let mut ud = Vec::with_capacity(data.len());
+    for (i, (r, rows, profil, signal)) in data.iter().enumerate() {
+        // Kun valgte domæner : fravalgte hentes ikke, og deres tal bliver gamle.
+        let andre: Vec<&overblik::Signal> = data.iter().enumerate().filter(|(j, _)| *j != i).map(|(_, x)| &x.3).collect();
+        let mut r = r.clone();
+        r.tendens = overblik::efter_boelgen(radar::tendens_for(&r, rows, &waf), &andre, &r.status_dag);
+        r.forstyrrelse = r.server.as_ref().and_then(|s| radar::forstyrrelse(&udfald, &land, &s.dag));
+        let m = overblik::moenstre(
+            &r,
+            rows,
+            profil,
+            signal,
+            &andre,
+            &|d| radar::forhold(&waf, d),
+            vurderet.get(&r.id).map(String::as_str),
+        );
+        (r.moenster, r.afgjort, r.efterslaeb, r.vurderet) = (m.vis, m.afgjort, m.efterslaeb, m.vurderet);
+        r.forgaars = overblik::er_forgaars(&r.status_dag, &lokal_dag);
+        r.kan_sammenligne = overblik::kan_sammenligne(&andre, &r.status_dag);
+        if let Some((z, hentet)) = stande.get(&r.id) {
+            let kl = |ms: i64| {
+                let (t, m) = tz.kl(ms);
+                format!("{t:02}.{m:02}")
+            };
+            let fund = overblik::tilstand_fund(z, vaern::parse_iso(hentet).unwrap_or(nu), nu, &kl);
+            overblik::med_tilstand(&mut r, fund);
+        }
+        ud.push(r);
+    }
+    overblik::sorter(&mut ud);
+    Ok(ud)
+}
+
+#[tauri::command]
+async fn overblik(tilstand: State<'_, Tilstand>) -> Svar<Vec<overblik::Raekke1>> {
+    let lager = laas(&tilstand)?;
+    byg_overblik(&lager, nu_ms())
+}
+
+/// De valgte domæner (id'er).
+#[tauri::command]
+async fn valg_hent(tilstand: State<'_, Tilstand>) -> Svar<Vec<String>> {
+    laas(&tilstand)?.valg()
+}
+
+#[derive(Serialize, Debug, PartialEq)]
+struct DomaeneValg {
+    id: String,
+    navn: String,
+    til: bool,
+    /// Nyt på kontoen og venter på et svar (linjen i Overblik).
+    ny: bool,
+}
+
+/// Hele zonelisten med kontakten pr. domæne (Indstillinger → Domæner). Ren funktion.
+fn domaener_ud(zoner: Vec<Zone>, valgte: &HashSet<String>, nye: &HashSet<String>) -> Vec<DomaeneValg> {
+    zoner
+        .into_iter()
+        .map(|z| DomaeneValg {
+            til: valgte.contains(&z.id),
+            ny: nye.contains(&z.id),
+            id: z.id,
+            navn: z.navn,
+        })
+        .collect()
+}
+
+#[tauri::command]
+async fn domaener_hent(tilstand: State<'_, Tilstand>) -> Svar<Vec<DomaeneValg>> {
+    let lager = laas(&tilstand)?;
+    Ok(domaener_ud(lager.zoner()?.0, &lager.valgte()?, &lager.nye()?))
+}
+
+/// Det første domæne, der er kommet til: det står forrest i køen. Ren funktion.
+fn nyvalgt(foer: &HashSet<String>, nu: &[String]) -> Option<String> {
+    nu.iter().filter(|z| !foer.contains(*z)).min().cloned()
+}
+
+/// Gemmer de valgte domæner. Tallene for et fravalgt domæne bliver liggende. Kommer et domæne til, vækkes køen, som henter det, der mangler.
+#[tauri::command]
+async fn domaener_saet(valgte: Vec<String>, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let valgte = valgte.iter().map(|z| vaern::tjek_zone(z)).collect::<Result<Vec<_>, _>>()?;
+    let foerst = {
+        let mut lager = laas(&tilstand)?;
+        let foer = lager.valgte()?;
+        lager.gem_valgte(&valgte)?;
+        nyvalgt(&foer, &valgte)
+    };
+    if foerst.is_some() {
+        tilstand.koe.prioriter(foerst);
+    }
+    Ok(())
+}
+
+/// "Ikke nu" til nye domæner: linjen i Overblik kommer ikke igen for dem.
+#[tauri::command]
+async fn domaene_afvis(zoner: Vec<String>, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let zoner = zoner.iter().map(|z| vaern::tjek_zone(z)).collect::<Result<Vec<_>, _>>()?;
+    laas(&tilstand)?.afvis_nye(&zoner)
+}
+
+#[derive(Serialize)]
+struct Samlet {
+    /// Antal valgte domæner, og hvor mange af dem der har tal i cachen.
+    domaener: usize,
+    med_tal: usize,
+    /// De valgte domæner efter navn (til etiketterne i heroen).
+    valgte: Vec<Valgt>,
+    /// `null`, hvis ingen af de valgte har tal endnu.
+    vaern: Option<vaern::VaernUd>,
+}
+
+#[derive(Serialize, Debug, PartialEq)]
+struct Valgt {
+    id: String,
+    /// Navnet fra den gemte zoneliste ("…", hvis zonen ikke står i den).
+    navn: String,
+    med_tal: bool,
+}
+
+/// De valgte zoner med navn, sorteret efter navn. Ren funktion.
+fn valgte(zoner: &[String], navne: &HashMap<String, String>, med_tal: &[String]) -> Vec<Valgt> {
+    let mut v: Vec<Valgt> = zoner
+        .iter()
+        .map(|z| Valgt {
+            id: z.clone(),
+            navn: navne.get(z).cloned().unwrap_or_else(|| "…".into()),
+            med_tal: med_tal.contains(z),
+        })
+        .collect();
+    v.sort_by(|a, b| a.navn.cmp(&b.navn).then_with(|| a.id.cmp(&b.id)));
+    v
+}
+
+/// Det samlede Værn for de valgte zoner, kun fra cachen (intet netværk; køen henter). "Hentet" = det ældste blandt dem.
+#[tauri::command]
+async fn vaern_samlet_cache(zoner: Vec<String>, tilstand: State<'_, Tilstand>) -> Svar<Samlet> {
+    let zoner = zoner.iter().map(|z| vaern::tjek_zone(z)).collect::<Result<Vec<_>, _>>()?;
+    let nu = nu_ms();
+    let lager = laas(&tilstand)?;
+    let navne: HashMap<String, String> = lager.zoner()?.0.into_iter().map(|z| (z.id, z.navn)).collect();
+    let mut med_tal = Vec::new();
+    let mut aeldste: Option<String> = None;
+    for z in &zoner {
+        if let Some(s) = vaern::sidst_hentet(&lager.hentet(z)?, nu) {
+            med_tal.push(z.clone());
+            aeldste = Some(aeldste.map_or(s.clone(), |a| a.min(s)));
+        }
+    }
+    let vaern = match aeldste {
+        Some(genereret) => {
+            let rows = lager.raekker_for(&med_tal, &overblik::hele_fra(nu))?;
+            let mut ud = vaern::samlet(&rows, &navne, nu, genereret);
+            ud.lister.med_historik(&lager.fw_datoer(&med_tal)?);
+            let mut hentet = HashSet::new();
+            for z in &med_tal {
+                hentet.extend(lager.hentet(z)?.into_keys());
+            }
+            ud.med_huller(hentet.iter(), nu);
+            Some(ud)
+        }
+        None => None,
+    };
+    Ok(Samlet {
+        domaener: zoner.len(),
+        med_tal: med_tal.len(),
+        valgte: valgte(&zoner, &navne, &med_tal),
+        vaern,
+    })
+}
+
+/// Dyk ned i de gemte tal: ét filter pr. dimension, kun fra cachen (intet netværk). Der læses under låsen og regnes bagefter,
+/// så køen ikke venter på optællingen.
+#[tauri::command]
+async fn dyk(
+    omfang: dyk::Omfang,
+    filtre: Vec<dyk::Filter>,
+    periode: dyk::Periode,
+    slags: Option<dyk::Slags>,
+    side: Option<usize>,
+    tilstand: State<'_, Tilstand>,
+) -> Svar<dyk::DykUd> {
+    let mut spoerg = dyk::tjek(omfang, filtre, periode, slags)?;
+    spoerg.side = side.unwrap_or(1).saturating_sub(1);
+    let nu = nu_ms();
+    let laest = dyk::laes(&*laas(&tilstand)?, &spoerg, nu)?;
+    Ok(dyk::regn(&spoerg, &laest, nu))
+}
+
+/// Trafik-dyk: hvor en dags forespørgsler kom fra, kun fra cachen (intet netværk). Noget andet end `dyk`, der viser det, Cloudflare stoppede.
+#[tauri::command]
+async fn trafik_dag(omfang: dyk::Omfang, dag: String, til: Option<String>, tilstand: State<'_, Tilstand>) -> Svar<dyk::TrafikUd> {
+    let til = til.unwrap_or_else(|| dag.clone());
+    let periode = dyk::Periode::Spaend {
+        fra: dag.clone(),
+        til: til.clone(),
+    };
+    let spoerg = dyk::tjek(omfang, Vec::new(), periode, None)?;
+    let (rows, ekstra) = dyk::trafik_laes(&*laas(&tilstand)?, &spoerg, &dag, &til)?;
+    Ok(dyk::trafik_regn(&rows, &dag, &til, spoerg.zoner.len() == 1, ekstra))
+}
+
+/// "Dit sites teknologi" for ét domæne, kun fra cachen (intet netværk).
+#[tauri::command]
+async fn teknologi_hent(zone: String, tilstand: State<'_, Tilstand>) -> Svar<teknologi::TeknologiUd> {
+    let zone = vaern::tjek_zone(&zone)?;
+    let lager = laas(&tilstand)?;
+    let rows: Vec<store::Raekke> = lager
+        .raekker_art(std::slice::from_ref(&zone), teknologi::ARTER, "0000-00-00")?
+        .into_iter()
+        .map(|(_, r)| r)
+        .collect();
+    Ok(teknologi::ud(&rows, &teknologi::profil(&lager, &zone)?, nu_ms()))
+}
+
+/// Siden `#teknologi`: de valgte domæner og kataloget, kun fra cachen. Nye sete teknologier afkrydses her, for det er her, de vises.
+fn teknologi_side_for(lager: &mut Store, nu: i64) -> Result<teknologi::SideUd, Fejl> {
+    let mut domaener = Vec::new();
+    for z in lager.zoner_til()? {
+        let rows: Vec<store::Raekke> = lager
+            .raekker_art(std::slice::from_ref(&z.id), teknologi::ARTER, "0000-00-00")?
+            .into_iter()
+            .map(|(_, r)| r)
+            .collect();
+        domaener.push(teknologi::side_domaene(
+            &z.id,
+            &z.navn,
+            &rows,
+            &teknologi::profil(lager, &z.id)?,
+            nu,
+        ));
+    }
+    let nye = teknologi::nye_vis(&domaener, &lager.tek_vis()?);
+    lager.tilfoej_tek_vis(&nye)?;
+    Ok(teknologi::SideUd {
+        katalog: teknologi::katalog(&domaener, &lager.tek_vis()?),
+        domaener,
+    })
+}
+
+#[tauri::command]
+async fn teknologi_side(tilstand: State<'_, Tilstand>) -> Svar<teknologi::SideUd> {
+    teknologi_side_for(&mut *laas(&tilstand)?, nu_ms())
+}
+
+/// "Vis i tabellen". Ændrer kun kolonnerne, aldrig et valg.
+#[tauri::command]
+async fn teknologi_vis_saet(tek: String, vis: bool, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    if !teknologi::kendt(&tek) {
+        return Err(Fejl::UgyldigtFilter);
+    }
+    laas(&tilstand)?.saet_tek_vis(&tek, vis)
+}
+
+/// Samme valg på alle valgte domæner: "Bruger ikke på alle" og "Nulstil kolonnen".
+#[tauri::command]
+async fn teknologi_kolonne(tek: String, valg: String, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let v = teknologi::Valg::fra(&valg).ok_or(Fejl::UgyldigtFilter)?;
+    let mut lager = laas(&tilstand)?;
+    for z in lager.valg()? {
+        teknologi::saet(&mut lager, &z, &tek, v, false, &vaern::iso(nu_ms()))?;
+    }
+    Ok(())
+}
+
+/// "Tilføj teknologi": et navn fra listen eller fri tekst. Svaret er id'et.
+#[tauri::command]
+async fn teknologi_tilfoej(navn: String, tilstand: State<'_, Tilstand>) -> Svar<String> {
+    let tek = teknologi::id_for(&navn).ok_or(Fejl::UgyldigtFilter)?;
+    let mut lager = laas(&tilstand)?;
+    lager.tilfoej_tek_vis(&[(tek.clone(), true, false, true)])?;
+    lager.saet_tek_vis(&tek, true)?;
+    Ok(tek)
+}
+
+/// Gemmer ét valg. Status og Hvorfor følger med ved næste `overblik`.
+#[tauri::command]
+async fn teknologi_saet(zone: String, tek: String, valg: String, besked: bool, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let zone = vaern::tjek_zone(&zone)?;
+    let v = teknologi::Valg::fra(&valg).ok_or(Fejl::UgyldigtFilter)?;
+    teknologi::saet(&mut *laas(&tilstand)?, &zone, &tek, v, besked, &vaern::iso(nu_ms()))
+}
+
+/// "Anvend på alle domæner": domænets valg lægges på de andre valgte domæner. Svaret er, hvor mange der fik dem.
+#[tauri::command]
+async fn teknologi_alle(zone: String, tilstand: State<'_, Tilstand>) -> Svar<usize> {
+    let zone = vaern::tjek_zone(&zone)?;
+    let mut lager = laas(&tilstand)?;
+    let andre: Vec<String> = lager.valg()?.into_iter().filter(|z| *z != zone).collect();
+    lager.kopier_teknologi(&zone, &andre, &vaern::iso(nu_ms()))?;
+    Ok(andre.len())
+}
+
+/// Linjen under Indstillinger → Domæner: antal valg pr. valgt domæne, og om der står et valg nogen steder, også på et fravalgt domæne.
+#[derive(Serialize, Debug, PartialEq)]
+struct TekOversigt {
+    zoner: HashMap<String, usize>,
+    valg: bool,
+}
+
+fn tek_oversigt(lager: &Store) -> Result<TekOversigt, Fejl> {
+    let mut zoner = HashMap::new();
+    for zone in lager.valg()? {
+        let n = lager.teknologi(&zone)?.len();
+        zoner.insert(zone, n);
+    }
+    let valg = !lager.teknologi_valg()?.is_empty();
+    Ok(TekOversigt { zoner, valg })
+}
+
+#[tauri::command]
+async fn teknologi_oversigt(tilstand: State<'_, Tilstand>) -> Svar<TekOversigt> {
+    tek_oversigt(&*laas(&tilstand)?)
+}
+
+/// Sætter alt til "Ved ikke": for ét domæne, eller for alle uden `zone`.
+#[tauri::command]
+async fn teknologi_nulstil(zone: Option<String>, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let zone = zone.map(|z| vaern::tjek_zone(&z)).transpose()?;
+    laas(&tilstand)?.nulstil_teknologi(zone.as_deref())
+}
+
+/// Huller i historikken, kun fra cachen.
+#[tauri::command]
+async fn huller(tilstand: State<'_, Tilstand>) -> Svar<huller::HullerUd> {
+    huller::laes(&*laas(&tilstand)?, nu_ms())
+}
+
+/// Linjen om et hul er lukket: den kommer ikke igen for det hul.
+#[tauri::command]
+async fn hul_luk(noegle: String, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    huller::luk(&mut *laas(&tilstand)?, &noegle)
+}
+
+/// Robotter: de gemte tal for ét domæne eller de valgte tilsammen, kun fra cachen (intet netværk).
+#[tauri::command]
+async fn robotter(omfang: dyk::Omfang, periode: dyk::Periode, tilstand: State<'_, Tilstand>) -> Svar<robotter::RobotterUd> {
+    let spoerg = dyk::tjek(omfang, Vec::new(), periode, None)?;
+    let nu = nu_ms();
+    let laest = robotter::laes(&*laas(&tilstand)?, &spoerg, nu)?;
+    Ok(robotter::regn(&spoerg.periode, &laest, nu))
+}
+
+/// Login: de gemte tal for domænets login-stier, kun fra cachen (intet netværk).
+#[tauri::command]
+async fn login(omfang: dyk::Omfang, periode: dyk::Periode, filter: login::Filter, tilstand: State<'_, Tilstand>) -> Svar<login::LoginUd> {
+    let spoerg = dyk::tjek(omfang, Vec::new(), periode, None)?;
+    let filter = login::tjek(filter)?;
+    let nu = nu_ms();
+    let laest = login::laes(&*laas(&tilstand)?, &spoerg, nu)?;
+    Ok(login::regn(&spoerg.periode, &filter, &laest, nu))
+}
+
+/// Indstillingen af login-stier for ét domæne: startlisten, egne stier og forslag fra data.
+#[tauri::command]
+async fn login_stier(zone: String, tilstand: State<'_, Tilstand>) -> Svar<login::StierUd> {
+    let zone = vaern::tjek_zone(&zone)?;
+    login::stier(&*laas(&tilstand)?, &zone)
+}
+
+/// Slår en login-sti til eller fra. En ny sti uden for startlisten er ikke i de hentede døgn: de hentes igen i baggrunden.
+#[tauri::command]
+async fn login_sti_saet(zone: String, sti: String, til: bool, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let zone = vaern::tjek_zone(&zone)?;
+    login::saet_sti(&mut *laas(&tilstand)?, &zone, &sti, til)?;
+    tilstand.koe.prioriter(None);
+    Ok(())
+}
+
+#[tauri::command]
+async fn login_sti_fjern(zone: String, sti: String, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let zone = vaern::tjek_zone(&zone)?;
+    login::fjern_sti(&mut *laas(&tilstand)?, &zone, &sti)
+}
+
+#[derive(Serialize)]
+struct LandValg {
+    /// Det gemte land; `null`, hvis der ikke er valgt noget.
+    land: Option<String>,
+    /// Et andet land, kun når det er tydeligt, at mindst halvdelen af de besøgende kommer derfra (`radar::forslag`).
+    forslag: Option<String>,
+}
+
+#[tauri::command]
+async fn land_hent(tilstand: State<'_, Tilstand>) -> Svar<LandValg> {
+    let nu = nu_ms();
+    let lager = laas(&tilstand)?;
+    let rows = lager.raekker_art(&lager.valg()?, &["land", "alle", "bot"], &overblik::hele_fra(nu))?;
+    let land = lager.indstilling(radar::LAND)?;
+    Ok(LandValg {
+        forslag: radar::forslag(&rows, land.as_deref()),
+        land,
+    })
+}
+
+#[tauri::command]
+async fn land_saet(kode: String, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let kode = radar::tjek_land(&kode)?;
+    laas(&tilstand)?.gem_indstilling(radar::LAND, &kode)
+}
+
+/// <Land> lige nu og Verden, kun fra cachen (intet netværk; `radar_opdater` henter). `waf`: verden som `mitigationProduct=WAF`.
+#[tauri::command]
+async fn land_visning(kode: String, waf: bool, tilstand: State<'_, Tilstand>) -> Svar<radar::LandUd> {
+    let kode = radar::tjek_land(&kode)?;
+    let nu = nu_ms();
+    let laest = radar::laes(&*laas(&tilstand)?, &kode, nu)?;
+    Ok(radar::regn(&kode, waf, &laest, nu))
+}
+
+struct RadarKilde<'a> {
+    klient: &'a Klient,
+    token: &'a Hemmelig,
+}
+
+impl radar::Kilde for RadarKilde<'_> {
+    async fn hent(&self, sti: &str) -> Result<Value, Fejl> {
+        self.klient.radar(self.token, sti).await
+    }
+}
+
+/// Opdaterer Radar under sin egen lås og melder `radar`, hvis der blev spurgt. Kører uden for køen: en fejl her når aldrig køen.
+async fn radar_runde(app: &AppHandle, token: &Hemmelig, kode: Option<&str>, interval: i64) -> Result<(), Fejl> {
+    let t = app.state::<Tilstand>();
+    let kilde = RadarKilde { klient: &t.klient, token };
+    let spurgt = t
+        .laase
+        .koer(RADAR, radar::koer(&t.lager, &kilde, kode, nu_ms(), interval, radar::TEMPO))
+        .await?;
+    if spurgt {
+        let _ = app.emit("radar", ());
+    }
+    Ok(())
+}
+
+/// Visningen er åbnet: det, der er over 1 time gammelt, hentes. Svaret kommer som hændelsen `radar`.
+#[tauri::command]
+async fn radar_opdater(kode: String, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    let kode = radar::tjek_land(&kode)?;
+    let token = gemt_token(&tilstand).await?;
+    radar_runde(&app, &token, Some(&kode), radar::AABEN_MS).await
+}
+
+/// Hver 6. time, tjekket hvert `koe::TIK`, så dvale ikke flytter den. Kun med et token i hukommelsen: baggrunden må ikke spørge
+/// nøgleringen af sig selv.
+fn start_radar(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::time::sleep(koe::TIK).await;
+            let t = app.state::<Tilstand>();
+            let Ok(token) = t.token.hent() else { continue };
+            let land = laas(&t).ok().and_then(|l| l.indstilling(radar::LAND).ok().flatten());
+            let _ = radar_runde(&app, &token, land.as_deref(), radar::OPDATER_MS).await;
+        }
+    });
+}
+
+/// Zonen på skærmen hentes først (`null`: ingen bestemt); vækker køen til en ny runde (også ved `online`).
+#[tauri::command]
+async fn koe_prioritet(zone: Option<String>, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let zone = zone.map(|z| vaern::tjek_zone(&z)).transpose()?;
+    tilstand.koe.prioriter(zone);
+    Ok(())
+}
+
+/// Køens seneste tilstand (hændelser afspilles ikke igen, når siden skiftes). `null` før første runde.
+#[tauri::command]
+async fn koe_status(tilstand: State<'_, Tilstand>) -> Svar<Option<KoeStatus>> {
+    Ok(tilstand.koe.status())
+}
+
+/// "Hent nu" i båndet, ⌘R/Ctrl+R og programmenuen: præcis som menulinjens "Hent nu" (`start_koe`), så en kø, der er
+/// stoppet efter et afvist token, også startes igen. `koe_prioritet` (ved `online`) vækker kun en sovende kø.
+#[tauri::command]
+async fn hent_nu(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<HentNu> {
+    let nu = nu_ms();
+    let alt_friskt = {
+        let lager = laas(&tilstand)?;
+        let mut friskt = true;
+        for z in lager.zoner_til()? {
+            friskt &= koe::er_frisk(&lager.hentet(&z.id)?, nu);
+        }
+        friskt
+    };
+    let status = tilstand.koe.status();
+    let udfald = koe::hent_udfald(status.as_ref(), tilstand.koe.koerer.load(Ordering::SeqCst), alt_friskt);
+    if udfald == koe::HentUdfald::Startet {
+        start_koe(&app);
+    }
+    let (faerdige, i_alt) = status.map_or((0, 0), |s| (s.zoner_faerdige, s.zoner_i_alt));
+    Ok(HentNu { udfald, faerdige, i_alt })
+}
+
+/// Svaret på "Hent nu": hvad der skete, og hvor langt en kørende runde er nået.
+#[derive(Serialize)]
+struct HentNu {
+    udfald: koe::HentUdfald,
+    faerdige: usize,
+    i_alt: usize,
+}
+
+// ── Køens driver ───────────────────────────────────────────────────────────────────────────────────────────────────
+struct KoeHenter<'a> {
+    tilstand: &'a Tilstand,
+    token: &'a Hemmelig,
+}
+
+impl Henter for KoeHenter<'_> {
+    async fn zone(&self, zone: &str, paa_doegn: &mut (dyn FnMut(&str, Doegnudfald<'_>) + Send)) -> Result<usize, Fejl> {
+        hent_zone(self.tilstand, self.token, zone, paa_doegn).await
+    }
+    fn pause_til(&self) -> Option<i64> {
+        self.tilstand.klient.pause_til_ms()
+    }
+    async fn ekstra(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
+        hent_ekstra(self.tilstand, self.token, zone, dag).await
+    }
+    async fn angreb(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
+        hent_angreb(self.tilstand, self.token, zone, dag).await
+    }
+    async fn laek(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
+        hent_laek(self.tilstand, self.token, zone, dag).await
+    }
+    async fn dns(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
+        hent_dns(self.tilstand, self.token, zone, dag).await
+    }
+    async fn dmarc(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
+        hent_dmarc(self.tilstand, self.token, zone, dag).await
+    }
+    async fn historik(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+        hent_historik(self.tilstand, self.token, zone, fra, til).await
+    }
+    async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
+        hent_tilstand(self.tilstand, self.token, zone).await
+    }
+}
+
+/// Køen melder: hændelsen `hentekoe` til webvisningen og statuslinjen i menuen. Er runden færdig, vurderes
+/// notifikationerne.
+fn melder(app: &AppHandle, s: &KoeStatus) {
+    let _ = app.emit("hentekoe", s);
+    if let Some(a) = app.try_state::<agent::Agent>() {
+        a.meld(s, nu_ms());
+    }
+    if s.tilstand == koe::Fase::Faerdig {
+        vurder(app);
+    }
+}
+
+/// Starter køen (eller vækker den, hvis den kører, også når den venter på nøgleringen): "Hent nu", et nyt token og
+/// programstart. Den kører, til tokenet mangler, afvises eller glemmes.
+fn start_koe(app: &AppHandle) {
+    let t = app.state::<Tilstand>();
+    t.koe.fortsaet();
+    if t.koe.koerer.swap(true, Ordering::SeqCst) {
+        t.koe.prioriter(None);
+        return;
+    }
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let tilstand = app.state::<Tilstand>();
+        let t: &Tilstand = &tilstand;
+        let meld = &|s: &KoeStatus| melder(&app, s);
+        let paa_gemt = &|zone: &str| {
+            let _ = app.emit("ekstra", zone);
+        };
+        let runde = move || async move {
+            let token = gemt_token(t).await?;
+            t.klient.ny_runde();
+            let h = KoeHenter {
+                tilstand: t,
+                token: &token,
+            };
+            let slut = t.koe.runde(&t.lager, &h, meld, &nu_ms).await;
+            if slut == koe::Slut::Faerdig && t.koe.ekstra_runde(&t.lager, &h, &nu_ms, koe::EKSTRA_TEMPO, paa_gemt).await {
+                return Ok(koe::Slut::Vaekket);
+            }
+            Ok(slut)
+        };
+        // Ved hvert tik: "Hentet for N min. siden" i menuen.
+        let paa_tik = || {
+            if let Some(a) = app.try_state::<agent::Agent>() {
+                a.vis(t.koe.status().as_ref(), nu_ms());
+            }
+        };
+        t.koe.koer(runde, meld, &nu_ms, &paa_tik).await;
+    });
+}
+
+#[derive(Serialize)]
+struct DataStatus {
+    /// Databasefilens størrelse i bytes.
+    bytes: u64,
+    /// Ældste dag pr. art for de valgte domæner (`Store::aeldste`), `null`, hvis der ingen er endnu.
+    trafik_fra: Option<String>,
+    sikkerhed_fra: Option<String>,
+    /// Ældste og nyeste dag med tal, uanset art.
+    foerste: Option<String>,
+    sidste: Option<String>,
+    /// Domæner med tal.
+    domaener: i64,
+    /// Hvad "Nulstil historik" koster.
+    nulstil: historik::NulstilTab,
+    /// Cloudflares kvote, hvis den er meldt.
+    kvote: Option<cf::KvoteUd>,
+}
+
+/// Indstillinger → Data: databasefilens størrelse og hvad den rummer. Kun læsning; intet netværk.
+#[tauri::command]
+async fn data_status(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<DataStatus> {
+    let sti = app.path().app_data_dir().map_err(|_| Fejl::Lager)?.join(DATABASE);
+    let bytes = std::fs::metadata(sti).map_err(|_| Fejl::Lager)?.len();
+    let lager = laas(&tilstand)?;
+    let (a, (_, _, domaener)) = (lager.aeldste(&lager.valg()?)?, lager.data_status()?);
+    Ok(DataStatus {
+        bytes,
+        foerste: a.trafik_fra.iter().chain(a.sikkerhed_fra.iter()).min().cloned(),
+        nulstil: historik::nulstil_tab(&a, nu_ms()),
+        trafik_fra: a.trafik_fra,
+        sikkerhed_fra: a.sikkerhed_fra,
+        sidste: a.sidste,
+        domaener,
+        kvote: tilstand.klient.kvote_ud(),
+    })
+}
+
+/// "Nulstil historik": køen stoppes, og tallene slettes (`Store::nulstil_historik`). Køen startes først igen, når den gamle
+/// løkke er slut: ellers ville en runde med den gamle plan køre videre og melde "færdig" på halve tal, og `vurder` kunne
+/// sende en notifikation ud fra dem. Dage, en zone i gang gemmer efter sletningen, er gyldige og hentes ikke igen.
+#[tauri::command]
+async fn nulstil_historik(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    tilstand.koe.stop();
+    let svar = laas(&tilstand).and_then(|mut l| l.nulstil_historik());
+    tauri::async_runtime::spawn(async move {
+        app.state::<Tilstand>().koe.slut().await;
+        start_koe(&app);
+    });
+    svar
+}
+
+/// Start ved login: OS'et er sandheden (LaunchAgent-plist / Run-nøglen), så et fravalg i Systemindstillinger slår igennem.
+/// Pluginnets egen fejltekst (med stier) kasseres; webvisningen får kun koden `autostart`.
+#[tauri::command]
+async fn autostart_hent(app: AppHandle) -> Svar<bool> {
+    app.autolaunch().is_enabled().map_err(|_| Fejl::Autostart)
+}
+
+/// Slår start ved login til eller fra og svarer med OS'ets tilstand bagefter.
+#[tauri::command]
+async fn autostart_saet(til: bool, app: AppHandle) -> Svar<bool> {
+    let al = app.autolaunch();
+    if til { al.enable() } else { al.disable() }.map_err(|_| Fejl::Autostart)?;
+    al.is_enabled().map_err(|_| Fejl::Autostart)
+}
+
+/// UI'ets sprog ("da"/"en") til menuen i menulinjen, programmenuen (macOS) og notifikationerne; gemt, så de er på det
+/// sprog, også når programmet startede ved login.
+#[tauri::command]
+async fn sprog_saet(sprog: String, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    let s = agent::Sprog::fra(&sprog).ok_or(Fejl::Intern)?;
+    laas(&tilstand)?.gem_indstilling(SPROG, s.kode())?;
+    if let Some(a) = app.try_state::<agent::Agent>() {
+        a.saet_sprog(s, tilstand.koe.status().as_ref(), nu_ms());
+    }
+    #[cfg(target_os = "macos")]
+    if let Ok(menu) = programmenu::byg(&app, s) {
+        let _ = app.set_menu(menu);
+    }
+    let _ = vis_handling(&app, s);
+    Ok(())
+}
+
+// ── Notifikationer og "Siden sidst" ───────────────────────────────────────────────────────────────────
+/// Det fælles domænevalg: "samlet" eller en zone. Fravalgt eller væk afgør rammen, som kender listen.
+const DOMAENE_VALG: &str = "domaene_valg";
+const SAMLET: &str = "samlet";
+
+#[tauri::command]
+async fn domaene_valg_hent(tilstand: State<'_, Tilstand>) -> Svar<String> {
+    Ok(laas(&tilstand)?.indstilling(DOMAENE_VALG)?.unwrap_or_else(|| SAMLET.into()))
+}
+
+#[tauri::command]
+async fn domaene_valg_saet(valg: String, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let v = if valg == SAMLET { valg } else { vaern::tjek_zone(&valg)? };
+    laas(&tilstand)?.gem_indstilling(DOMAENE_VALG, &v)
+}
+
+/// Tidsskiftene fra webvisningen: (fra ms, minutter øst for UTC). Højst 8: to om året for 13 måneder og lidt til.
+#[tauri::command]
+async fn tidszone_saet(skift: Vec<(i64, i64)>, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    if skift.len() > 8 || skift.iter().any(|x| x.1.abs() > 14 * 60) {
+        return Err(Fejl::Intern);
+    }
+    let vaerdi = serde_json::to_string(&skift).map_err(|_| Fejl::Intern)?;
+    laas(&tilstand)?.gem_indstilling(notify::TIDSZONE, &vaerdi)
+}
+
+/// Datoformatet ("sprog" | "system" | "iso") og systemets mønster, som kun webvisningen kan læse. Bruges af notifikationerne.
+#[tauri::command]
+async fn dato_format_saet(format: String, moenster: String, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    if !matches!(format.as_str(), "sprog" | "system" | "iso") || moenster.len() > 32 {
+        return Err(Fejl::Intern);
+    }
+    let mut lager = laas(&tilstand)?;
+    lager.gem_indstilling(notify::DATO_FORMAT, &format)?;
+    lager.gem_indstilling(notify::DATO_MOENSTER, &moenster)
+}
+
+#[derive(Serialize)]
+struct NotifikationValg {
+    niveau: &'static str,
+    roed: bool,
+    rekognoscering: bool,
+    /// Zone → "alt" | "roed" | "fra"; domæner uden valg følger forudindstillingen.
+    zoner: HashMap<String, &'static str>,
+}
+
+/// Forudindstillingen, "Giv besked ved rødt" og valget pr. domæne.
+#[tauri::command]
+async fn notifikation_hent(tilstand: State<'_, Tilstand>) -> Svar<NotifikationValg> {
+    let lager = laas(&tilstand)?;
+    let i = notify::indst(&lager)?;
+    Ok(NotifikationValg {
+        niveau: i.niveau.kode(),
+        roed: i.roed,
+        rekognoscering: i.rekognoscering,
+        zoner: i.zoner.into_iter().map(|(z, v)| (z, v.kode())).collect(),
+    })
+}
+
+/// Gemmer forudindstillingen ("rolig" | "standard" | "alt") og "Giv besked ved rødt".
+#[tauri::command]
+async fn notifikation_saet(niveau: String, roed: bool, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let n = notify::Niveau::fra(&niveau).ok_or(Fejl::Intern)?;
+    let mut lager = laas(&tilstand)?;
+    lager.gem_indstilling(notify::NIVEAU, n.kode())?;
+    lager.gem_indstilling(notify::ROED, if roed { "1" } else { "0" })
+}
+
+/// Giv besked ved "Ligner rekognoscering" (fra som standard).
+#[tauri::command]
+async fn notifikation_rekog_saet(til: bool, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    laas(&tilstand)?.gem_indstilling(notify::REKOG, if til { "1" } else { "0" })
+}
+
+/// Gemmer ét domænes valg ("standard" | "alt" | "roed" | "fra").
+#[tauri::command]
+async fn notifikation_zone_saet(zone: String, valg: String, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let zone = vaern::tjek_zone(&zone)?;
+    let v = notify::ZoneValg::fra(&valg).ok_or(Fejl::Intern)?;
+    laas(&tilstand)?.gem_notifikation_zone(&zone, (v != notify::ZoneValg::Standard).then(|| v.kode()))
+}
+
+#[derive(Serialize)]
+struct SidenSidst {
+    /// Skal kortet vises nu (menuen/notifikationen bad om det, eller forudindstillingen siger det)?
+    vis: bool,
+    /// Hvornår kortet sidst blev vist (ISO, UTC).
+    vist: Option<String>,
+    /// Røde/gule domæner, der er nye siden da.
+    nye: Vec<String>,
+    raekker: Vec<overblik::Raekke1>,
+    /// AI-robotter, der er dukket op siden sidst (linjer i visningen; status og kolonner er uændrede).
+    nye_robotter: Vec<robotter::NyRobot>,
+}
+
+/// "Siden sidst": overblikkets rækker, hvornår kortet sidst blev vist, og hvad der er nyt siden. Kun fra cachen.
+#[tauri::command]
+async fn siden_sidst(tilstand: State<'_, Tilstand>) -> Svar<SidenSidst> {
+    let nu = nu_ms();
+    let lager = laas(&tilstand)?;
+    let raekker = byg_overblik(&lager, nu)?;
+    let niveau = notify::indst(&lager)?.niveau;
+    let vist = lager.indstilling(notify::VIST)?;
+    let nye = notify::nye(&raekker, lager.indstilling(notify::VIST_AFTRYK)?.as_deref(), nu);
+    let nye_robotter = robotter::nye_robotter(&lager, vist.as_deref(), nu)?;
+    let bedt = tilstand.siden_sidst.swap(false, Ordering::SeqCst);
+    Ok(SidenSidst {
+        vis: bedt || notify::vis_selv(niveau, vist.as_deref(), &raekker, nu, &notify::tidszone(&lager)?),
+        vist,
+        nye,
+        raekker,
+        nye_robotter,
+    })
+}
+
+/// Kortet er vist: tidspunktet og det, der stod på det, gemmes (til "du så kortet sidst …" og "ny").
+#[tauri::command]
+async fn siden_sidst_set(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    let nu = nu_ms();
+    let mut lager = laas(&tilstand)?;
+    let aftryk = notify::aftryk(&byg_overblik(&lager, nu)?, nu);
+    lager.gem_indstilling(notify::VIST, &vaern::iso(nu))?;
+    lager.gem_indstilling(notify::VIST_AFTRYK, &aftryk)?;
+    if let Some(a) = app.try_state::<agent::Agent>() {
+        a.saet_nye(0, None);
+    }
+    Ok(())
+}
+
+/// Handlingstypen med knappen "Vis"/"Show": uden en handling melder macOS-stien (NSUserNotification) ikke klik tilbage
+///. Registreres igen, når sproget skiftes (en type med samme id erstatter den forrige).
+const VIS_TYPE: &str = "huginn-vis";
+const VIS: &str = "vis";
+
+fn vis_handling(app: &AppHandle, sprog: agent::Sprog) -> Result<(), tauri_plugin_notification::Error> {
+    use tauri_plugin_notification::{Action, ActionType, NotificationExt};
+    let titel = match sprog {
+        agent::Sprog::Da => "Vis",
+        agent::Sprog::En => "Show",
+    };
+    app.notification().register_action_types(vec![ActionType::builder(VIS_TYPE)
+        .actions(vec![Action::builder(VIS, titel).build()])
+        .build()])
+}
+
+/// Klik på notifikationen (`tap`) eller på "Vis" åbner vinduet på "Siden sidst". Handleren kører på en baggrundstråd;
+/// vinduet åbnes på hovedtråden.
+fn notifikation_klik(app: &AppHandle) -> Result<(), tauri_plugin_notification::Error> {
+    use tauri_plugin_notification::NotificationExt;
+    let h = app.clone();
+    app.notification().on_action(move |handling| {
+        if matches!(handling.action_id(), "tap" | VIS) {
+            let a = h.clone();
+            let _ = h.run_on_main_thread(move || vis_siden_sidst(&a));
+        }
+    })
+}
+
+/// Menuen "Siden sidst" og klik på en notifikation: vinduet åbnes på visningen "Siden sidst". Et nyt vindue spørger selv
+/// (`siden_sidst` → `vis`); et åbent får hændelsen `siden_sidst`, og rammen skifter visning (uden at genindlæse).
+fn vis_siden_sidst(app: &AppHandle) {
+    app.state::<Tilstand>().siden_sidst.store(true, Ordering::SeqCst);
+    let _ = aabn_vindue(app);
+    let _ = app.emit("siden_sidst", ());
+}
+
+fn sprog_fra(lager: &Store) -> agent::Sprog {
+    lager
+        .indstilling(SPROG)
+        .ok()
+        .flatten()
+        .as_deref()
+        .and_then(agent::Sprog::fra)
+        .unwrap_or(agent::Sprog::Da)
+}
+
+/// Beslutter og noterer: det meldte, og hvor langt mærkerne er vurderet. Også en runde uden besked rykker det vurderede frem, så et senere valg ikke melder gammelt nyt.
+fn naeste_besked(lager: &mut Store, rk: &[overblik::Raekke1], ind: &notify::Indst, nu: i64) -> Result<Option<notify::Besked>, Fejl> {
+    let b = notify::beslut(rk, ind, &lager.meldt()?, nu);
+    if let Some(b) = &b {
+        let glem_foer = vaern::dag_noegle(nu - notify::MELDT_DOEGN * vaern::DOEGN_MS);
+        lager.gem_meldt(&b.meldte(), &vaern::iso(nu), &glem_foer)?;
+    }
+    lager.gem_vurderet(&notify::vurderede(rk, ind, &lager.meldt()?))?;
+    Ok(b)
+}
+
+/// Er der noget at sige? Ved start (fra cachen alene; `beslut` melder kun domæner med friske tal) og efter hver færdig
+/// runde. Det meldte noteres, før notifikationen sendes, så den samme aldrig kommer to gange. Det kan ikke flyttes til efter `show()`: pluginnet starter en tråd og svarer `Ok`,
+/// før notifikationen er vist (tauri-plugin-notification 2.8.0, desktop.rs), så et svar ville ikke sige noget om visningen. Venter køen på nøgleringen,
+/// kommer der ingen runde og derfor ingen notifikation (kun menulinjen).
+fn vurder(app: &AppHandle) {
+    use tauri_plugin_notification::NotificationExt;
+    let t = app.state::<Tilstand>();
+    let nu = nu_ms();
+    let Ok(mut lager) = laas(&t) else { return };
+    let mut besked = || -> Result<Option<(String, String)>, Fejl> {
+        let rk = byg_overblik(&lager, nu)?;
+        if let Some(a) = app.try_state::<agent::Agent>() {
+            let navne = |f: &dyn Fn(&overblik::Raekke1) -> bool| rk.iter().filter(|r| f(r)).map(|r| r.navn.clone()).collect();
+            let rekog = |r: &overblik::Raekke1| r.moenster.as_ref().is_some_and(|m| m.slags.er_rekognoscering());
+            a.saet_maerker(navne(&|r| r.afgjort.is_some()), navne(&rekog));
+            let vist = lager.indstilling(notify::VIST)?;
+            let nye = notify::nye(&rk, lager.indstilling(notify::VIST_AFTRYK)?.as_deref(), nu).len()
+                + robotter::nye_robotter(&lager, vist.as_deref(), nu)?.len();
+            let tz = notify::tidszone(&lager)?;
+            a.saet_nye(nye, vist.as_deref().and_then(vaern::parse_iso).map(|ms| tz.kl(ms)));
+        }
+        let ind = notify::indst(&lager)?;
+        let Some(b) = naeste_besked(&mut lager, &rk, &ind, nu)? else {
+            return Ok(None);
+        };
+        if b.rolig {
+            lager.gem_indstilling(notify::ROLIG_SIDST, &ind.tz.dag(nu))?;
+        }
+        Ok(Some(notify::tekst(&b, sprog_fra(&lager), &notify::dato_format(&lager)?)))
+    };
+    let besked = besked();
+    drop(lager);
+    if let Ok(Some((titel, tekst))) = besked {
+        let _ = app
+            .notification()
+            .builder()
+            .title(titel)
+            .body(tekst)
+            .action_type_id(VIS_TYPE)
+            .show();
+    }
+}
+
+// ── Vinduet, menuen og start ved login ─────────────────────────────────────────────────────────────────────────────
+/// Autostart giver programmet dette argument (i LaunchAgent-plist'en / Run-nøglen).
+const VED_LOGIN: &str = "--autostart";
+const SPROG: &str = "sprog";
+/// Sat, når start ved login er slået til første gang; derefter er brugerens valg (i OS'et) sandheden.
+const AUTOSTART_STANDARD: &str = "autostart_standard";
+
+/// Startede programmet ved login? Første argument er programmets sti. Ren funktion.
+fn startet_ved_login(args: impl IntoIterator<Item = String>) -> bool {
+    args.into_iter().skip(1).any(|a| a == VED_LOGIN)
+}
+
+/// Skal start ved login slås til nu? Kun i en bundlet build (ikke `tauri dev`) og kun den første gang. Ren funktion.
+fn skal_slaa_autostart_til(dev: bool, anvendt: Option<&str>) -> bool {
+    !dev && anvendt.is_none()
+}
+
+fn autostart_standard(app: &AppHandle) -> Result<(), Fejl> {
+    let t = app.state::<Tilstand>();
+    let anvendt = laas(&t)?.indstilling(AUTOSTART_STANDARD)?;
+    if !skal_slaa_autostart_til(tauri::is_dev(), anvendt.as_deref()) {
+        return Ok(());
+    }
+    app.autolaunch().enable().map_err(|_| Fejl::Autostart)?;
+    let mut lager = laas(&t)?;
+    lager.gem_indstilling(AUTOSTART_STANDARD, "1")
+}
+
+/// Viser vinduet: det eksisterende, eller et nyt fra konfigurationen. Det bygges her ("create": false i tauri.conf.json),
+/// så vinduets titel følger sidens <title> ("Angreb · 3 domæner · …"); det gør Tauri ikke af sig selv. Init-scriptet giver
+/// siden platformen (`<html data-platform>`). På macOS kommer Dock-ikonet frem først (det er væk, mens programmet kun står
+/// i menulinjen).
+fn aabn_vindue(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(target_os = "macos")]
+    app.set_activation_policy(tauri::ActivationPolicy::Regular)?;
+    let vindue = match app.get_webview_window("main") {
+        Some(v) => v,
+        None => {
+            let konfig = app
+                .config()
+                .app
+                .windows
+                .first()
+                .cloned()
+                .ok_or("vinduet mangler i tauri.conf.json")?;
+            tauri::WebviewWindowBuilder::from_config(app, &konfig)?
+                .initialization_script(programmenu::platform_skript(std::env::consts::OS))
+                .on_document_title_changed(|w, titel| {
+                    let _ = w.set_title(&titel);
+                })
+                .build()?
+        }
+    };
+    vindue.show()?;
+    vindue.set_focus()?;
+    Ok(())
+}
+
+/// Programmenuen (macOS): en visning → hændelsen `visning` til rammen (vinduet åbnes først); Tilbage/Frem → hændelsen
+/// `historik`; tekststørrelsen → hændelsen `tekst`; "Hent nu" → køen. Den globale menuhåndtering får også menulinjeikonets punkter; dem kender
+/// `programmenu::handling` ikke.
+fn paa_programmenu(app: &AppHandle, id: &str) {
+    match programmenu::handling(id) {
+        Some(programmenu::Handling::Visning(v)) => {
+            let _ = aabn_vindue(app);
+            let _ = app.emit("visning", v);
+        }
+        Some(programmenu::Handling::Historik(retning)) => {
+            let _ = app.emit("historik", retning);
+        }
+        Some(programmenu::Handling::Tekst(trin)) => {
+            let _ = app.emit("tekst", trin);
+        }
+        // Med et vindue går ⌘R samme vej som knappen, så brugeren ser udfaldet.
+        Some(programmenu::Handling::HentNu) if app.get_webview_window("main").is_none() || app.emit("hent_nu", ()).is_err() => {
+            start_koe(app)
+        }
+        Some(programmenu::Handling::HentNu) | None => {}
+    }
+}
+
+fn paa_menu(app: &AppHandle, id: &str) {
+    match id {
+        agent::AABN => {
+            let _ = aabn_vindue(app);
+        }
+        agent::SIDEN => vis_siden_sidst(app),
+        agent::STATUS => {
+            let _ = aabn_vindue(app);
+            let _ = app.emit("visning", "overblik");
+        }
+        agent::HENT => start_koe(app),
+        agent::AFSLUT => app.exit(0),
+        _ => {}
+    }
+}
+
+static KORTDATA: LazyLock<Value> = LazyLock::new(|| {
+    json!({
+        "verden": serde_json::from_str::<Value>(include_str!("../../ui/assets/verden.json")).unwrap_or(Value::Null),
+        "colo": serde_json::from_str::<Value>(include_str!("../../ui/assets/colo.json")).unwrap_or(Value::Null),
+        "tidszoner": serde_json::from_str::<Value>(include_str!("../../ui/assets/tidszoner.json")).unwrap_or(Value::Null),
+    })
+});
+
+/// Landkonturer og datacentre til kortet og tidszonerne til første valg af land (indlejret ved bygning; webvisningen henter intet selv).
+#[tauri::command]
+fn kortdata() -> Value {
+    KORTDATA.clone()
+}
+
+/// CVE-numre: præcis "CVE-", fire cifre, "-", fire til syv cifre (kun ASCII-cifre; ikke Unicodes `\d`).
+static CVE_ID: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new("^CVE-[0-9]{4}-[0-9]{4,7}$").expect("CVE-mønster"));
+
+/// Et CVE-nummer → cve.org-adressen; alt andet afvises (`Fejl::Intern`). Adressen bygges kun her. Ren funktion.
+fn cve_adresse(id: &str) -> Result<String, Fejl> {
+    if !CVE_ID.is_match(id) {
+        return Err(Fejl::Intern);
+    }
+    Ok(format!("https://www.cve.org/CVERecord?id={id}"))
+}
+
+/// Åbner adressen i systemets standardbrowser: et fast program med adressen som ét argument (ingen shell), og der ventes
+/// på, at programmet har givet adressen videre. Programmet selv kontakter ikke cve.org.
+fn aabn_i_browser(url: &str) -> std::io::Result<()> {
+    #[cfg(target_os = "macos")]
+    let mut kommando = std::process::Command::new("/usr/bin/open");
+    #[cfg(target_os = "windows")]
+    let mut kommando = std::process::Command::new("explorer.exe");
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    let mut kommando = std::process::Command::new("xdg-open");
+    kommando.arg(url).status().map(|_| ())
+}
+
+/// Et klik på et CVE-nummer: åbner CVE'ens side på cve.org i brugerens browser. Kun gyldige CVE-numre.
+#[tauri::command]
+async fn aabn_cve(id: String) -> Svar<()> {
+    let url = cve_adresse(&id)?;
+    tauri::async_runtime::spawn_blocking(move || aabn_i_browser(&url))
+        .await
+        .map_err(|_| Fejl::Intern)?
+        .map_err(|_| Fejl::Intern)
+}
+
+/// Kildelinjen under Radar-tal (CC BY-NC 4.0 kræver kilden): Radars forside i brugerens browser. Adressen står kun her.
+#[tauri::command]
+async fn aabn_radar() -> Svar<()> {
+    tauri::async_runtime::spawn_blocking(|| aabn_i_browser("https://radar.cloudflare.com/"))
+        .await
+        .map_err(|_| Fejl::Intern)?
+        .map_err(|_| Fejl::Intern)
+}
+
+/// Cloudflares template-URL til et bruger-API Token med navn og de to rettigheder udfyldt på forhånd: `[{"key":"analytics","type":"read"},{"key":"zone","type":"read"}]`
+/// (developers.cloudflare.com/fundamentals/api/how-to/account-owned-token-template/). Brugeren skal selv oprette tokenet.
+const API_TOKEN_SIDE: &str = "https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22analytics%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22zone%22%2C%22type%22%3A%22read%22%7D%5D&accountId=%2A&zoneId=all&name=Huginn%20and%20Muninn";
+
+/// "Opret API Token hos Cloudflare": åbner siden i brugerens browser. Et fast mål, og webvisningen kan ikke vælge et andet.
+#[tauri::command]
+async fn aabn_api_token() -> Svar<()> {
+    tauri::async_runtime::spawn_blocking(|| aabn_i_browser(API_TOKEN_SIDE))
+        .await
+        .map_err(|_| Fejl::Intern)?
+        .map_err(|_| Fejl::Intern)
+}
+
+/// Webvisningen må kun vise appens egne sider: Tauris egen protokol, og under `tauri dev` den indbyggede dev-server.
+fn tilladt_adresse(url: &Url) -> bool {
+    let app = matches!(
+        (url.scheme(), url.host_str()),
+        ("tauri", Some("localhost")) | ("http" | "https", Some("tauri.localhost"))
+    );
+    let dev_server = cfg!(dev) && url.scheme() == "http" && matches!(url.host_str(), Some("localhost" | "127.0.0.1"));
+    app || dev_server
+}
+
+fn navigationsvagt<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
+    tauri::plugin::Builder::new("navigationsvagt")
+        .on_navigation(|_, url| tilladt_adresse(url))
+        .build()
+}
+
+pub fn run() {
+    let app = tauri::Builder::default()
+        // Skal være det første plugin: en anden start overdrager til denne (som viser vinduet) og afslutter, før dens
+        // eget setup åbner SQLite (plugins sættes op i `Builder::build`, vores setup først ved `RunEvent::Ready`).
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            let _ = aabn_vindue(app);
+        }))
+        .plugin(
+            tauri_plugin_autostart::Builder::new()
+                .macos_launcher(MacosLauncher::LaunchAgent)
+                .app_name("com.wi24rd.huginn-muninn")
+                .args([VED_LOGIN])
+                .build(),
+        )
+        .plugin(navigationsvagt())
+        .plugin(tauri_plugin_notification::init())
+        .on_menu_event(|app, ev| paa_programmenu(app, ev.id().as_ref()))
+        .setup(|app| {
+            let mappe = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&mappe)?;
+            let lager = Store::aaben(&mappe.join(DATABASE))?;
+            let sprog = sprog_fra(&lager);
+            app.manage(Tilstand {
+                lager: Mutex::new(lager),
+                klient: Klient::ny()?,
+                laase: Hentelaase::default(),
+                koe: Koe::default(),
+                udenfor: Mutex::default(),
+                token: token::Huske::default(),
+                siden_sidst: AtomicBool::new(false),
+                uden_asn: Mutex::default(),
+                laek_uden_filter: AtomicBool::new(false),
+            });
+            app.manage(agent::Agent::byg(app.handle(), sprog, paa_menu)?);
+            #[cfg(target_os = "macos")]
+            app.set_menu(programmenu::byg(app.handle(), sprog)?)?;
+            vis_handling(app.handle(), sprog)?;
+            notifikation_klik(app.handle())?;
+            // Ved start: notifikation fra cachen, hvis tallene er friske nok (beslutning 6); ellers efter første runde.
+            vurder(app.handle());
+            // Første start af en bundlet build: start ved login slås til. Lykkes det ikke, prøves der igen ved næste start.
+            let _ = autostart_standard(app.handle());
+            // Køen starter, hvis der er et token (ellers melder den "intet token" og startes af token_set).
+            start_koe(app.handle());
+            start_radar(app.handle());
+            // Ved login: intet vindue, kun ikonet i menulinjen (politikken Accessory er sat, før programmet kørte).
+            if !startet_ved_login(std::env::args()) {
+                aabn_vindue(app.handle())?;
+            }
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            token_set,
+            token_status,
+            token_delete,
+            zones,
+            zones_cache,
+            vaern_cache,
+            vaern_oversigt,
+            kortdata,
+            overblik,
+            valg_hent,
+            domaener_hent,
+            domaener_saet,
+            domaene_afvis,
+            vaern_samlet_cache,
+            dyk,
+            robotter,
+            login,
+            login_stier,
+            login_sti_saet,
+            login_sti_fjern,
+            trafik_dag,
+            teknologi_hent,
+            teknologi_saet,
+            teknologi_alle,
+            teknologi_side,
+            teknologi_vis_saet,
+            teknologi_kolonne,
+            teknologi_tilfoej,
+            email_oversigt,
+            huller,
+            hul_luk,
+            land_hent,
+            land_saet,
+            domaene_valg_hent,
+            domaene_valg_saet,
+            dato_format_saet,
+            notifikation_rekog_saet,
+            tidszone_saet,
+            teknologi_oversigt,
+            teknologi_nulstil,
+            vurdering,
+            aabn_api_token,
+            land_visning,
+            radar_opdater,
+            aabn_radar,
+            koe_prioritet,
+            koe_status,
+            hent_nu,
+            data_status,
+            nulstil_historik,
+            aabn_cve,
+            autostart_hent,
+            autostart_saet,
+            sprog_saet,
+            notifikation_hent,
+            notifikation_saet,
+            notifikation_zone_saet,
+            siden_sidst,
+            siden_sidst_set
+        ])
+        .build(tauri::generate_context!())
+        .expect("Huginn and Muninn kunne ikke starte");
+    // Startet ved login: intet Dock-ikon fra starten.
+    #[cfg(target_os = "macos")]
+    let app = {
+        let mut app = app;
+        if startet_ved_login(std::env::args()) {
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+        }
+        app
+    };
+    app.run(|app, ev| match ev {
+        // Det sidste vindue er lukket (rødt kryds, ⌘W): programmet bliver i menulinjen, og Dock-ikonet forsvinder.
+        // "Afslut" i menuen (app.exit: code Some) og ⌘Q (RunEvent::Exit) afslutter.
+        RunEvent::ExitRequested { code: None, api, .. } => {
+            api.prevent_exit();
+            #[cfg(target_os = "macos")]
+            let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+        }
+        // Klik på Dock-ikonet.
+        #[cfg(target_os = "macos")]
+        RunEvent::Reopen { .. } => {
+            let _ = aabn_vindue(app);
+        }
+        _ => {}
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn navigation_kun_til_appens_egne_sider() {
+        for ok in [
+            "tauri://localhost/index.html",
+            "tauri://localhost/index.html#vaernet?zone=a&navn=a.wi24rd.com",
+            "http://tauri.localhost/index.html",
+        ] {
+            assert!(tilladt_adresse(&Url::parse(ok).unwrap()), "{ok}");
+        }
+        for nej in [
+            "https://www.cve.org/CVERecord?id=CVE-2025-55182",
+            "https://wi24rd.com/",
+            "https://api.cloudflare.com/",
+            "file:///etc/passwd",
+            "tauri://evil/",
+        ] {
+            assert!(!tilladt_adresse(&Url::parse(nej).unwrap()), "{nej}");
+        }
+        // Den indbyggede dev-server (tauri dev) kun når tauri-build har sat cfg `dev`.
+        assert_eq!(tilladt_adresse(&Url::parse("http://localhost:1430/index.html").unwrap()), cfg!(dev));
+        assert!(!tilladt_adresse(&Url::parse("https://localhost:1430/").unwrap()));
+    }
+
+    /// F3: to hentninger af samme zone kører aldrig samtidig; to forskellige zoner gør gerne.
+    #[tokio::test]
+    async fn hentelaas_pr_zone() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let laase = Hentelaase::default();
+        let (i_gang, flest) = (AtomicUsize::new(0), AtomicUsize::new(0));
+        let arbejde = || async {
+            let n = i_gang.fetch_add(1, Ordering::SeqCst) + 1;
+            flest.fetch_max(n, Ordering::SeqCst);
+            for _ in 0..3 {
+                tokio::task::yield_now().await;
+            }
+            i_gang.fetch_sub(1, Ordering::SeqCst);
+        };
+        futures_util::future::join3(laase.koer("a", arbejde()), laase.koer("a", arbejde()), laase.koer("a", arbejde())).await;
+        assert_eq!(flest.load(Ordering::SeqCst), 1, "samme zone: én ad gangen");
+        flest.store(0, Ordering::SeqCst);
+        futures_util::future::join(laase.koer("a", arbejde()), laase.koer("b", arbejde())).await;
+        assert_eq!(flest.load(Ordering::SeqCst), 2, "forskellige zoner blokerer ikke hinanden");
+        flest.store(0, Ordering::SeqCst);
+        futures_util::future::join(laase.koer(ZONELISTEN, arbejde()), laase.koer(ZONELISTEN, arbejde())).await;
+        assert_eq!(flest.load(Ordering::SeqCst), 1, "zonelisten har sin egen lås");
+        assert!(vaern::tjek_zone(ZONELISTEN).is_err(), "nøglen kan ikke være et zone-id");
+        assert!(vaern::tjek_zone(NOEGLERINGEN).is_err(), "nøgleringens nøgle heller ikke");
+        assert!(vaern::tjek_zone(RADAR).is_err(), "Radars nøgle heller ikke");
+    }
+
+    fn zone(id: &str, navn: &str) -> Zone {
+        Zone {
+            id: id.into(),
+            navn: navn.into(),
+        }
+    }
+
+    /// T1 og D2: et domæne, der ikke er valgt, er væk fra rækkerne, som Overblik, Siden sidst og notifikationerne deler. En ny zone er ikke valgt.
+    #[test]
+    fn kun_valgte_domaener_er_med() {
+        const NU: i64 = 1_793_693_280_000;
+        let mut s = Store::i_hukommelse().unwrap();
+        let dag = vaern::dag_noegle(NU - vaern::DOEGN_MS);
+        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t").unwrap();
+        let rk = [(
+            "fw".to_string(),
+            ["R", "US", "A", "/", "CPH", "GET", "firewallManaged", "block"].join("\t"),
+            900,
+        )];
+        for z in ["z1", "z2"] {
+            s.gem_doegn(z, &dag, &rk, &vaern::iso(NU)).unwrap();
+        }
+        let navne = |s: &Store| byg_overblik(s, NU).unwrap().into_iter().map(|r| r.navn).collect::<Vec<_>>();
+        let meldes = |s: &Store| {
+            notify::beslut(&byg_overblik(s, NU).unwrap(), &notify::indst(s).unwrap(), &s.meldt().unwrap(), NU).map(|b| b.meldte().len())
+        };
+        assert!(navne(&s).is_empty(), "intet er valgt fra start");
+        assert_eq!(meldes(&s), None, "og intet giver en notifikation");
+        s.gem_valgte(&["z1".into(), "z2".into()]).unwrap();
+        assert_eq!(navne(&s), ["a.wi24rd.com", "b.wi24rd.com"]);
+        assert_eq!(meldes(&s), Some(2));
+        s.gem_valgte(&["z1".into()]).unwrap();
+        assert_eq!(navne(&s), ["a.wi24rd.com"]);
+        assert_eq!(meldes(&s), Some(1), "det fravalgte giver ingen notifikation");
+        assert_eq!(s.raekker("z2", &dag).unwrap().len(), 1, "tallene bliver liggende");
+        s.gem_zoner(
+            &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")],
+            "t",
+        )
+        .unwrap();
+        assert_eq!(s.valg().unwrap(), ["z1"], "T3: en ny zone er ikke valgt");
+        assert_eq!(meldes(&s), Some(1), "og giver ingen notifikation");
+        let ud = domaener_ud(s.zoner().unwrap().0, &s.valgte().unwrap(), &s.nye().unwrap());
+        assert_eq!(
+            ud.iter().map(|d| (d.til, d.ny)).collect::<Vec<_>>(),
+            [(true, false), (false, false), (false, true)]
+        );
+    }
+
+    #[test]
+    fn nyvalgt_finder_det_der_er_kommet_til() {
+        let foer = HashSet::from(["a".to_string()]);
+        assert_eq!(nyvalgt(&foer, &["a".into(), "c".into(), "b".into()]).as_deref(), Some("b"));
+        assert_eq!(nyvalgt(&foer, &["a".into()]), None, "intet nyt");
+        assert_eq!(nyvalgt(&foer, &[]), None, "kun fravalgt");
+    }
+
+    /// P2: de valgte domæner efter navn, med "har tal"; en zone uden for den gemte liste står som "…".
+    #[test]
+    fn valgte_domaener_efter_navn() {
+        let navne = HashMap::from([
+            ("a".to_string(), "wi24rd.com".to_string()),
+            ("b".to_string(), "abe.wi24rd.com".to_string()),
+        ]);
+        let v = valgte(&["a".into(), "b".into(), "c".into()], &navne, &["a".into()]);
+        let ud: Vec<(&str, &str, bool)> = v.iter().map(|x| (x.id.as_str(), x.navn.as_str(), x.med_tal)).collect();
+        assert_eq!(ud, [("b", "abe.wi24rd.com", false), ("a", "wi24rd.com", true), ("c", "…", false)]);
+    }
+
+    #[test]
+    fn startet_ved_login_kun_med_argumentet() {
+        let a = |v: &[&str]| startet_ved_login(v.iter().map(|s| s.to_string()));
+        assert!(a(&[
+            "/Applications/Huginn and Muninn.app/Contents/MacOS/huginn-muninn",
+            "--autostart"
+        ]));
+        assert!(
+            !a(&["/Applications/Huginn and Muninn.app/Contents/MacOS/huginn-muninn"]),
+            "dobbeltklik"
+        );
+        assert!(!a(&["--autostart"]), "programmets sti tæller ikke");
+        assert!(!a(&["huginn-muninn", "--autostart=1"]));
+        assert!(!a(&[]));
+    }
+
+    /// Autostart slås kun til af sig selv i en bundlet build, og kun én gang (et fravalg holder).
+    #[test]
+    fn autostart_standard_kun_bundlet_og_kun_een_gang() {
+        assert!(skal_slaa_autostart_til(false, None), "første start af en bundlet build");
+        assert!(!skal_slaa_autostart_til(true, None), "tauri dev");
+        assert!(!skal_slaa_autostart_til(false, Some("1")), "anvendt før: brugerens valg gælder");
+    }
+
+    /// Kun gyldige CVE-numre bliver til en adresse, og adressen er præcis cve.org's.
+    /// Beslutning 2: en bølge, der kun ses på et fravalgt domæne, tæller ikke, og det fravalgte tæller heller ikke med i de 3.
+    #[test]
+    fn kun_valgte_domaener_i_sammenligningen() {
+        const NU: i64 = 1_793_693_280_000; // 2026-11-03T08:08:00Z
+        let dag = |i: i64| vaern::dag_noegle(NU - i * vaern::DOEGN_MS);
+        let hentet = vaern::iso(NU - 3_600_000);
+        let rk = |netvaerk: &str, n: i64| {
+            let noegle = ["Regel", "US", netvaerk, "/", "CPH", "GET", "firewallManaged", "block"].join("\t");
+            vec![("fw".to_string(), noegle, n)]
+        };
+        let med = |valgte: &[&str]| {
+            let mut s = Store::i_hukommelse().unwrap();
+            let zoner: Vec<Zone> = ["a", "b", "c", "d"].iter().map(|z| zone(z, &format!("{z}.wi24rd.com"))).collect();
+            s.gem_zoner(&zoner, "t").unwrap();
+            s.gem_valgte(&valgte.iter().map(|z| z.to_string()).collect::<Vec<_>>()).unwrap();
+            for (z, net, n) in [
+                ("a", "Mal AS", 40),
+                ("b", "Stille AS", 1),
+                ("c", "Stille AS", 1),
+                ("d", "Mal AS", 40),
+            ] {
+                s.gem_doegn(z, &dag(1), &rk(net, n), &hentet).unwrap();
+            }
+            byg_overblik(&s, NU).unwrap()
+        };
+        let a = |rk: Vec<overblik::Raekke1>| rk.into_iter().find(|r| r.id == "a").unwrap();
+        let r = a(med(&["a", "b", "c"]));
+        assert!(
+            r.moenster.is_some() && r.kan_sammenligne,
+            "netværket på det fravalgte d tæller ikke"
+        );
+        assert!(a(med(&["a", "b", "c", "d"])).moenster.is_none(), "valgt tæller det");
+        let r = a(med(&["a", "b"]));
+        assert!(r.moenster.is_none() && !r.kan_sammenligne, "2 valgte: det fravalgte fylder ikke op");
+    }
+
+    /// Et mærke afgøres, mens programmet er slukket. Det melder ved næste start, én gang, og det vurderede rykker frem.
+    #[test]
+    fn maerke_afgjort_mens_programmet_var_slukket_melder_senere() {
+        const NU: i64 = 1_793_693_280_000; // 2026-11-03T08:08:00Z
+        const FOER: i64 = NU - 4 * vaern::DOEGN_MS;
+        let dag = |i: i64| vaern::dag_noegle(NU - i * vaern::DOEGN_MS);
+        let rk = |netvaerk: &str, n: i64| {
+            let noegle = ["Regel", "US", netvaerk, "/", "CPH", "GET", "firewallManaged", "block"].join("\t");
+            vec![("fw".to_string(), noegle, n)]
+        };
+        let mut s = Store::i_hukommelse().unwrap();
+        let zoner: Vec<Zone> = ["a", "b", "c"].iter().map(|z| zone(z, &format!("{z}.wi24rd.com"))).collect();
+        s.gem_zoner(&zoner, "t").unwrap();
+        s.gem_valgte(&["a".to_string(), "b".to_string(), "c".to_string()]).unwrap();
+        for z in ["a", "b", "c"] {
+            for i in 5..=9 {
+                s.gem_doegn(z, &dag(i), &rk("Stille AS", 1), &vaern::iso(FOER - 3_600_000)).unwrap();
+            }
+        }
+        let runde = |s: &mut Store, nu: i64| {
+            let (rk, ind) = (byg_overblik(s, nu).unwrap(), notify::indst(s).unwrap());
+            naeste_besked(s, &rk, &ind, nu).unwrap()
+        };
+        assert_eq!(runde(&mut s, FOER), None);
+        assert_eq!(s.vurderet().unwrap()["a"], dag(6), "før den slukkede periode");
+        for z in ["a", "b", "c"] {
+            for i in 1..=4 {
+                let tal = if z == "a" && i == 4 { rk("Mal AS", 40) } else { rk("Stille AS", 1) };
+                s.gem_doegn(z, &dag(i), &tal, &vaern::iso(NU - 3_600_000)).unwrap();
+            }
+        }
+        let b = runde(&mut s, NU).expect("mærket er ikke tabt");
+        assert_eq!(b.fund.len(), 1);
+        assert_eq!(
+            (b.fund[0].r.id.as_str(), b.fund[0].moenster().unwrap().dag.as_str()),
+            ("a", dag(4).as_str())
+        );
+        assert_eq!(s.vurderet().unwrap()["a"], dag(2), "statusdøgnet venter på døgnet efter");
+        assert_eq!(runde(&mut s, NU + 3_600_000), None, "én besked pr. mærke");
+    }
+
+    /// Kun valgte domæner, hver med sine linjer; "Ved ikke" står med, og et valg på et fravalgt domæne tæller til knappen.
+    #[test]
+    fn teknologi_oversigten_taeller_valg_pr_valgt_domaene() {
+        let mut s = Store::i_hukommelse().unwrap();
+        s.gem_zoner(
+            &[zone("a", "a.wi24rd.com"), zone("b", "b.wi24rd.com"), zone("c", "c.wi24rd.com")],
+            "t",
+        )
+        .unwrap();
+        s.gem_valgte(&["a".to_string(), "b".to_string()]).unwrap();
+        let o = tek_oversigt(&s).unwrap();
+        assert_eq!(o.zoner["a"], 0);
+        assert!(!o.zoner.contains_key("c") && !o.valg);
+        s.gem_teknologi("b", "php", "bruger_ikke", false, "t").unwrap();
+        assert_eq!(tek_oversigt(&s).unwrap().zoner["b"], 1);
+        s.nulstil_teknologi(None).unwrap();
+        s.gem_teknologi("c", "php", "bruger", false, "t").unwrap();
+        let o = tek_oversigt(&s).unwrap();
+        assert!(o.valg && o.zoner["b"] == 0, "knappen nulstiller også fravalgte domæner");
+    }
+
+    /// Siden: de valgte domæner, første gang intet "nyt", og et nyt angreb på en ny teknologi afkrydses med en linje.
+    #[test]
+    fn teknologi_siden_afkrydser_det_sete() {
+        const NU: i64 = 1_793_693_280_000;
+        let mut s = Store::i_hukommelse().unwrap();
+        s.gem_zoner(&[zone("a", "a.wi24rd.com"), zone("c", "c.wi24rd.com")], "t").unwrap();
+        s.gem_valgte(&["a".to_string()]).unwrap();
+        let dag = vaern::dag_noegle(NU - vaern::DOEGN_MS);
+        let regel = |r: &str| {
+            (
+                "fw".to_string(),
+                [r, "US", "N", "/", "CPH", "GET", "firewallManaged", "block"].join("\t"),
+                3,
+            )
+        };
+        s.gem_doegn("a", &dag, &[regel("React - RCE")], &vaern::iso(NU)).unwrap();
+        let u = teknologi_side_for(&mut s, NU).unwrap();
+        assert_eq!(u.domaener.iter().map(|d| d.navn.as_str()).collect::<Vec<_>>(), ["a.wi24rd.com"]);
+        let r = u.katalog.iter().find(|k| k.tek == "react").unwrap();
+        assert!(r.vis && r.set && !r.ny);
+        s.gem_doegn("a", &dag, &[regel("React - RCE"), regel("Yeti Platform - RCE")], &vaern::iso(NU))
+            .unwrap();
+        let u = teknologi_side_for(&mut s, NU).unwrap();
+        let y = u.katalog.iter().find(|k| k.tek == "yeti platform").unwrap();
+        assert!(y.vis && y.ny && y.navn == "Yeti Platform");
+    }
+
+    #[test]
+    fn api_token_siden_er_cloudflares_template_med_de_to_laeserettigheder() {
+        let u = Url::parse(API_TOKEN_SIDE).unwrap();
+        assert_eq!((u.host_str(), u.path()), (Some("dash.cloudflare.com"), "/profile/api-tokens"));
+        let q: HashMap<String, String> = u.query_pairs().into_owned().collect();
+        assert_eq!(
+            q["permissionGroupKeys"],
+            r#"[{"key":"analytics","type":"read"},{"key":"zone","type":"read"}]"#
+        );
+        assert_eq!(
+            (q["accountId"].as_str(), q["zoneId"].as_str(), q["name"].as_str()),
+            ("*", "all", "Huginn and Muninn")
+        );
+    }
+
+    #[test]
+    fn cve_adresse_kun_for_gyldige_numre() {
+        assert_eq!(
+            cve_adresse("CVE-2025-55182").unwrap(),
+            "https://www.cve.org/CVERecord?id=CVE-2025-55182"
+        );
+        assert_eq!(
+            cve_adresse("CVE-2017-5638").unwrap(),
+            "https://www.cve.org/CVERecord?id=CVE-2017-5638"
+        );
+        assert_eq!(
+            cve_adresse("CVE-2026-1234567").unwrap(),
+            "https://www.cve.org/CVERecord?id=CVE-2026-1234567"
+        );
+        for nej in [
+            "CVE-2025-55182; rm",
+            "CVE-2025-55182 && open /",
+            "javascript:alert(1)",
+            "",
+            "CVE-2025-55182\n",
+            "cve-2025-55182",
+            "CVE-25-55182",
+            "CVE-2025-123",
+            "CVE-2025-12345678",
+            "CVE-٢٠٢٥-55182",
+            "https://www.cve.org/CVERecord?id=CVE-2025-55182",
+        ] {
+            assert_eq!(cve_adresse(nej), Err(Fejl::Intern), "{nej:?}");
+        }
+    }
+
+    #[test]
+    fn kortdata_er_indlejret_og_gyldig() {
+        assert!(KORTDATA["verden"]["lande"].is_object());
+        assert!(KORTDATA["colo"].is_object());
+        assert_eq!(KORTDATA["tidszoner"]["zoner"]["Europe/Copenhagen"], "DK");
+    }
+}

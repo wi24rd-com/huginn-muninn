@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-teknologi-kolonne"
+description = "Enables the teknologi_kolonne command without any pre-configured scope."
+commands.allow = ["teknologi_kolonne"]
+
+[[permission]]
+identifier = "deny-teknologi-kolonne"
+description = "Denies the teknologi_kolonne command without any pre-configured scope."
+commands.deny = ["teknologi_kolonne"]

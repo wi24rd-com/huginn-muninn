@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-domaener-hent"
+description = "Enables the domaener_hent command without any pre-configured scope."
+commands.allow = ["domaener_hent"]
+
+[[permission]]
+identifier = "deny-domaener-hent"
+description = "Denies the domaener_hent command without any pre-configured scope."
+commands.deny = ["domaener_hent"]
