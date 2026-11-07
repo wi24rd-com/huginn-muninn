@@ -59,7 +59,8 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - **Menuen ved ravne-ikonet:** Åbn Huginn · Siden sidst · Hent nu · en statuslinje ("Henter 3/16", "Hentet for 12 min. siden") · Afslut.
 - **Afslut** i menuen (eller ⌘Q, mens vinduet er åbent) lukker programmet helt.
 - **Start ved login** slås til første gang, en færdigbygget udgave starter (ikke under `npm run tauri dev`). Programmet starter så uden vindue, kun i menulinjen. Slå det fra under **Indstillinger** i programmet. Programmet slår det aldrig til igen af sig selv.
-- **Før du sletter programmet:** slå Start ved login fra i Indstillinger. Ellers bliver filen `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` liggende (Windows: værdien under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`) og peger på et program, der ikke findes længere. Den kan også slettes i hånden.
+- **Daglig start:** så længe Start ved login er til, starter programmet også selv én gang om dagen, kl. 12 lokal tid. Sover Mac'en, sker det, når den vågner. Kører programmet ikke, starter det uden vindue, henter og lukker igen, senest efter 30 minutter. Kører det, henter det bare. Så får historikken ikke huller, selv om du har valgt **Afslut**. Der er ingen særskilt kontakt: Start ved login slår begge til og fra. Windows: en planlagt opgave, som endnu ikke er prøvet.
+- **Før du sletter programmet:** slå Start ved login fra i Indstillinger. Ellers bliver filerne `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` og `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist` liggende (Windows: værdien under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` og den planlagte opgave `Wi24rd Huginn and Muninn dagligt`) og peger på et program, der ikke findes længere. De kan også slettes i hånden.
 - Programmet kører kun én gang ad gangen; starter du det igen, vises det vindue, der allerede findes.
 
 ## "Siden sidst" og notifikationer

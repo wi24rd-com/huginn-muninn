@@ -13,7 +13,7 @@ Every choice is saved at once on your computer. There is no Save button, except 
 | **Country** | A list of countries, and possibly the button **Switch to …** | From your time zone, then the system language | Used in **… now**. **Switch to …** appears when at least half of your visitors clearly come from another country. |
 | **Appearance** | System · Light · Dark | System | Follows the system, or choose for yourself. |
 | **Text size** | Small · Normal · Large | Normal | Applies to the text in the whole program. Also ⌘+ ⌘− ⌘0 (Windows: Ctrl). |
-| **Start at login** | Switch | On (turned on the first time a built version starts) | The program starts in the menu bar when you log in and fetches in the background. Turn it off before you delete the program. |
+| **Start at login** | Switch | On (turned on the first time a built version starts) | The program starts in the menu bar when you log in and fetches in the background. Huginn also starts by itself once a day and fetches if it is not running. The switch turns both on and off. Turn it off before you delete the program. |
 
 If **Start at login** is off, a yellow line appears at the top: "The program does not start at login. Then Huginn only fetches while the program is open. Open it at least every three weeks, or gaps will appear in the history." The button **Turn on Start at login** turns it back on. The operating system is the truth: if you turn it off in System Settings, that applies here.
 

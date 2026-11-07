@@ -46,5 +46,6 @@ The program only runs once at a time. If you start it again, the window that is 
 | Data folder with the database | `~/Library/Application Support/com.wi24rd.huginn-muninn/` | First start |
 | API Token | macOS Keychain, the item `com.wi24rd.huginn-muninn` | When you connect |
 | Start at login | `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` | First start of a built version |
+| Daily start | `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist` | Together with Start at login |
 
 How to remove all of it again is in [Uninstalling](90-afinstallation.md).

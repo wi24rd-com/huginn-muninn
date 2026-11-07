@@ -7,6 +7,7 @@
 mod adgang;
 mod agent;
 mod cf;
+mod dagligt;
 mod dmarc;
 mod dns;
 mod dyk;
@@ -55,6 +56,8 @@ struct Tilstand {
     uden_asn: Mutex<HashSet<String>>,
     /// Cloudflare har afvist filteret i `LAEK_QUERY`: resten af kørslen hentes uden det.
     laek_uden_filter: AtomicBool,
+    /// Startet af den daglige start og lukker selv, når køen er færdig. Et vindue slår det fra (`aabn_vindue`): så bliver programmet.
+    dagligt: AtomicBool,
 }
 
 /// Fejl til webvisningen er en fejlkode (`{kode, status?, dag?, detalje?}`, se `cf::Fejl`); teksten vælges i UI'et.
@@ -909,9 +912,14 @@ async fn koe_status(tilstand: State<'_, Tilstand>) -> Svar<Option<KoeStatus>> {
 /// stoppet efter et afvist token, også startes igen. `koe_prioritet` (ved `online`) vækker kun en sovende kø.
 #[tauri::command]
 async fn hent_nu(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<HentNu> {
+    start_hentning(&tilstand, &app)
+}
+
+/// "Hent nu" og en daglig start, mens programmet kører: starter køen, hvis der er noget at hente, og den ikke kører.
+fn start_hentning(tilstand: &Tilstand, app: &AppHandle) -> Svar<HentNu> {
     let nu = nu_ms();
     let alt_friskt = {
-        let lager = laas(&tilstand)?;
+        let lager = laas(tilstand)?;
         let mut friskt = true;
         for z in lager.zoner_til()? {
             friskt &= koe::er_frisk(&lager.hentet(&z.id)?, nu);
@@ -921,7 +929,7 @@ async fn hent_nu(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<HentNu> 
     let status = tilstand.koe.status();
     let udfald = koe::hent_udfald(status.as_ref(), tilstand.koe.koerer.load(Ordering::SeqCst), alt_friskt);
     if udfald == koe::HentUdfald::Startet {
-        start_koe(&app);
+        start_koe(app);
     }
     let (faerdige, i_alt) = status.map_or((0, 0), |s| (s.zoner_faerdige, s.zoner_i_alt));
     Ok(HentNu { udfald, faerdige, i_alt })
@@ -1023,6 +1031,34 @@ fn start_koe(app: &AppHandle) {
     });
 }
 
+/// Den daglige start, når programmet ikke kørte: lukker, når `dagligt::skal_afslutte` siger ja. Køen bedes om at stoppe først, så en
+/// zone i gang bliver hentet færdig (højst `STOP_VENT`). Åbner brugeren vinduet undervejs, er det et almindeligt kørende program.
+fn vagt_dagligt(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let t = app.state::<Tilstand>();
+        let start = nu_ms();
+        loop {
+            tokio::time::sleep(dagligt::TJEK).await;
+            if !t.dagligt.load(Ordering::SeqCst) {
+                return;
+            }
+            let (koerer, fase) = (t.koe.koerer.load(Ordering::SeqCst), t.koe.status().map(|s| s.tilstand));
+            if dagligt::skal_afslutte(koerer, fase, t.koe.hele_runder.load(Ordering::SeqCst), nu_ms() - start) {
+                break;
+            }
+        }
+        t.koe.stop();
+        let _ = tokio::time::timeout(dagligt::STOP_VENT, t.koe.slut()).await;
+        tokio::time::sleep(dagligt::EFTERSLAEB).await;
+        if t.dagligt.load(Ordering::SeqCst) {
+            app.exit(0);
+        } else {
+            start_koe(&app);
+        }
+    });
+}
+
 #[derive(Serialize)]
 struct DataStatus {
     /// Databasefilens størrelse i bytes.
@@ -1081,11 +1117,15 @@ async fn autostart_hent(app: AppHandle) -> Svar<bool> {
     app.autolaunch().is_enabled().map_err(|_| Fejl::Autostart)
 }
 
-/// Slår start ved login til eller fra og svarer med OS'ets tilstand bagefter.
+/// Slår start ved login og den daglige start til eller fra (én kontakt) og svarer med OS'ets tilstand bagefter. Begge forsøges, også hvis den ene fejler.
 #[tauri::command]
 async fn autostart_saet(til: bool, app: AppHandle) -> Svar<bool> {
     let al = app.autolaunch();
-    if til { al.enable() } else { al.disable() }.map_err(|_| Fejl::Autostart)?;
+    let login = if til { al.enable() } else { al.disable() };
+    let daglig = dagligt::saet(til);
+    if login.is_err() || daglig.is_err() {
+        return Err(Fejl::Autostart);
+    }
     al.is_enabled().map_err(|_| Fejl::Autostart)
 }
 
@@ -1340,10 +1380,17 @@ const VED_LOGIN: &str = "--autostart";
 const SPROG: &str = "sprog";
 /// Sat, når start ved login er slået til første gang; derefter er brugerens valg (i OS'et) sandheden.
 const AUTOSTART_STANDARD: &str = "autostart_standard";
+/// Sat, når den daglige start er afgjort første gang, også på en installation, der er ældre end den.
+const DAGLIGT_STANDARD: &str = "dagligt_standard";
 
 /// Startede programmet ved login? Første argument er programmets sti. Ren funktion.
 fn startet_ved_login(args: impl IntoIterator<Item = String>) -> bool {
     args.into_iter().skip(1).any(|a| a == VED_LOGIN)
+}
+
+/// Startede programmet uden vindue og uden Dock-ikon? Ved login og ved den daglige start. Ren funktion.
+fn uden_vindue(args: &[String]) -> bool {
+    startet_ved_login(args.iter().cloned()) || dagligt::startet_dagligt(args.iter().cloned())
 }
 
 /// Skal start ved login slås til nu? Kun i en bundlet build (ikke `tauri dev`) og kun den første gang. Ren funktion.
@@ -1354,12 +1401,21 @@ fn skal_slaa_autostart_til(dev: bool, anvendt: Option<&str>) -> bool {
 fn autostart_standard(app: &AppHandle) -> Result<(), Fejl> {
     let t = app.state::<Tilstand>();
     let anvendt = laas(&t)?.indstilling(AUTOSTART_STANDARD)?;
-    if !skal_slaa_autostart_til(tauri::is_dev(), anvendt.as_deref()) {
-        return Ok(());
+    if skal_slaa_autostart_til(tauri::is_dev(), anvendt.as_deref()) {
+        app.autolaunch().enable().map_err(|_| Fejl::Autostart)?;
+        laas(&t)?.gem_indstilling(AUTOSTART_STANDARD, "1")?;
     }
-    app.autolaunch().enable().map_err(|_| Fejl::Autostart)?;
+    // Den daglige start følger login-agenten og har sin egen markør, så installationer fra før den også får den. Én gang: et fravalg står ved magt.
+    let anvendt = laas(&t)?.indstilling(DAGLIGT_STANDARD)?;
+    let login_til = app.autolaunch().is_enabled().map_err(|_| Fejl::Autostart)?;
+    let Some(slaa_til) = dagligt::standard(tauri::is_dev(), anvendt.as_deref(), login_til) else {
+        return Ok(());
+    };
+    if slaa_til {
+        dagligt::saet(true).map_err(|_| Fejl::Autostart)?;
+    }
     let mut lager = laas(&t)?;
-    lager.gem_indstilling(AUTOSTART_STANDARD, "1")
+    lager.gem_indstilling(DAGLIGT_STANDARD, "1")
 }
 
 /// Viser vinduet: det eksisterende, eller et nyt fra konfigurationen. Det bygges her ("create": false i tauri.conf.json),
@@ -1367,6 +1423,9 @@ fn autostart_standard(app: &AppHandle) -> Result<(), Fejl> {
 /// siden platformen (`<html data-platform>`). På macOS kommer Dock-ikonet frem først (det er væk, mens programmet kun står
 /// i menulinjen).
 fn aabn_vindue(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(t) = app.try_state::<Tilstand>() {
+        t.dagligt.store(false, Ordering::SeqCst);
+    }
     #[cfg(target_os = "macos")]
     app.set_activation_policy(tauri::ActivationPolicy::Regular)?;
     let vindue = match app.get_webview_window("main") {
@@ -1539,11 +1598,26 @@ fn navigationsvagt<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
 }
 
 pub fn run() {
+    let args: Vec<String> = std::env::args().collect();
+    // Slået fra, men launchd har stadig jobbet (det var det, der kørte, da kontakten blev slået fra, eller filen er slettet i hånden): intet at gøre.
+    if dagligt::startet_dagligt(args.iter().cloned()) && !dagligt::er_til() {
+        return;
+    }
+    let setup_args = args.clone();
     let app = tauri::Builder::default()
-        // Skal være det første plugin: en anden start overdrager til denne (som viser vinduet) og afslutter, før dens
-        // eget setup åbner SQLite (plugins sættes op i `Builder::build`, vores setup først ved `RunEvent::Ready`).
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            let _ = aabn_vindue(app);
+        // Skal være det første plugin: en anden start overdrager til denne (som viser vinduet eller, ved en daglig start, henter)
+        // og afslutter, før dens eget setup åbner SQLite (plugins sættes op i `Builder::build`, vores setup først ved `RunEvent::Ready`).
+        .plugin(tauri_plugin_single_instance::init(|app, args, _| {
+            match dagligt::anden_start(args) {
+                dagligt::AndenStart::Vindue => {
+                    let _ = aabn_vindue(app);
+                }
+                dagligt::AndenStart::Hent => {
+                    if let Some(t) = app.try_state::<Tilstand>() {
+                        let _ = start_hentning(&t, app);
+                    }
+                }
+            }
         }))
         .plugin(
             tauri_plugin_autostart::Builder::new()
@@ -1555,7 +1629,7 @@ pub fn run() {
         .plugin(navigationsvagt())
         .plugin(tauri_plugin_notification::init())
         .on_menu_event(|app, ev| paa_programmenu(app, ev.id().as_ref()))
-        .setup(|app| {
+        .setup(move |app| {
             let mappe = app.path().app_data_dir()?;
             std::fs::create_dir_all(&mappe)?;
             let lager = Store::aaben(&mappe.join(DATABASE))?;
@@ -1570,6 +1644,7 @@ pub fn run() {
                 siden_sidst: AtomicBool::new(false),
                 uden_asn: Mutex::default(),
                 laek_uden_filter: AtomicBool::new(false),
+                dagligt: AtomicBool::new(dagligt::startet_dagligt(setup_args.iter().cloned())),
             });
             app.manage(agent::Agent::byg(app.handle(), sprog, paa_menu)?);
             #[cfg(target_os = "macos")]
@@ -1583,8 +1658,12 @@ pub fn run() {
             // Køen starter, hvis der er et token (ellers melder den "intet token" og startes af token_set).
             start_koe(app.handle());
             start_radar(app.handle());
-            // Ved login: intet vindue, kun ikonet i menulinjen (politikken Accessory er sat, før programmet kørte).
-            if !startet_ved_login(std::env::args()) {
+            // Daglig start: lukker selv igen, når køen er færdig.
+            if dagligt::startet_dagligt(setup_args.iter().cloned()) {
+                vagt_dagligt(app.handle());
+            }
+            // Ved login og ved den daglige start: intet vindue, kun ikonet i menulinjen (politikken Accessory er sat, før programmet kørte).
+            if !uden_vindue(&setup_args) {
                 aabn_vindue(app.handle())?;
             }
             Ok(())
@@ -1653,11 +1732,11 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("Huginn and Muninn kunne ikke starte");
-    // Startet ved login: intet Dock-ikon fra starten.
+    // Startet ved login eller af den daglige start: intet Dock-ikon fra starten.
     #[cfg(target_os = "macos")]
     let app = {
         let mut app = app;
-        if startet_ved_login(std::env::args()) {
+        if uden_vindue(&args) {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
         }
         app
@@ -1816,6 +1895,14 @@ mod tests {
         assert!(!a(&["--autostart"]), "programmets sti tæller ikke");
         assert!(!a(&["huginn-muninn", "--autostart=1"]));
         assert!(!a(&[]));
+    }
+
+    #[test]
+    fn uden_vindue_ved_login_og_ved_daglig_start() {
+        let a = |v: &[&str]| uden_vindue(&v.iter().map(|s| s.to_string()).collect::<Vec<_>>());
+        assert!(a(&["huginn-muninn", "--autostart"]));
+        assert!(a(&["huginn-muninn", "--dagligt"]));
+        assert!(!a(&["huginn-muninn"]), "en almindelig start viser vinduet");
     }
 
     /// Autostart slås kun til af sig selv i en bundlet build, og kun én gang (et fravalg holder).

@@ -1,17 +1,18 @@
 # Uninstalling
 
-The program puts four things on your computer: the application itself, an autostart entry, an API Token in the keychain and a data folder. Follow the steps in order so nothing is left behind.
+The program puts five things on your computer: the application itself, two autostart entries, an API Token in the keychain and a data folder. Follow the steps in order so nothing is left behind.
 
 ## macOS
 
 ### 1. Turn Start at login off in the program
 
-Open the program and turn **Settings → General → Start at login** off. That removes the file `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist`.
+Open the program and turn **Settings → General → Start at login** off. That removes the files `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` and `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist`.
 
-If you forget, the file is left behind and points to an application that no longer exists. It can also be deleted by hand:
+If you forget, the files are left behind and point to an application that no longer exists. They can also be deleted by hand:
 
 ```
 rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist
+rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist
 ```
 
 ### 2. Forget the API Token
@@ -51,6 +52,7 @@ There is no Windows version yet. When it comes, the places are:
 | What | Where |
 |---|---|
 | Autostart | The value under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` (turn **Start at login** off in the program first) |
+| Daily start | The scheduled task `Wi24rd Huginn and Muninn dagligt` (turn **Start at login** off in the program first) |
 | API Token | Windows Credential Manager, the item `com.wi24rd.huginn-muninn` |
 | Data folder | `%APPDATA%\com.wi24rd.huginn-muninn\` |
 

@@ -13,7 +13,7 @@ Alle valg gemmes med det samme på din computer. Der er ingen Gem-knap, bortset 
 | **Land** | Liste over lande, og evt. knappen **Skift til …** | Fra din tidszone, derefter systemets sprog | Bruges i **… lige nu**. **Skift til …** vises, når mindst halvdelen af dine besøgende tydeligt kommer fra et andet land. |
 | **Udseende** | System · Lys · Mørk | System | Følger systemet, eller vælg selv. |
 | **Tekststørrelse** | Lille · Normal · Stor | Normal | Gælder teksten i hele programmet. Også ⌘+ ⌘− ⌘0 (Windows: Ctrl). |
-| **Start ved login** | Kontakt | Til (slås til første gang en færdigbygget udgave starter) | Programmet starter i menulinjen, når du logger ind, og henter i baggrunden. Slå det fra, før du sletter programmet. |
+| **Start ved login** | Kontakt | Til (slås til første gang en færdigbygget udgave starter) | Programmet starter i menulinjen, når du logger ind, og henter i baggrunden. Huginn starter også selv én gang om dagen og henter, hvis det ikke kører. Kontakten slår begge dele til og fra. Slå det fra, før du sletter programmet. |
 
 Er **Start ved login** slået fra, står der en gul linje øverst: "Programmet starter ikke ved login. Så henter Huginn kun, når programmet er åbent. Åbn det mindst hver tredje uge, ellers kommer der huller i historikken." Knappen **Slå Start ved login til** slår det til igen. Styresystemet er sandheden: slår du det fra i Systemindstillinger, slår det igennem her.
 

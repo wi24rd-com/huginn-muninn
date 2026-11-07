@@ -46,5 +46,6 @@ Programmet kører kun én gang ad gangen. Starter du det igen, vises det vindue,
 | Datamappe med database | `~/Library/Application Support/com.wi24rd.huginn-muninn/` | Første start |
 | API Token | macOS Nøglering, posten `com.wi24rd.huginn-muninn` | Når du forbinder |
 | Start ved login | `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` | Første start af en færdigbygget udgave |
+| Daglig start | `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist` | Sammen med Start ved login |
 
 Hvordan du fjerner det hele igen, står i [Afinstallation](90-afinstallation.md).

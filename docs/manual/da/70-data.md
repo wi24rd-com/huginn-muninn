@@ -37,7 +37,7 @@ Et hul er en dag, programmet aldrig har hentet, typisk fordi computeren var sluk
 - Var det slukket **længere**, er de ældste dage væk hos Cloudflare og kan ikke hentes. Overblik siger, hvor mange dage der mangler for altid.
 - **Indstillinger → Data → Huller** viser antallet, og et klik viser listen.
 
-Derfor er **Start ved login** slået til som standard, og derfor siger programmet, at du bør åbne det mindst hver tredje uge, hvis du slår det fra.
+Derfor er **Start ved login** slået til som standard. Med den starter programmet også selv én gang om dagen og henter, så der ikke kommer huller, selv om du har valgt **Afslut**. Og derfor siger programmet, at du bør åbne det mindst hver tredje uge, hvis du slår det fra.
 
 ## Hentningen
 

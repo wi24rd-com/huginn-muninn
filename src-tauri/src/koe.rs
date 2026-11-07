@@ -11,7 +11,7 @@
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::pin::pin;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -234,6 +234,8 @@ pub struct Koe {
     grund: Mutex<Option<Fejl>>,
     /// Kører køens løkke? Kun én ad gangen.
     pub koerer: AtomicBool,
+    /// Runder, der er gjort helt færdige, ekstra tal med (`Fase::Faerdig` kommer før dem). Den daglige start lukker på den.
+    pub hele_runder: AtomicUsize,
 }
 
 impl Koe {
@@ -337,7 +339,10 @@ impl Koe {
                 }
             }
             match runde().await {
-                Ok(Slut::Faerdig) => self.vent_paa_runde(nu, paa_tik).await,
+                Ok(Slut::Faerdig) => {
+                    self.hele_runder.fetch_add(1, Ordering::SeqCst);
+                    self.vent_paa_runde(nu, paa_tik).await
+                }
                 Ok(Slut::Stoppet | Slut::Vaekket) => {}
                 Err(e) => {
                     let intet = e == Fejl::IntetToken;
@@ -1251,6 +1256,27 @@ mod tests {
             koe.prioriter(None); // Hent nu
             tokio::time::sleep(Duration::from_secs(1)).await;
             assert_eq!(runder.load(Ordering::SeqCst), 2, "Hent nu prøver igen");
+            koe.stop();
+        })
+        .await;
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn hele_runder_taeller_kun_runder_der_er_gjort_faerdige() {
+        let koe = Koe::default();
+        koe.koerer.store(true, Ordering::SeqCst);
+        let gang = AtomicUsize::new(0);
+        let g = &gang;
+        let runde = move || async move {
+            match g.fetch_add(1, Ordering::SeqCst) {
+                0 => Ok(Slut::Vaekket),
+                _ => Ok(Slut::Faerdig),
+            }
+        };
+        futures_util::future::join(koe.koer(runde, &|_| {}, &|| NU, &|| {}), async {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            assert_eq!(gang.load(Ordering::SeqCst), 2, "en afbrudt og en hel runde");
+            assert_eq!(koe.hele_runder.load(Ordering::SeqCst), 1, "den afbrudte tæller ikke");
             koe.stop();
         })
         .await;

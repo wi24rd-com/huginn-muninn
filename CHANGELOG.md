@@ -4,6 +4,15 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-07 23:30 — Huginn starter selv én gang om dagen
+#### Tilføjet
+- Daglig start kl. 12 lokal tid, så historikken ikke får huller, når programmet er afsluttet, eller maskinen ikke har været logget ud i ugevis. macOS: LaunchAgenten `com.wi24rd.huginn-muninn.dagligt`, indlæst med det samme. Sover Mac'en, sker det, når den vågner.
+- Kørte programmet ikke, starter det uden vindue og Dock-ikon, henter hele runden med de ekstra tal og lukker igen, senest efter 30 minutter. Åbner du vinduet undervejs, bliver programmet kørende.
+- Kører programmet, åbner den daglige start ikke vinduet. Den starter en hentning som **Hent nu**.
+- Windows: en planlagt opgave med `schtasks`. Koden er skrevet, men ikke prøvet eller oversat. Linux: intet endnu.
+#### Ændret
+- **Start ved login** slår både login-agenten og den daglige start til og fra. Der er ingen ny kontakt. Installationer med Start ved login slået til får den daglige start én gang; et fravalg står ved magt.
+
 ### 2026-11-07 23:30 — Kortet i mørkt tema: egen ringfarve og tydeligere trin
 #### Ændret
 - Kortet har sin egen ringfarve i lyst og mørkt tema, så ringen ikke falder sammen med det første trin. I mørkt tema er ringen gul.

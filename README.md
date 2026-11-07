@@ -59,7 +59,8 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - **The menu at the raven icon:** Open Huginn · Since last time · Fetch now · a status line ("Fetching 3/16", "Fetched 12 min ago") · Quit.
 - **Quit** in the menu (or ⌘Q while the window is open) closes the app completely.
 - **Start at login** is turned on the first time a built app starts (not under `npm run tauri dev`). The app then starts without a window, only in the menu bar. Turn it off under **Settings** in the app. The app never turns it back on by itself.
-- **Before you delete the app:** turn Start at login off in Settings. Otherwise the file `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` is left behind (Windows: the value under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`), pointing to an app that no longer exists. It can also be deleted by hand.
+- **Daily start:** while Start at login is on, the app also starts by itself once a day, at 12:00 local time. If the Mac is asleep, it happens when it wakes. If the app is not running, it starts without a window, fetches and closes again, after 30 minutes at most. If it is running, it just fetches. That way the history gets no gaps, even if you have chosen **Quit**. There is no separate switch: Start at login turns both on and off. Windows: a scheduled task, not tested yet.
+- **Before you delete the app:** turn Start at login off in Settings. Otherwise the files `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` and `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist` are left behind (Windows: the value under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` and the scheduled task `Wi24rd Huginn and Muninn dagligt`), pointing to an app that no longer exists. They can also be deleted by hand.
 - The app only runs once at a time; starting it again shows the window that is already there.
 
 ## "Since last time" and notifications

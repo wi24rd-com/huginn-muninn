@@ -1,17 +1,18 @@
 # Afinstallation
 
-Programmet lægger fire ting på din computer: programmet selv, en autostart-post, et API Token i nøgleringen og en datamappe. Følg trinene i rækkefølge, så intet bliver liggende.
+Programmet lægger fem ting på din computer: programmet selv, to autostart-poster, et API Token i nøgleringen og en datamappe. Følg trinene i rækkefølge, så intet bliver liggende.
 
 ## macOS
 
 ### 1. Slå Start ved login fra i programmet
 
-Åbn programmet, og slå **Indstillinger → Generelt → Start ved login** fra. Det fjerner filen `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist`.
+Åbn programmet, og slå **Indstillinger → Generelt → Start ved login** fra. Det fjerner filerne `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` og `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist`.
 
-Glemmer du det, bliver filen liggende og peger på et program, der ikke findes længere. Den kan også slettes i hånden:
+Glemmer du det, bliver filerne liggende og peger på et program, der ikke findes længere. De kan også slettes i hånden:
 
 ```
 rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist
+rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist
 ```
 
 ### 2. Glem API Tokenet
@@ -51,6 +52,7 @@ Der findes endnu ingen Windows-udgave. Når den kommer, er stederne:
 | Hvad | Hvor |
 |---|---|
 | Autostart | Værdien under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` (slå **Start ved login** fra i programmet først) |
+| Daglig start | Den planlagte opgave `Wi24rd Huginn and Muninn dagligt` (slå **Start ved login** fra i programmet først) |
 | API Token | Windows Credential Manager, posten `com.wi24rd.huginn-muninn` |
 | Datamappe | `%APPDATA%\com.wi24rd.huginn-muninn\` |
 

@@ -37,7 +37,7 @@ A gap is a day the program never fetched, typically because the computer was off
 - If it was off for **longer**, the oldest days are gone at Cloudflare and cannot be fetched. The Overview says how many days are missing for good.
 - **Settings → Data → Gaps** shows the number, and a click shows the list.
 
-That is why **Start at login** is on by default, and why the program says you should open it at least every three weeks if you turn it off.
+That is why **Start at login** is on by default. With it, the program also starts by itself once a day and fetches, so gaps do not appear even if you have chosen **Quit**. And that is why the program says you should open it at least every three weeks if you turn it off.
 
 ## Fetching
 

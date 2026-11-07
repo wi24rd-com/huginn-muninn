@@ -16,7 +16,7 @@ The menu at the raven icon in the menu bar:
 
 **⌘Q** while the window is open also closes the program completely. Clicking the red close icon only closes the window.
 
-**Start at login** (under **Settings → General**) makes the program start without a window, only in the menu bar, when you log in to the computer. It is turned on the first time a built version starts, and the program never turns it back on by itself if you turn it off. If it is off, the program only fetches while it is open; open it at least every three weeks, or gaps will appear in the history, because Cloudflare keeps only a month.
+**Start at login** (under **Settings → General**) makes the program start without a window, only in the menu bar, when you log in to the computer. It is turned on the first time a built version starts, and the program never turns it back on by itself if you turn it off. While it is on, the program also starts by itself once a day, at 12:00, without a window, fetches and closes again if it was not already running. If it is off, the program only fetches while it is open; open it at least every three weeks, or gaps will appear in the history, because Cloudflare keeps only a month.
 
 ## Where the notifications come from
 
