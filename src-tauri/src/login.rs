@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::LazyLock;
 
-use regex::RegexSet;
+use regex::{Regex, RegexSet};
 use serde::{Deserialize, Serialize};
 
 use crate::adgang::LAEK_IKKE_TJEKKET;
@@ -34,12 +34,36 @@ const ARTER: &[&str] = &["fw", "probe", "login", "asn"];
 const FORSLAG_DAGE: usize = 3;
 const FORSLAG_STATUS: &[&str] = &["200", "302", "401", "403"];
 const FORSLAG_MAKS: usize = 8;
-/// En sti, der indeholder et af disse ord (uanset store og små bogstaver), ligner et login. En omdøbt login-side findes i stedet på, at lækket-tjekket har set et kodeord (`forslag`).
+/// Ord for at logge ind (ikke ud). En sti ligner et login, når et af dem står som helt ord, også i flertal og med et tal efter, uanset store og små bogstaver: `/login.php` og `/wp-login.php`, men ikke `/badminton`. En omdøbt
+/// login-side findes i stedet på, at lækket-tjekket har set et kodeord (`forslag`).
 pub const LOGIN_ORD: &[&str] = &[
-    "login", "signin", "sign-in", "logon", "auth", "session", "account", "admin", "wp-login", "user",
+    "login",
+    "signin",
+    "sign-in",
+    "logon",
+    "auth",
+    "authenticate",
+    "authorize",
+    "oauth",
+    "token",
+    "sso",
+    "saml",
+    "2fa",
+    "mfa",
+    "otp",
+    "password",
+    "passwd",
+    "reset",
+    "session",
+    "account",
+    "admin",
+    "administrator",
+    "user",
 ];
-/// Ord fra `LOGIN_ORD`, der kun tæller som et helt ord i stien: `auth` står også inde i `/authors`.
-const HELE_ORD: &[&str] = &["auth"];
+static LOGIN_MOENSTER: LazyLock<Regex> = LazyLock::new(|| {
+    let ord: Vec<String> = LOGIN_ORD.iter().map(|o| regex::escape(o)).collect();
+    Regex::new(&format!(r"(^|[^\p{{L}}\p{{N}}])({})s?\d*($|[^\p{{L}}\p{{N}}])", ord.join("|"))).expect("mønsteret for login-ordene")
+});
 /// Stier, der ligner et login på navnet, men ikke er det (mønstre på stien i små bogstaver): WordPress' AJAX- og formularindgang, forfatterarkivet, hvor brugernavnet er en del af stien, og REST-ruterne
 /// for brugere. Gælder kun forslag fra navnet: en sti, hvor tjekket har set et kodeord, kan stadig foreslås (`forslag`).
 pub const IKKE_LOGIN: &[&str] = &[
@@ -468,11 +492,7 @@ pub fn regn(periode: &Periode, f: &Filter, l: &Laest, nu: i64) -> LoginUd {
 /// Ligner stien et login på navnet? Ren funktion.
 fn ligner_login(sti: &str) -> bool {
     let sti = sti.to_lowercase();
-    let helt_ord = |o: &str| sti.split(|c: char| !c.is_alphanumeric()).any(|d| d == o);
-    !IKKE_LOGIN_MOENSTRE.is_match(&sti)
-        && LOGIN_ORD
-            .iter()
-            .any(|o| if HELE_ORD.contains(o) { helt_ord(o) } else { sti.contains(o) })
+    !IKKE_LOGIN_MOENSTRE.is_match(&sti) && LOGIN_MOENSTER.is_match(&sti)
 }
 
 /// Stier, hvor lækket-tjekket har set et kodeord: alt andet end `none` og det ukendte. Ren funktion.
@@ -952,6 +972,36 @@ mod tests {
             "/wp-admin/",
             "/my-account",
             "/blog/wp-login.php",
+            "/login",
+            "/logins",
+            "/login.php",
+            "/signin",
+            "/sign-in",
+            "/Sign-In/Ny",
+            "/logon",
+            "/users",
+            "/user_profile",
+            "/account",
+            "/accounts",
+            "/admin",
+            "/administrator/",
+            "/sessions",
+            "/authenticate",
+            "/api/authorize",
+            "/oauth/token",
+            "/oauth2/authorize",
+            "/oauth2",
+            "/login2",
+            "/api/tokens",
+            "/sso",
+            "/saml/acs",
+            "/2fa",
+            "/mfa/verify",
+            "/otp",
+            "/password/reset",
+            "/passwords",
+            "/passwd",
+            "/reset",
         ] {
             assert!(ligner_login(sti), "{sti}");
         }
@@ -976,6 +1026,16 @@ mod tests {
             "/wp-json/users",
             "/authority",
             "/coauthored",
+            "/badminton",
+            "/accounting",
+            "/obsession",
+            "/superuser",
+            "/usercontent",
+            "/blogin",
+            "/logout",
+            "/presets",
+            "/tokenize",
+            "/lotpris",
         ] {
             assert!(!ligner_login(sti), "{sti}");
         }

@@ -720,6 +720,31 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   }
   console.log('     tavle: ' + tavleTal.join(' · '));
   tjek('S kontrast tavle: tekst, akse, legende, landenavne, angreb, datacentre og net (også mod land) i lys og mørk (24 par)', tavleFejl.length === 0 && tavleTal.length === 24, tavleFejl.join(' · '));
+  /* Verdenskortet: grafik ≥ 3:1 mod både hav og land i begge temaer. */
+  const KORT_NOEGLER = ['hav', 'land', 'graense', 'gitter', 'dc', 'halo', 'bue', 'angreb-1', 'angreb-2', 'angreb-3', 'angreb-4', 'angreb-5'], kortFejl = [], kortTal = [];
+  for (const tema of ['light', 'dark']) {
+    const v = bt.loesTema(tokens, tema), k = n => v['kort.' + n], b = n => v['board.' + n];
+    for (const n of KORT_NOEGLER) if (!k(n)) kortFejl.push(`${tema} kort.${n} mangler`);
+    for (const [navn, farve] of [...[1, 2, 3, 4, 5].map(i => [`angreb-${i}`, k(`angreb-${i}`)]), ['ring', b('attack')], ['bue', k('bue')], ['datacenter', b('colo')]]) for (const flade of ['hav', 'land']) {
+      const t = kontrast(farve, k(flade), k(flade));
+      kortTal.push(`${tema} ${navn}/${flade} ${t.toFixed(2)}`);
+      if (!(t >= 3)) kortFejl.push(`${tema} ${navn}/${flade} ${t.toFixed(2)} < 3`);
+    }
+    const ring = kontrast(b('attack'), k('halo')), dc = kontrast(k('dc'), k('land')), dcHav = kontrast(k('dc'), k('hav')), colo = kontrast(b('colo'), k('land')), graense = kontrast(k('graense'), k('land')), etiket = kontrast(b('label'), b('bg'));
+    kortTal.push(`${tema} ring/glorie ${ring.toFixed(2)}`, `${tema} prikker/land ${dc.toFixed(2)}`, `${tema} prikker/hav ${dcHav.toFixed(2)}`, `${tema} grænse/land ${graense.toFixed(2)}`, `${tema} etiket/baggrund ${etiket.toFixed(2)}`);
+    if (!(ring >= 3)) kortFejl.push(`${tema} ring/glorie`);
+    if (!(dc >= 1.5 && dcHav >= 1.5 && dc < colo / 2)) kortFejl.push(`${tema} prikkerne skal ses, men være tydeligt svagere end datacentret: ${dc.toFixed(2)} mod ${colo.toFixed(2)}`);
+    if (!(graense >= 1.2)) kortFejl.push(`${tema} grænsen ses ikke`);
+    if (!(etiket >= 7)) kortFejl.push(`${tema} etiket`);
+    const lyshed = [1, 2, 3, 4, 5].map(i => lum(rgba(k(`angreb-${i}`))));
+    if (!lyshed.every((x, i) => !i || (tema === 'light' ? x < lyshed[i - 1] : x > lyshed[i - 1]))) kortFejl.push(`${tema}: trinene følger ikke lysheden`);
+  }
+  console.log('     kort: ' + kortTal.join(' · '));
+  tjek('S kontrast kort: fyld, ringe, buer og datacentre mod hav og land, prikker, grænser og etiketter i lys og mørk', kortFejl.length === 0 && kortTal.length === 42, kortFejl.join(' · '));
+  const kortCss = ui('assets/vagt.css');
+  tjek('S tokens: kortets farver findes i begge temaer og bruges', KORT_NOEGLER.every(n => (cssUd.match(new RegExp(`--kort-${n}: var\\(--raw-color-kort-(light|dark)-${n}\\)`, 'g')) || []).length === 3 && kortCss.includes(`var(--kort-${n})`)), KORT_NOEGLER.filter(n => !kortCss.includes(`var(--kort-${n})`)).join());
+  const medFarve = fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f) && f !== 'tokens.css').filter(f => /#[0-9a-fA-F]{3,8}\b(?![\w-])|\brgba?\(|\bhsla?\(/.test(ui('assets/' + f).replace(/&#\d+;/g, '')));
+  tjek('S tokens: ingen farvekoder i JS og CSS uden for tokens', medFarve.length === 0, medFarve.join());
   const lys = bt.loesTema(tokens, 'light'), moerk = bt.loesTema(tokens, 'dark');
   const stop = t => tokens.semantic[t].band.fill.stops.map(([c, p]) => `${c} ${p}`).join();
   tjek('S båndet: gradienten er den rigtige i begge temaer, og der er ingen bølgemaske', stop('light') === '{raw.color.blue.800} 0,{raw.color.blue.720} 55,{raw.color.blue.550} 100' && stop('dark') === '{raw.color.blue.900} 0,{raw.color.blue.820} 55,{raw.color.blue.750} 100' && !/mask-image/.test(udenKommentarer(ui('assets/app.css'))), stop('light'));
@@ -1317,7 +1342,7 @@ const dagFor = n => new Date(urNu() - n * 864e5).toISOString().slice(0, 10);
   const s = side('#vaernet?zone=z1&navn=wi24rd.com', { ...MED_SIDEN }), e = side('#vaernet?zone=z1&navn=wi24rd.com', { ...MED_SIDEN }, 'en');
   await sov(100);
   const leg = x => [...x.d.querySelectorAll('.vg-legende li')].map(l => l.textContent);
-  tjek('P5 legenden forklarer ◆ i en ring', leg(s).at(-1) === '◆ i en ring = stoppet i samme land, som angrebet kom fra' && leg(s).length === 4, leg(s).join(' | '));
+  tjek('P5 legenden forklarer ◆ i en ring', leg(s).at(-1) === '◆ i en ring = stoppet i samme land, som angrebet kom fra' && leg(s).length === 5, leg(s).join(' | '));
   tjek('P5 legenden på engelsk', leg(e).at(-1) === '◆ inside a ring = stopped in the country the attack came from', leg(e).join(' | '));
   const svg = s.d.querySelector('svg.vg-kort');
   tjek('P5 hele kortet: ingen <title>, men role=group (mærkerne kan åbnes) og aria-label med samme tekst', ![...svg.children].some(c => c.tagName.toLowerCase() === 'title') && svg.getAttribute('role') === 'group' && svg.getAttribute('aria-label').startsWith('Verdenskort over afviste angreb de seneste 30 dage') && !svg.hasAttribute('aria-labelledby'), svg.outerHTML.slice(0, 200));
@@ -3012,8 +3037,8 @@ const DOMV = (fravalgte = [], x) => {
   /* Del A2: foreløbig */
   const fo = sp => side('', DYK({ overblik: [rk('z1', 'wi24rd.com', { moenster: MAAL })] }), sp), fd = fo('da'), fe = fo('en');
   await sov(120);
-  tjek('Foreløbigt mærke: mærket står med det samme, men foreløbigt', fd.d.querySelector('.moenster-maerke').textContent === 'Ligner målrettet · foreløbig' && fe.d.querySelector('.moenster-maerke').textContent === 'Looks targeted · provisional', fd.d.querySelector('.moenster-maerke').textContent);
-  tjek('Foreløbigt mærke: teksten siger, hvornår det afgøres', fd.w.hmSprog.moensterTekst(MAAL).endsWith('Foreløbig — afgøres, når i morgen er hentet.') && fe.w.hmSprog.moensterTekst(MAAL).endsWith('Provisional — decided when tomorrow is fetched.'));
+  tjek('Foreløbigt mærke: mærket står med det samme, men foreløbigt', fd.d.querySelector('.moenster-maerke').textContent === 'Ligner målrettet · foreløbig' && fe.d.querySelector('.moenster-maerke').textContent === 'Looks targeted · preliminary', fd.d.querySelector('.moenster-maerke').textContent);
+  tjek('Foreløbigt mærke: teksten siger, hvornår det afgøres', fd.w.hmSprog.moensterTekst(MAAL).endsWith('Foreløbig — afgøres, når dagen efter er hentet.') && fe.w.hmSprog.moensterTekst(MAAL).endsWith('Preliminary — decided when the next day is fetched.'));
   tjek('Foreløbigt mærke: afgjort står uden "foreløbig"', !fd.w.hmSprog.moensterTekst({ ...MAAL, foreloebig: false }).includes('Foreløbig'));
 
   /* Den korte tabel er erstattet af en linje og knappen til #teknologi. */
@@ -3063,7 +3088,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Vurdering: det uden data bag kan ikke klikkes', !vl('radar')?.querySelector('button') && !vb?.querySelector('li[data-id="faktor"] button'));
   const db = vkd.d.querySelector('.vurdering');
   tjek('Vurdering: i dyk for én dag, med dagen', db && vkd.kald.some(k => k[0] === 'vurdering' && k[1].dag === '2026-11-05') && db.textContent.includes('for 5. november'), db?.textContent.slice(0, 200));
-  tjek('Vurdering: engelsk, og foreløbig siges', vke.d.querySelector('.vurdering summary')?.textContent === 'Why did the day (not) get a label?' && vke.d.querySelector('.vurdering h4')?.textContent === 'Looks targeted: yes, for now — decided when the next day is fetched', vke.d.querySelector('.vurdering')?.textContent.slice(0, 200));
+  tjek('Vurdering: engelsk, og foreløbig siges', vke.d.querySelector('.vurdering summary')?.textContent === 'Why did the day (not) get a label?' && vke.d.querySelector('.vurdering h4')?.textContent === 'Looks targeted: yes, preliminary — decided when the next day is fetched', vke.d.querySelector('.vurdering')?.textContent.slice(0, 200));
   tjek('Vurdering: ikke i det samlede Angreb og ikke for en periode', !vks.d.querySelector('.vurdering') && !vkp.d.querySelector('.vurdering'));
 
   /* Trafikken */
@@ -3982,7 +4007,8 @@ const DOMV = (fravalgte = [], x) => {
   kolKnap(2, 0).click(); kolKnap(2, 2).click(); await sov(40);
   tjek('Kolonnemenu: efter handlingen står fokus på kolonnens knap', d.activeElement.classList.contains('tek-kol-knap') && d.activeElement.dataset.tek === 'react', d.activeElement.outerHTML.slice(0, 90));
   tjek('Teknologi: "Nulstil kolonnen"', JSON.stringify(t.kald.filter(k => k[0] === 'teknologi_kolonne').at(-1)[1]) === '{"tek":"react","valg":"ved_ikke"}');
-  rkT()[0].querySelector('th button').click(); await sov(20);
+  rkT()[0].querySelector('.tek-rk-knap').click();
+  rkT()[0].querySelector('.tek-kol-menu button').click(); await sov(20);
   d.getElementById('bekraeft-ja').click(); await sov(40);
   tjek('Teknologi: "Nulstil domænet" spørger og nulstiller kun domænet', JSON.stringify(t.kald.filter(k => k[0] === 'teknologi_nulstil').at(-1)[1]) === '{"zone":"z1"}');
   const soeg = d.querySelector('.tek-soeg input');
@@ -4073,6 +4099,43 @@ const DOMV = (fravalgte = [], x) => {
   m1.d.activeElement.dispatchEvent(new m1.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
   tjek('Kolonnemenu: Esc lukker og giver fokus tilbage', stop(kol(3)).length === 1 && m1.d.activeElement === kol(3).querySelector('.tek-kol-knap'));
   tjek('Kolonnemenu: ingen handling kaldes af at åbne', !m1.kald.some(k => k[0] === 'teknologi_kolonne'));
+  const tast = (x, key) => x.d.activeElement.dispatchEvent(new x.w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+  kol(1).querySelector('.tek-kol-knap').click();
+  const kolK = stop(kol(1));
+  tast(m1, 'ArrowDown');
+  tjek('Kolonnemenu: pil ned flytter til næste handling', m1.d.activeElement === kolK[2], m1.d.activeElement.outerHTML.slice(0, 80));
+  tast(m1, 'Escape');
+
+  /* Ét Tab-stop pr. domæne. */
+  const rk = i => m1.d.querySelectorAll('.tek-gitter tbody th')[i];
+  tjek('Domænemenu: ét Tab-stop pr. domæne', [...m1.d.querySelectorAll('.tek-gitter tbody th')].every(th => stop(th).length === 1 && !th.querySelector('a[href], [tabindex="0"]')), [...m1.d.querySelectorAll('.tek-gitter tbody th')].map(th => stop(th).length).join());
+  const rm = rk(0).querySelector('.tek-rk-knap'), navn0 = rk(0).querySelector('.domaene').textContent;
+  tjek('Domænemenu: knappen siger hvilket domæne, og at den er lukket', rm.textContent === '⋯' && rm.getAttribute('aria-label') === `Handlinger for ${navn0}` && rm.getAttribute('aria-expanded') === 'false', rm.outerHTML.slice(0, 120));
+  rm.click();
+  const rkK = stop(rk(0));
+  tjek('Domænemenu: åben viser handlingerne, og fokus står på den første', rkK.length === 3 && rm.getAttribute('aria-expanded') === 'true' && m1.d.activeElement === rkK[1], m1.d.activeElement.outerHTML.slice(0, 80));
+  tast(m1, 'ArrowDown');
+  tjek('Domænemenu: pil ned flytter', m1.d.activeElement === rkK[2]);
+  tast(m1, 'ArrowDown');
+  tjek('Domænemenu: pil ned går rundt', m1.d.activeElement === rkK[1]);
+  tast(m1, 'ArrowUp');
+  tjek('Domænemenu: pil op går rundt', m1.d.activeElement === rkK[2]);
+  rm.focus(); tast(m1, 'ArrowUp');
+  tjek('Domænemenu: pil op fra knappen går til den sidste handling', m1.d.activeElement === rkK[2], m1.d.activeElement.outerHTML.slice(0, 80));
+  rm.focus(); tast(m1, 'ArrowDown');
+  tjek('Domænemenu: pil ned fra knappen går til den første handling', m1.d.activeElement === rkK[1], m1.d.activeElement.outerHTML.slice(0, 80));
+  rk(1)?.querySelector('.tek-rk-knap').click();
+  tjek('Domænemenu: kun én er åben ad gangen, også sammen med kolonnerne', stop(rk(0)).length === 1 && stop(rk(1)).length === 3);
+  tast(m1, 'Escape');
+  tjek('Domænemenu: Esc lukker og giver fokus tilbage', stop(rk(1)).length === 1 && m1.d.activeElement === rk(1).querySelector('.tek-rk-knap'));
+  tjek('Domænemenu: ingen handling kaldes af at åbne', !m1.kald.some(k => ['teknologi_nulstil', 'teknologi_alle'].includes(k[0])));
+  rk(0).querySelector('.tek-rk-knap').click();
+  stop(rk(0))[2].click(); await sov(60);
+  tjek('Domænemenu: "Brug på alle domæner" kører, og fokus står på domænets knap', m1.kald.some(k => k[0] === 'teknologi_alle') && m1.d.activeElement === rk(0).querySelector('.tek-rk-knap'), m1.d.activeElement.outerHTML.slice(0, 90));
+  rk(0).querySelector('.tek-rk-knap').click();
+  stop(rk(0))[1].click(); await sov(20);
+  m1.d.getElementById('bekraeft-nej')?.click(); await sov(40);
+  tjek('Domænemenu: afvist bekræftelse lukker menuen og nulstiller ikke', !m1.kald.some(k => k[0] === 'teknologi_nulstil') && stop(rk(0)).length === 1, stop(rk(0)).length);
 
   /* DNS-mærket og boksen "Vurdering". */
   const DNS_M = { slags: 'dns_rekognoscering', dag: '2026-11-02', stier: 300, normalt: 4.4, dns_navne: true, scanner: false, ny: true, netvaerk: null, procent: 0, verden: false, tek: null, angreb: 0, stoppet: 0, foreloebig: false };
@@ -4131,6 +4194,50 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Mails: ental, alle godkendt', emailTekst(e10) === '1 mail · alle godkendt' && emailTekst(e11) === '1 email · all approved', [emailTekst(e10), emailTekst(e11)].join('|'));
   tjek('Mails: ental og flertal, ikke godkendt', emailTekst(e12) === '1 mail · 1 ikke godkendt fra 1 afsender' && emailTekst(e13) === '2 emails · 1 not approved from 1 sender', [emailTekst(e12), emailTekst(e13)].join('|'));
   tjek('Mails: linjen gentager ikke overskriften', [e1, e6, e10, e12].every(x => !emailTekst(x).includes(x.w.hmSprog.T.emailH)) && [e2, e11, e13].every(x => !emailTekst(x).includes(x.w.hmSprog.T.emailH)));
+
+  /* Verdenskortet: lande efter antal angreb. */
+  const kp = side('#overblik', { ...MED_SIDEN, overblik: OD }), kpe = side('#overblik', { ...MED_SIDEN, overblik: OD }, 'en');
+  await sov(120);
+  const KV = kp.w.hmTegn, trinAf = n => [...KV.angrebsTrin(n.map((x, i) => ({ kode: 'L' + i, n: x }))).values()].join();
+  tjek('Kort: fem tal giver de fem trin', trinAf([1, 2, 3, 4, 5]) === '1,2,3,4,5', trinAf([1, 2, 3, 4, 5]));
+  tjek('Kort: ti tal fordeles jævnt', trinAf([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) === '1,1,2,2,3,3,4,4,5,5', trinAf([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+  tjek('Kort: ét land med alt skubber ikke de andre ned i det laveste trin', trinAf([1000000, 1, 2, 3, 4]) === '5,1,2,3,4', trinAf([1000000, 1, 2, 3, 4]));
+  tjek('Kort: samme tal giver samme trin, og det største står altid øverst', trinAf([7, 7, 7, 9]) === '3,3,3,5' && trinAf([4]) === '5', trinAf([7, 7, 7, 9]));
+  tjek('Kort: et land uden angreb får intet trin', !KV.angrebsTrin([{ kode: 'DK', n: 0 }, { kode: 'SE', n: 3 }]).has('DK'));
+  const spring = [...Object.values(KORT.verden.flader), KORT.verden.flader_uden_kode].flatMap(d => d.split('M').slice(1)).filter(r => { const x = r.replace('Z', '').split('L').map(p => Number(p.split(',')[0])); return x.some((v, i) => Math.abs(v - x[(i + 1) % x.length]) > 500); });
+  tjek('Kort: ingen flade springer tværs over kortet ved datolinjen', spring.length === 0, String(spring.length));
+  tjek('Kort: lande over datolinjen står i begge sider af kortet', (x => Math.min(...x) < 20 && Math.max(...x) > 980)(KORT.verden.flader.RU.split('M').slice(1).flatMap(r => r.replace('Z', '').split('L').map(p => Number(p.split(',')[0])))));
+  tjek('Kort: fladerne findes for de store lande, og alle har en landekode', ['DK', 'US', 'RU', 'BR', 'FR', 'XK'].every(k => KORT.verden.flader[k]) && Object.keys(KORT.verden.flader).every(k => k in KORT.verden.lande) && KORT.verden.flader_uden_kode.length > 0);
+  const DYKK = { land: k => `zone=z1&land=${k}`, colo: k => `zone=z1&colo=${k}`, bue: (a, b) => `zone=z1&land=${a}&colo=${b}` };
+  const tegnKort = (lande, vis = 'verden', dyk = DYKK) => KV.kort({ lande, colos: [], buer: [] }, vis, { titel: 'Kort', tal: n => String(n), dyk }).querySelector('svg');
+  const k1 = tegnKort([{ kode: 'DK', n: 500 }, { kode: 'SE', n: 20 }, { kode: 'SG', n: 7 }, { kode: 'XX', n: 2 }]), fy = k => [...k.querySelectorAll('.vg-fyld')], flDK = fy(k1).find(e => e.getAttribute('d') === KORT.verden.flader.DK), ringDK = [...k1.querySelectorAll('circle.vg-land')][0];
+  tjek('Kort: kun lande med angreb og en flade fyldes', fy(k1).length === 2 && !fy(k1).some(e => e.getAttribute('d') === KORT.verden.flader.NO), fy(k1).length);
+  tjek('Kort: det største land står i det øverste trin', flDK?.classList.contains('vg-trin-5'), flDK?.getAttribute('class'));
+  tjek('Kort: fladen åbner det samme som ringen', flDK?.getAttribute('data-dyk') === ringDK.getAttribute('data-dyk') && flDK.getAttribute('data-dyk') === 'zone=z1&land=DK', flDK?.getAttribute('data-dyk'));
+  tjek('Kort: fladen har land og tal i <title>', flDK?.querySelector('title')?.textContent === 'Danmark: 500', flDK?.querySelector('title')?.textContent);
+  tjek('Kort: fladen er ikke et ekstra Tab-stop, og ringen er stadig mærket', flDK && !flDK.hasAttribute('tabindex') && flDK.getAttribute('aria-hidden') === 'true' && ringDK.getAttribute('tabindex') === '0' && k1.querySelectorAll('[tabindex="0"]').length === 1);
+  tjek('Kort: hver ring har en glorie, der ikke tager klik', k1.querySelectorAll('circle.vg-land-halo').length === k1.querySelectorAll('circle.vg-land').length && /\.vg-land-halo \{[^}]*pointer-events: none/.test(ui('assets/vagt.css')));
+  tjek('Kort: musen over et land skifter ikke farven ud med klikfladens', ui('assets/vagt.css').includes('.dyk-hit:not(.vg-fyld):hover') && !/^\.dyk-hit:hover/m.test(ui('assets/vagt.css')) && /\.vg-fyld\[data-dyk\]:hover/.test(ui('assets/vagt.css')));
+  tjek('Kort: et land uden flade beholder ringen', [...k1.querySelectorAll('circle.vg-land')].some(c => c.querySelector('title')?.textContent.endsWith(': 7')));
+  tjek('Kort: fladerne ligger under grænserne, og prikkerne over', (b => b.indexOf(fy(k1)[0].parentNode) < b.indexOf(k1.querySelector('.vg-graense')) && b.indexOf(k1.querySelector('.vg-graense')) < b.indexOf(k1.querySelector('.vg-net').parentNode))([...k1.children]));
+  const kE = tegnKort([{ kode: 'RU', n: 40 }, { kode: 'DK', n: 3 }], 'europa'), ruE = fy(kE).find(e => e.getAttribute('d') === KORT.verden.flader.RU);
+  tjek('Kort: Europa: et land, hvis ring er uden for billedet, kan åbnes med tastaturet på fladen', ruE?.classList.contains('dyk-maerke') && ruE.getAttribute('role') === 'link' && ruE.getAttribute('tabindex') === '-1' && ruE.getAttribute('data-dyk') === 'zone=z1&land=RU', ruE?.outerHTML.slice(0, 120));
+  const kU = tegnKort([{ kode: 'DK', n: 3 }], 'verden', null), flU = fy(kU)[0];
+  const kUden = side('#overblik', { ...MED_SIDEN, overblik: OD, kortdata: { ...KORT, verden: { ...KORT.verden, flader: undefined, flader_uden_kode: undefined } } });
+  await sov(120);
+  tjek('Kort: fladerne er valgfrie i kortdata', kUden.w.hmTegn.kort({ lande: [{ kode: 'DK', n: 3 }], colos: [], buer: [] }, 'verden', { titel: 'Kort' }).querySelectorAll('circle.vg-land').length === 1);
+  tjek('Kort: uden dyk kan fladen ikke klikkes, men har stadig <title>', flU && !flU.hasAttribute('data-dyk') && flU.querySelector('title')?.textContent === 'Danmark: 3');
+  const skala = kp.w.hmTegn.kortSkala([{ kode: 'DK', n: 1200 }, { kode: 'SE', n: 3 }, { kode: 'NO', n: 0 }]), skalaEn = kpe.w.hmTegn.kortSkala([{ kode: 'DK', n: 1200 }, { kode: 'SE', n: 3 }]);
+  tjek('Kort: forklaringen har skalaen med tal ved enderne', skala.querySelectorAll('.vg-skala-trin i').length === 5 && skala.firstElementChild.textContent === '3' && skala.children[2].textContent === '1.200', skala.textContent);
+  tjek('Kort: forklaringens tekst', skala.lastElementChild.textContent === 'Landet, Cloudflare så angrebet komme fra (kan være en VPN eller proxy)' && skalaEn.lastElementChild.textContent === 'Country Cloudflare saw the attack come from (may be a VPN or proxy)' && skalaEn.children[2].textContent === '1,200', skalaEn.textContent);
+  tjek('Kort: ingen forklaring uden angreb', kp.w.hmTegn.kortSkala([]) === null && kp.w.hmTegn.kortSkala([{ kode: 'DK', n: 0 }]) === null);
+  const ka = side('#vaernet?zone=z1&navn=wi24rd.com', RV()), kd = side('#dyk?' + dykQ({}), RV());
+  await sov(200);
+  tjek('Kort: forklaringen står under kortet i Angreb og dyk', ka.d.querySelector('.vg-legende .vg-skala') && kd.d.querySelector('.vg-legende .vg-skala') && ka.d.querySelector('svg.vg-kort .vg-fyld') && kd.d.querySelector('svg.vg-kort .vg-fyld'), ka.d.querySelector('.vg-legende')?.textContent.slice(0, 120));
+
+  /* Det foreløbige mærke siger det samme overalt. */
+  const foreloebig = x => Object.entries(x.w.hmSprog.T).filter(([n, v]) => /foreloeb/i.test(n) && typeof v === 'string').map(([, v]) => v);
+  tjek('Foreløbigt mærke: ingen tekst siger i morgen', [...foreloebig(kp), ...foreloebig(kpe)].length === 6 && ![...foreloebig(kp), ...foreloebig(kpe)].some(t => /i morgen|tomorrow/i.test(t)) && foreloebig(kp).filter(t => t.includes('afgøres, når dagen efter er hentet')).length === 2 && foreloebig(kpe).filter(t => t.includes('decided when the next day is fetched')).length === 2, [...foreloebig(kp), ...foreloebig(kpe)].join(' | '));
 
   /* Vurdering: status pr. mærke, grænser som hele tal og betingelser uden noget at sammenligne med. */
   const bet = (id, ok, n, m, x = {}) => ({ id, ok, n, m, navn: null, domaener: [], ...x });

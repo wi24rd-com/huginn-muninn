@@ -510,9 +510,24 @@
   const proj = (lon, lat) => [500 + lon * 1000 / 360, 250 - lat * 1000 / 360];
   const VIEW = { verden: [0, 28, 1000, 385], europa: [430, 50, 250, 96] };
   const iBilledet = (p, [x, y, b, h]) => p[0] >= x && p[0] <= x + b && p[1] >= y && p[1] <= y + h;
+  /* Ses en del af fladen (en sti af M, L og Z) i billedet? */
+  const fladeIBilledet = (d, view) => d.split(/[MLZ]/).some(p => p && iBilledet(p.split(',').map(Number), view));
+  const TRIN = 5;
+  /* Landenes trin (1–5) som kvantiler af de forskellige tal: ét land med alt får det øverste trin og kan ikke skubbe de andre ned i det nederste. Samme tal giver samme trin. Lande uden angreb er ikke med. */
+  function angrebsTrin(lande) {
+    const tal = [...new Set(lande.map(l => l.n).filter(n => n > 0))].sort((a, b) => a - b);
+    return new Map(lande.filter(l => l.n > 0).map(l => [l.kode, Math.ceil(TRIN * (tal.indexOf(l.n) + 1) / tal.length)]));
+  }
+  /* Forklaringen under kortet: skalaen med det mindste og største tal. Intet, når intet land har angreb. */
+  function kortSkala(lande) {
+    const tal = lande.map(l => l.n).filter(n => n > 0);
+    if (!tal.length) return null;
+    const trin = Array.from({ length: TRIN }, (_, i) => el('i', { className: `vg-trin-${i + 1}` }));
+    return el('li', { className: 'vg-skala' }, el('span', { textContent: S.tal(Math.min(...tal)) }), el('span', { className: 'vg-skala-trin' }, ...trin), el('span', { textContent: S.tal(Math.max(...tal)) }), el('span', { textContent: T.kortSkala }));
+  }
   function kort(v, visning, opt) {
     const [vx, vy, vw, vh] = VIEW[visning], k = 1000 / vw, r = n => (n / k).toFixed(2);
-    const L = verden.lande || {}, dyk = opt.dyk || null, tekst = opt.tal || (n => fmt(T.nAfvist, { n: tal(n) }));
+    const L = verden.lande || {}, F = verden.flader || {}, dyk = opt.dyk || null, tekst = opt.tal || (n => fmt(T.nAfvist, { n: tal(n) }));
     /* Kortet er mindst 600 px bredt (vinduets mindste bredde er 900 px), så en flade med denne radius er mindst 24 px. */
     const hitR = (HIT / 2) * vw / 600, set = p => iBilledet(p, VIEW[visning]);
     const fladeLag = svg('g', {}), bueLag = svg('g', {});
@@ -522,9 +537,20 @@
     const gitter = svg('g', { class: 'vg-gitter', 'stroke-width': r(.4) });
     for (let lon = -150; lon <= 180; lon += 30) { const x = proj(lon, 0)[0]; gitter.append(svg('line', { x1: x, y1: 0, x2: x, y2: 500 })); }
     for (let lat = -60; lat <= 60; lat += 30) { const y = proj(0, lat)[1]; gitter.append(svg('line', { x1: 0, y1: y, x2: 1000, y2: y })); }
-    s.append(svg('rect', { class: 'vg-hav', x: 0, y: 0, width: 1000, height: 500 }), gitter, svg('path', { class: 'vg-landflade', d: verden.land, 'stroke-width': r(.5) }));
+    s.append(svg('rect', { class: 'vg-hav', x: 0, y: 0, width: 1000, height: 500 }), gitter, svg('path', { class: 'vg-landflade', d: verden.land }));
+    /* Lande med angreb: fladen åbner det samme som ringen. Tastaturet går til ringen; er den uden for billedet, er fladen selv et mærke, ellers kunne landet kun åbnes med musen. */
+    const maerker = [], trin = angrebsTrin(v.lande), fyld = svg('g', {});
+    for (const l of v.lande) {
+      const d = F[l.kode], t = trin.get(l.kode);
+      if (!d || !t) continue;
+      const tt = `${land(l.kode)}: ${tekst(l.n)}`, label = fmt(T.dykAabn, { navn: land(l.kode), n: tal(l.n) }), ringSes = Boolean(L[l.kode]) && set(L[l.kode]);
+      if (dyk && ringSes) { flade(fyld, svg('path', { class: `vg-fyld vg-trin-${t} dyk-hit`, d, 'fill-rule': 'evenodd' }), dyk.land(l.kode), label, tt); continue; }
+      const e = svg('path', { class: `vg-fyld vg-trin-${t}`, d, 'fill-rule': 'evenodd' }, titel(tt));
+      if (dyk && fladeIBilledet(d, VIEW[visning])) { e.classList.add('dyk-maerke'); maerker.push([e, dyk.land(l.kode), label]); }
+      fyld.append(e);
+    }
+    s.append(fyld, svg('path', { class: 'vg-graense', d: Object.values(F).join('') + (verden.flader_uden_kode || ''), 'stroke-width': r(.35) }));
     s.append(svg('g', {}, ...[...Object.values(verden.colo), ...Object.values(verden.net).map(a => a.slice(0, 2))].map(([x, y]) => svg('circle', { class: 'vg-net', cx: x, cy: y, r: r(1.3) }))));
-    const maerker = [];
     const mb = Math.max(1, ...v.buer.map(b => b.n)), buer = svg('g', {});
     for (const b of v.buer.slice().sort((a, c) => a.n - c.n)) {
       const a = L[b.land], c = xyColo(b.colo);
@@ -545,6 +571,8 @@
       const p = L[l.kode];
       if (!p || !set(p)) continue;
       const tt = `${land(l.kode)}: ${tekst(l.n)}`, label = fmt(T.dykAabn, { navn: land(l.kode), n: tal(l.n) });
+      /* Glorien holder ringen læselig oven på et rødt land. */
+      ringe.append(svg('circle', { class: 'vg-land-halo', cx: p[0], cy: p[1], r: r(radius(l.n)), 'stroke-width': r(1.4) }));
       const e = svg('circle', { class: 'vg-land' + (dyk ? ' dyk-maerke' : ''), cx: p[0], cy: p[1], r: r(radius(l.n)) }, titel(tt));
       if (dyk) {
         maerker.push([e, dyk.land(l.kode), label]);
@@ -586,5 +614,5 @@
   const paaKortet = p => Boolean(p) && iBilledet(p, VIEW.verden);
   const udenPlads = v => [...v.lande.filter(l => !paaKortet((verden.lande || {})[l.kode])).map(l => land(l.kode)), ...v.colos.filter(c => !paaKortet(xyColo(c.kode))).map(c => colo(c.kode))];
 
-  window.hmTegn = { moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, flise, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, kort, udenPlads, ark };
+  window.hmTegn = { angrebsTrin, kortSkala, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, flise, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, kort, udenPlads, ark };
 })();

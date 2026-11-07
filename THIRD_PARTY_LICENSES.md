@@ -17,7 +17,7 @@ Kildeangivelsen står også i programmet (Værnet, under "Sådan tælles der").
 
 | Data | Kilde | Licens |
 |---|---|---|
-| Landkonturer (`verden.json` → `land`) | Natural Earth 110m via world-atlas | Public domain |
+| Landkonturer (`verden.json` → `land`, `flader`, `flader_uden_kode`) | Natural Earth 110m via world-atlas | Public domain |
 | Landenes midtpunkter (`verden.json` → `lande`) | world-countries | ODbL |
 | Datacentrenes koordinater (`verden.json` → `colo`, `net`) | OpenFlights via airport-codes (ifølge filens egen note) | Ikke afgjort |
 | Tidszone → land (`tidszoner.json`) | tz-databasens `zone.tab`, genereret med `tools/tidszoner.mjs` | Public domain |

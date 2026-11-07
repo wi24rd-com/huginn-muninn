@@ -37,32 +37,53 @@
   }
   const smaaKnap = (tekst, label, fn) => { const b = el('button', { type: 'button', className: 'link tek-lille', textContent: tekst }); b.setAttribute('aria-label', label); b.addEventListener('click', fn); return b; };
 
-  /* Kolonnens handlinger bag én knap, så en kolonne er ét Tab-stop. De står i overskriften og ikke i en svævende menu, for tabellens rulleboks ville klippe den. Kun én er åben ad gangen. */
-  function kolMenu(k) {
-    const knap = el('button', { type: 'button', className: 'tek-kol-knap', textContent: '⋯' });
+  /* Handlinger bag én knap, så en kolonne eller et domæne er ét Tab-stop. De står i tabellen og ikke i en svævende menu, for tabellens rulleboks ville klippe den. Kun én er åben ad gangen. Pil op og ned flytter i menuen, Esc lukker. */
+  function menuKnap(klasse, label, knapper) {
+    const knap = el('button', { type: 'button', className: klasse, textContent: '⋯' }), menu = el('div', { className: 'tek-kol-menu', hidden: true }, ...knapper);
     const aabn = ja => {
-      rod.querySelectorAll('.tek-kol-knap').forEach(b => { b.setAttribute('aria-expanded', 'false'); b.nextElementSibling.hidden = true; });
+      rod.querySelectorAll('.tek-kol-knap, .tek-rk-knap').forEach(b => { b.setAttribute('aria-expanded', 'false'); b.nextElementSibling.hidden = true; });
       knap.setAttribute('aria-expanded', String(ja));
       menu.hidden = !ja;
     };
-    /* Tabellen tegnes om efter handlingen: fokus tilbage på kolonnens knap. */
-    const gem = valg => async () => {
-      await handling(() => invoke('teknologi_kolonne', { tek: k.tek, valg }));
-      [...rod.querySelectorAll('.tek-kol-knap')].find(b => b.dataset.tek === k.tek)?.focus();
-    };
-    const menu = el('div', { className: 'tek-kol-menu', hidden: true }, smaaKnap(T.tekIkkeAlle, fmt(T.tekIkkeAlleFor, { t: k.navn }), gem('bruger_ikke')), smaaKnap(T.tekNulKolonne, fmt(T.tekNulKolonneFor, { t: k.navn }), gem('ved_ikke')));
-    knap.dataset.tek = k.tek;
-    knap.setAttribute('aria-label', fmt(T.tekKolMenu, { t: k.navn }));
+    knap.setAttribute('aria-label', label);
     knap.setAttribute('aria-expanded', 'false');
     knap.addEventListener('click', () => {
       const ja = menu.hidden;
       aabn(ja);
       if (ja) menu.querySelector('button').focus();
     });
-    const luk = ev => { if (ev.key !== 'Escape' || menu.hidden) return; ev.preventDefault(); ev.stopPropagation(); aabn(false); knap.focus(); };
-    knap.addEventListener('keydown', luk);
-    menu.addEventListener('keydown', luk);
+    const tast = ev => {
+      if (menu.hidden) return;
+      if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); aabn(false); knap.focus(); return; }
+      const skridt = { ArrowDown: 1, ArrowUp: -1 }[ev.key];
+      if (!skridt) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      const k = [...menu.querySelectorAll('button')], i = k.indexOf(document.activeElement);
+      k[(Math.max(i, skridt < 0 ? 0 : -1) + skridt + k.length) % k.length].focus();
+    };
+    knap.addEventListener('keydown', tast);
+    menu.addEventListener('keydown', tast);
+    return { knap, menu, luk: () => { aabn(false); knap.focus(); } };
+  }
+  function kolMenu(k) {
+    /* Tabellen tegnes om efter handlingen: fokus tilbage på kolonnens knap. */
+    const gem = valg => async () => {
+      await handling(() => invoke('teknologi_kolonne', { tek: k.tek, valg }));
+      [...rod.querySelectorAll('.tek-kol-knap')].find(b => b.dataset.tek === k.tek)?.focus();
+    };
+    const { knap, menu } = menuKnap('tek-kol-knap', fmt(T.tekKolMenu, { t: k.navn }), [smaaKnap(T.tekIkkeAlle, fmt(T.tekIkkeAlleFor, { t: k.navn }), gem('bruger_ikke')), smaaKnap(T.tekNulKolonne, fmt(T.tekNulKolonneFor, { t: k.navn }), gem('ved_ikke'))]);
+    knap.dataset.tek = k.tek;
     return [knap, menu];
+  }
+  function rkMenu(dom) {
+    /* Tabellen tegnes om efter handlingen: fokus tilbage på domænets knap. */
+    const fokus = () => [...rod.querySelectorAll('.tek-rk-knap')].find(b => b.dataset.zone === dom.zone)?.focus();
+    const gem = fn => async () => { await handling(fn); fokus(); };
+    const nulstil = async () => { if (await R.bekraeft(fmt(T.bekraeftTekP, { d: dom.navn }))) await gem(() => invoke('teknologi_nulstil', { zone: dom.zone }))(); else m.luk(); };
+    const m = menuKnap('tek-rk-knap', fmt(T.tekRkMenu, { navn: dom.navn }), [smaaKnap(T.tekNulDomaene, fmt(T.tekNulDomaeneFor, { navn: dom.navn }), nulstil), smaaKnap(T.tekKopier, fmt(T.tekKopierFor, { navn: dom.navn }), gem(() => invoke('teknologi_alle', { zone: dom.zone })))]);
+    m.knap.dataset.zone = dom.zone;
+    return [m.knap, m.menu];
   }
 
   /* ── "Pr. domæne" ── */
@@ -125,9 +146,7 @@
     if (!kolonner.length) return el('p', { className: 'vg-status', textContent: T.tekIngenTraef });
     const hoved = el('tr', {}, el('th', { scope: 'col', textContent: T.thDomaene }), ...kolonner.map(k => el('th', { scope: 'col' }, el('span', { className: 'tek-kol', textContent: k.navn }), ...kolMenu(k))));
     const raekker = d.domaener.map(dom => {
-      const th = el('th', { scope: 'row' }, V.domaene(dom.navn),
-        smaaKnap(T.tekNulDomaene, fmt(T.tekNulDomaeneFor, { navn: dom.navn }), async () => { if (await R.bekraeft(fmt(T.bekraeftTekP, { d: dom.navn }))) handling(() => invoke('teknologi_nulstil', { zone: dom.zone })); }),
-        smaaKnap(T.tekKopier, fmt(T.tekKopierFor, { navn: dom.navn }), () => handling(() => invoke('teknologi_alle', { zone: dom.zone }))));
+      const th = el('th', { scope: 'row' }, V.domaene(dom.navn), ...rkMenu(dom));
       const tr = el('tr', { className: dom.zone === params.get('zone') ? 'tek-fokus' : '' }, th, ...kolonner.map(k => celle(dom, k)));
       tr.dataset.zone = dom.zone;
       return tr;

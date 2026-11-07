@@ -95,6 +95,30 @@
   <Color x:Key="Raw.Color.BoardLight.Ok">#FF166534</Color>
   <Color x:Key="Raw.Color.BoardLight.ZoomBg">#EBFFFFFF</Color>
   <Color x:Key="Raw.Color.BoardLight.OnColo">#FFFFFFFF</Color>
+  <Color x:Key="Raw.Color.KortDark.Hav">#FF0C2740</Color>
+  <Color x:Key="Raw.Color.KortDark.Land">#FF2B3036</Color>
+  <Color x:Key="Raw.Color.KortDark.Graense">#FF454C55</Color>
+  <Color x:Key="Raw.Color.KortDark.Gitter">#FF17364F</Color>
+  <Color x:Key="Raw.Color.KortDark.Dc">#FF3F6E9C</Color>
+  <Color x:Key="Raw.Color.KortDark.Halo">#FF060B14</Color>
+  <Color x:Key="Raw.Color.KortDark.Bue">#D9FF7A6B</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb1">#FFD9534A</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb2">#FFE56C60</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb3">#FFF08676</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb4">#FFF8A293</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb5">#FFFFC0B3</Color>
+  <Color x:Key="Raw.Color.KortLight.Hav">#FFCFE4F3</Color>
+  <Color x:Key="Raw.Color.KortLight.Land">#FFF4EDDD</Color>
+  <Color x:Key="Raw.Color.KortLight.Graense">#FFCDBFA3</Color>
+  <Color x:Key="Raw.Color.KortLight.Gitter">#FFBCD6EA</Color>
+  <Color x:Key="Raw.Color.KortLight.Dc">#FF8CB3DA</Color>
+  <Color x:Key="Raw.Color.KortLight.Halo">#FFFFFFFF</Color>
+  <Color x:Key="Raw.Color.KortLight.Bue">#E6CC333A</Color>
+  <Color x:Key="Raw.Color.KortLight.Angreb1">#FFDE4A41</Color>
+  <Color x:Key="Raw.Color.KortLight.Angreb2">#FFC43229</Color>
+  <Color x:Key="Raw.Color.KortLight.Angreb3">#FFA02120</Color>
+  <Color x:Key="Raw.Color.KortLight.Angreb4">#FF771416</Color>
+  <Color x:Key="Raw.Color.KortLight.Angreb5">#FF4E0A0E</Color>
   <Color x:Key="Raw.Color.Chart.2xx">#FF3FB46C</Color>
   <Color x:Key="Raw.Color.Chart.3xx">#FF5AA7E0</Color>
   <Color x:Key="Raw.Color.Chart.4xx">#FFD9A441</Color>
@@ -177,6 +201,18 @@
   <FontFamily x:Key="Light.Shadow.Card">0 1px 2px rgba(13, 40, 90, .06)</FontFamily>
   <SolidColorBrush x:Key="Light.Nav.SelectedBg" Color="#FFE8F2FF"/>
   <SolidColorBrush x:Key="Light.Nav.SelectedText" Color="#FF0A3FB8"/>
+  <SolidColorBrush x:Key="Light.Kort.Hav" Color="#FFCFE4F3"/>
+  <SolidColorBrush x:Key="Light.Kort.Land" Color="#FFF4EDDD"/>
+  <SolidColorBrush x:Key="Light.Kort.Graense" Color="#FFCDBFA3"/>
+  <SolidColorBrush x:Key="Light.Kort.Gitter" Color="#FFBCD6EA"/>
+  <SolidColorBrush x:Key="Light.Kort.Dc" Color="#FF8CB3DA"/>
+  <SolidColorBrush x:Key="Light.Kort.Halo" Color="#FFFFFFFF"/>
+  <SolidColorBrush x:Key="Light.Kort.Bue" Color="#E6CC333A"/>
+  <SolidColorBrush x:Key="Light.Kort.Angreb1" Color="#FFDE4A41"/>
+  <SolidColorBrush x:Key="Light.Kort.Angreb2" Color="#FFC43229"/>
+  <SolidColorBrush x:Key="Light.Kort.Angreb3" Color="#FFA02120"/>
+  <SolidColorBrush x:Key="Light.Kort.Angreb4" Color="#FF771416"/>
+  <SolidColorBrush x:Key="Light.Kort.Angreb5" Color="#FF4E0A0E"/>
   <SolidColorBrush x:Key="Light.Board.Bg" Color="#FFFFFFFF"/>
   <SolidColorBrush x:Key="Light.Board.Bg2" Color="#FFF4F7FB"/>
   <SolidColorBrush x:Key="Light.Board.Land" Color="#FFC9D6E6"/>
@@ -254,6 +290,18 @@
   <FontFamily x:Key="Dark.Shadow.Card">0 30px 60px -40px rgba(0, 0, 0, .9)</FontFamily>
   <SolidColorBrush x:Key="Dark.Nav.SelectedBg" Color="#293B8DFF"/>
   <SolidColorBrush x:Key="Dark.Nav.SelectedText" Color="#FFFFFFFF"/>
+  <SolidColorBrush x:Key="Dark.Kort.Hav" Color="#FF0C2740"/>
+  <SolidColorBrush x:Key="Dark.Kort.Land" Color="#FF2B3036"/>
+  <SolidColorBrush x:Key="Dark.Kort.Graense" Color="#FF454C55"/>
+  <SolidColorBrush x:Key="Dark.Kort.Gitter" Color="#FF17364F"/>
+  <SolidColorBrush x:Key="Dark.Kort.Dc" Color="#FF3F6E9C"/>
+  <SolidColorBrush x:Key="Dark.Kort.Halo" Color="#FF060B14"/>
+  <SolidColorBrush x:Key="Dark.Kort.Bue" Color="#D9FF7A6B"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb1" Color="#FFD9534A"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb2" Color="#FFE56C60"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb3" Color="#FFF08676"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb4" Color="#FFF8A293"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb5" Color="#FFFFC0B3"/>
   <SolidColorBrush x:Key="Dark.Board.Bg" Color="#FF060B14"/>
   <SolidColorBrush x:Key="Dark.Board.Bg2" Color="#FF0F1B30"/>
   <SolidColorBrush x:Key="Dark.Board.Land" Color="#FF1B2731"/>

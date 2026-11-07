@@ -765,8 +765,8 @@ pub fn moenster_tekst(m: &Moenster, sprog: Sprog) -> String {
     let tek = m.tek.as_deref().map(teknologi::navn);
     let foreloebig = match (m.foreloebig, da) {
         (false, _) => "",
-        (true, true) => " Foreløbig — afgøres, når i morgen er hentet.",
-        (true, false) => " Provisional — decided when tomorrow is fetched.",
+        (true, true) => " Foreløbig — afgøres, når dagen efter er hentet.",
+        (true, false) => " Preliminary — decided when the next day is fetched.",
     };
     let slut = match (tek, da) {
         (Some(t), true) => format!(", og angrebene ramte {t}, som dit site bruger"),
@@ -1539,8 +1539,8 @@ mod tests {
         g.afgjort = None;
         g.moenster.as_mut().unwrap().foreloebig = true;
         assert_eq!(beslut(std::slice::from_ref(&g), &std, &intet(), NU), None, "foreløbigt");
-        assert!(moenster_tekst(g.moenster.as_ref().unwrap(), Sprog::Da).ends_with("Foreløbig — afgøres, når i morgen er hentet."));
-        assert!(moenster_tekst(g.moenster.as_ref().unwrap(), Sprog::En).ends_with("Provisional — decided when tomorrow is fetched."));
+        assert!(moenster_tekst(g.moenster.as_ref().unwrap(), Sprog::Da).ends_with("Foreløbig — afgøres, når dagen efter er hentet."));
+        assert!(moenster_tekst(g.moenster.as_ref().unwrap(), Sprog::En).ends_with("Preliminary — decided when the next day is fetched."));
         assert!(
             !vis_selv(Niveau::Standard, None, std::slice::from_ref(&g), NU, &Tidszone::default()),
             "åbner ikke kortet"
@@ -1650,6 +1650,17 @@ mod tests {
                 dns: vec!["c.wi24rd.com".into()],
             }
         );
+    }
+
+    /// Teksten siger det samme som mærket og Vurdering: det afgøres af dagen efter, ikke af en bestemt dag i kalenderen.
+    #[test]
+    fn foreloebig_teksten_afgoeres_af_dagen_efter() {
+        let mut m = maerke(MoensterSlags::Maalrettet);
+        m.foreloebig = true;
+        let (da, en) = (moenster_tekst(&m, Sprog::Da), moenster_tekst(&m, Sprog::En));
+        assert!(da.ends_with("Foreløbig — afgøres, når dagen efter er hentet."), "{da}");
+        assert!(en.ends_with("Preliminary — decided when the next day is fetched."), "{en}");
+        assert!(!da.contains("i morgen") && !en.contains("tomorrow"));
     }
 
     #[test]

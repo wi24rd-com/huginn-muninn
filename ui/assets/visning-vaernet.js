@@ -251,7 +251,9 @@
     plads('trafik').replaceChildren(...trafikLinjer(v));
     plads('fordeling').replaceChildren(...fordelingLinjer(T.fordI, f.i_gaar, { dag: iGaar(v) }), ...fordelingLinjer(T.ford30, f.d30, {}));
     rod.querySelector('.vg-kortramme').replaceChildren(V.kort(kortData(v), 'verden', kortOpt(v)));
-    const uden = V.udenPlads(kortData(v)), legende = plads('legende');
+    const uden = V.udenPlads(kortData(v)), legende = plads('legende'), skala = V.kortSkala(kortData(v).lande);
+    legende.querySelector('.vg-skala')?.remove();
+    if (skala) legende.prepend(skala);
     if (uden.length) legende.append(el('li', { textContent: fmt(Sp.T.kortUdenPlads, { liste: uden.join(', ') }) }));
     if (v.h_buer_i_alt > v.h_buer.length) legende.append(el('li', { textContent: fmt(Sp.T.kortBuer, { n: tal(v.h_buer.length), m: tal(v.h_buer_i_alt) }) }));
     plads('dage-top').replaceChildren(...dageTop(v));

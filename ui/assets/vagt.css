@@ -39,9 +39,10 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .tek-gitter .domaene { display: block; font-weight: 600; }
 .tek-gitter tr.tek-fokus > th:first-child { box-shadow: inset 3px 0 0 var(--color-accent); }
 .tek-kol { display: block; color: var(--color-text); }
-.tek-kol-knap { min-width: 28px; min-height: 24px; padding: 0 6px; border: 1px solid var(--color-border); border-radius: var(--chip-radius); background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 600; line-height: 1; cursor: pointer; }
-.tek-kol-knap:hover { background: var(--color-hover); }
-.tek-kol-knap[aria-expanded="true"] { border-color: var(--color-text-muted); }
+.tek-kol-knap, .tek-rk-knap { min-width: 28px; min-height: 24px; padding: 0 6px; border: 1px solid var(--color-border); border-radius: var(--chip-radius); background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 600; line-height: 1; cursor: pointer; }
+.tek-kol-knap:hover, .tek-rk-knap:hover { background: var(--color-hover); }
+.tek-kol-knap[aria-expanded="true"], .tek-rk-knap[aria-expanded="true"] { border-color: var(--color-text-muted); }
+.tek-rk-knap { display: block; margin-top: 2px; }
 .tek-kol-menu { margin-top: 4px; }
 .tek-lille { display: block; min-height: 24px; font-size: var(--font-size-xs); font-weight: 500; }
 .tek-radio { display: inline-flex; gap: 2px; }
@@ -106,11 +107,19 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .vg-tavle-top { margin: 0 0 2px; color: var(--board-text-2); font-size: var(--font-size-sm); }
 .vg-tavle-top b { color: var(--board-text); font-size: var(--font-size-lg); }
 .vg-kort { display: block; width: 100%; height: auto; aspect-ratio: 1000 / 385; }
-.vg-hav { fill: var(--board-bg); }
-.vg-gitter line { stroke: var(--board-grid); }
-.vg-landflade { fill: var(--board-land); stroke: var(--board-land-edge); }
-.vg-net { fill: var(--board-net); }
-.vg-bue { fill: none; stroke: var(--board-attack-arc); stroke-linecap: round; animation: vg-flyd 1.8s linear infinite; }
+.vg-hav { fill: var(--kort-hav); }
+.vg-gitter line { stroke: var(--kort-gitter); }
+.vg-landflade { fill: var(--kort-land); }
+.vg-graense { fill: none; stroke: var(--kort-graense); pointer-events: none; }
+.vg-net { fill: var(--kort-dc); pointer-events: none; }
+.vg-land-halo { fill: none; stroke: var(--kort-halo); pointer-events: none; }
+/* Lande efter antal angreb. To klasser, så farven vinder over den usynlige klikflade. */
+.vg-fyld.vg-trin-1 { fill: var(--kort-angreb-1); }
+.vg-fyld.vg-trin-2 { fill: var(--kort-angreb-2); }
+.vg-fyld.vg-trin-3 { fill: var(--kort-angreb-3); }
+.vg-fyld.vg-trin-4 { fill: var(--kort-angreb-4); }
+.vg-fyld.vg-trin-5 { fill: var(--kort-angreb-5); }
+.vg-bue { fill: none; stroke: var(--kort-bue); stroke-linecap: round; animation: vg-flyd 1.8s linear infinite; }
 .vg-land { fill: var(--board-attack-fill); stroke: var(--board-attack); }
 .vg-colo { fill: var(--board-colo); stroke: var(--board-bg); }
 @keyframes vg-flyd { to { stroke-dashoffset: -12; } }
@@ -123,6 +132,14 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .vg-legende-inde { border-top: 0; background: none; padding: 4px 0 8px; }
 .vg-legende li { display: inline-flex; align-items: center; gap: 6px; }
 .vg-legende i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.vg-skala { flex-wrap: wrap; }
+.vg-skala-trin { display: inline-flex; gap: 2px; }
+.vg-legende .vg-skala-trin i { width: 18px; border-radius: 2px; }
+.vg-skala-trin .vg-trin-1 { background: var(--kort-angreb-1); }
+.vg-skala-trin .vg-trin-2 { background: var(--kort-angreb-2); }
+.vg-skala-trin .vg-trin-3 { background: var(--kort-angreb-3); }
+.vg-skala-trin .vg-trin-4 { background: var(--kort-angreb-4); }
+.vg-skala-trin .vg-trin-5 { background: var(--kort-angreb-5); }
 .vg-leg-land { border-radius: 50% !important; background: var(--board-attack-fill); border: 1px solid var(--board-attack); }
 .vg-leg-colo { background: var(--board-colo); transform: rotate(45deg) scale(.8); border-radius: 1px !important; }
 .vg-leg-bue { width: 20px !important; height: 0 !important; border-top: 2px dashed var(--board-attack); border-radius: 0 !important; }
@@ -258,9 +275,10 @@ button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--ho
 .dyk-maerke { outline: none; }
 /* Den usynlige klikflade under et mærke: en svag glorie viser, at musen rammer det. */
 .dyk-hit { fill: transparent; }
-.dyk-hit:hover { fill: var(--board-grid); }
+.dyk-hit:not(.vg-fyld):hover { fill: var(--board-grid); }
 .dyk-hit-bue { fill: none; stroke: transparent; }
 .dyk-hit-bue:hover { fill: none; stroke: var(--board-grid); }
+.vg-fyld[data-dyk]:hover, .vg-fyld.dyk-maerke:focus-visible { stroke: var(--board-text); stroke-width: 1px; vector-effect: non-scaling-stroke; }
 .vg-land.dyk-maerke:hover, .vg-land.dyk-maerke:focus-visible { fill: var(--board-attack); }
 .vg-colo.dyk-maerke:hover, .vg-colo.dyk-maerke:focus-visible { stroke: var(--board-text); }
 .vg-bue.dyk-maerke:hover, .vg-bue.dyk-maerke:focus-visible { stroke: var(--board-attack); }

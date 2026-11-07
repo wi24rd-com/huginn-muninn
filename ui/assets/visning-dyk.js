@@ -193,7 +193,8 @@
       bue: (l, c) => kopi(p => { p.set('land', l); p.set('colo', c); }),
     };
     const legende = el('ul', { className: 'vg-legende' }, el('li', {}, el('i', { className: 'vg-leg-land' }), T.dykLegLand), el('li', {}, el('i', { className: 'vg-leg-colo' }), T.dykLegColo), el('li', { textContent: T.dykLegSamme }));
-    const uden = V.udenPlads(v), flereLande = d.antal.land - v.lande.length, flereColos = d.antal.colo - v.colos.length;
+    const uden = V.udenPlads(v), flereLande = d.antal.land - v.lande.length, flereColos = d.antal.colo - v.colos.length, skala = V.kortSkala(v.lande);
+    if (skala) legende.prepend(skala);
     if (uden.length) legende.append(el('li', { textContent: fmt(T.kortUdenPlads, { liste: uden.join(', ') }) }));
     if (flereLande > 0) legende.append(el('li', { textContent: fmt(T.kortFaaLande, { n: tal(flereLande) }) }));
     if (flereColos > 0) legende.append(el('li', { textContent: fmt(T.kortFaaColos, { n: tal(flereColos) }) }));
