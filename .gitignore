@@ -44,3 +44,6 @@ Thumbs.db
 # Filer, programmet, testene og bygningen ikke bruger
 /design/brand/menulinje-forenklet.png
 /tools/fast-tid.sh
+
+# Fotobogens billeder (npm run test:foto)
+/tests/ui/out/

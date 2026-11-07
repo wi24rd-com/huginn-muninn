@@ -6,7 +6,8 @@
   "license": "Apache-2.0",
   "scripts": {
     "tauri": "tauri",
-    "test:ui": "node tests/ui/ui-roeg.mjs"
+    "test:ui": "node tests/ui/ui-roeg.mjs",
+    "test:foto": "node tests/ui/fotobog.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.4",
