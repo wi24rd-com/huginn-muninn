@@ -1502,7 +1502,7 @@ async fn aabn_api_token() -> Svar<()> {
 
 /// Manualen på wi24rd.com: forsiden på hvert sprog. Programmet henter intet derfra; adressen åbnes i brugerens browser.
 const VEJLEDNING_DA: &str = "https://wi24rd.com/dokumentation/huginn-muninn/";
-const VEJLEDNING_EN: &str = "https://wi24rd.com/en/docs/huginn-muninn/";
+const VEJLEDNING_EN: &str = "https://wi24rd.com/en/documentation/huginn-muninn/";
 /// Adressen på manualens forside for sproget. Et andet sprog end `en` er dansk, som overalt i programmet. Sproget vælger kun mellem de to faste adresser.
 fn vejledning_adresse(sprog: &str) -> &'static str {
     if sprog == "en" {
@@ -1970,7 +1970,7 @@ mod tests {
     #[test]
     fn vejledningen_aabner_forsiden_paa_sproget() {
         assert_eq!(vejledning_adresse("da"), "https://wi24rd.com/dokumentation/huginn-muninn/");
-        assert_eq!(vejledning_adresse("en"), "https://wi24rd.com/en/docs/huginn-muninn/");
+        assert_eq!(vejledning_adresse("en"), "https://wi24rd.com/en/documentation/huginn-muninn/");
     }
 
     #[test]
