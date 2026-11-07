@@ -25,7 +25,7 @@ Et IT-firma kan oprette ét API Token pr. kunde, der kun ser kundens domæne, og
 |---|---|
 | **Computer** | macOS (udviklingsbuilds i dag). Windows og Linux er planlagt; se [Installation](20-installation.md). |
 | **Cloudflare** | En Cloudflare-konto med mindst ét domæne (en zone). Alle planer, også Free, kan bruges. |
-| **Rettigheder** | Et API Token med præcis to rettigheder: `Zone › Analytics › Read` og `Zone › Zone › Read`. Programmet beder ikke om mere. |
+| **Rettigheder** | Et API Token med præcis to rettigheder: **Zone › Read** og **Analytics › Read**. Programmet beder ikke om mere. |
 | **Internet** | Programmet henter fra Cloudflare, mens det kører. Det kører kun, når computeren er tændt. |
 | **Plads** | Den lokale database er lille (få megabyte efter en måned med få domæner). Du kan se størrelsen under **Indstillinger → Data**. |
 

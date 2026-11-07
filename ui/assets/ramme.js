@@ -101,7 +101,8 @@
     opdaterTitel();
     if (visninger[navn] && visninger[navn].vis) visninger[navn].vis(params, { samme: foer === navn && foerParams === params.toString() });
   }
-  function opdaterTitel() { document.title = S.titel(tilstand.visning); }
+  /* En visning kan låne en anden visnings titel (titel()): Angreb med robotfilter hedder Robotter. */
+  function opdaterTitel() { const v = visninger[tilstand.visning]; document.title = S.titel((v && v.titel && v.titel()) || tilstand.visning); }
   function navTilstand() {
     document.querySelectorAll('#side a[data-visning]').forEach(a => {
       const fri = tilstand.sat || a.getAttribute('data-visning') === 'indstillinger';
@@ -556,18 +557,17 @@
   });
   $('token-form').addEventListener('submit', ev => { ev.preventDefault(); gemNoegle($('token'), $('token-knap'), $('token-status')); });
 
-  /* "Åbn vejledningen": Rust åbner en fast adresse på wi24rd.com i brugerens browser. Herfra sendes kun sproget og manualens side for visningen (sider[].id i docs/manual/manual.json); Rust afviser alt andet. Uden side er det manualens forside. */
-  const VEJLEDNING = { overblik: '40-visninger/overblik', 'siden-sidst': '40-visninger/siden-sidst', vaernet: '40-visninger/vaernet', dyk: '40-visninger/vaernet', robotter: '40-visninger/robotter', login: '40-visninger/login', land: '40-visninger/land', teknologi: '40-visninger/teknologi', indstillinger: '50-indstillinger', opsaetning: '30-opsaetning' };
-  const aabnVejledning = side => (invoke ? invoke('aabn_vejledning', { sprog: S.lang, side: side || null }).catch(() => { }) : null);
+  /* "Åbn vejledningen": Rust åbner manualens forside på wi24rd.com i brugerens browser. Herfra sendes kun sproget. */
+  const aabnVejledning = () => (invoke ? invoke('aabn_vejledning', { sprog: S.lang }).catch(() => { }) : null);
   $('hjaelp-vejledning').setAttribute('aria-label', T.vejledningLabel);
-  $('hjaelp-vejledning').addEventListener('click', () => aabnVejledning(VEJLEDNING[tilstand.visning]));
+  $('hjaelp-vejledning').addEventListener('click', () => aabnVejledning());
 
   /* Et klik på et CVE-nummer: Rust åbner cve.org i brugerens browser (aabn_cve validerer igen). */
   const CVE = /^CVE-[0-9]{4}-[0-9]{4,7}$/;
   const aabnCve = id => (invoke && CVE.test(id) ? invoke('aabn_cve', { id }).catch(() => { }) : null);
 
   window.hmRamme = {
-    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, aabnVejledning, vejledning: VEJLEDNING,
+    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, aabnVejledning,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
     platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
   };

@@ -2,7 +2,7 @@
 
 **Act** · The status when there were unusually many attacks yesterday compared with the week before, or something got through. Notifies you by default.
 
-**API Token** · A key you create in your Cloudflare account that lets a program do certain things. The program's API Token can only read: `Zone › Analytics › Read` and `Zone › Zone › Read`.
+**API Token** · A key you create in your Cloudflare account that lets a program do certain things. The program's API Token can only read: **Zone › Read** and **Analytics › Read**.
 
 **Attacks** · Requests Cloudflare's rules stopped because they looked like an attack: known holes, your own rules, DDoS. Routine (bot checks) is not counted.
 

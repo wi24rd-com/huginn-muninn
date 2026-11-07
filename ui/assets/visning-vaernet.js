@@ -487,8 +487,8 @@
     const filter = liste.length > 0, vurd = et && (har('dag') || !filter);
     if (et && !vurd) skjult.push(L.vurderingNavn);
     if (har('dag') && d.sum) skjult.push(L.soejlerNavn);
-    /* Samme rækkefølge som altid: fliser → fordeling → kort → lister → søjler → regler → resten, og "De seneste" sidst. */
-    const dele = [bjaelke, ...advarsel, ...kunIDag(d, liste), ...trafikLinjer(d), vaelger, ...kunTrafik(d), ...(trafik ? [trafikAfsnit(trafik)] : []), ...hoved(d), ...(har('regel') || har('forsoeg') || erRobot() ? [] : [slagsVaelger(d)]), fliser(d), ...(kunTrafik(d).length ? [] : V.daekning(d.periode)), ...fordeling(d), ...(vurd ? vurdering(d) : [])];
+    /* Samme rækkefølge som altid: datovælger → Vis → trafik og hoved → fliser → fordeling → kort → lister → søjler → regler → resten, og "De seneste" sidst. */
+    const dele = [bjaelke, ...advarsel, ...kunIDag(d, liste), ...trafikLinjer(d), vaelger, ...(har('regel') || har('forsoeg') || erRobot() ? [] : [slagsVaelger(d)]), ...kunTrafik(d), ...(trafik ? [trafikAfsnit(trafik)] : []), ...hoved(d), fliser(d), ...(kunTrafik(d).length ? [] : V.daekning(d.periode)), ...fordeling(d), ...(vurd ? vurdering(d) : [])];
     if (d.loft) dele.push(el('p', { className: 'vg-advarsel vg-gul', textContent: T.dykLoft }));
     if (d.sum) dele.push(...kortBlok(d), ...lister(d), ...soejleBlok(d), ...reglerBlok(d, liste));
     else dele.push(el('p', { className: 'vg-status dyk-tom', textContent: T.dykTomt }), ...reglerBlok(d, liste));
@@ -695,6 +695,7 @@
   R.registrer('vaernet', {
     domaener: true,
     hvad: () => ({ samlet: samlet(), zone: zone(), navn: domaene }),
+    titel: () => (erRobot() ? 'robotter' : 'vaernet'),
     /* Et andet domæne: samme filtre og periode. */
     skift(q) {
       const ny = new URLSearchParams(q);

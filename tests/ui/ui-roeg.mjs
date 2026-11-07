@@ -2771,8 +2771,11 @@ const DOMV = (fravalgte = [], x) => {
   tjek('A Indstillinger → Forbindelse (da)', t(s, 'skift-noegle') === 'Skift API Token…' && t(s, 'glem') === 'Glem API Token…' && t(s, 'forb-note') === 'API Tokenet ligger i macOS Nøglering.' && s.d.querySelector('[data-t="forbNoegle"]').textContent === 'API Token til Cloudflare', t(s, 'glem'));
   tjek('A Indstillinger → Forbindelse (en)', t(en, 'skift-noegle') === 'Change API Token…' && t(en, 'glem') === 'Forget API Token…' && t(en, 'forb-note') === 'The API Token is in the macOS Keychain.' && en.d.querySelector('[data-t="forbNoegle"]').textContent === 'API Token for Cloudflare', t(en, 'glem'));
   const T = s.w.hmSprog.T, E = en.w.hmSprog.T;
-  tjek('A hjælpen bruger Cloudflares navne på den nye token-side: Zone › Read og Analytics › Read', [T.tokenTrin[1], E.tokenTrin[1]].every(x => x.includes('Zone › Read') && x.includes('Analytics › Read')) && T.ingenZoner.includes('Zone > Zone > Read'), T.hjaelp2);
+  tjek('A hjælpen bruger Cloudflares navne på den nye token-side: Zone › Read og Analytics › Read', [T.tokenTrin[1], E.tokenTrin[1]].every(x => x.includes('Zone › Read') && x.includes('Analytics › Read')) && T.ingenZoner.includes('Zone › Read') && !T.ingenZoner.includes('Zone > Zone'), T.hjaelp2);
   tjek('V-BUNDT P1 tokenTrin følger Cloudflares nye side: Zone › Read og Analytics › Read står, de gamle ord er væk (da, en)', [T, E].every(x => { const alle = x.tokenTrin.join(' '); return x.tokenTrin.length === 6 && alle.includes('Zone › Read') && alle.includes('Analytics › Read') && !alle.includes('Zone Resources') && !alle.includes('Create Custom Token') && !alle.includes('Permissions'); }), T.tokenTrin.join(' | '));
+  tjek('V-BUNDT FIX1 F4 fejlteksterne bruger Cloudflares nye ord (da, en)', [T, E].every(x => !x.fejl.mangler_zone.includes('Zone Resources') && x.fejl.mangler_zone.includes('Zone › Read') && x.fejl.mangler_zone.includes('Include · All zones') && x.fejl.mangler_analytics.includes('Analytics › Read') && !x.fejl.mangler_analytics.includes('Zone › Analytics') && x.ingenZoner.includes('Zone › Read')), T.fejl.mangler_zone);
+  tjek('V-BUNDT FIX1 F4 manualens fejlfinding citerer teksterne ordret (da, en)', fs.readFileSync(path.join(repo, 'docs', 'manual', 'da', '80-fejlfinding.md'), 'utf8').includes(`**${T.fejl.mangler_zone}**`) && fs.readFileSync(path.join(repo, 'docs', 'manual', 'da', '80-fejlfinding.md'), 'utf8').includes(`**${T.fejl.mangler_analytics}**`) && fs.readFileSync(path.join(repo, 'docs', 'manual', 'en', '80-fejlfinding.md'), 'utf8').includes(`**${E.fejl.mangler_zone}**`) && fs.readFileSync(path.join(repo, 'docs', 'manual', 'en', '80-fejlfinding.md'), 'utf8').includes(`**${E.fejl.mangler_analytics}**`));
+  tjek('V-BUNDT FIX1 F5 hjælpen til teknologi siger Angreb, ikke dyk (da, en)', !/\bdyk\b/i.test(T.tekP) && !/drill-down/i.test(E.tekP) && T.tekP.includes('i Angreb og på kortet'), T.tekP);
   tjek('V-BUNDT P1 trinene slutter med, at felterne er de samme, hvis man selv starter fra Create Token (da, en)', T.tokenTrinNote.includes('Create Token') && E.tokenTrinNote.includes('Create Token') && s.d.querySelector('.token-trin > p.note')?.textContent === T.tokenTrinNote, s.d.querySelector('.token-trin')?.outerHTML.slice(-160));
 }
 
@@ -2812,9 +2815,18 @@ const DOMV = (fravalgte = [], x) => {
   const tr = side(`#vaernet?${Z}&dag=2026-11-02&trafik=1`, S0);
   await sov(120);
   const chipT = [...tr.d.querySelectorAll('#dyk-filtre .dyk-filter')];
+  const trafikRod = tr.d.getElementById('vagt'), efter = (x, y) => Boolean(x.compareDocumentPosition(y) & tr.w.Node.DOCUMENT_POSITION_FOLLOWING), vis = trafikRod.querySelector('.dyk-slags'), trafikDag = tr.d.getElementById('vg-trafik-dag'), vaelger = trafikRod.querySelector('.dato-vaelger');
+  tjek('V-BUNDT FIX1 F3 Vis står lige under datovælgeren og før Trafik den …', vaelger.nextElementSibling === vis && efter(vis, trafikDag) && efter(vis, [...trafikRod.children].find(e => e.matches('.vg-fliser'))), [...trafikRod.children].map(e => e.id || e.className).join(' | '));
+  const ven = side(`#vaernet?${Z}&land=PL`, S0);
+  await sov(120);
+  tjek('V-BUNDT FIX1 F3 Vis står samme sted på en almindelig side', ven.d.querySelector('#vagt .dato-vaelger').nextElementSibling === ven.d.querySelector('#vagt .dyk-slags'));
   tjek('A4 trafikken er et afsnit på samme side med chip, og resten følger dagen', tr.d.querySelector('#vg-trafik-dag h2').textContent === 'Trafik den 2. november' && chipT.map(c => c.firstChild.firstChild.textContent).join() === 'Trafik,2. november' && synlige(tr.d).join() === 'vaernet' && tr.d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com', chipT.map(c => c.textContent).join());
   chipT[0].click(); await sov(120);
   tjek('A4 × på Trafik fjerner afsnittet og beholder dagen', !tr.d.getElementById('vg-trafik-dag') && tr.w.location.hash.includes('dag=2026-11-02') && !tr.w.location.hash.includes('trafik'), tr.w.location.hash);
+  const kv = side(`#vaernet?${Z}`, { ...S0, koe_status: { tilstand: 'venter_kvote', fortsaetter_kl: '2026-11-06T13:45:00.000Z', zoner_i_alt: 3, zoner_faerdige: 1, doegn_i_alt: 30, doegn_faerdige: 4 } });
+  await sov(120);
+  const kvB = kv.d.getElementById('koe-besked');
+  tjek('V-BUNDT FIX1 IDEA-014 Angreb for én zone viser "fortsætter kl. …", når Cloudflare beder os vente', synlige(kv.d).join() === 'vaernet' && kvB.closest('#indhold') && !kvB.closest('section[data-visning]') && kvB.textContent.includes('fortsætter kl.'), kvB.textContent);
   const vz = side(`#vaernet?${Z}&land=PL&periode=30`, S0);
   await sov(120);
   const v = vz.d.getElementById('vg-zone');
@@ -2822,7 +2834,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('A5 domænevælgeren beholder filter og periode', vz.w.location.hash === '#vaernet?zone=z2&navn=xyz.wi24rd.com&land=PL&periode=30', vz.w.location.hash);
   vz.d.querySelector('#side a[data-visning=vaernet]').click(); await sov(100);
   tjek('A5 sidebjælken åbner Angreb uden filtre, men med domænet og perioden', vz.w.location.hash === '#vaernet?periode=30&zone=z2&navn=xyz.wi24rd.com', vz.w.location.hash);
-  tjek('A6 vejledningens kort peger dyk på Angreb', vz.w.hmRamme.vejledning.dyk === '40-visninger/vaernet' && vz.w.hmRamme.vejledning.vaernet === '40-visninger/vaernet');
+  tjek('A6 Rust har ingen liste over manualens sider', !/VEJLEDNING_SIDER|side: Option<String>\) -> Svar/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'lib.rs'), 'utf8')));
 }
 
 // ── V-BUNDT P2: "Åbn vejledningen" i hjælpen og under Indstillinger → Om ──
@@ -2834,15 +2846,16 @@ const DOMV = (fravalgte = [], x) => {
   for (const [x, tekst, label, navn] of [[da, 'Åbn vejledningen', 'Åbn vejledningen i din browser', 'da'], [en, 'Open the guide', 'Open the guide in your browser', 'en']]) {
     tjek(`V-BUNDT P2 knappen findes begge steder som rigtig knap med aria-label (${navn})`, ['hjaelp-vejledning', 'om-vejledning'].every(id => knap(x, id)?.tagName === 'BUTTON' && knap(x, id).type === 'button' && knap(x, id).className === 'knap' && knap(x, id).textContent === tekst && knap(x, id).getAttribute('aria-label') === label), knap(x, 'om-vejledning')?.outerHTML);
   }
-  tjek('V-BUNDT P2 knappen står nederst i hjælpen, efter genvejene', knap(da, 'hjaelp-vejledning').closest('#hjaelp-generelt') && knap(da, 'hjaelp-vejledning').parentElement === knap(da, 'hjaelp-generelt')?.lastElementChild && Boolean(knap(da, 'genveje').compareDocumentPosition(knap(da, 'hjaelp-vejledning')) & da.w.Node.DOCUMENT_POSITION_FOLLOWING));
+  const plads = knap(da, 'hjaelp-vejledning').parentElement, foerstDel = da.d.querySelector('#hjaelp .hjaelp-del');
+  tjek('V-BUNDT FIX1 F2 knappen står lige under overskriften i hjælpen, før guiden og før første afsnit', plads.previousElementSibling === da.d.querySelector('#hjaelp .hjaelp-top') && plads.nextElementSibling === knap(da, 'hjaelp-guide') && Boolean(plads.compareDocumentPosition(foerstDel) & da.w.Node.DOCUMENT_POSITION_FOLLOWING), plads.previousElementSibling?.outerHTML.slice(0, 80));
   tjek('V-BUNDT P2 knappen under Om står ved kildekode-linjen', knap(da, 'om-vejledning').parentElement.previousElementSibling === knap(da, 'om-kilde'));
   knap(da, 'hjaelp-vejledning').click(); knap(en, 'hjaelp-vejledning').click(); await sov(10);
-  tjek('V-BUNDT P2 i hjælpen sendes sproget og den aktuelle visnings side', JSON.stringify(sidste(da)) === '{"sprog":"da","side":"40-visninger/vaernet"}' && JSON.stringify(sidste(en)) === '{"sprog":"en","side":"40-visninger/robotter"}', JSON.stringify([sidste(da), sidste(en)]));
+  tjek('V-BUNDT FIX1 F1 i hjælpen sendes kun sproget', JSON.stringify(sidste(da)) === '{"sprog":"da"}' && JSON.stringify(sidste(en)) === '{"sprog":"en"}', JSON.stringify([sidste(da), sidste(en)]));
   knap(da, 'om-vejledning').click(); knap(en, 'om-vejledning').click(); await sov(10);
-  tjek('V-BUNDT P2 under Om sendes kun sproget', JSON.stringify(sidste(da)) === '{"sprog":"da","side":null}' && JSON.stringify(sidste(en)) === '{"sprog":"en","side":null}', JSON.stringify([sidste(da), sidste(en)]));
-  const ids = JSON.parse(fs.readFileSync(path.join(repo, 'docs', 'manual', 'manual.json'), 'utf8')).sider.map(x => x.id), kort = da.w.hmRamme.vejledning;
-  const visninger = [...da.d.querySelectorAll('section[data-visning]')].map(x => x.getAttribute('data-visning'));
-  tjek('V-BUNDT P2 hvert data-visning i index.html har et side-id, og hvert id står i manual.json', visninger.length >= 9 && visninger.every(v => ids.includes(kort[v])) && Object.values(kort).every(v => ids.includes(v)), visninger.filter(v => !ids.includes(kort[v])).join());
+  tjek('V-BUNDT FIX1 F1 under Om sendes kun sproget', JSON.stringify(sidste(da)) === '{"sprog":"da"}' && JSON.stringify(sidste(en)) === '{"sprog":"en"}', JSON.stringify([sidste(da), sidste(en)]));
+  const visninger = [...da.d.querySelectorAll('section[data-visning]')].map(x => x.getAttribute('data-visning')), sendt = [];
+  for (const v of visninger) { da.w.hmRamme.tilstand.visning = v; for (const id of ['hjaelp-vejledning', 'om-vejledning']) { knap(da, id).click(); await sov(1); sendt.push(JSON.stringify(sidste(da))); } }
+  tjek('V-BUNDT FIX1 F1 begge knapper sender sproget alene i hver visning, uden side-kort', visninger.length >= 8 && sendt.length === 2 * visninger.length && sendt.every(x => x === '{"sprog":"da"}') && !('vejledning' in da.w.hmRamme) && !ui('assets/ramme.js').includes('40-visninger/'), [...new Set(sendt)].join());
   const lib = fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'lib.rs'), 'utf8'), cap = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'capabilities', 'default.json'), 'utf8'));
   tjek('V-BUNDT P2 kommandoen er tilladt og registreret, og adresserne står kun i Rust', cap.permissions.includes('allow-aabn-vejledning') && fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8').includes('"aabn_vejledning"') && /generate_handler![\s\S]*aabn_vejledning/.test(lib) && lib.includes('https://wi24rd.com/dokumentation/huginn-muninn/') && !['ramme.js', 'visning-indstillinger.js', 'sprog.js'].some(f => ui('assets/' + f).includes('wi24rd.com/dokumentation')) && !ui('index.html').includes('wi24rd.com/dokumentation'));
 }
@@ -3026,6 +3039,7 @@ const DOMV = (fravalgte = [], x) => {
   const rob = side('#vaernet?' + dykQ({ robot: 'alle' }), DYK({ dyk: () => ROBOT_DYK }));
   await sov(80);
   const rb = rob.d.querySelector('#dyk-filtre .dyk-filter');
+  tjek('V-BUNDT FIX1 F5 vinduets titel følger overskriften med robotfilter', rob.d.title.startsWith('Robotter · wi24rd.com'), rob.d.title);
   tjek('DK robot: den sidste chip går til Robotter, og overskriften er ikke "Angreb"', rb.dataset.gaa === 'robotter?zone=z1&navn=wi24rd.com' && rob.d.getElementById('vaernet-h').textContent === 'Robotter · wi24rd.com', rb.outerHTML.slice(0, 200) + rob.d.getElementById('vaernet-h').textContent);
 }
 
@@ -3417,11 +3431,11 @@ const DOMV = (fravalgte = [], x) => {
   tjek('API Token: IT-firma-linjen står over feltet', it?.textContent === 'Har du fået et API Token af dit IT-firma? Indsæt det her.' && it && (it.compareDocumentPosition(op.d.getElementById('token')) & 4) !== 0);
   op.d.getElementById('token').value = 'x'.repeat(40); op.d.getElementById('token-form').dispatchEvent(new op.w.Event('submit', { cancelable: true, bubbles: true })); await sov(40);
   const ts = op.d.getElementById('token-status');
-  tjek('API Token: fejlen siger, hvilken rettighed der mangler', ts.textContent.startsWith('API Tokenet mangler rettigheden Zone › Analytics › Read') && ts.classList.contains('fejl'), ts.textContent);
+  tjek('API Token: fejlen siger, hvilken rettighed der mangler', ts.textContent.startsWith('API Tokenet mangler rettigheden Analytics › Read') && ts.classList.contains('fejl'), ts.textContent);
   ts.querySelector('button')?.click();
   tjek('API Token: fejlen har et link til trinene', ts.querySelector('button')?.textContent === 'Se trinene' && opS.querySelector('details.token-trin').open);
   ope.d.getElementById('token').value = 'x'.repeat(40); ope.d.getElementById('token-form').dispatchEvent(new ope.w.Event('submit', { cancelable: true, bubbles: true })); await sov(40);
-  tjek('API Token: engelsk og den anden rettighed', ope.d.getElementById('token-status').textContent.startsWith('The API Token cannot see any domains: it lacks the permission Zone › Zone › Read'), ope.d.getElementById('token-status').textContent);
+  tjek('API Token: engelsk og den anden rettighed', ope.d.getElementById('token-status').textContent.startsWith('The API Token cannot see any domains: it lacks the permission Zone › Read'), ope.d.getElementById('token-status').textContent);
   tjek('API Token: ny kommando har sin rettighed', ['aabn-api-token', 'domaene-valg-hent', 'domaene-valg-saet', 'dato-format-saet', 'notifikation-rekog-saet'].every(k => ui('../src-tauri/capabilities/default.json').includes(`allow-${k}`)));
 }
 

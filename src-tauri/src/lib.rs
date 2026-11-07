@@ -1503,48 +1503,20 @@ async fn aabn_api_token() -> Svar<()> {
 /// Manualen på wi24rd.com: forsiden på hvert sprog. Programmet henter intet derfra; adressen åbnes i brugerens browser.
 const VEJLEDNING_DA: &str = "https://wi24rd.com/dokumentation/huginn-muninn/";
 const VEJLEDNING_EN: &str = "https://wi24rd.com/en/docs/huginn-muninn/";
-/// `sider[].id` i `docs/manual/manual.json`. Kun disse kan åbnes; listen læses ikke ved kørsel.
-const VEJLEDNING_SIDER: &[&str] = &[
-    "00-index",
-    "10-foer-du-starter",
-    "20-installation",
-    "30-opsaetning",
-    "31-cloudflare",
-    "50-indstillinger",
-    "60-notifikationer",
-    "70-data",
-    "80-fejlfinding",
-    "85-opdatering",
-    "90-afinstallation",
-    "95-genveje",
-    "99-ordliste",
-    "40-visninger/dyk",
-    "40-visninger/indstillinger",
-    "40-visninger/land",
-    "40-visninger/login",
-    "40-visninger/opsaetning",
-    "40-visninger/overblik",
-    "40-visninger/robotter",
-    "40-visninger/siden-sidst",
-    "40-visninger/teknologi",
-    "40-visninger/vaernet",
-];
-
-/// Adressen på manualen for sproget og eventuelt én side. Et andet sprog end `en` er dansk, som overalt i programmet. Et id uden for listen afvises.
-fn vejledning_adresse(sprog: &str, side: Option<&str>) -> Result<String, Fejl> {
-    let basis = if sprog == "en" { VEJLEDNING_EN } else { VEJLEDNING_DA };
-    match side {
-        None => Ok(basis.to_string()),
-        Some(id) if VEJLEDNING_SIDER.contains(&id) => Ok(format!("{basis}{id}/")),
-        Some(_) => Err(Fejl::UgyldigtFilter),
+/// Adressen på manualens forside for sproget. Et andet sprog end `en` er dansk, som overalt i programmet. Sproget vælger kun mellem de to faste adresser.
+fn vejledning_adresse(sprog: &str) -> &'static str {
+    if sprog == "en" {
+        VEJLEDNING_EN
+    } else {
+        VEJLEDNING_DA
     }
 }
 
-/// "Åbn vejledningen": manualen i brugerens browser. Faste adresser; webvisningen vælger kun sprog og et id fra listen.
+/// "Åbn vejledningen": manualens forside i brugerens browser. Faste adresser; webvisningen vælger kun sproget.
 #[tauri::command]
-async fn aabn_vejledning(sprog: String, side: Option<String>) -> Svar<()> {
-    let url = vejledning_adresse(&sprog, side.as_deref())?;
-    tauri::async_runtime::spawn_blocking(move || aabn_i_browser(&url))
+async fn aabn_vejledning(sprog: String) -> Svar<()> {
+    let url = vejledning_adresse(&sprog);
+    tauri::async_runtime::spawn_blocking(move || aabn_i_browser(url))
         .await
         .map_err(|_| Fejl::Intern)?
         .map_err(|_| Fejl::Intern)
@@ -1996,59 +1968,24 @@ mod tests {
     }
 
     #[test]
-    fn vejledningen_aabner_kun_faste_adresser_paa_wi24rd_com() {
-        assert_eq!(
-            vejledning_adresse("da", None).unwrap(),
-            "https://wi24rd.com/dokumentation/huginn-muninn/"
-        );
-        assert_eq!(vejledning_adresse("en", None).unwrap(), "https://wi24rd.com/en/docs/huginn-muninn/");
-        assert_eq!(
-            vejledning_adresse("da", Some("40-visninger/vaernet")).unwrap(),
-            "https://wi24rd.com/dokumentation/huginn-muninn/40-visninger/vaernet/"
-        );
-        assert_eq!(
-            vejledning_adresse("en", Some("50-indstillinger")).unwrap(),
-            "https://wi24rd.com/en/docs/huginn-muninn/50-indstillinger/"
-        );
-        for sprog in ["da", "en", "xx"] {
-            for side in VEJLEDNING_SIDER {
-                let u = Url::parse(&vejledning_adresse(sprog, Some(side)).unwrap()).unwrap();
-                assert_eq!((u.scheme(), u.host_str()), ("https", Some("wi24rd.com")));
-            }
+    fn vejledningen_aabner_forsiden_paa_sproget() {
+        assert_eq!(vejledning_adresse("da"), "https://wi24rd.com/dokumentation/huginn-muninn/");
+        assert_eq!(vejledning_adresse("en"), "https://wi24rd.com/en/docs/huginn-muninn/");
+    }
+
+    #[test]
+    fn vejledningens_vaert_er_altid_wi24rd_com() {
+        for sprog in ["da", "en", "", "xx", "../evil", "https://evil.example/"] {
+            let u = Url::parse(vejledning_adresse(sprog)).unwrap();
+            assert_eq!((u.scheme(), u.host_str()), ("https", Some("wi24rd.com")), "{sprog}");
         }
     }
 
     #[test]
-    fn vejledningen_afviser_alt_uden_for_listen() {
-        for side in [
-            "",
-            "ukendt",
-            "../../evil",
-            "40-visninger/vaernet/../..",
-            "//evil.example/",
-            "https://evil.example/",
-            "40-visninger/vaernet?x=1",
-            "40-visninger/VAERNET",
-        ] {
-            assert!(matches!(vejledning_adresse("da", Some(side)), Err(Fejl::UgyldigtFilter)), "{side}");
-            assert!(matches!(vejledning_adresse("en", Some(side)), Err(Fejl::UgyldigtFilter)), "{side}");
+    fn vejledningen_bruger_ikke_sproget_i_adressen() {
+        for sprog in ["xx", "../evil", "40-visninger/vaernet"] {
+            assert_eq!(vejledning_adresse(sprog), VEJLEDNING_DA, "{sprog}");
         }
-    }
-
-    #[test]
-    fn vejledningens_liste_er_manualens_sider() {
-        let manual: serde_json::Value = serde_json::from_str(include_str!("../../docs/manual/manual.json")).unwrap();
-        let mut ids: Vec<&str> = manual["sider"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|s| s["id"].as_str().unwrap())
-            .collect();
-        let mut her = VEJLEDNING_SIDER.to_vec();
-        ids.sort_unstable();
-        ids.dedup();
-        her.sort_unstable();
-        assert_eq!(her, ids);
     }
 
     #[test]

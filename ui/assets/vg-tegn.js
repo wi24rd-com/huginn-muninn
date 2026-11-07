@@ -1,4 +1,4 @@
-/* Huginn and Muninn — det, Angreb og dyk tegner ens: kortet, søjlerne, listerne, navnene på lande, datacentre og regler. Alt bygges
+/* Huginn and Muninn — det, Angreb (dyk er en del af Angreb siden V-ANGREB.1) tegner: kortet, søjlerne, listerne, navnene på lande, datacentre og regler. Alt bygges
    med createElement/createElementNS: ingen innerHTML og ingen style-attributter. Tekst står aldrig i SVG'en, men som HTML oven på
    (etiketter og akser), så den har --font-size-xs og følger Tekststørrelse uanset, hvordan tegningen skaleres; søjlerne strækkes
    med preserveAspectRatio="none". Etiketternes plads og listernes bredde er tal, der først kendes her: de står som regler i et eget

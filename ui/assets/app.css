@@ -310,6 +310,7 @@ input.kontakt:disabled { opacity: .5; cursor: default; }
 .om p { margin: 0 0 4px; color: var(--color-text-muted); font-size: var(--font-size-sm); }
 .om-kilde { -webkit-user-select: text; user-select: text; font-family: var(--font-mono); }
 .vejledning-plads { margin-top: 12px; }
+.hjaelp-top + .vejledning-plads { margin: 0 0 12px; }
 .dialog { width: min(420px, 90vw); padding: 18px 20px; border: 1px solid var(--color-border); border-radius: var(--card-radius); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-window); }
 .dialog::backdrop { background: var(--color-overlay-pressed); }
 .dialog h2 { margin-bottom: 6px; font-size: var(--font-size-xl); }

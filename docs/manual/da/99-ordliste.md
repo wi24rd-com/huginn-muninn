@@ -4,7 +4,7 @@
 
 **Angreb** · Forespørgsler, Cloudflares regler stoppede, fordi de lignede et angreb: kendte huller, dine egne regler, DDoS. Rutine (bot-tjek) tæller ikke med.
 
-**API Token** · En nøgle, du opretter i din Cloudflare-konto, og som giver et program lov til bestemte ting. Programmets API Token kan kun læse: `Zone › Analytics › Read` og `Zone › Zone › Read`.
+**API Token** · En nøgle, du opretter i din Cloudflare-konto, og som giver et program lov til bestemte ting. Programmets API Token kan kun læse: **Zone › Read** og **Analytics › Read**.
 
 **Blokeret** · Cloudflare afviste forespørgslen uden videre.
 

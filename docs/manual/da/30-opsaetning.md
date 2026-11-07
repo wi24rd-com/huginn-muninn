@@ -9,8 +9,8 @@ Opsætningen har tre trin: opret et API Token hos Cloudflare, indsæt det i prog
 
 Et **API Token** er en nøgle, du opretter i din Cloudflare-konto, og som giver et program lov til at gøre bestemte ting. Programmet beder om præcis to rettigheder, og begge kan kun læse:
 
-- `Zone › Analytics › Read` – må læse tallene (angreb, trafik, robotter).
-- `Zone › Zone › Read` – må se, hvilke domæner (zoner) kontoen har.
+- **Analytics › Read** (under *Analytics & Logs*) – må læse tallene (angreb, trafik, robotter).
+- **Zone › Read** (under *DNS & Zones*) – må se, hvilke domæner (zoner) kontoen har.
 
 Det er alt. Uden skriverettigheder kan programmet ikke ændre noget hos Cloudflare, uanset hvad der sker med din computer.
 
@@ -35,7 +35,7 @@ Hvert trin er vist med skærmbilleder i [Opret API Token hos Cloudflare – trin
 
 Programmet tjekker API Tokenet hos Cloudflare og gemmer det i din computers nøglering (macOS Nøglering eller Windows Credential Manager). Det forlader aldrig programmets Rust-del, og vinduet kan ikke hente det tilbage.
 
-Får du en fejltekst, står den forklaret i [Fejlfinding](80-fejlfinding.md). De mest almindelige er, at API Tokenet mangler en af de to rettigheder, eller at domænet ikke står under **Zone Resources**.
+Får du en fejltekst, står den forklaret i [Fejlfinding](80-fejlfinding.md). De mest almindelige er, at API Tokenet mangler en af de to rettigheder, eller at domænet ikke er med under **Include** (**All zones** eller **Specific zone**).
 
 ## Trin 3 – Vælg domæner
 

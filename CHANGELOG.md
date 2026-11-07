@@ -15,7 +15,7 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 - Angreb og dyk er samlet på én side. Overskriften siger fx "Angreb · wi24rd.com", og siden har altid datovælger, **7 dage** (standard) / **30 dage**, **Vis** og filtre som chips med × og **Nulstil**.
 - Et klik på et tal, et land, en regel eller en sti forudindstiller perioden og filtret på samme side, og tilbage og frem virker som før.
 - Alle afsnit fra begge visninger følger perioden og filtrene. Det gælder også "Hvad de ledte efter", mails og tabellen under søjlerne. Et afsnit, der ikke kan følge et filter, står ikke, og en linje siger hvilke.
-- Dage med usædvanlig meget trafik er afsnittet "Trafik den …" på samme side.
+- Dage med usædvanlig meget trafik er afsnittet "Trafik den …" på samme side, under **Vis**.
 - Domænevælgeren beholder filtre og periode, når du skifter domæne.
 - Gamle `#dyk?…`-adresser lander på samme sted i Angreb.
 - README har et eget afsnit om Angreb, og manualens kapitel er skrevet om.
@@ -24,13 +24,14 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ### 2026-11-07 23:30 — Knappen Åbn vejledningen
 #### Tilføjet
-- **Åbn vejledningen** nederst i hjælpen (**?**) åbner manualens side for den visning, du står i, i din browser. Under **Indstillinger → Om** åbner den manualens forside.
-- Adressen følger sproget og står kun i Rust. Webvisningen vælger kun sprog og en side fra en fast liste, og programmet henter intet derfra.
+- **Åbn vejledningen** øverst i hjælpen (**?**) og under **Indstillinger → Om** åbner manualens forside i din browser.
+- Adressen følger sproget og står kun i Rust. Webvisningen sender kun sproget, og programmet henter intet derfra.
 
 ### 2026-11-07 23:30 — Trinene til API Token følger Cloudflares nye side
 #### Ændret
 - "Sådan opretter du et API Token" har nu seks trin med Cloudflares ord: Create Token, Policies, Zone › Read, Analytics › Read, Include · All zones, No expiration og Continue to summary. Knappen åbner formularen færdigudfyldt, så de overflødige trin er væk.
 - En linje under trinene siger, at felterne er de samme, hvis man selv starter fra Create Token.
+- Fejlteksterne om manglende rettigheder bruger de samme ord: Zone › Read, Analytics › Read og Include · All zones eller Specific zone. Fejlfinding i manualen citerer dem.
 - Manualens kapitel om opsætningen siger ikke længere, at programmets liste bruger ældre ord.
 
 ### 2026-11-07 23:30 — Verdenskort med farver og ét Tab-stop pr. domæne

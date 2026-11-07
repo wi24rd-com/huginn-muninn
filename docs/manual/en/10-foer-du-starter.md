@@ -25,7 +25,7 @@ An IT company can create one API Token per customer that only sees the customer'
 |---|---|
 | **Computer** | macOS (development builds today). Windows and Linux are planned; see [Installation](20-installation.md). |
 | **Cloudflare** | A Cloudflare account with at least one domain (a zone). All plans, including Free, can be used. |
-| **Permissions** | An API Token with exactly two permissions: `Zone › Analytics › Read` and `Zone › Zone › Read`. The program asks for nothing more. |
+| **Permissions** | An API Token with exactly two permissions: **Zone › Read** and **Analytics › Read**. The program asks for nothing more. |
 | **Internet** | The program fetches from Cloudflare while it runs. It only runs while the computer is on. |
 | **Space** | The local database is small (a few megabytes after a month with a few domains). You can see the size under **Settings → Data**. |
 

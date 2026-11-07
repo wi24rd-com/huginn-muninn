@@ -9,8 +9,8 @@ Setup has three steps: create an API Token at Cloudflare, paste it into the prog
 
 An **API Token** is a key you create in your Cloudflare account that lets a program do certain things. The program asks for exactly two permissions, and both can only read:
 
-- `Zone › Analytics › Read` – may read the figures (attacks, traffic, robots).
-- `Zone › Zone › Read` – may see which domains (zones) the account has.
+- **Analytics › Read** (under *Analytics & Logs*) – may read the figures (attacks, traffic, robots).
+- **Zone › Read** (under *DNS & Zones*) – may see which domains (zones) the account has.
 
 That is all. Without write permissions the program cannot change anything at Cloudflare, whatever happens to your computer.
 
@@ -35,7 +35,7 @@ Each step is shown with screenshots in [Create an API Token at Cloudflare – st
 
 The program checks the API Token with Cloudflare and stores it in your computer's keychain (macOS Keychain or Windows Credential Manager). It never leaves the program's Rust part, and the window cannot read it back.
 
-If you get an error text, it is explained in [Troubleshooting](80-fejlfinding.md). The most common ones are that the API Token lacks one of the two permissions, or that the domain is not under **Zone Resources**.
+If you get an error text, it is explained in [Troubleshooting](80-fejlfinding.md). The most common ones are that the API Token lacks one of the two permissions, or that the domain is not included under **Include** (**All zones** or **Specific zone**).
 
 ## Step 3 – Choose domains
 
