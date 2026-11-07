@@ -733,6 +733,18 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
     const ring = kontrast(b('attack'), k('halo')), dc = kontrast(k('dc'), k('land')), dcHav = kontrast(k('dc'), k('hav')), colo = kontrast(b('colo'), k('land')), graense = kontrast(k('graense'), k('land')), etiket = kontrast(b('label'), b('bg'));
     kortTal.push(`${tema} ring/glorie ${ring.toFixed(2)}`, `${tema} prikker/land ${dc.toFixed(2)}`, `${tema} prikker/hav ${dcHav.toFixed(2)}`, `${tema} grænse/land ${graense.toFixed(2)}`, `${tema} etiket/baggrund ${etiket.toFixed(2)}`);
     if (!(ring >= 3)) kortFejl.push(`${tema} ring/glorie`);
+    const havLand = kontrast(k('hav'), k('land'));
+    kortTal.push(`${tema} hav/land ${havLand.toFixed(2)}`);
+    if (tema === 'dark' && !(havLand >= 1.6)) kortFejl.push(`${tema} hav/land ${havLand.toFixed(2)} < 1,6`);
+    for (const i of [1, 2, 3, 4, 5]) {
+      const fyld = kontrast(k(`angreb-${i}`), k('halo'));
+      kortTal.push(`${tema} glorie/angreb-${i} ${fyld.toFixed(2)}`);
+      if (!(fyld >= 3)) kortFejl.push(`${tema} glorie/angreb-${i} ${fyld.toFixed(2)} < 3`);
+      if (i === 5) continue;
+      const nabo = kontrast(k(`angreb-${i}`), k(`angreb-${i + 1}`));
+      kortTal.push(`${tema} angreb-${i}/angreb-${i + 1} ${nabo.toFixed(2)}`);
+      if (!(nabo >= 1.15)) kortFejl.push(`${tema} angreb-${i}/angreb-${i + 1} ${nabo.toFixed(2)} < 1,15`);
+    }
     if (!(dc >= 1.5 && dcHav >= 1.5 && dc < colo / 2)) kortFejl.push(`${tema} prikkerne skal ses, men være tydeligt svagere end datacentret: ${dc.toFixed(2)} mod ${colo.toFixed(2)}`);
     if (!(graense >= 1.2)) kortFejl.push(`${tema} grænsen ses ikke`);
     if (!(etiket >= 7)) kortFejl.push(`${tema} etiket`);
@@ -740,7 +752,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
     if (!lyshed.every((x, i) => !i || (tema === 'light' ? x < lyshed[i - 1] : x > lyshed[i - 1]))) kortFejl.push(`${tema}: trinene følger ikke lysheden`);
   }
   console.log('     kort: ' + kortTal.join(' · '));
-  tjek('S kontrast kort: fyld, ringe, buer og datacentre mod hav og land, prikker, grænser og etiketter i lys og mørk', kortFejl.length === 0 && kortTal.length === 42, kortFejl.join(' · '));
+  tjek('S kontrast kort: fyld, ringe, buer og datacentre mod hav og land, hav mod land, nabotrin, glorien mod fyldet, prikker, grænser og etiketter i lys og mørk', kortFejl.length === 0 && kortTal.length === 62, kortFejl.join(' · '));
   const kortCss = ui('assets/vagt.css');
   tjek('S tokens: kortets farver findes i begge temaer og bruges', KORT_NOEGLER.every(n => (cssUd.match(new RegExp(`--kort-${n}: var\\(--raw-color-kort-(light|dark)-${n}\\)`, 'g')) || []).length === 3 && kortCss.includes(`var(--kort-${n})`)), KORT_NOEGLER.filter(n => !kortCss.includes(`var(--kort-${n})`)).join());
   const medFarve = fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f) && f !== 'tokens.css').filter(f => /#[0-9a-fA-F]{3,8}\b(?![\w-])|\brgba?\(|\bhsla?\(/.test(ui('assets/' + f).replace(/&#\d+;/g, '')));
@@ -1654,7 +1666,16 @@ const sidsteDyk = s => s.kald.filter(k => k[0] === 'dyk').pop()[1];
     tjek(`K ${navn}: hver klikflade hører til et mærke med samme mål og er skjult for skærmlæsere (${flader.length})`, !forladte.length, forladte.slice(0, 2).map(e => e.outerHTML.slice(0, 120)).join(' '));
     /* Hele-fladen-hover står som `.kort:has(.knap:hover)`: den gælder knappen inde i parentesen. */
     const hoverMaal = v => (/:has\((.+?):hover\)/.exec(v) || [])[1] || ren(v.split(':hover')[0]);
-    const udenHover = m.filter(e => !hover.some(v => { try { return e.matches(hoverMaal(v)); } catch (x) { return false; } }));
+    /* En klikflade er usynlig, også under musen: den tæller kun, hvis den lyser sit eget mærke op. */
+    const lyserMaerke = e => {
+      if (!e.matches('.dyk-hit:not(.vg-fyld)')) return false;
+      const slags = e.matches('.dyk-hit-bue') ? '.vg-bue:not(.dyk-hit)' : '.vg-land, .vg-colo', maerke = [...e.closest('svg').querySelectorAll(slags)].find(x => x.getAttribute('data-dyk') === e.getAttribute('data-dyk')), H = e.ownerDocument.defaultView.Event;
+      e.dispatchEvent(new H('pointerenter'));
+      const ja = !!maerke?.classList.contains('vg-over');
+      e.dispatchEvent(new H('pointerleave'));
+      return ja && !maerke.classList.contains('vg-over');
+    };
+    const udenHover = m.filter(e => !lyserMaerke(e) && !hover.some(v => { try { return e.matches(hoverMaal(v)); } catch (x) { return false; } }));
     /* En stor flade får aldrig understregning. Stor = rummer et blokindhold (tal og tekst i fliser, kort og hele-rækken-lister). */
     const understreg = [...fjernCssKommentarer(ui('assets/app.css') + ui('assets/vagt.css')).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(x => [x[1].trim(), x[2]]).filter(([sel, krop]) => sel.includes(':hover') && /text-decoration:\s*underline/.test(krop)).flatMap(([sel]) => sel.split(',')).map(x => x.trim());
     const store = m.filter(e => !e.matches('.link') && (e.matches('.dyk-flise, .dyk-flise-aabn, .vg-regel-aabn, .dyk-l, .gruppe-kort, .hm-siden-aabn') || e.querySelector('b, div, ol, ul, p, h3, h4')));
@@ -4217,7 +4238,21 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Kort: fladen har land og tal i <title>', flDK?.querySelector('title')?.textContent === 'Danmark: 500', flDK?.querySelector('title')?.textContent);
   tjek('Kort: fladen er ikke et ekstra Tab-stop, og ringen er stadig mærket', flDK && !flDK.hasAttribute('tabindex') && flDK.getAttribute('aria-hidden') === 'true' && ringDK.getAttribute('tabindex') === '0' && k1.querySelectorAll('[tabindex="0"]').length === 1);
   tjek('Kort: hver ring har en glorie, der ikke tager klik', k1.querySelectorAll('circle.vg-land-halo').length === k1.querySelectorAll('circle.vg-land').length && /\.vg-land-halo \{[^}]*pointer-events: none/.test(ui('assets/vagt.css')));
-  tjek('Kort: musen over et land skifter ikke farven ud med klikfladens', ui('assets/vagt.css').includes('.dyk-hit:not(.vg-fyld):hover') && !/^\.dyk-hit:hover/m.test(ui('assets/vagt.css')) && /\.vg-fyld\[data-dyk\]:hover/.test(ui('assets/vagt.css')));
+  const kortStil = ui('assets/vagt.css'), haloRegel = kortStil.match(/\.vg-land-halo \{([^}]*)\}/)?.[1] || '', haloEl = k1.querySelector('.vg-land-halo');
+  tjek('Kort: glorien er en smal streg uden fyld, også når kortet skaleres', /fill: none/.test(haloRegel) && /stroke: var\(--kort-halo\)/.test(haloRegel) && /stroke-width: (1\.5|1\.75|2)px/.test(haloRegel) && /vector-effect: non-scaling-stroke/.test(haloRegel) && !haloEl.hasAttribute('fill') && !haloEl.hasAttribute('stroke-width'), haloRegel);
+  tjek('Kort: ingen regel for hover eller fokus ændrer glorien', !/\.vg-land-halo[^{,]*:(hover|focus)/.test(kortStil));
+  tjek('Kort: musen maler ikke klikfladen', !/\.dyk-hit[^{]*:hover/.test(kortStil) && /\.vg-fyld\[data-dyk\]:hover/.test(kortStil), kortStil.match(/\.dyk-hit[^{]*:hover[^}]*\}/)?.[0]);
+  const dcKode = Object.keys(KORT.verden.colo)[0], kM = KV.kort({ lande: [{ kode: 'DK', n: 5 }], colos: [{ kode: dcKode, n: 2 }], buer: [{ land: 'DK', colo: dcKode, n: 2 }] }, 'verden', { titel: 'Kort', tal: n => String(n), dyk: DYKK }).querySelector('svg');
+  const mus = (e, type) => e.dispatchEvent(new e.ownerDocument.defaultView.Event(type));
+  for (const [navn, fladeV, maerkeV] of [['ringen', 'circle.dyk-hit[data-dyk*="land=DK"]', '.vg-land'], ['datacentret', `circle.dyk-hit[data-dyk*="colo=${dcKode}"]`, '.vg-colo'], ['buen', '.dyk-hit-bue', '.vg-bue:not(.dyk-hit)']]) {
+    const f = kM.querySelector(fladeV), m = kM.querySelector(maerkeV);
+    const foer = m?.classList.contains('vg-over');
+    if (f) mus(f, 'pointerenter');
+    const under = m?.classList.contains('vg-over');
+    if (f) mus(f, 'pointerleave');
+    tjek(`Kort: musen på klikfladen lyser ${navn} op og slipper igen`, f && m && !foer && under && !m.classList.contains('vg-over') && new RegExp(`\\.${m.classList[0]}\\.vg-over[^{]*\\{|\\.${m.classList[0]}\\.vg-over`).test(kortStil), `${f?.outerHTML.slice(0, 80)} ${m?.getAttribute('class')}`);
+  }
+  tjek('Kort: musen over et land giver kun landet en kontur', /\.vg-fyld\[data-dyk\]:hover[^{]*\{[^}]*stroke: var\(--board-text\)/.test(kortStil));
   tjek('Kort: et land uden flade beholder ringen', [...k1.querySelectorAll('circle.vg-land')].some(c => c.querySelector('title')?.textContent.endsWith(': 7')));
   tjek('Kort: fladerne ligger under grænserne, og prikkerne over', (b => b.indexOf(fy(k1)[0].parentNode) < b.indexOf(k1.querySelector('.vg-graense')) && b.indexOf(k1.querySelector('.vg-graense')) < b.indexOf(k1.querySelector('.vg-net').parentNode))([...k1.children]));
   const kE = tegnKort([{ kode: 'RU', n: 40 }, { kode: 'DK', n: 3 }], 'europa'), ruE = fy(kE).find(e => e.getAttribute('d') === KORT.verden.flader.RU);

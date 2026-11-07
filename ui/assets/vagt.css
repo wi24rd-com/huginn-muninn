@@ -112,7 +112,7 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .vg-landflade { fill: var(--kort-land); }
 .vg-graense { fill: none; stroke: var(--kort-graense); pointer-events: none; }
 .vg-net { fill: var(--kort-dc); pointer-events: none; }
-.vg-land-halo { fill: none; stroke: var(--kort-halo); pointer-events: none; }
+.vg-land-halo { fill: none; stroke: var(--kort-halo); stroke-width: 2px; vector-effect: non-scaling-stroke; pointer-events: none; }
 /* Lande efter antal angreb. To klasser, så farven vinder over den usynlige klikflade. */
 .vg-fyld.vg-trin-1 { fill: var(--kort-angreb-1); }
 .vg-fyld.vg-trin-2 { fill: var(--kort-angreb-2); }
@@ -273,15 +273,13 @@ button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--ho
 .dyk-kort { position: relative; }
 .dyk-etiket { position: absolute; transform: translate(-50%, 3px); padding: 0 3px; border-radius: 3px; background: var(--board-bg); color: var(--board-label); font: 600 var(--font-size-xs) var(--font-mono); pointer-events: none; white-space: nowrap; }
 .dyk-maerke { outline: none; }
-/* Den usynlige klikflade under et mærke: en svag glorie viser, at musen rammer det. */
+/* Den usynlige klikflade under et mærke forbliver usynlig: musen lyser mærket op (.vg-over). */
 .dyk-hit { fill: transparent; }
-.dyk-hit:not(.vg-fyld):hover { fill: var(--board-grid); }
 .dyk-hit-bue { fill: none; stroke: transparent; }
-.dyk-hit-bue:hover { fill: none; stroke: var(--board-grid); }
 .vg-fyld[data-dyk]:hover, .vg-fyld.dyk-maerke:focus-visible { stroke: var(--board-text); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.vg-land.dyk-maerke:hover, .vg-land.dyk-maerke:focus-visible { fill: var(--board-attack); }
-.vg-colo.dyk-maerke:hover, .vg-colo.dyk-maerke:focus-visible { stroke: var(--board-text); }
-.vg-bue.dyk-maerke:hover, .vg-bue.dyk-maerke:focus-visible { stroke: var(--board-attack); }
+.vg-land.dyk-maerke:hover, .vg-land.dyk-maerke:focus-visible, .vg-land.vg-over { fill: var(--board-attack); }
+.vg-colo.dyk-maerke:hover, .vg-colo.dyk-maerke:focus-visible, .vg-colo.vg-over { stroke: var(--board-text); }
+.vg-bue.dyk-maerke:hover, .vg-bue.dyk-maerke:focus-visible, .vg-bue.vg-over { stroke: var(--board-attack); }
 
 /* Protokollen over, hvad robotterne ledte efter */
 .vg-protokol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 4px 24px; }

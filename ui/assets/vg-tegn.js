@@ -531,7 +531,13 @@
     /* Kortet er mindst 600 px bredt (vinduets mindste bredde er 900 px), så en flade med denne radius er mindst 24 px. */
     const hitR = (HIT / 2) * vw / 600, set = p => iBilledet(p, VIEW[visning]);
     const fladeLag = svg('g', {}), bueLag = svg('g', {});
-    const flade = (lag, e, q, label, tt) => { e.setAttribute('data-dyk', q); e.setAttribute('aria-label', label); e.setAttribute('aria-hidden', 'true'); e.append(titel(tt)); lag.append(e); };
+    /* Klikfladen er usynlig, også under musen: det er mærket, der lyser op. */
+    const flade = (lag, e, q, label, tt, maerke) => {
+      e.setAttribute('data-dyk', q); e.setAttribute('aria-label', label); e.setAttribute('aria-hidden', 'true'); e.append(titel(tt)); lag.append(e);
+      if (!maerke) return;
+      e.addEventListener('pointerenter', () => maerke.classList.add('vg-over'));
+      e.addEventListener('pointerleave', () => maerke.classList.remove('vg-over'));
+    };
     const s = svg('svg', { class: 'vg-kort', viewBox: `${vx} ${vy} ${vw} ${vh}`, role: dyk ? 'group' : 'img', 'aria-label': opt.titel, 'aria-describedby': opt.beskrivelse ? opt.id : null, preserveAspectRatio: 'xMidYMid meet' });
     if (opt.beskrivelse) s.append(svg('desc', { id: opt.id }, opt.beskrivelse));
     const gitter = svg('g', { class: 'vg-gitter', 'stroke-width': r(.4) });
@@ -562,7 +568,7 @@
       const e = svg('path', { class: 'vg-bue' + (dyk ? ' dyk-maerke' : ''), d: sti, 'stroke-width': r(0.7 + 2.2 * Math.sqrt(b.n / mb)), 'stroke-dasharray': `${r(3)} ${r(3)}` }, titel(tt));
       if (dyk) {
         maerker.push([e, dyk.bue(b.land, b.colo), label]);
-        flade(bueLag, svg('path', { class: 'dyk-hit dyk-hit-bue', d: sti, 'stroke-width': (hitR).toFixed(2) }), dyk.bue(b.land, b.colo), label, tt); // halv bredde: 60 buer à 24 px ville dække kortet
+        flade(bueLag, svg('path', { class: 'dyk-hit dyk-hit-bue', d: sti, 'stroke-width': (hitR).toFixed(2) }), dyk.bue(b.land, b.colo), label, tt, e); // halv bredde: 60 buer à 24 px ville dække kortet
       }
       buer.append(e);
     }
@@ -571,12 +577,12 @@
       const p = L[l.kode];
       if (!p || !set(p)) continue;
       const tt = `${land(l.kode)}: ${tekst(l.n)}`, label = fmt(T.dykAabn, { navn: land(l.kode), n: tal(l.n) });
-      /* Glorien holder ringen læselig oven på et rødt land. */
-      ringe.append(svg('circle', { class: 'vg-land-halo', cx: p[0], cy: p[1], r: r(radius(l.n)), 'stroke-width': r(1.4) }));
+      /* Glorien er en smal streg, der holder ringen læselig oven på et rødt land. */
+      ringe.append(svg('circle', { class: 'vg-land-halo', cx: p[0], cy: p[1], r: r(radius(l.n)) }));
       const e = svg('circle', { class: 'vg-land' + (dyk ? ' dyk-maerke' : ''), cx: p[0], cy: p[1], r: r(radius(l.n)) }, titel(tt));
       if (dyk) {
         maerker.push([e, dyk.land(l.kode), label]);
-        flade(fladeLag, svg('circle', { class: 'dyk-hit', cx: p[0], cy: p[1], r: hitR.toFixed(2) }), dyk.land(l.kode), label, tt);
+        flade(fladeLag, svg('circle', { class: 'dyk-hit', cx: p[0], cy: p[1], r: hitR.toFixed(2) }), dyk.land(l.kode), label, tt, e);
       }
       ringe.append(e);
     }
@@ -588,7 +594,7 @@
       const e = svg('path', { class: 'vg-colo' + (dyk ? ' dyk-maerke' : ''), d: `M${p[0]} ${(p[1] - m).toFixed(2)} L${(p[0] + m).toFixed(2)} ${p[1]} L${p[0]} ${(p[1] + m).toFixed(2)} L${(p[0] - m).toFixed(2)} ${p[1]} Z` }, titel(tt));
       if (dyk) {
         maerker.push([e, dyk.colo(c.kode), label]);
-        flade(fladeLag, svg('circle', { class: 'dyk-hit', cx: p[0], cy: p[1], r: hitR.toFixed(2) }), dyk.colo(c.kode), label, tt);
+        flade(fladeLag, svg('circle', { class: 'dyk-hit', cx: p[0], cy: p[1], r: hitR.toFixed(2) }), dyk.colo(c.kode), label, tt, e);
       }
       ruder.append(e);
     }
