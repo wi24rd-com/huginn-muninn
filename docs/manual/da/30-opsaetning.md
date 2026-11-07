@@ -16,15 +16,14 @@ Det er alt. Uden skriverettigheder kan programmet ikke ændre noget hos Cloudfla
 
 Sådan gør du:
 
-1. Klik på **Opret API Token hos Cloudflare** i programmet. Det åbner Cloudflares side **My Profile › API Tokens** i din browser med navn og de to rettigheder udfyldt. Tjek dem. (Er du ikke logget ind, logger du ind først.)
-2. Vil du oprette det i hånden i stedet: vælg **Create Token**, og derefter **Get started** ud for **Create Custom Token**.
-3. Skriv et navn under **Token name**, fx *Huginn and Muninn*.
-4. Vælg under **Permissions**: **Zone › Analytics › Read** og **Zone › Zone › Read**. Giv det ingen skriverettigheder.
-5. Vælg under **Zone Resources**: **Include › All zones**, hvis Huginn skal kunne se alle dine domæner, eller **Include › Specific zone** og ét domæne, hvis det kun skal se dét.
-6. Vælg **Continue to summary**, og derefter **Create Token**.
-7. Kopiér API Tokenet. Cloudflare viser det kun én gang.
+1. Klik på **Opret API Token hos Cloudflare** i programmet. Det åbner Cloudflares side **Create Token** i din browser med navnet *Huginn and Muninn* og de to rettigheder udfyldt. (Er du ikke logget ind, logger du ind først.)
+2. Tjek under **Policies**, at **DNS & Zones** viser 1 valgt (**Zone › Read**) og **Analytics & Logs** viser 1 valgt (**Analytics › Read**), og at alle andre grupper står på 0. Giv det ingen **Edit**-rettigheder.
+3. Lad **Include · All zones** stå, hvis Huginn skal kunne se alle dine domæner. Skal API Tokenet kun se ét domæne, vælger du **Specific zone** og domænet.
+4. Lad **Token expiration** stå på **No expiration**, og lad **Client IP address filtering** være tomt.
+5. Klik **Continue to summary**, tjek, at der kun står **Analytics: Read** og **Zone: Read**, og klik **Create Token**.
+6. Kopiér API Tokenet. Cloudflare viser det kun én gang.
 
-Samme trin står i programmet under **Sådan opretter du et API Token**, både i opsætningen og under **Indstillinger → Forbindelse**.
+Hvert trin er vist med skærmbilleder i [Opret API Token hos Cloudflare – trin for trin](31-cloudflare.md). Programmets egen liste under **Sådan opretter du et API Token** (i opsætningen og under **Indstillinger → Forbindelse**) bruger stadig Cloudflares ældre ord *Permissions* og *Zone Resources*; felterne er de samme.
 
 **Har du fået et API Token af dit IT-firma?** Så springer du trin 1 over og indsætter det, du har fået. Et API Token, der kun ser ét domæne, giver et program, der kun viser det domæne.
 

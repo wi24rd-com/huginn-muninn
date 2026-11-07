@@ -16,15 +16,14 @@ That is all. Without write permissions the program cannot change anything at Clo
 
 How to do it:
 
-1. Click **Create API Token at Cloudflare** in the program. It opens Cloudflare's page **My Profile › API Tokens** in your browser with the name and the two permissions filled in. Check them. (If you are not logged in, log in first.)
-2. If you prefer to create it by hand: choose **Create Token**, then **Get started** next to **Create Custom Token**.
-3. Enter a name under **Token name**, for example *Huginn and Muninn*.
-4. Choose under **Permissions**: **Zone › Analytics › Read** and **Zone › Zone › Read**. Give it no write permissions.
-5. Choose under **Zone Resources**: **Include › All zones** if Huginn should be able to see all your domains, or **Include › Specific zone** and one domain if it should only see that one.
-6. Choose **Continue to summary**, then **Create Token**.
-7. Copy the API Token. Cloudflare shows it only once.
+1. Click **Create API Token at Cloudflare** in the program. It opens Cloudflare's page **Create Token** in your browser with the name *Huginn and Muninn* and the two permissions filled in. (If you are not logged in, log in first.)
+2. Check under **Policies** that **DNS & Zones** shows 1 chosen (**Zone › Read**) and **Analytics & Logs** shows 1 chosen (**Analytics › Read**), and that all other groups are at 0. Give it no **Edit** permissions.
+3. Leave **Include · All zones** if Huginn should be able to see all your domains. If the API Token should only see one domain, choose **Specific zone** and the domain.
+4. Leave **Token expiration** at **No expiration**, and leave **Client IP address filtering** empty.
+5. Click **Continue to summary**, check that only **Analytics: Read** and **Zone: Read** are listed, and click **Create Token**.
+6. Copy the API Token. Cloudflare shows it only once.
 
-The same steps are in the program under **How to create an API Token**, both in setup and under **Settings → Connection**.
+Each step is shown with screenshots in [Create an API Token at Cloudflare – step by step](31-cloudflare.md). The program's own list under **How to create an API Token** (in setup and under **Settings → Connection**) still uses Cloudflare's older words *Permissions* and *Zone Resources*; the fields are the same.
 
 **Did your IT company give you an API Token?** Then skip step 1 and paste the one you were given. An API Token that only sees one domain gives a program that only shows that domain.
 

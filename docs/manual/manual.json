@@ -3,7 +3,7 @@
  "navn": "Wi24rd Huginn and Muninn",
  "version": "0.1.0",
  "dato": "2026-11-07",
- "commit": "906585c",
+ "commit": "0222283",
  "fotobog_commit": "71c3c2e",
  "fotobog_dato": "2026-11-07",
  "sprog": [
@@ -100,6 +100,187 @@
      "sprog": "en",
      "fil": "img/alle-fra--light-en-1200x860.webp",
      "sha256": "7f400d98334d9309f68a2d58b3be900095a6d0bcb3faf24dd43122e82c7b5fee"
+    }
+   ]
+  },
+  {
+   "id": "31-cloudflare",
+   "da": {
+    "fil": "da/31-cloudflare.md",
+    "titel": "Opret API Token hos Cloudflare – trin for trin"
+   },
+   "en": {
+    "fil": "en/31-cloudflare.md",
+    "titel": "Create an API Token at Cloudflare – step by step"
+   },
+   "billeder": [
+    {
+     "id": "cf-01-create-token",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-01-create-token.webp",
+     "sha256": "1844dcbe9eed8132244fce2857d78ea75157bb0ae08788b8c61cf93ba043bec0"
+    },
+    {
+     "id": "cf-02-zone-read",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-02-zone-read.webp",
+     "sha256": "e955369f226551155fb4a61774c1dfab34676efdc51a13044587057610774860"
+    },
+    {
+     "id": "cf-03-analytics-read",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-03-analytics-read.webp",
+     "sha256": "ba98c8d03fb4579742684e24962990eb88de8bdea8c39492ffb6f9b1627d9255"
+    },
+    {
+     "id": "cf-04-zone-resources",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-04-zone-resources.webp",
+     "sha256": "2c958ad72126577874c47c8944c6543198253185eef2b7367b47a1e5006bd66a"
+    },
+    {
+     "id": "cf-05-specific-zone-list",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-05-specific-zone-list.webp",
+     "sha256": "73613d392d254e9155d7e66f1e90ec69f8a45b3ed06fe835483c92f10f3e3c44"
+    },
+    {
+     "id": "cf-06-specific-zone-chosen",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-06-specific-zone-chosen.webp",
+     "sha256": "3cba6028d6f7bc901f82ba8999ee1f98db8bea624d00a1db598e805ef8061b3f"
+    },
+    {
+     "id": "cf-07-expiration-continue",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-07-expiration-continue.webp",
+     "sha256": "6f3149fd4c78c302667d92292505498461764e32a6a4b5e62592f5cadec6c9f8"
+    },
+    {
+     "id": "cf-08-summary",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-08-summary.webp",
+     "sha256": "8dc8aa2ecef56b1cbe81ba36ed9f689976145ac4972b5acdf69965192815c6a4"
+    },
+    {
+     "id": "cf-09-token-created",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-09-token-created.webp",
+     "sha256": "992c350ac3441cb9a016b8234fb944dc78ecc92e60feafe7af06f51d4b2c6c7a"
+    },
+    {
+     "id": "cf-10-token-list",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-10-token-list.webp",
+     "sha256": "8cc4be9beca817c16e8bc29de0ed2e5fef69ac9e0dc501c4fb1414c970c80eb5"
+    },
+    {
+     "id": "cf-11-token-menu-delete",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-11-token-menu-delete.webp",
+     "sha256": "bb3af0394718320003ecc6b94e1e745bc088ed0c115382319df34520bcc6dad0"
+    },
+    {
+     "id": "cf-12-delete-confirm",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-12-delete-confirm.webp",
+     "sha256": "2f3cbcdad4704581458f3285a23e18ea8a90423f9e946e011664e6f46240de47"
+    },
+    {
+     "id": "cf-01-create-token",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-01-create-token.webp",
+     "sha256": "1844dcbe9eed8132244fce2857d78ea75157bb0ae08788b8c61cf93ba043bec0"
+    },
+    {
+     "id": "cf-02-zone-read",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-02-zone-read.webp",
+     "sha256": "e955369f226551155fb4a61774c1dfab34676efdc51a13044587057610774860"
+    },
+    {
+     "id": "cf-03-analytics-read",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-03-analytics-read.webp",
+     "sha256": "ba98c8d03fb4579742684e24962990eb88de8bdea8c39492ffb6f9b1627d9255"
+    },
+    {
+     "id": "cf-04-zone-resources",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-04-zone-resources.webp",
+     "sha256": "2c958ad72126577874c47c8944c6543198253185eef2b7367b47a1e5006bd66a"
+    },
+    {
+     "id": "cf-05-specific-zone-list",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-05-specific-zone-list.webp",
+     "sha256": "73613d392d254e9155d7e66f1e90ec69f8a45b3ed06fe835483c92f10f3e3c44"
+    },
+    {
+     "id": "cf-06-specific-zone-chosen",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-06-specific-zone-chosen.webp",
+     "sha256": "3cba6028d6f7bc901f82ba8999ee1f98db8bea624d00a1db598e805ef8061b3f"
+    },
+    {
+     "id": "cf-07-expiration-continue",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-07-expiration-continue.webp",
+     "sha256": "6f3149fd4c78c302667d92292505498461764e32a6a4b5e62592f5cadec6c9f8"
+    },
+    {
+     "id": "cf-08-summary",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-08-summary.webp",
+     "sha256": "8dc8aa2ecef56b1cbe81ba36ed9f689976145ac4972b5acdf69965192815c6a4"
+    },
+    {
+     "id": "cf-09-token-created",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-09-token-created.webp",
+     "sha256": "992c350ac3441cb9a016b8234fb944dc78ecc92e60feafe7af06f51d4b2c6c7a"
+    },
+    {
+     "id": "cf-10-token-list",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-10-token-list.webp",
+     "sha256": "8cc4be9beca817c16e8bc29de0ed2e5fef69ac9e0dc501c4fb1414c970c80eb5"
+    },
+    {
+     "id": "cf-11-token-menu-delete",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-11-token-menu-delete.webp",
+     "sha256": "bb3af0394718320003ecc6b94e1e745bc088ed0c115382319df34520bcc6dad0"
+    },
+    {
+     "id": "cf-12-delete-confirm",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-12-delete-confirm.webp",
+     "sha256": "2f3cbcdad4704581458f3285a23e18ea8a90423f9e946e011664e6f46240de47"
     }
    ]
   },
