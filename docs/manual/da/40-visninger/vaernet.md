@@ -4,10 +4,10 @@ Genvej: ⌘3 (Windows: Ctrl+3)
 
 ## Hvad viser den?
 
-Angreb viser, hvad Cloudflares **Edge – første forsvarslinje** holdt ude fra dit domæne: hvor meget der blev afvist i går, på 7 dage og på 30 dage, hvordan det blev stoppet, hvilke regler og huller angrebene gik efter, og hvor i verden de kom fra. Du ser ét domæne ad gangen (domænevælgeren i det blå bånd skifter) eller alle valgte domæner samlet (**Angreb for alle** i Overblik, eller **Samlet** i vælgeren).
+Angreb viser på én side, hvad Cloudflares **Edge – første forsvarslinje** holdt ude fra dit domæne: hvor meget der blev afvist, hvordan det blev stoppet, hvilke regler og huller angrebene gik efter, og hvor i verden de kom fra. Overskriften siger, hvad du ser, fx **Angreb · wi24rd.com**. Du ser ét domæne ad gangen (domænevælgeren i det blå bånd skifter) eller alle valgte domæner samlet (**Angreb for alle** i Overblik, eller **Samlet** i vælgeren).
 
 ![Angreb for ét domæne](../../img/angreb--light-da-1200x860.webp)
-*De fire fliser øverst, fordelingen på blokeret, udfordret og labyrinten, og verdenskortet med buer fra angriberens land til det datacenter, der stoppede angrebet.*
+*Overskriften, 7 dage og 30 dage, datovælgeren, **Vis** og fliserne. Under dem står fordelingen, og længere nede verdenskortet.*
 
 ![Angreb for alle valgte domæner samlet](../../img/angreb-samlet--light-da-1200x860.webp)
 *Samlet: de valgte domæner står som chips under overskriften, og tallene er lagt sammen. Den grønne prik viser det ældste hentetidspunkt blandt de valgte.*
@@ -19,37 +19,73 @@ Fliserne øverst:
 | **Afvist i går** | Alt, Cloudflare stoppede i går (hele UTC-døgnet), og "i dag hidtil" som en lille linje. |
 | **Afvist på 7 dage** | Samme for de seneste 7 hele dage, med andelen af alle forespørgsler. |
 | **Afvist på 30 dage** | Samme for 30 hele dage. |
-| **Snusere, der intet fandt (7 dage)** | Forespørgsler efter filer, der ikke findes: scannere, der leder efter kendte huller. |
+| **Først set** og **Sidst set** | De dage, der først og sidst er tal for. |
+| **Forespørgsler i alt** | Alle forespørgsler i perioden. Klik åbner **Trafik den …**. |
+| **Snusere, der intet fandt** | Forespørgsler efter filer, der ikke findes, i den valgte periode: scannere, der leder efter kendte huller. |
 
 Under fliserne står fordelingen: **blokeret**, **udfordret** (et browsertjek, som en robot ikke klarer) og **lokket ind i labyrinten** (falske sider, der spilder robottens tid). Sider, der blev leveret med skjulte fælde-links, står på deres egen linje og tæller ikke som afvist.
 
 Længere nede på siden:
 
+- **Hvorfor fik dagen (ikke) et mærke?** kan foldes ud og viser for hvert af de tre mærker (Ligner målrettet, Ligner rekognoscering, Ligner DNS-rekognoscering) ja, nej eller "ja, foreløbigt" med hver betingelse og tallet. Den gælder i går eller den dag, du har valgt.
 - **Hvor angrebene kom fra**: verdenskortet. Landene fyldes i fem trin efter antal angreb, med skalaen under kortet. En bue går fra landet til det datacenter i Cloudflares edge, der stoppede angrebet; de øvrige datacentre er svage blå prikker. **Verden** og **Europa** zoomer. Landet er det, Cloudflare så angrebet komme fra, og det kan være en VPN eller proxy.
-- **Hvad angrebene var rettet mod**: regler og kendte huller (CVE-numre) med antal, og hvilke af dem, der rammer teknologi, dit site bruger.
+- **Fordelt på**: lande, netværk, stier, datacentre, metoder og handling, de fem største fremme og resten bag **Vis top 20**.
+- **Edge**: søjlerne pr. dag, og **Vis tallene** med tabellen. Går perioden længere tilbage end sikkerhedshændelserne, står trafikken for sig.
+- **Reglerne, der slog til**: regler og kendte huller (CVE-numre) med antal.
 - **Dit sites teknologi** (kun for ét domæne): hvad du har fortalt programmet, at sitet bruger, med **Ret teknologier**. Se [Teknologi pr. domæne](teknologi.md).
-- **Mails sendt i dit domænes navn** (kun for ét domæne): hvor mange mails der blev sendt i domænets navn de seneste 30 dage, hvor mange der fejlede DMARC, og fra hvilke afsendere. Kræver DMARC Management hos Cloudflare.
-- **Hvorfor fik dagen (ikke) et mærke?** kan foldes ud og viser for hvert af de tre mærker (Ligner målrettet, Ligner rekognoscering, Ligner DNS-rekognoscering) ja, nej eller "ja, foreløbigt" med hver betingelse og tallet.
+- **Hvad angrebene var rettet mod**: teknologierne, angrebene gik efter, og om dit site bruger dem.
+- **Mails sendt i dit domænes navn** (kun for ét domæne): hvor mange mails der blev sendt i domænets navn i perioden, hvor mange der fejlede DMARC, og fra hvilke afsendere. Kræver DMARC Management hos Cloudflare.
+- **Hvad de ledte efter**: de stier, scannerne spurgte efter, sorteret i kategorier.
+- **På dine andre domæner**: det samme på dine andre valgte domæner.
 - **De seneste**: de seneste afviste forespørgsler, renset for IP-adresser og forespørgselsdel.
 
 Den grønne prik øverst ("Hentet fra Cloudflare …") siger, hvornår tallene sidst blev hentet. Dage, der ikke er hentet, tegnes ikke som 0: summer siger "N af M dage".
 
+## Periode og filtre
+
+Siden har altid de samme vælgere:
+
+- **7 dage** (standard) og **30 dage** øverst til højre.
+- Datovælgeren **Fra** og **Til**, og **Nulstil** til hele historikken. Trafiktal rækker et år tilbage; sikkerhedshændelser begynder, hvor Cloudflare begynder, og det står tydeligt.
+- **Vis**: **Alt**, **Kun angreb** eller **Kun rutine**, så du kan se egentlige angreb uden Cloudflares rutine, eller omvendt.
+
+Et klik på et tal, et land, en regel eller en sti lægger et filter på samme side. Filtrene står som chips under overskriften, fx "Et kendt hul i React ×": × fjerner ét, og **Nulstil** ved siden af fjerner alle filtre og perioden. Der kan højst være ét filter pr. slags (ét land, én regel, én sti …).
+
+![Angreb filtreret på én regel](../../img/dyk-regel--light-da-1200x860.webp)
+*Med en regel som filter forklarer kortet øverst hullet i klart sprog, med Cloudflares eget navn nedenunder og et råd bag **Hvad gør jeg?**.*
+
+![Angreb filtreret på ét land](../../img/dyk-land--light-da-1200x860.webp)
+*Med et land som filter viser fliserne og kortet kun angrebene derfra.*
+
+Alle afsnit følger perioden og filtrene. Et afsnit, der ikke kan følge filtret, står ikke, og en linje nederst på siden siger hvilke. Det gælder fx **Dit sites teknologi**, **Mails sendt i dit domænes navn** og **Hvad de ledte efter**, for de tal har hverken land eller regel. Med et filter eller en valgt periode viser siden de gemte tal og henter intet fra Cloudflare.
+
+## Trafik den …
+
+Klikker du på en dag med **usædvanlig meget trafik** (fra Overblik, en notifikation eller flisen **Forespørgsler i alt**), står afsnittet **Trafik den …** øverst på siden. Det viser forespørgslerne den dag, ikke det, Cloudflare stoppede: antal mod det normale, hvor mange Cloudflare stoppede, hvor de kom fra, svarkoderne og robotterne. Tallene kan sige, hvor trafikken kom fra, men ikke hvad den var. **Trafik** står som chip, og × fjerner afsnittet.
+
+![Afsnittet Trafik den 2. november](../../img/trafik-dyk--light-da-1200x860.webp)
+*Et døgn med 410.000 forespørgsler mod normalt 1.500: 92 % fra ét land, og de fleste fik svar 522, fordi serveren ikke svarede.*
+
 ## Hvad skal jeg gøre, når …
 
 - **… tallene er store, men alt er stoppet?** Ingenting. Det er det, Cloudflare er til for. Rutine (Bot Fight Mode, browsertjek, labyrinten) fylder ofte mest.
-- **… der står et kendt hul (CVE) under "Hvad angrebene var rettet mod"?** Klik på det. Kortet forklarer hullet i klart sprog, og **Hvad gør jeg?** giver et råd, typisk at bede din webmand tjekke, at netop den teknologi er opdateret. Bruger dit site ikke teknologien, kan du sige det under **Ret teknologier**, så fylder det mindre i status.
+- **… der står et kendt hul (CVE) under "Reglerne, der slog til"?** Klik på det. Kortet forklarer hullet i klart sprog, og **Hvad gør jeg?** giver et råd, typisk at bede din webmand tjekke, at netop den teknologi er opdateret. Bruger dit site ikke teknologien, kan du sige det under **Ret teknologier**, så fylder det mindre i status.
 - **… det meste kommer fra ét land?** Klik på landet eller buen for at se angrebene bag. Husk, at kildelandet kan være en VPN.
 - **… din egen regel har mange hits?** Så virker den. Klik på reglen for at se, hvad den stoppede.
+- **… du vil vide, om det er rettet mod dig?** Se **På dine andre domæner**. Mærket **Ligner målrettet** sættes netop, når angrebene steg her, men ikke på dine andre domæner, og en stor del kom fra ét netværk.
+- **… en sti dukker op igen og igen?** Klik på stien. Er det `wp-login.php` eller lignende, er det rutine fra scannere; se også [Login](login.md).
+- **… en dag skiller sig ud?** Vælg dagen i datovælgeren eller klik på søjlen, og fold **Hvorfor fik dagen (ikke) et mærke?** ud.
 
 ## Klik videre
 
-Alt med data bag sig åbner et [dyk](dyk.md) i netop det tal: fliserne, fordelingen (blokeret, udfordret, labyrinten), lande, ringe og buer på kortet, søjler, lister, regelkortene, "Hvad de ledte efter" og "De seneste". Et klik på et CVE-nummer åbner CVE'ens side på cve.org i din browser; programmet henter intet derfra. **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md).
+Alt med data bag sig lægger et filter eller en periode på samme side: fliserne, fordelingen, lande, ringe og buer på kortet, søjler, lister, regelkortene, "Hvad de ledte efter" og "De seneste". Tilbage og frem i det blå bånd (⌘[ og ⌘]) går ét trin ad gangen, også gennem filtre. Et klik på et CVE-nummer åbner CVE'ens side på cve.org i din browser; programmet henter intet derfra. **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md).
 
 Tastatur: kortet er ét Tab-stop; piletasterne flytter mellem landene og ringene, og Enter eller mellemrum åbner det valgte.
 
 ## Tal og begreber
 
-- Alle tal er hele døgn i **UTC**. I går, 7 og 30 dage er hele dage til og med i går.
+- Alle tal er hele døgn i **UTC**. I går, 7 og 30 dage er hele dage til og med i går; i dag står for sig, indtil dagen er slut.
 - Edge er Cloudflares netværk af datacentre. Dit site svarer fra dem alle, så et angreb stoppes i det datacenter, der ligger nærmest angriberen, længe før det når din server. Det gælder kun DNS-poster med orange sky. Kender en angriber serverens egen IP-adresse, kan den gå uden om edge, medmindre serveren kun tager imod trafik fra Cloudflare.
 - Labyrinten stopper ikke robotten; den viser falske sider. Cloudflare regner den ikke for en blokering, og det gør programmet heller ikke.
+- Stier står uden forespørgselsdel, og lange koder er skjult. IP-adresser findes ikke i programmet.
 - Tallene kommer fra Cloudflares GraphQL Analytics API og kan være samplet over lange perioder.

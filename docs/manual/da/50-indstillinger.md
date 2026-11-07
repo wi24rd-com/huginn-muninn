@@ -62,7 +62,7 @@ Nederst står: "Du kan også slå notifikationerne helt fra i Systemindstillinge
 | Felt | Hvad det viser eller gør |
 |---|---|
 | **Lokal database** | Databasens størrelse på din computer. |
-| **Historik** | Perioden, der er tal for. Klik åbner hele historikken for alle domæner i et dyk. |
+| **Historik** | Perioden, der er tal for. Klik åbner hele historikken for alle domæner i [Angreb](40-visninger/vaernet.md). |
 | **Ældste dag** | Den første dag, der er tal for. |
 | **Hvad der findes** | "Trafik fra … · sikkerhedshændelser fra …": hvor langt tilbage hver slags tal rækker. Vises, når der er tal. |
 | **Kvote hos Cloudflare** | "Cloudflare tillader N kald pr. M minutter; Huginn brugte K i sidste runde." Vises, når Cloudflare har oplyst det. |

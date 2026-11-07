@@ -1,6 +1,6 @@
 # Technology by domain
 
-No shortcut. You get there from **Settings → Domains → Technology by domain →** or from **Edit technologies** in Attacks and in a drill-down.
+No shortcut. You get there from **Settings → Domains → Technology by domain →** or from **Edit technologies** in Attacks.
 
 ## What does it show?
 
@@ -33,7 +33,7 @@ The **All technologies** tab: the catalogue in groups with search and the number
 
 ## Click on
 
-The figure in a cell opens the attacks on the technology on the domain in a [drill-down](dyk.md). **⋯** shows the column's or the domain's actions.
+The figure in a cell opens the attacks on the technology on the domain in [Attacks](vaernet.md). **⋯** shows the column's or the domain's actions.
 
 Keyboard: the table is one Tab stop. The arrow keys move between the cells, Space changes the choice, and Enter enters the group, where the arrow keys choose, until Esc.
 

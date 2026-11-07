@@ -62,7 +62,7 @@ At the bottom it says: "You can also turn notifications off completely in System
 | Field | What it shows or does |
 |---|---|
 | **Local database** | The size of the database on your computer. |
-| **History** | The period there are figures for. Clicking opens all history for all domains in a drill-down. |
+| **History** | The period there are figures for. Clicking opens all history for all domains in [Attacks](40-visninger/vaernet.md). |
 | **Oldest day** | The first day there are figures for. |
 | **What is available** | "Traffic from … · security events from …": how far back each kind of figure reaches. Shown when there are figures. |
 | **Quota at Cloudflare** | "Cloudflare allows N calls per M minutes; Huginn used K in the last round." Shown when Cloudflare has reported it. |

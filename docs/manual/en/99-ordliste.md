@@ -22,7 +22,7 @@
 
 **DNS reconnaissance** · Someone asks for many names under your domain that do not exist, to find servers and services.
 
-**Drill-down** · A view of the saved figures for exactly what you clicked, with filters you can add on top.
+**Drill-down** · The old name for the filters in Attacks: the saved figures for exactly what you clicked.
 
 **Edge – first line of defence** · Cloudflare's network of data centres. Your site answers from all of them (anycast), so an attack is stopped near the attacker, long before it reaches your server. Only applies to DNS records with the orange cloud.
 

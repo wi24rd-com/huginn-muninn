@@ -38,8 +38,8 @@
         "attack-arc": "rgba(204,51,58,.55)", "attack-fill": "rgba(204,51,58,.16)", "label": "#A3261F", "colo": "#0A3FB8",
         "ok": "#166534", "zoom-bg": "rgba(255,255,255,.92)", "on-colo": "#FFFFFF"
       },
-      "kort-dark": { "hav": "#1E5581", "land": "#272C32", "graense": "#454C55", "gitter": "#245F8E", "dc": "#4A7DAA", "halo": "#060B14", "bue": "rgba(255,143,128,.95)", "angreb-1": "#FB7C6C", "angreb-2": "#FC9284", "angreb-3": "#FCA79C", "angreb-4": "#FFBBB2", "angreb-5": "#FFD0CA" },
-      "kort-light": { "hav": "#CFE4F3", "land": "#F4EDDD", "graense": "#CDBFA3", "gitter": "#BCD6EA", "dc": "#8CB3DA", "halo": "#FFFFFF", "bue": "rgba(204,51,58,.9)", "angreb-1": "#DE4A41", "angreb-2": "#C43229", "angreb-3": "#A02120", "angreb-4": "#771416", "angreb-5": "#4E0A0E" },
+      "kort-dark": { "hav": "#1B4E76", "land": "#272C32", "graense": "#454C55", "gitter": "#245F8E", "dc": "#4A7DAA", "halo": "#060B14", "bue": "rgba(255,143,128,.95)", "ring": "#FFC24D", "ring-fyld": "rgba(255,194,77,.26)", "hover": "#060B14", "angreb-1": "#F86A5A", "angreb-2": "#FA9084", "angreb-3": "#FCB4AC", "angreb-4": "#FDD9D4", "angreb-5": "#FFFFFF" },
+      "kort-light": { "hav": "#CFE4F3", "land": "#F4EDDD", "graense": "#CDBFA3", "gitter": "#BCD6EA", "dc": "#8CB3DA", "halo": "#FFFFFF", "bue": "rgba(204,51,58,.9)", "ring": "#A8222B", "ring-fyld": "rgba(168,34,43,.16)", "hover": "#FFFFFF", "angreb-1": "#DE4A41", "angreb-2": "#C43229", "angreb-3": "#A02120", "angreb-4": "#771416", "angreb-5": "#4E0A0E" },
       "chart": { "2xx": "#3FB46C", "3xx": "#5AA7E0", "4xx": "#D9A441", "5xx": "#D4583F" },
       "green": { "50": "#E3F8EA", "300": "#6FE3A1", "400": "#34D27A", "450": "#22C55E", "800": "#166534", "850": "#14572D" },
       "alpha": {
@@ -179,7 +179,7 @@
     },
     "light": {
       "nav": { "selected-bg": "{semantic.light.color.accent-soft}", "selected-text": "{semantic.light.color.accent-text}" },
-      "kort": { "hav": "{raw.color.kort-light.hav}", "land": "{raw.color.kort-light.land}", "graense": "{raw.color.kort-light.graense}", "gitter": "{raw.color.kort-light.gitter}", "dc": "{raw.color.kort-light.dc}", "halo": "{raw.color.kort-light.halo}", "bue": "{raw.color.kort-light.bue}", "angreb-1": "{raw.color.kort-light.angreb-1}", "angreb-2": "{raw.color.kort-light.angreb-2}", "angreb-3": "{raw.color.kort-light.angreb-3}", "angreb-4": "{raw.color.kort-light.angreb-4}", "angreb-5": "{raw.color.kort-light.angreb-5}" },
+      "kort": { "hav": "{raw.color.kort-light.hav}", "land": "{raw.color.kort-light.land}", "graense": "{raw.color.kort-light.graense}", "gitter": "{raw.color.kort-light.gitter}", "dc": "{raw.color.kort-light.dc}", "halo": "{raw.color.kort-light.halo}", "bue": "{raw.color.kort-light.bue}", "ring": "{raw.color.kort-light.ring}", "ring-fyld": "{raw.color.kort-light.ring-fyld}", "hover": "{raw.color.kort-light.hover}", "angreb-1": "{raw.color.kort-light.angreb-1}", "angreb-2": "{raw.color.kort-light.angreb-2}", "angreb-3": "{raw.color.kort-light.angreb-3}", "angreb-4": "{raw.color.kort-light.angreb-4}", "angreb-5": "{raw.color.kort-light.angreb-5}" },
       "board": {
         "bg": "{raw.color.board-light.bg}", "bg-2": "{raw.color.board-light.bg-2}", "land": "{raw.color.board-light.land}", "land-edge": "{raw.color.board-light.land-edge}",
         "grid": "{raw.color.board-light.grid}", "axis": "{raw.color.board-light.axis}", "border": "{raw.color.board-light.border}", "net": "{raw.color.board-light.net}",
@@ -191,7 +191,7 @@
     },
     "dark": {
       "nav": { "selected-bg": "{semantic.dark.color.accent-soft}", "selected-text": "{semantic.dark.color.on-accent}" },
-      "kort": { "hav": "{raw.color.kort-dark.hav}", "land": "{raw.color.kort-dark.land}", "graense": "{raw.color.kort-dark.graense}", "gitter": "{raw.color.kort-dark.gitter}", "dc": "{raw.color.kort-dark.dc}", "halo": "{raw.color.kort-dark.halo}", "bue": "{raw.color.kort-dark.bue}", "angreb-1": "{raw.color.kort-dark.angreb-1}", "angreb-2": "{raw.color.kort-dark.angreb-2}", "angreb-3": "{raw.color.kort-dark.angreb-3}", "angreb-4": "{raw.color.kort-dark.angreb-4}", "angreb-5": "{raw.color.kort-dark.angreb-5}" },
+      "kort": { "hav": "{raw.color.kort-dark.hav}", "land": "{raw.color.kort-dark.land}", "graense": "{raw.color.kort-dark.graense}", "gitter": "{raw.color.kort-dark.gitter}", "dc": "{raw.color.kort-dark.dc}", "halo": "{raw.color.kort-dark.halo}", "bue": "{raw.color.kort-dark.bue}", "ring": "{raw.color.kort-dark.ring}", "ring-fyld": "{raw.color.kort-dark.ring-fyld}", "hover": "{raw.color.kort-dark.hover}", "angreb-1": "{raw.color.kort-dark.angreb-1}", "angreb-2": "{raw.color.kort-dark.angreb-2}", "angreb-3": "{raw.color.kort-dark.angreb-3}", "angreb-4": "{raw.color.kort-dark.angreb-4}", "angreb-5": "{raw.color.kort-dark.angreb-5}" },
       "board": {
         "bg": "{raw.color.board-dark.bg}", "bg-2": "{raw.color.board-dark.bg-2}", "land": "{raw.color.board-dark.land}", "land-edge": "{raw.color.board-dark.land-edge}",
         "grid": "{raw.color.board-dark.grid}", "axis": "{raw.color.board-dark.axis}", "border": "{raw.color.board-dark.border}", "net": "{raw.color.board-dark.net}",

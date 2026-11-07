@@ -23,7 +23,7 @@ Sådan gør du:
 5. Klik **Continue to summary**, tjek, at der kun står **Analytics: Read** og **Zone: Read**, og klik **Create Token**.
 6. Kopiér API Tokenet. Cloudflare viser det kun én gang.
 
-Hvert trin er vist med skærmbilleder i [Opret API Token hos Cloudflare – trin for trin](31-cloudflare.md). Programmets egen liste under **Sådan opretter du et API Token** (i opsætningen og under **Indstillinger → Forbindelse**) bruger stadig Cloudflares ældre ord *Permissions* og *Zone Resources*; felterne er de samme.
+Hvert trin er vist med skærmbilleder i [Opret API Token hos Cloudflare – trin for trin](31-cloudflare.md).
 
 **Har du fået et API Token af dit IT-firma?** Så springer du trin 1 over og indsætter det, du har fået. Et API Token, der kun ser ét domæne, giver et program, der kun viser det domæne.
 

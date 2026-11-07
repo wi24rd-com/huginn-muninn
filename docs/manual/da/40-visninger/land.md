@@ -34,7 +34,7 @@ Et kildeland alene kan ikke stoles på: angrebet kan komme gennem en VPN eller l
 
 - **… din kurve stiger, men verdens gør ikke?** Så er stigningen din egen. Overblik siger det samme i Hvorfor ("Verden var normal i går, så stigningen er din egen"). Se [Angreb](vaernet.md) for, hvad der skete.
 - **… din kurve følger verdens?** Så følger du en global tendens. Det ændrer ikke status, men det forklarer tallet.
-- **… et land er mærket "Særligt hos dig"?** Landet fylder meget mere hos dig end i landet som helhed. Klik på det for at se angrebene i et dyk.
+- **… et land er mærket "Særligt hos dig"?** Landet fylder meget mere hos dig end i landet som helhed. Klik på det for at se angrebene i Angreb.
 - **… der står "Tallene fra Cloudflare Radar er ikke opdateret"?** Radar svarer ikke lige nu. Dine egne tal virker stadig, og programmet prøver igen.
 
 ## Skift land
@@ -43,7 +43,7 @@ Vælgeren i det blå bånd og **Indstillinger → Generelt → Land** gemmer dit
 
 ## Klik videre
 
-Et land i listen over, hvor angreb mod dine domæner kom fra, åbner et [dyk](dyk.md) i angrebene fra landet. **Dag for dag** folder kurven ud. **7 dage** / **4 uger** skifter perioden i sammenligningen (Radar kender ikke 30 dage her). **Danmark** / **Verden** skifter fane. Et land i **Mest ramte lande** åbner et kig på det land.
+Et land i listen over, hvor angreb mod dine domæner kom fra, åbner [Angreb](vaernet.md) med landet som filter. **Dag for dag** folder kurven ud. **7 dage** / **4 uger** skifter perioden i sammenligningen (Radar kender ikke 30 dage her). **Danmark** / **Verden** skifter fane. Et land i **Mest ramte lande** åbner et kig på det land.
 
 ## Tal og begreber
 

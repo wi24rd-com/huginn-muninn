@@ -294,6 +294,8 @@
     const v = window.__TAURI__.app ? await window.__TAURI__.app.getVersion().catch(() => null) : null;
     $('om-version').textContent = v ? fmt(T.omVersion, { v }) : '';
   }
+  $('om-vejledning').setAttribute('aria-label', T.vejledningLabel);
+  $('om-vejledning').addEventListener('click', () => R.aabnVejledning());
   if (KILDEKODE) { $('om-kilde').textContent = fmt(T.omKilde, { url: KILDEKODE }); $('om-kilde').hidden = false; }
   // data-t, så sprog.js' anvend() ikke skriver den almene tekst tilbage.
   if (R.mac) { for (const [id, k] of [['forb-note', 'forbNoteMac'], ['data-hist-note', 'dataHistNoteMac'], ['nulstil-note', 'nulstilNoteMac']]) { $(id).dataset.t = k; $(id).textContent = T[k]; } }

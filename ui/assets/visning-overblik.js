@@ -181,7 +181,7 @@
     const f = r.angreb_fordeling || {}, k = a - ((f.blokeret || 0) + (f.udfordret || 0) + (f.labyrint || 0));
     kort.append(el('p', { className: 'g-slut' + (k > 0 ? ' g-igennem' : '') }, k > 0 ? `${fmt(T.gKomIgennem, { k: S.tal(k) })} ${T.gKomIgennemTrin}` : fmt(T.gAlleStoppet, { n: S.tal(a) })));
     const se = el('button', { type: 'button', className: 'link g-se', textContent: (forgaars(r) ? T.gSeNat : T.gSe)(a) });
-    se.addEventListener('click', () => { R.hjaelp(false); R.gaaTil('vaernet', new URLSearchParams({ zone: r.id, navn: r.navn, vis: 'angreb-i-gaar' })); });
+    se.addEventListener('click', () => { R.hjaelp(false); R.gaaTil('vaernet', new URLSearchParams({ zone: r.id, navn: r.navn, dag: r.status_dag, slags: 'angreb', vis: 'seneste' })); });
     kort.append(se);
     return kort;
   }

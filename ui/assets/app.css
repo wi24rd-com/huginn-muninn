@@ -309,6 +309,7 @@ input.kontakt:disabled { opacity: .5; cursor: default; }
 .om { padding: 0 16px 16px; }
 .om p { margin: 0 0 4px; color: var(--color-text-muted); font-size: var(--font-size-sm); }
 .om-kilde { -webkit-user-select: text; user-select: text; font-family: var(--font-mono); }
+.vejledning-plads { margin-top: 12px; }
 .dialog { width: min(420px, 90vw); padding: 18px 20px; border: 1px solid var(--color-border); border-radius: var(--card-radius); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-window); }
 .dialog::backdrop { background: var(--color-overlay-pressed); }
 .dialog h2 { margin-bottom: 6px; font-size: var(--font-size-xl); }
@@ -375,7 +376,6 @@ button.chip-knap:hover:not(:disabled) { box-shadow: inset 0 0 0 100vmax var(--co
 .genveje dd { margin: 0; }
 
 /* ── Angreb (Værnet) i rammen: titlen og de valgte domæner ── */
-#vaernet-under:not(:empty)::before { content: "· "; }
 .hm-valgte { margin: -4px 0 12px; }
 .hm-valgte-liste { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .hm-valgte-liste a { display: inline-block; padding: 2px 10px; border: 1px solid var(--color-border-strong); border-radius: 999px; background: var(--color-surface); color: var(--color-text); font: 600 var(--font-size-sm)/1.5 var(--font-mono); text-decoration: none; overflow-wrap: anywhere; }

@@ -16,7 +16,6 @@
 <script src="assets/visning-overblik.js" defer></script>
 <script src="assets/visning-siden.js" defer></script>
 <script src="assets/visning-vaernet.js" defer></script>
-<script src="assets/visning-dyk.js" defer></script>
 <script src="assets/visning-robotter.js" defer></script>
 <script src="assets/visning-login.js" defer></script>
 <script src="assets/visning-land.js" defer></script>
@@ -142,23 +141,15 @@
 
   <section class="visning" id="visning-vaernet" data-visning="vaernet" aria-labelledby="vaernet-h" hidden>
     <div class="titelrad">
-      <h1 id="vaernet-h" data-t="vaernetH">Angreb</h1><span class="under" id="vaernet-under"></span>
+      <h1 id="vaernet-h" tabindex="-1"></h1>
     </div>
     <div class="hm-valgte" id="valgte" hidden></div>
-    <div class="hm-genforsoeg" id="vg-genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="knap" type="button" data-t="proevNu">Prøv igen nu</button></div>
-    <div class="vg" id="vagt" data-vagt="vaern"></div>
-  </section>
-
-  <section class="visning" id="visning-dyk" data-visning="dyk" aria-labelledby="dyk-h" hidden>
-    <div class="dyk-tilbage" id="dyk-tilbage"></div>
-    <div class="titelrad">
-      <h1 id="dyk-h" tabindex="-1"></h1><span class="dyk-udsnit" id="dyk-udsnit" data-t="dykUdsnit">Udsnit</span><span class="under" id="dyk-under"></span>
-    </div>
     <div class="titelrad dyk-raekke">
       <nav class="dyk-filtre" id="dyk-filtre" hidden></nav>
       <div class="hoejre" id="dyk-periode"></div>
     </div>
-    <div class="vg" id="dyk-rod"></div>
+    <div class="hm-genforsoeg" id="vg-genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="knap" type="button" data-t="proevNu">Prøv igen nu</button></div>
+    <div class="vg" id="vagt" data-vagt="vaern"></div>
   </section>
 
   <section class="visning" id="visning-robotter" data-visning="robotter" aria-labelledby="robotter-h" hidden>
@@ -284,6 +275,7 @@
             <p data-t="om3"></p>
             <p data-t="om2"></p>
             <p class="om-kilde" id="om-kilde" hidden></p>
+            <p class="vejledning-plads"><button class="knap" type="button" id="om-vejledning" data-t="vejledningAabn">Åbn vejledningen</button></p>
           </div>
         </div>
       </div>
@@ -321,6 +313,8 @@
   </div>
   <div class="hjaelp-del" data-hjaelp="vaernet">
     <p data-t="lead"></p>
+    <p data-t="hjDyk1"></p>
+    <p data-t="hjDyk2"></p>
     <h3 data-t="edgeH">Edge – første forsvarslinje</h3>
     <p data-t="edgeP"></p>
     <h3 id="metode-h" data-t="metodeH">Sådan tælles der</h3>
@@ -332,10 +326,6 @@
       <div><h3 data-t="m4H">Det, der ikke gemmes</h3><p data-t="m4"></p></div>
     </div>
     <p data-t="kilder">Landenes midtpunkter: world-countries (ODbL). Landkonturer: Natural Earth (public domain).</p>
-  </div>
-  <div class="hjaelp-del" data-hjaelp="dyk">
-    <p data-t="hjDyk1"></p>
-    <p data-t="hjDyk2"></p>
   </div>
   <div class="hjaelp-del" data-hjaelp="robotter">
     <p data-t="hjRobotter"></p>
@@ -362,6 +352,7 @@
   <dl class="genveje" id="genveje"></dl>
   <p data-t="hjCve">Et klik på et CVE-nummer åbner cve.org i din browser.</p>
   <p data-t="hjOm">Version, licenser og varemærke står under Indstillinger → Om.</p>
+  <p class="vejledning-plads"><button class="knap" type="button" id="hjaelp-vejledning" data-t="vejledningAabn">Åbn vejledningen</button></p>
   </div>
 </aside>
 </div>

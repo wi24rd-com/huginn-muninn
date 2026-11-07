@@ -4,6 +4,35 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-07 23:30 — Kortet i mørkt tema: egen ringfarve og tydeligere trin
+#### Ændret
+- Kortet har sin egen ringfarve i lyst og mørkt tema, så ringen ikke falder sammen med det første trin. I mørkt tema er ringen gul.
+- Mørkt tema: nabotrin i landenes fyld står mindst 1,3 fra hinanden, og det øverste trin er hvidt. Havet er en lille smule mørkere, så det første trin stadig står 3:1 mod havet.
+- Konturen om et land ved hover og fokus har sin egen farve og kan ses på alle trin.
+
+### 2026-11-07 23:30 — Angreb på én side pr. domæne
+#### Ændret
+- Angreb og dyk er samlet på én side. Overskriften siger fx "Angreb · wi24rd.com", og siden har altid datovælger, **7 dage** (standard) / **30 dage**, **Vis** og filtre som chips med × og **Nulstil**.
+- Et klik på et tal, et land, en regel eller en sti forudindstiller perioden og filtret på samme side, og tilbage og frem virker som før.
+- Alle afsnit fra begge visninger følger perioden og filtrene. Det gælder også "Hvad de ledte efter", mails og tabellen under søjlerne. Et afsnit, der ikke kan følge et filter, står ikke, og en linje siger hvilke.
+- Dage med usædvanlig meget trafik er afsnittet "Trafik den …" på samme side.
+- Domænevælgeren beholder filtre og periode, når du skifter domæne.
+- Gamle `#dyk?…`-adresser lander på samme sted i Angreb.
+- README har et eget afsnit om Angreb, og manualens kapitel er skrevet om.
+#### Fjernet
+- "Udsnit" og "← Hele oversigten" er væk.
+
+### 2026-11-07 23:30 — Knappen Åbn vejledningen
+#### Tilføjet
+- **Åbn vejledningen** nederst i hjælpen (**?**) åbner manualens side for den visning, du står i, i din browser. Under **Indstillinger → Om** åbner den manualens forside.
+- Adressen følger sproget og står kun i Rust. Webvisningen vælger kun sprog og en side fra en fast liste, og programmet henter intet derfra.
+
+### 2026-11-07 23:30 — Trinene til API Token følger Cloudflares nye side
+#### Ændret
+- "Sådan opretter du et API Token" har nu seks trin med Cloudflares ord: Create Token, Policies, Zone › Read, Analytics › Read, Include · All zones, No expiration og Continue to summary. Knappen åbner formularen færdigudfyldt, så de overflødige trin er væk.
+- En linje under trinene siger, at felterne er de samme, hvis man selv starter fra Create Token.
+- Manualens kapitel om opsætningen siger ikke længere, at programmets liste bruger ældre ord.
+
 ### 2026-11-07 23:30 — Verdenskort med farver og ét Tab-stop pr. domæne
 #### Tilføjet
 - Verdenskortet i Angreb og dyk har hav, land og landegrænser som et rigtigt kort i lyst og mørkt tema.

@@ -1,357 +1,544 @@
-/* Huginn and Muninn — Angreb (Værnet): hvad Cloudflares edge holdt ude fra dine zoner. Én visning i rammen:
-   #vaernet?zone=<id>&navn=… for ét domæne, #vaernet?samlet=1 for de valgte tilsammen; domænevælgeren i båndet skifter (et valg er ét trin i historikken).
-   Tegningen er en port af W assets/vagt.js (MIT, samme ophavsmand); kort, søjler og lister står nu i vg-tegn.js og deles med dyk.
-   Tallene kommer fra programmets Rust-del (vaern_cache = de gemte tal med det samme, vaern_oversigt = hent nye fra Cloudflare;
-   samlet: vaern_samlet_cache) og kortdata ligeså. Webvisningen henter intet over netværket selv, og der er ingen eksempeldata.
-   Ingen IP-adresser; stierne er renset i Rust. Fejl er koder fra Rust, oversat af hmSprog.fejl. Uden forbindelse prøver
-   visningen selv igen (genforsoeg.js). Fliser, søjler, lister, kort og regelkort viser hele UTC-dage (i går, 7 og 30 hele dage: felterne
-   h_*) og kun det afviste, så tallet er det samme i dyk; siderne med skjulte fælde-links står på deres egen linje. Alt med data bag
-   åbner dyk (data-dyk, rammens lytter): fliser, fordeling, kort, søjler, lister, regelkort, "Hvad de ledte efter" og "De seneste".
-   vaern() tegner skelettet; alt, der kan klikkes på, sættes ind i dets pladser af fyld() med createElement.
-   Det samlede Angreb tegnes igen, når køen melder nyt (rammens 'hentekoe'), højst hvert 3. sekund. Ét domæne har afsnittet "Dit sites teknologi" (teknologi_hent), og
-   #vaernet?…&vis=teknologi ruller dertil. Valgene sættes på #teknologi. "Hvad angrebene var rettet mod" står både for ét domæne og samlet. Dage i uhentet er huller: de tegnes ikke som 0, og summer siger "N af M dage".
-   start(params)/stop(): et skift af domæne eller visning stopper alt fra det forrige (lyttere, ure, genforsøg), og svar,
-   der kommer for sent, kasseres (gen). De valgte domæner står som etiketter under titlen (visValgte, createElement). */
+/* Huginn and Muninn — Angreb: hvad Cloudflares edge holdt ude fra dine zoner, på én side pr. domæne.
+   #vaernet?zone=<id>&navn=… eller #vaernet?samlet=1, plus filtrene regel, land, netvaerk, sti, colo, metode, handling, forsoeg, robot,
+   robotgruppe og teknologi (højst ét pr. dimension; rækkefølgen i adressen er rækkefølgen i chippene; robotter kan kun kombineres med sti),
+   slags (angreb|rutine, ellers alt) og perioden: ingen eller periode=7 er 7 hele dage, periode=30, periode=alt, dag=… eller fra=…&til=….
+   side=N er siden i "De seneste". trafik=1 med dag=… eller fra=…&til=… lægger afsnittet "Trafik den …" øverst (trafik_dag). vis=teknologi og vis=seneste ruller dertil første gang.
+   Et klik på et tal, et land, en regel eller en sti forudindstiller perioden og filtrene på samme side, og hvert skift er ét trin i tilbage/frem.
+   Sidens egne links har altid perioden med, for rammen læser data-dyk uden periode som 30 dage (fraDyk). Gamle #dyk?…-adresser lander her.
+   Alle tal, der følger perioden, regnes i Rust (dyk, kun fra cachen). vaern_* giver statuslinjen og "I går" i fordelingen, og vaern_oversigt henter nye tal fra Cloudflare,
+   men kun på siden uden parametre: et filter læser kun det gemte. Det samlede henter ikke selv; køen gør, og siden tegnes igen, når den melder nyt, højst hvert 3. sekund.
+   Afsnit, der ikke kan følge et filter, står ikke og nævnes i én linje (skjultLinje), så intet står tomt. Kort, søjler, lister og regelkort står i vg-tegn.js.
+   Ingen IP-adresser; stierne er renset i Rust og sættes altid som tekst. Bygges med createElement. Dage i uhentet er huller: de tegnes ikke som 0.
+   start(params)/stop(): et skift stopper alt fra det forrige (lyttere, ure, genforsøg), og svar, der kommer for sent, kasseres (gen). */
 (function () {
   'use strict';
-  const rod = document.getElementById('vagt');
-  const R = window.hmRamme, Sp = window.hmSprog, V = window.hmTegn;
-  const da = document.documentElement.lang !== 'en', loc = da ? 'da-DK' : 'en-GB';
-  const invoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
-  let zoneId = '', samlet = false, domaene = '…', vis = null, samletValg = [];
-  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const tal = n => Number(n || 0).toLocaleString(loc);
-  const fmt = Sp.fmt;
-  const fejltekst = window.hmSprog.fejl, erNet = window.hmSprog.erNet;
-  const landNavn = V.land, coloNavn = V.colo, datoLang = V.datoLang, { el } = R;
+  const S = window.hmSprog, T = S.T, L = T.ang, R = window.hmRamme, V = window.hmTegn;
+  const $ = id => document.getElementById(id);
+  const { el, fmt, invoke } = R, tal = S.tal, kl = S.kl;
+  const FILTRE = ['regel', 'land', 'netvaerk', 'sti', 'colo', 'metode', 'handling', 'forsoeg', 'robot', 'robotgruppe', 'teknologi'];
+  const PERIODE = ['periode', 'dag', 'fra', 'til'];
+  const TOP_SYNLIGE = 5;
+  const rod = $('vagt');
 
-  const T = da ? {
-    henter: 'Henter tallene fra Cloudflare …', opdateret: 'Hentet fra Cloudflare {t}', opdaterer: 'Viser de gemte tal fra {t} · henter nye fra Cloudflare …',
-    fejl: 'Tallene kunne ikke hentes: {f}', fejlGemte: 'Nye tal kunne ikke hentes: {f} Visningen viser de senest gemte tal fra {t}.', ingenZone: 'Intet domæne er valgt. Vælg et i listen.',
-    mangler: 'Programmets forbindelse til Rust-delen mangler. Start det med npm run tauri dev.',
-    d1: 'Afvist i går', d1Sub: 'i dag hidtil: {n}', d7: 'Afvist på 7 dage', d30: 'Afvist på 30 dage', andel: '1 af hver {n} {n|forespørgsel|forespørgsler}', forsoeg: 'Snusere, der intet fandt (7 dage)', forsoegSub: 'forespørgsler efter filer, der ikke findes',
-    fordI: 'I går', ford30: '30 dage', ford: 'heraf {b} blokeret · {u} udfordret · {l} lokket ind i labyrinten', fordAndet: ' · og {a} andet, som ikke tæller som afvist',
-    fordNote: 'Cloudflare stopper på flere måder: blokerer, udfordrer (et browsertjek, som en robot ikke klarer) eller lokker robotten ind i en labyrint af falske sider. Sider med skjulte fælde-links blev leveret og tæller ikke som afvist; først når en robot følger et link, er den lokket ind. Hele dage regnes i UTC.',
-    kortH: 'Hvor angrebene kom fra', kortP: 'Hver bue går fra det land, angrebet kom fra, til det datacenter i Cloudflares edge, der stoppede det. Det sker i det datacenter, der ligger nærmest angriberen, længe før noget når dit site.',
-    kortTitel: 'Verdenskort over afviste angreb de seneste 30 dage', kortDesc: 'Flest kom fra {lande}. Flest blev stoppet i {colos}.',
-    verden: 'Verden', europa: 'Europa', leg: { land: 'Land, angrebet kom fra', colo: 'Datacenter, der stoppede det', bue: 'Et angreb på vej', samme: '◆ i en ring = stoppet i samme land, som angrebet kom fra' },
-    lande: 'Lande', netvaerk: 'Netværk', colos: 'Afvist i',
-    dageH: 'Edge · 30 dage', dageP: 'Første forsvarslinje: Cloudflares edge, som al trafik møder, før den når din server. Afviste forespørgsler pr. dag (UTC).', dageTitel: 'Søjlediagram over afviste forespørgsler pr. dag de seneste 30 dage', ialt: 'i alt', maks: 'flest: {n} den {d}',
-    vis: 'Vis tallene', dag: 'Dag', antal: 'Afvist', trafik: 'Alle forespørgsler',
-    reglerH: 'Reglerne, der slog til', reglerP: 'Cloudflares forvaltede regelsæt kender angrebsmønstre mod almindelig software. Her er de regler, der stoppede noget på {domaene}.',
-    reglerNote: 'Om et angreb ville have virket, afhænger af, hvad sitet kører. Cloudflare stoppede det alligevel, før det nåede frem.',
-    n30: 'på 30 dage', n7: '{n} på 7 dage',
-    forsoegH: 'Hvad de ledte efter', forsoegP: 'Ikke alt bliver blokeret. Mange robotter går bare rundt og prøver dørhåndtag: de spørger efter filer, som andre steder ved et uheld ligger fremme. Her svarede {domaene} 404: filen fandtes ikke.',
-    forsoegPP: 'Ikke alt bliver blokeret. Mange robotter går bare rundt og prøver dørhåndtag: de spørger efter filer, som andre steder ved et uheld ligger fremme. Her svarede dine {domaene} 404: filen fandtes ikke.',
-    ingenTalSamlet: 'Ingen af dine domæner har tal endnu. De hentes i baggrunden, og siden tegnes, når de kommer.',
-    mAfN: '{m} af {n} {n|domæne|domæner} har tal endnu. Resten hentes i baggrunden.', valgteH: 'Dine domæner', flere: '+ {n} flere', udenTal: 'ingen tal endnu', opdateretSamlet: 'Hentet fra Cloudflare {t} (det ældste af de valgte)', opdatererSamlet: 'Hentet fra Cloudflare {t} (det ældste af de valgte) · henter i baggrunden …',
-    senesteH: 'De seneste, der blev afvist', tid: 'Tidspunkt (UTC, hel time)', domaeneKol: 'Domæne', regel: 'Regel', land: 'Land', sti: 'Sti', colo: 'Datacenter', metode: 'Metode',
-  } : {
-    henter: 'Fetching the figures from Cloudflare …', opdateret: 'Fetched from Cloudflare {t}', opdaterer: 'Showing the saved figures from {t} · fetching new ones from Cloudflare …',
-    fejl: 'The figures could not be fetched: {f}', fejlGemte: 'New figures could not be fetched: {f} The view shows the last saved figures from {t}.', ingenZone: 'No domain is chosen. Choose one in the list.',
-    mangler: 'The connection to the program’s Rust part is missing. Start it with npm run tauri dev.',
-    d1: 'Refused yesterday', d1Sub: 'today so far: {n}', d7: 'Refused in 7 days', d30: 'Refused in 30 days', andel: '1 in every {n} {n|request|requests}', forsoeg: 'Snoopers who found nothing (7 days)', forsoegSub: 'requests for files that do not exist',
-    fordI: 'Yesterday', ford30: '30 days', ford: 'of which {b} blocked · {u} challenged · {l} lured into the labyrinth', fordAndet: ' · and {a} other, not counted as refused',
-    fordNote: 'Cloudflare stops in several ways: it blocks, challenges (a browser check a robot cannot pass) or lures the robot into a labyrinth of fake pages. Pages with hidden trap links were served and do not count as refused; only when a robot follows a link has it been lured in. Whole days are counted in UTC.',
-    kortH: 'Where the attacks came from', kortP: 'Each arc runs from the country an attack came from to the data centre in Cloudflare’s edge that stopped it. That happens in the data centre nearest the attacker, long before anything reaches your site.',
-    kortTitel: 'World map of refused attacks in the last 30 days', kortDesc: 'Most came from {lande}. Most were stopped in {colos}.',
-    verden: 'World', europa: 'Europe', leg: { land: 'Country the attack came from', colo: 'Data centre that stopped it', bue: 'An attack under way', samme: '◆ inside a ring = stopped in the country the attack came from' },
-    lande: 'Countries', netvaerk: 'Networks', colos: 'Refused in',
-    dageH: 'Edge · 30 days', dageP: 'First line of defence: Cloudflare’s edge, which all traffic meets before it reaches your server. Refused requests per day (UTC).', dageTitel: 'Bar chart of refused requests per day over the last 30 days', ialt: 'in total', maks: 'most: {n} on {d}',
-    vis: 'Show the figures', dag: 'Day', antal: 'Refused', trafik: 'All requests',
-    reglerH: 'The rules that fired', reglerP: 'Cloudflare’s managed ruleset knows attack patterns against common software. These are the rules that stopped something on {domaene}.',
-    reglerNote: 'Whether an attack would have worked depends on what the site runs. Cloudflare stopped it anyway, before it arrived.',
-    n30: 'in 30 days', n7: '{n} in 7 days',
-    forsoegH: 'What they were looking for', forsoegP: 'Not everything is blocked. Many robots simply walk around trying door handles: they ask for files that are sometimes left out by accident elsewhere. Here {domaene} answered 404: the file did not exist.',
-    forsoegPP: 'Not everything is blocked. Many robots simply walk around trying door handles: they ask for files that are sometimes left out by accident elsewhere. Here your {domaene} answered 404: the file did not exist.',
-    ingenTalSamlet: 'None of your domains has figures yet. They are fetched in the background, and the page is drawn when they arrive.',
-    mAfN: '{m} of {n} {n|domain|domains} {m|has|have} figures so far. The rest are fetched in the background.', valgteH: 'Your domains', flere: '+ {n} more', udenTal: 'no figures yet', opdateretSamlet: 'Fetched from Cloudflare {t} (the oldest of the chosen)', opdatererSamlet: 'Fetched from Cloudflare {t} (the oldest of the chosen) · fetching in the background …',
-    senesteH: 'The latest that were refused', tid: 'Time (UTC, whole hour)', domaeneKol: 'Domain', regel: 'Rule', land: 'Country', sti: 'Path', colo: 'Data centre', metode: 'Method',
-  };
-  const kl = Sp.kl;
+  /* ── adressen ── */
+  let params = new URLSearchParams(), domaene = '…', omfang = null, vaern = null, stat = { tekst: '', henter: false, advarsel: null };
+  const samlet = () => params.get('samlet') === '1';
+  const zone = () => params.get('zone') || '';
+  const filtre = () => [...params.keys()].filter(k => FILTRE.includes(k)).map(dim => ({ dim, vaerdi: params.get(dim) }));
+  const har = dim => params.has(dim);
+  const erRobot = () => har('robot') || har('robotgruppe');
+  const erTrafik = () => har('trafik') && (har('dag') || (har('fra') && har('til')));
+  /* Siden uden parametre er den eneste, der henter fra Cloudflare. */
+  const ren = () => ![...params.keys()].some(k => !['zone', 'navn', 'samlet', 'vis'].includes(k));
+  function periodeArg() {
+    if (har('dag')) return { dag: params.get('dag') };
+    if (har('fra') && har('til')) return { spaend: { fra: params.get('fra'), til: params.get('til') } };
+    return { 30: 'd30', alt: 'alt' }[params.get('periode')] || 'd7';
+  }
+  /* En ny adresse starter på første side i "De seneste" og har altid perioden med. */
+  const kopi = fn => { const p = new URLSearchParams(params); p.delete('side'); p.delete('vis'); fn(p); if (!PERIODE.some(k => p.has(k))) p.set('periode', '7'); return p.toString(); };
+  const medFilter = (dim, v) => kopi(p => p.set(dim, v));
+  const udenFilter = dim => kopi(p => p.delete(dim));
+  const medPeriode = (k, v) => kopi(p => { PERIODE.forEach(x => p.delete(x)); if (k) p.set(k, v); });
+  const medSlags = v => kopi(p => { if (v) p.set('slags', v); else p.delete('slags'); });
+  /* Til adresser, der ikke går gennem data-dyk: standardperioden står ikke i adressen. */
+  const udenStandard = q => { const p = new URLSearchParams(q); if (p.get('periode') === '7') p.delete('periode'); return p.toString(); };
+  const omfangQ = () => new URLSearchParams(samlet() ? { samlet: '1' } : { zone: zone(), navn: domaene }).toString();
 
-  /* ── fælles byggeklodser ── */
-  const blok = (id, h, p, indhold) => `<section class="vg-blok" id="${id}" aria-labelledby="${id}-h"><h2 id="${id}-h">${esc(h)}</h2>${p ? `<p class="vg-intro">${esc(p)}</p>` : ''}${indhold}</section>`;
+  /* ── navne ── */
+  function filterNavn(f, d) {
+    switch (f.dim) {
+      case 'regel': return d.regel ? V.regelVis(d.regel).titel : V.regelTitel(f.vaerdi);
+      case 'land': return V.land(f.vaerdi);
+      case 'colo': return V.colo(f.vaerdi);
+      case 'handling': return T.dykHandling[f.vaerdi] || f.vaerdi;
+      case 'forsoeg': return (T.kat[f.vaerdi] || [f.vaerdi])[0];
+      case 'robot': return V.robotValg(f.vaerdi);
+      case 'robotgruppe': return (T.robotGrupper[f.vaerdi] || [f.vaerdi])[0];
+      case 'teknologi': return S.tekNavn(f.vaerdi);
+      default: return f.vaerdi;
+    }
+  }
+  const periodeTekst = () => (har('dag') ? V.datoLang(params.get('dag')) : har('fra') ? V.interval(params.get('fra'), params.get('til')) : params.get('periode') === '30' ? T.dykP30 : params.get('periode') === 'alt' ? T.dykPAlt : T.dykP7);
+  /* Kun angreb tæller som statusreglen, også det, der ikke blev afvist (fx log fra egne regler). */
+  const ord = () => (erRobot() ? (/^(stoppet|labyrint)/.test(params.get('robot') || '') ? T.dykHaendelser : T.dykBesoeg) : ['faelder', 'andet'].includes(params.get('handling')) || har('forsoeg') ? T.dykHaendelser : params.get('slags') === 'angreb' ? T.dykAngrebOrd : T.dykAfvist);
 
-  /* ── Værnet: skelettet ── */
-  function vaern(v) {
-    const kortBlok = `<div class="vg-tavle"><div class="vg-zoom" role="group" aria-label="${esc(T.kortH)}"><button type="button" data-vis="verden" aria-pressed="true">${esc(T.verden)}</button><button type="button" data-vis="europa" aria-pressed="false">${esc(T.europa)}</button></div><div class="vg-kortramme" role="region" aria-label="${esc(T.kortTitel)}"></div>
-      <ul class="vg-legende" data-plads="legende"><li><i class="vg-leg-land"></i>${esc(T.leg.land)}</li><li><i class="vg-leg-colo"></i>${esc(T.leg.colo)}</li><li><i class="vg-leg-bue"></i>${esc(T.leg.bue)}</li><li>${esc(T.leg.samme)}</li></ul></div>
-      <div class="vg-tre"><div><h3>${esc(T.lande)}</h3><div data-plads="lande"></div></div><div><h3>${esc(T.netvaerk)}</h3><div data-plads="netvaerk"></div></div><div><h3>${esc(T.colos)}</h3><div data-plads="colos"></div></div></div>`;
-    const dageBlok = `<div class="vg-tavle vg-tavle-pad"><p class="vg-tavle-top" data-plads="dage-top"></p><div class="vg-soejler-rul" role="region" aria-label="${esc(T.dageTitel)}"></div></div><details class="vg-tal" data-noegle="dage"><summary>${esc(T.vis)}</summary><div data-plads="dage-tabel"></div></details>`;
-    const regler = `<div class="vg-regler" data-plads="regler"></div><p class="vg-note">${esc(T.reglerNote)}</p>`;
-    const vurd = samlet ? '' : '<div data-plads="vurdering"></div>';
-    const tek = samlet ? '' : '<section class="vg-blok" id="vg-teknologi" aria-labelledby="vg-teknologi-h"><h2 id="vg-teknologi-h"></h2><div data-plads="teknologi"></div></section>';
-    const sen = (v.seneste || []).length ? blok('vg-seneste', T.senesteH, '', '<div data-plads="seneste"></div>') : '';
-    return `<div data-plads="fliser"></div><ul class="vg-trafik" data-plads="trafik"></ul><ul class="vg-fordeling" data-plads="fordeling"></ul><p class="vg-note">${esc(T.fordNote)}</p>${vurd}` + blok('vg-kort', T.kortH, T.kortP, kortBlok) + blok('vg-dage', T.dageH, T.dageP, dageBlok) + blok('vg-regler', T.reglerH, fmt(T.reglerP, { domaene }), regler) + tek + '<div data-plads="rettet"></div>' + (samlet ? '' : '<div data-plads="email"></div>') + blok('vg-forsoeg', T.forsoegH, fmt(samlet ? T.forsoegPP : T.forsoegP, { domaene }), '<ol class="vg-protokol" data-plads="forsoeg"></ol>') + sen;
+  /* ── byggeklodser ── */
+  const knap = (tekst, query, klasse, label) => V.knap(tekst, query, klasse || 'link', label);
+  const segment = (navn, etiket, valg) => V.segment(navn, etiket, valg.map(([t, q, valgt]) => [t, udenStandard(q), valgt]), 'vaernet');
+  const flise = (n, tekst, sub, query, aktiv) => V.flise(n, tekst, sub, query, { aktiv });
+  /* Et afsnit med fast id, så det kan nås med data-rul og fra tests. */
+  function afsnit(id, h, p, ...indhold) {
+    const s = V.blok(h, p, ...indhold), h2 = s.querySelector('h2');
+    s.id = id;
+    h2.id = `${id}-h`;
+    s.setAttribute('aria-labelledby', h2.id);
+    return s;
   }
 
-  /* Forespørgslen til dyk: domænet (eller det samlede) og filtrene. */
-  const dykTil = x => { const q = new URLSearchParams(samlet ? { samlet: '1' } : { zone: zoneId, navn: domaene }); for (const [k, val] of Object.entries(x)) q.set(k, val); return q.toString(); };
-  const knap = V.knap;
-  /* i går = sidste søjle (d-1). */
-  const iGaar = v => (v.h_dage.length ? v.h_dage[v.h_dage.length - 1].dag : '');
-  /* Hentede døgn af de sidste 7 og 30: en sum med huller siger det. */
-  const huller = v => new Set(v.uhentet || []);
-  const daekning = (v, n) => { const h = huller(v), m = v.h_dage.slice(-n).filter(d => !h.has(d.dag)).length; return m < n ? fmt(Sp.T.dagMed, { m: tal(m), n: tal(n) }) : ''; };
-  function fliser(v) {
-    const d7 = v.hele7, alle7 = v.alle_hele7, f = v.h_forsoeg || {}, andel = d7 && alle7 ? fmt(T.andel, { n: tal(Math.round(alle7 / d7)) }) : '';
-    return el('div', { className: 'vg-fliser' },
-      V.flise(v.i_gaar, T.d1, fmt(T.d1Sub, { n: tal(v.i_dag_hidtil) }), dykTil({ dag: iGaar(v) }), { ekstra: { n: v.i_dag_hidtil, dyk: dykTil({ dag: v.h_idag }) } }),
-      V.flise(d7, T.d7, [andel, daekning(v, 7)].filter(Boolean).join(' · '), dykTil({ periode: '7' }), { klasse: 'vg-hoved' }),
-      V.flise(v.hele30, T.d30, daekning(v, 30), dykTil({})),
-      V.flise(f.i7, T.forsoeg, T.forsoegSub, { rul: 'vg-forsoeg' }, { klasse: 'vg-graa', label: fmt(Sp.T.dykRul, { navn: T.forsoeg, n: tal(f.i7) }) }));
+  /* ── overskrift, chips og vælgere ── */
+  function visOverskrift() {
+    $('vaernet-h').textContent = fmt(erRobot() ? T.titel.robotter : T.titel.vaernet, { domaene });
   }
-  /* Usædvanlig meget trafik: hver dag åbner dagens forespørgsler i trafik-dyk. Tallene kan ikke sige, hvad det var, så det står for sig. */
-  function trafikLinjer(v) {
-    const dage = v.trafik || [];
-    if (!dage.length) return [];
-    return [...dage.map(t => el('li', {}, knap(fmt(2 * t.stoppet >= t.n ? Sp.T.trafikDagMest : Sp.T.trafikDag, { d: datoLang(t.dag), n: tal(t.n), s: tal(t.stoppet), o: tal(t.n - t.stoppet) }), dykTil({ dag: t.dag, trafik: '1' }), 'trafik-maerke'))), el('li', { className: 'vg-trafik-note', textContent: fmt(Sp.T.trafikNote, { m: tal(Math.round(dage[0].median)) }) })];
+  /* Tilbage til oversigten: robotterne har deres egen. */
+  const oversigt = q => (erRobot() ? `robotter?${omfangQ()}` : `vaernet?${udenStandard(q)}`);
+  /* Ét filter pr. dimension. × fjerner kun det; er det det sidste, er man tilbage på siden uden filtre. Nulstil fjerner alt. */
+  function chips(d, liste) {
+    const led = liste.map(f => ({ navn: filterNavn(f, d), fjern: udenFilter(f.dim) }));
+    if (erTrafik()) led.push({ navn: L.trafikChip, fjern: kopi(p => p.delete('trafik')) });
+    if (har('dag')) led.push({ navn: V.datoLang(params.get('dag')), fjern: kopi(p => { PERIODE.forEach(x => p.delete(x)); p.delete('trafik'); }) });
+    if (har('fra') && har('til')) led.push({ navn: V.interval(params.get('fra'), params.get('til')), fjern: kopi(p => { PERIODE.forEach(x => p.delete(x)); p.delete('trafik'); }) });
+    const ul = el('ul');
+    for (const l of led) {
+      const indhold = el('span', { className: 'dyk-filter-tekst' }, el('span', { textContent: l.navn }), el('span', { className: 'dyk-filter-x', textContent: '×' }));
+      ul.append(el('li', {}, V.knap(indhold, led.length === 1 ? { gaa: oversigt(l.fjern) } : l.fjern, 'dyk-filter', fmt(T.dykFjern, { navn: l.navn }))));
+    }
+    const nav = $('dyk-filtre'), noget = led.length || har('slags');
+    nav.setAttribute('aria-label', T.dykFiltre);
+    nav.hidden = !noget;
+    nav.replaceChildren(ul, ...(noget ? [V.knap(L.nulstil, { gaa: `vaernet?${omfangQ()}` }, 'link dyk-nulstil', L.nulstilLabel)] : []));
   }
-  /* "heraf N blokeret · N udfordret · N lokket ind i labyrinten" for én periode; hver del åbner dyk på den handling. Tallet 0 fører ingen steder hen. */
-  const FORD = { b: 'blokeret', u: 'udfordret', l: 'labyrint' };
-  function fordelingLinjer(navn, f, periode) {
-    if (!f) return [];
-    const li = el('li', {}, el('b', { textContent: `${navn}:` }), ' '), maal = handling => dykTil({ ...periode, handling });
-    T.ford.split(' · ').forEach((del, i) => {
-      const [, foer, k] = /^(.*?)\{(\w)\}/.exec(del), tekst = fmt(del.slice(foer.length), { [k]: tal(f[FORD[k]]) });
-      li.append(...(i ? [' · '] : []), foer, f[FORD[k]] ? knap(tekst, maal(FORD[k])) : tekst);
-    });
-    if (f.andet) li.append(' · ', knap(fmt(T.fordAndet, { a: tal(f.andet) }).replace(/^ · /, ''), maal('andet')));
-    const ud = [li];
-    if (f.faelder) ud.push(el('li', { className: 'vg-faelder' }, el('b', { textContent: `${navn}:` }), ' ', knap(Sp.T.faelderLinje(tal(f.faelder)), maal('faelder'))));
+  /* Hovedet efter filter: regel (mærke, CVE, Cloudflares navn og guiden) og noter til de andre filtre. */
+  function hoved(d) {
+    const ud = [];
+    if (d.regel) {
+      const r = d.regel, vis = V.regelVis(r), top = el('div', { className: 'dyk-hoved-top' }, el('span', { className: 'vg-produkt', textContent: vis.maerke }));
+      if (r.cve) top.append(el('span', { className: 'vg-cve' }, V.cveKnap(r.cve, `${r.cve} ↗`)));
+      const boks = el('div', { className: 'dyk-hoved' + (r.art === 'rutine' ? ' dyk-rutine' : '') }, top);
+      const type = V.typeTekst(r.navn, r.type);
+      if (r.art === 'angreb' && type) boks.append(el('p', { className: 'dyk-type', textContent: type }));
+      boks.append(el('p', { className: 'dyk-navn' }, T.dykCloudflareNavn, ' ', el('code', { textContent: r.navn })));
+      boks.append(el('details', { className: 'dyk-guide' }, el('summary', { textContent: T.gTitel }), ...V.bogAfsnit(vis.id)));
+      ud.push(boks);
+    }
+    const note = t => ud.push(el('p', { className: 'vg-note dyk-note', textContent: t }));
+    if (har('netvaerk')) note(T.dykNetNote);
+    if (har('sti')) { const k = /^\[([a-z]+)\]$/.exec(params.get('sti')); if (k && T.kat[k[1]]) note(T.kat[k[1]][1]); }
+    if (har('forsoeg')) { const k = T.kat[params.get('forsoeg')]; note(k ? `${k[1]} ${T.dykForsoegNote}` : T.dykForsoegNote); }
+    if (har('robotgruppe') && T.robotGrupper[params.get('robotgruppe')]) note(T.robotGrupper[params.get('robotgruppe')][2]);
+    if (/^labyrint/.test(params.get('robot') || '')) note(T.robotLabyrintNote);
     return ud;
   }
-  /* En regel, der kun er set i dag, åbner dagen i dag, hvor tallet står. */
-  function regelKort(rg, v) {
-    const vis = V.regelVis(rg), labyrint = rg.navn === 'linkMaze', kunIDag = !rg.h30 && rg.idag > 0, omfang = kunIDag ? { dag: v.h_idag } : {};
-    return V.regelKort(rg, {
-      dyk: dykTil({ regel: rg.navn, ...omfang }), n: rg.h30, enhed: labyrint ? Sp.T.lokketInd : T.n30,
-      label: kunIDag ? fmt(Sp.T.dykAabnRegelIDag, { navn: vis.overskrift, n: tal(rg.idag) }) : fmt(Sp.T.dykAabnRegel, { navn: vis.overskrift, n: tal(rg.h30) }),
-      under: kunIDag ? fmt(T.d1Sub, { n: tal(rg.idag) }) : labyrint ? fmt(Sp.T.faelderSat, { n: tal(rg.faelder30) }) : fmt(T.n7, { n: tal(rg.h7) }),
-      sti: x => dykTil({ regel: rg.navn, sti: x }), land: k => dykTil({ regel: rg.navn, land: k }),
-    });
+  function slagsVaelger(d) {
+    const nu = params.get('slags'), boks = el('div', { className: 'dyk-slags' }, el('span', { textContent: T.dykSlagsH }));
+    boks.append(segment('dyk-slags', T.dykSlagsH, [[T.dykSAlt, medSlags(''), !nu], [fmt(T.dykSAngreb, { n: tal(d.slags.angreb) }), medSlags('angreb'), nu === 'angreb'], [fmt(T.dykSRutine, { n: tal(d.slags.rutine) }), medSlags('rutine'), nu === 'rutine']]));
+    return boks;
   }
-  /* "Edge · 30 dage": i alt, den travleste dag og tabellen bag "Vis tallene". */
-  function dageTop(v) {
-    const sumD = v.h_dage.reduce((s, d) => s + d.n, 0), mx = v.h_dage.reduce((a, d) => (d.n > a.n ? d : a), v.h_dage[0] || { n: 0 });
-    const b = el('b', { textContent: tal(sumD) }), ud = [sumD ? knap(b, dykTil({}), 'link dyk-celle', fmt(Sp.T.dykAabn, { navn: T.ialt, n: tal(sumD) })) : b, ' ', T.ialt];
-    if (mx && mx.n) ud.push(' · ', knap(fmt(T.maks, { n: tal(mx.n), d: datoLang(mx.dag) }), dykTil({ dag: mx.dag })));
-    if (daekning(v, 30)) ud.push(' · ', daekning(v, 30));
+
+  /* ── fliser ── */
+  function fliser(d) {
+    const k = d.noegletal, o = ord(), p = params.get('periode'), iDag = fmt(T.dykFIDag, { n: tal(k.i_dag_hidtil) }), liste = filtre();
+    const boks = el('div', { className: 'vg-fliser' }), med = (m, n, ellers) => (m < n ? fmt(T.dagMed, { m: tal(m), n: tal(n) }) : ellers);
+    if (har('dag')) boks.append(flise(d.sum, fmt(T.dykFDag, { o, d: V.datoLang(params.get('dag')) }), '', '', true));
+    if (har('fra')) { const [a, b] = S.datoPar(params.get('fra'), params.get('til')); boks.append(flise(d.sum, fmt(T.dykFPeriode, { o, a, b }), med(d.periode.med, d.periode.dage, ''), '', true)); }
+    /* Tal kun i dag: flisen siger begge dele, så den ikke modsiger "Først set". */
+    const altSub = d.kun_i_dag ? fmt(T.dykHeleIDag, { h: tal(k.alt), n: tal(k.i_dag_hidtil) }) : med(d.periode.med, d.periode.dage, '');
+    if (p === 'alt') boks.append(flise(k.alt, fmt(T.dykFAlt, { o }), altSub, medPeriode('periode', 'alt'), true));
+    const fast = !har('dag') && !har('fra') && p !== 'alt', andel = !liste.length && vaern && k.hele7 && vaern.alle_hele7 ? fmt(L.andel, { n: tal(Math.round(vaern.alle_hele7 / k.hele7)) }) : '';
+    boks.append(V.flise(k.i_gaar, fmt(T.dykFIGaar, { o }), iDag, medPeriode('dag', d.i_gaar), { ekstra: { n: k.i_dag_hidtil, dyk: medPeriode('dag', d.i_dag) } }));
+    boks.append(flise(k.hele7, fmt(T.dykF7, { o }), [andel, med(k.med7, 7, '')].filter(Boolean).join(' · '), medPeriode('periode', '7'), fast && p !== '30'), flise(k.hele30, fmt(T.dykF30, { o }), med(k.med30, 30, T.dykF30Sub), medPeriode('periode', '30'), fast && p === '30'));
+    const dato = (h, dag) => el('div', { className: 'dyk-dato' }, el('span', { textContent: h }), knap(V.datoLang(dag), medPeriode('dag', dag), 'link', fmt(T.dykAabn, { navn: h, n: V.datoLang(dag) })));
+    if (d.foerst) boks.append(el('div', { className: 'vg-flise dyk-datoer' }, dato(T.dykFoerst, d.foerst), dato(T.dykSidst, d.sidst)));
+    boks.append(...forespoergsler(d));
+    if (visForsoeg(d)) { const navn = fmt(L.forsoeg, { p: periodeTekst() }); boks.append(V.flise(d.forsoeg.n, navn, L.forsoegSub, { rul: 'vg-forsoeg' }, { klasse: 'vg-graa', label: fmt(T.dykRul, { navn, n: tal(d.forsoeg.n) }) })); }
+    return boks;
+  }
+  /* Adressen til afsnittet "Trafik den …" for en periode. */
+  const trafikQ = (a, b) => kopi(p => { PERIODE.forEach(x => p.delete(x)); FILTRE.forEach(x => p.delete(x)); p.delete('slags'); if (a === b) p.set('dag', a); else { p.set('fra', a); p.set('til', b); } p.set('trafik', '1'); });
+  /* Forholdet mellem det, der står her, og alle forespørgsler. Kun uden filtre: et filter gælder ikke forespørgslerne. Robotter tæller besøg, og forsøg er for sig. */
+  function forespoergsler(d) {
+    const antal = erRobot() ? d.sum : d.slags.angreb, rene = erRobot() ? !har('sti') : !filtre().length;
+    if (!d.trafik.i_alt || !rene) return [];
+    const sub = antal ? fmt(T.dykForespSub, { o: erRobot() ? T.dykBesoeg : T.dykAngrebOrd, n: tal(antal), m: tal(Math.round(d.trafik.i_alt / antal)) }) : '';
+    return [V.flise(d.trafik.i_alt, T.dykForesp, sub, trafikQ(d.periode.fra, d.periode.til), { label: fmt(T.dykForespAabn, { n: tal(d.trafik.i_alt) }) })];
+  }
+
+  /* ── linjerne øverst ── */
+  /* En periode med usædvanlig meget trafik siger det øverst, for angrebene alene ser små ud. Flere dage får en samlet linje; hver dag åbner sin trafik. Tallene kan ikke sige, hvad det var. */
+  function trafikLinjer(d) {
+    const dage = d.trafik.dage;
+    if (!dage.length || filtre().length || erTrafik()) return [];
+    const ud = [];
+    if (dage.length > 1) {
+      const a = dage[0].dag, b = dage[dage.length - 1].dag, sum = k => dage.reduce((x, t) => x + t[k], 0), n = tal(sum('n'));
+      const tekst = fmt(T.dykTrafikLinje, { t: T.trafikMaerke, p: V.interval(a, b), n, m: tal(Math.round(dage[0].median)), stop: S.trafikStop(sum('n'), sum('stoppet')) });
+      ud.push(el('p', { className: 'vg-advarsel vg-gul dyk-trafik-linje' }, tekst, ' ', knap(T.dykSeTrafikken, trafikQ(a, b), 'link', T.dykSeTrafikken)));
+    }
+    ud.push(el('ul', { className: 'vg-trafik' }, ...dage.map(t => el('li', {}, V.knap(fmt(2 * t.stoppet >= t.n ? T.trafikDagMest : T.trafikDag, { d: V.datoLang(t.dag), n: tal(t.n), s: tal(t.stoppet), o: tal(t.n - t.stoppet) }), trafikQ(t.dag, t.dag), 'trafik-maerke'))), el('li', { className: 'vg-trafik-note', textContent: fmt(T.trafikNote, { m: tal(Math.round(dage[0].median)) }) })));
     return ud;
   }
-  function dageTabel(v) {
-    const kol = (tekst, klasse) => { const th = el('th', { textContent: tekst, className: klasse || '' }); th.setAttribute('scope', 'col'); return th; };
-    const uhentet = huller(v), raekker = v.h_dage.slice().reverse().map(d => {
-      if (uhentet.has(d.dag)) return el('tr', { className: 'hul-raekke' }, el('th', { scope: 'row', textContent: datoLang(d.dag) }), el('td', { className: 'tal-kol', textContent: Sp.T.hulIngen }), el('td', { className: 'tal-kol', textContent: Sp.T.hulIngen }));
-      const dag = datoLang(d.dag), q = dykTil({ dag: d.dag }), th = el('th', { scope: 'row' }, d.n ? knap(dag, q, 'link dyk-celle', fmt(Sp.T.dykDag, { d: dag, n: tal(d.n) })) : dag);
-      return el('tr', {}, th, el('td', { className: 'tal-kol' }, d.n ? knap(tal(d.n), q, 'link dyk-celle', fmt(Sp.T.dykDag, { d: dag, n: tal(d.n) })) : tal(d.n)), el('td', { className: 'tal-kol', textContent: tal(d.alle) }));
-    });
-    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel' }, el('thead', {}, el('tr', {}, kol(T.dag), kol(T.antal, 'tal-kol'), kol(T.trafik, 'tal-kol'))), el('tbody', {}, ...raekker)));
-    rul.setAttribute('role', 'region');
-    rul.setAttribute('aria-label', T.vis);
-    return rul;
+  /* Et filter, der kun har tal i dag, må ikke ligne 0. */
+  function kunIDag(d, liste) {
+    const k = d.kun_i_dag;
+    if (!k) return [];
+    const n = d.noegletal.i_dag_hidtil, flere = ord().toLowerCase(), o = n === 1 ? ({ hændelser: 'hændelse', visits: 'visit', attacks: 'attack', events: 'event' }[flere] || flere) : flere;
+    const navn = liste.length ? filterNavn(liste[0], d) : T.dykKunIDagHer, boks = el('div', { className: 'vg-advarsel dyk-kun-i-dag' }, el('p', { textContent: fmt(T.dykKunIDag, { navn, n: tal(n), o }) }));
+    const linje = (h, rk) => { if (rk.length) boks.append(el('p', {}, el('b', { textContent: `${h}: ` }), rk.join(', '))); };
+    linje(T.dykKunStier, k.stier.slice(0, 3).map(x => `${x.v} (${tal(x.n)})`));
+    linje(T.dykKunLande, k.lande.slice(0, 3).map(x => `${V.land(x.v)} (${tal(x.n)})`));
+    if (k.t) linje(T.dykKunTid, [S.datoTid(k.t)]);
+    boks.append(el('p', {}, knap(T.dykKunAabn, medPeriode('dag', d.i_dag), 'link', T.dykKunAabn)));
+    return [boks];
   }
-  /* "Hvad de ledte efter": 7 hele dage, som flisen; en kategori og en sti åbner forsøget i dyk med samme periode. */
-  function forsoegPunkt(k, i, m) {
-    const [navn, forkl] = Sp.T.kat[k.id] || [k.id, ''], q = x => dykTil({ forsoeg: x, periode: '7' });
-    const li = el('li', {}, el('div', { className: 'vg-p-hoved' }, el('span', { className: 'vg-p-nr', textContent: `§ ${i + 1}` }), el('h3', {}, knap(navn, q(k.id), 'link dyk-celle', fmt(Sp.T.dykAabn, { navn, n: tal(k.n) }))), el('b', { textContent: tal(k.n) })),
-      el('i', { className: V.bredde(100 * k.n / m) }), el('p', { textContent: forkl }));
-    if (k.stier && k.stier.length) li.append(el('p', { className: 'vg-p-stier' }, ...k.stier.slice(0, 5).flatMap(s => [knap(V.sti(s.sti), q(s.sti), 'link dyk-celle', fmt(Sp.T.dykAabn, { navn: s.sti, n: tal(s.n) })), ' '])));
-    return li;
+  /* Sikkerhedstal over en måned gamle findes ikke hos Cloudflare: det skal stå tydeligt, når perioden når længere tilbage. */
+  function kunTrafik(d) {
+    const fra = d.periode.sikkerhed_fra;
+    return fra && d.periode.fra < fra ? [el('p', { className: 'vg-advarsel vg-gul dyk-kun-trafik', textContent: fmt(T.dykKunTrafik, { d: V.datoLang(fra) }) })] : [];
   }
-  /* Domænet i det samlede "De seneste" åbner domænets Angreb. Kendes det ikke (mere), står det som tekst. */
-  function domaeneCelle(navn) {
-    const r = R.tilstand.raekker.find(x => x.navn === navn), td = el('td');
-    if (!r) td.append(navn); else td.append(knap(navn, { gaa: 'vaernet?' + new URLSearchParams({ zone: r.id, navn: r.navn }) }, 'link dyk-celle', fmt(Sp.T.aabnFor, { navn })));
-    return td;
-  }
-  /* Kort, søjler, lister og regelkort sættes ind i de pladser, vaern() har lavet. */
-  const kortOpt = v => ({
-    titel: `${T.kortTitel}. ${Sp.T.tastatur}`, id: 'vg-kort-d', beskrivelse: fmt(T.kortDesc, { lande: v.h_lande.slice(0, 3).map(l => landNavn(l.kode)).join(', '), colos: v.h_colos.slice(0, 3).map(c => coloNavn(c.kode)).join(', ') }),
-    dyk: { land: k => dykTil({ land: k }), colo: k => dykTil({ colo: k }), bue: (l, c) => dykTil({ land: l, colo: c }) },
-  });
-  /* "Dit sites teknologi": kun valgene og forslaget (hmTegn.tekKort); de sættes på #teknologi. De generiske slags har intet valg og står for sig. */
-  async function tegnTeknologi() {
-    const plads = rod.querySelector('[data-plads="teknologi"]'), g = gen, S = Sp.T;
-    if (!plads) return;
-    rod.querySelector('#vg-teknologi-h').textContent = S.tekH;
-    let d;
-    try { d = await invoke('teknologi_hent', { zone: zoneId }); } catch (e) { return; }
-    if (g !== gen || !plads.isConnected) return;
-    const saet = async (tek, valg) => { try { await invoke('teknologi_saet', { zone: zoneId, tek, valg, besked: false }); await tegnTeknologi(); R.hentOverblik(); } catch (e) { /* valget står */ } };
-    const dele = V.tekKort({ zone: zoneId, navn: domaene, linjer: d.linjer, saet });
-    if (d.generiske.length) {
-      const liste = el('ul', { className: 'tek-generiske' }, ...d.generiske.map(x => { const n = (S.kat[x.id] || [x.id])[0]; return el('li', {}, knap(`${n}: ${fmt(S.tekForsoeg, { n: tal(x.forsoeg30) })}`, dykTil({ forsoeg: x.id }))); }));
-      dele.push(el('h3', { textContent: S.tekGeneriskH }), el('p', { className: 'vg-note', textContent: S.tekGeneriskP }), liste);
-    }
-    plads.replaceChildren(...dele);
-    if (vis === 'teknologi') {
-      /* Tallene fra cachen tegnes, mens de friske er på vej. Først de friske er sidste tegning. */
-      if (!rod.classList.contains('vg-henter')) vis = null;
-      const s = rod.querySelector('#vg-teknologi');
-      if (s && s.scrollIntoView) s.scrollIntoView({ block: 'start' });
-    }
-  }
-  /* "Hvad angrebene var rettet mod" for de 30 hele dage: samme tal som dyk, og kun angreb. Fejler opslaget, står afsnittet ikke. */
-  async function tegnRettet() {
-    const plads = rod.querySelector('[data-plads="rettet"]'), g = gen;
-    if (!plads) return;
-    let d;
-    try { d = await invoke('dyk', { omfang: samlet ? { zoner: samletValg } : { zone: zoneId }, filtre: [], periode: 'd30', slags: 'angreb' }); } catch (e) { return; }
-    if (g !== gen || !plads.isConnected || !d || !(d.rettet_mod || []).length) return;
-    plads.replaceChildren(V.blok(Sp.T.rettetH, Sp.T.rettetP, V.rettetMod(d.rettet_mod, t => dykTil({ teknologi: t, slags: 'angreb' }))));
-  }
-  /* "Mails sendt i dit domænes navn", kun fra cachen. Fejler opslaget, står afsnittet ikke. Rækkerne har ikke mere bag sig, så intet her er klikbart ud over guiden. */
-  function emailBlok(d) {
-    const T = Sp.T, fod = [el('p', { className: 'vg-note', textContent: T.emailNote })];
-    const guide = () => { const b = Sp.bog('dmarc_til'); return el('details', { className: 'dyk-guide' }, el('summary', { textContent: T.emailGuide }), el('p', { textContent: b.alle }), el('ol', {}, ...b.ja.map(t => el('li', { textContent: t })))); };
-    if (!d.mails) {
-      const linje = d.fejl ? fmt(T.emailFejl, { f: d.fejl }) : d.hentede_dage ? T.emailTom : T.emailVenter;
-      return V.blok(T.emailH, '', el('p', { className: 'email-tom', textContent: linje }), ...(d.hentede_dage && !d.fejl ? [guide()] : []));
-    }
-    const top = el('p', { className: 'email-linje', textContent: d.fejlet ? fmt(T.emailLinje, { n: tal(d.mails), m: tal(d.fejlet), k: d.afsendere }) : fmt(T.emailLinjeOk, { n: tal(d.mails) }) });
-    if (!d.liste.length) return V.blok(T.emailH, T.emailP, top);
-    const th = (t, k) => { const e = el('th', { textContent: t, className: k || 'v' }); e.setAttribute('scope', 'col'); return e; };
-    const rk = d.liste.map(x => el('tr', {}, el('td', { className: 'v', textContent: x.afsender || T.emailUkendt }), el('td', { className: 'v', textContent: x.land || '–' }), el('td', { className: 'tal-kol', textContent: tal(x.fejlet) }), el('td', { className: 'tal-kol', textContent: tal(x.mails) })));
-    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel email-tabel' }, el('thead', {}, el('tr', {}, th(T.emailAfsender), th(T.emailLand), th(T.emailFejlet, 'tal-kol'), th(T.emailMails, 'tal-kol'))), el('tbody', {}, ...rk)));
-    rul.setAttribute('role', 'region');
-    rul.setAttribute('aria-label', T.emailH);
-    return V.blok(T.emailH, T.emailP, top, rul, ...fod);
-  }
-  async function tegnEmail() {
-    const plads = rod.querySelector('[data-plads="email"]'), g = gen;
-    if (!plads) return;
-    let d;
-    try { d = await invoke('email_oversigt', { zone: zoneId }); } catch (e) { return; }
-    if (g !== gen || !plads.isConnected || !d) return;
-    plads.replaceChildren(emailBlok(d));
-  }
-  const kortData = v => ({ lande: v.h_lande, colos: v.h_colos, buer: v.h_buer });
-  const LISTE = 8;
   /* Mærket "Ligner …" øverst med forklaringen: klik åbner dagen, og linket guiden. */
   function tegnMoenster() {
     rod.querySelector('.moenster-linje')?.remove();
     rod.querySelector('.moenster-note')?.remove();
-    if (R.tilstand.raekker.some(x => x.kan_sammenligne === false)) rod.prepend(el('p', { className: 'vg-note moenster-note', textContent: Sp.T.maalMin }));
-    const r = samlet ? null : R.tilstand.raekker.find(x => x.id === zoneId), b = r && V.moensterKnap(r);
+    if (R.tilstand.raekker.some(x => x.kan_sammenligne === false)) rod.prepend(el('p', { className: 'vg-note moenster-note', textContent: T.maalMin }));
+    const r = samlet() ? null : R.tilstand.raekker.find(x => x.id === zone()), b = r && V.moensterKnap(r);
     if (!b) return;
-    const guide = el('button', { type: 'button', className: 'link', textContent: Sp.T.maerkeGuide });
+    const guide = el('button', { type: 'button', className: 'link', textContent: T.maerkeGuide });
     guide.addEventListener('click', () => R.guide(r.id));
-    rod.prepend(el('p', { className: `moenster-linje moenster-linje-${r.moenster.slags}` }, b, ' ', Sp.moensterTekst(r.moenster), ' ', guide));
+    rod.prepend(el('p', { className: `moenster-linje moenster-linje-${r.moenster.slags}` }, b, ' ', S.moensterTekst(r.moenster), ' ', guide));
   }
-  function fyld(v) {
-    const plads = id => rod.querySelector(`[data-plads="${id}"]`), f = v.fordeling || {}, fk = (v.h_forsoeg && v.h_forsoeg.kategorier) || [], fm = Math.max(1, ...fk.map(k => k.n));
-    plads('fliser').replaceChildren(fliser(v));
-    tegnMoenster();
-    if (!samlet) tegnTeknologi();
-    tegnRettet();
-    tegnEmail();
-    if (!samlet && iGaar(v)) plads('vurdering').replaceChildren(V.vurderingBoks({ zone: zoneId, navn: domaene, dag: iGaar(v) }));
-    plads('trafik').replaceChildren(...trafikLinjer(v));
-    plads('fordeling').replaceChildren(...fordelingLinjer(T.fordI, f.i_gaar, { dag: iGaar(v) }), ...fordelingLinjer(T.ford30, f.d30, {}));
-    rod.querySelector('.vg-kortramme').replaceChildren(V.kort(kortData(v), 'verden', kortOpt(v)));
-    const uden = V.udenPlads(kortData(v)), legende = plads('legende'), skala = V.kortSkala(kortData(v).lande);
-    legende.querySelector('.vg-skala')?.remove();
+
+  /* ── fordelingen ── */
+  /* "heraf N blokeret · N udfordret · N lokket ind i labyrinten" for én periode; hver del lægger handlingen på som filter. Tallet 0 fører ingen steder hen. */
+  const FORD = { b: 'blokeret', u: 'udfordret', l: 'labyrint' };
+  function fordelingLinjer(navn, f, maal) {
+    if (!f) return [];
+    const li = el('li', {}, el('b', { textContent: `${navn}:` }), ' ');
+    L.ford.split(' · ').forEach((del, i) => {
+      const [, foer, k] = /^(.*?)\{(\w)\}/.exec(del), tekst = fmt(del.slice(foer.length), { [k]: tal(f[FORD[k]]) });
+      li.append(...(i ? [' · '] : []), foer, f[FORD[k]] ? knap(tekst, maal(FORD[k]), 'link dyk-celle') : tekst);
+    });
+    if (f.andet) li.append(' · ', knap(fmt(L.fordAndet, { a: tal(f.andet) }).replace(/^ · /, ''), maal('andet'), 'link dyk-celle'));
+    const ud = [li];
+    if (f.faelder) ud.push(el('li', { className: 'vg-faelder' }, el('b', { textContent: `${navn}:` }), ' ', knap(T.faelderLinje(tal(f.faelder)), maal('faelder'), 'link dyk-celle')));
+    return ud;
+  }
+  function fordeling(d) {
+    if (har('handling') || har('forsoeg') || erRobot()) return [];
+    const iGaar = !filtre().length && !har('slags') && !har('dag') && vaern && vaern.fordeling ? fordelingLinjer(L.fordI, vaern.fordeling.i_gaar, h => kopi(p => { PERIODE.forEach(x => p.delete(x)); p.set('dag', d.i_gaar); p.set('handling', h); })) : [];
+    const linjer = [...iGaar, ...fordelingLinjer(periodeTekst(), d.fordeling, h => medFilter('handling', h))];
+    return linjer.length ? [el('ul', { className: 'vg-fordeling' }, ...linjer), el('p', { className: 'vg-note', textContent: L.fordNote })] : [];
+  }
+
+  /* ── kortet ── */
+  function kortBlok(d) {
+    const v = { lande: d.top.land.map(x => ({ kode: x.v, n: x.n })), colos: d.top.colo.map(x => ({ kode: x.v, n: x.n })), buer: d.buer };
+    if (har('forsoeg') || !v.lande.length) return [];
+    const opt = {
+      titel: `${fmt(L.kortTitel, { p: periodeTekst() })}. ${T.tastatur}`, id: 'vg-kort-d', ...(filtre().length || har('slags') ? { tal: n => tal(n) } : {}), beskrivelse: fmt(L.kortDesc, { lande: v.lande.slice(0, 3).map(l => V.land(l.kode)).join(', '), colos: v.colos.slice(0, 3).map(c => V.colo(c.kode)).join(', ') }),
+      dyk: { land: k => medFilter('land', k), colo: k => medFilter('colo', k), bue: (l, c) => kopi(p => { p.set('land', l); p.set('colo', c); }) },
+    };
+    const leg = (klasse, tekst) => el('li', {}, el('i', { className: klasse }), tekst);
+    const legende = el('ul', { className: 'vg-legende' }, leg('vg-leg-land', L.leg.land), leg('vg-leg-colo', L.leg.colo), leg('vg-leg-bue', L.leg.bue), el('li', { textContent: L.leg.samme }));
+    const uden = V.udenPlads(v), flereLande = d.antal.land - v.lande.length, flereColos = d.antal.colo - v.colos.length, skala = V.kortSkala(v.lande);
     if (skala) legende.prepend(skala);
-    if (uden.length) legende.append(el('li', { textContent: fmt(Sp.T.kortUdenPlads, { liste: uden.join(', ') }) }));
-    if (v.h_buer_i_alt > v.h_buer.length) legende.append(el('li', { textContent: fmt(Sp.T.kortBuer, { n: tal(v.h_buer.length), m: tal(v.h_buer_i_alt) }) }));
-    plads('dage-top').replaceChildren(...dageTop(v));
-    rod.querySelector('.vg-soejler-rul').replaceChildren(V.soejler(v.h_dage.map(d => ({ ...d, hentet: !huller(v).has(d.dag) })), { titel: `${T.dageTitel}. ${Sp.T.tastatur}`, dyk: dag => dykTil({ dag }) }));
-    plads('dage-tabel').replaceChildren(dageTabel(v));
-    plads('lande').replaceChildren(...V.listeFlere(v.h_lande.map(l => ({ navn: landNavn(l.kode), n: l.n, dyk: dykTil({ land: l.kode }) })), LISTE, 'lande', fmt(Sp.T.listeAlle, { n: tal(v.h_lande.length) })));
-    plads('netvaerk').replaceChildren(V.liste(v.h_netvaerk.slice(0, LISTE).map(l => ({ navn: l.navn, n: l.n, dyk: dykTil({ netvaerk: l.navn }) }))));
-    plads('colos').replaceChildren(...V.listeFlere(v.h_colos.map(c => ({ navn: coloNavn(c.kode), n: c.n, dyk: dykTil({ colo: c.kode }) })), LISTE, 'colos', fmt(Sp.T.listeAlle, { n: tal(v.h_colos.length) })));
-    plads('regler').replaceChildren(...v.h_regler.map(rg => regelKort(rg, v)));
-    plads('forsoeg').replaceChildren(...fk.map((k, i) => forsoegPunkt(k, i, fm)));
-    const sen = plads('seneste'), kilde = new Map(v.h_regler.map(rg => [rg.navn, rg.art]));
-    if (sen) sen.replaceChildren(V.senesteTabel(v.seneste, { til: (dim, val) => dykTil({ [dim]: val }), domaene: domaeneCelle, cve: true, art: x => kilde.get(x) }));
+    if (uden.length) legende.append(el('li', { textContent: fmt(T.kortUdenPlads, { liste: uden.join(', ') }) }));
+    if (flereLande > 0) legende.append(el('li', { textContent: fmt(T.kortFaaLande, { n: tal(flereLande) }) }));
+    if (flereColos > 0) legende.append(el('li', { textContent: fmt(T.kortFaaColos, { n: tal(flereColos) }) }));
+    if (d.buer_i_alt > d.buer.length) legende.append(el('li', { textContent: fmt(T.kortBuer, { n: tal(d.buer.length), m: tal(d.buer_i_alt) }) }));
+    const ramme = el('div', { className: 'vg-kortramme' }, V.kort(v, 'verden', opt));
+    ramme.setAttribute('role', 'region');
+    ramme.setAttribute('aria-label', fmt(L.kortTitel, { p: periodeTekst() }));
+    const midt = () => { if (ramme.scrollWidth > ramme.clientWidth) ramme.scrollLeft = (ramme.scrollWidth - ramme.clientWidth) * 0.5; };
+    const zoom = el('div', { className: 'vg-zoom' });
+    zoom.setAttribute('role', 'group');
+    zoom.setAttribute('aria-label', L.kortH);
+    for (const [navn, tekst] of [['verden', L.verden], ['europa', L.europa]]) {
+      const b = el('button', { type: 'button', textContent: tekst });
+      b.dataset.vis = navn;
+      b.setAttribute('aria-pressed', String(navn === 'verden'));
+      b.addEventListener('click', () => {
+        zoom.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        ramme.replaceChildren(V.kort(v, navn, opt));
+        midt();
+      });
+      zoom.append(b);
+    }
+    queueMicrotask(midt);
+    return [afsnit('vg-kort', L.kortH, L.kortP, el('div', { className: 'vg-tavle' }, zoom, ramme, legende))];
   }
 
-  /* ── "Se de N angreb" (vis=angreb-i-gaar): "De seneste" kun med dagens egentlige angreb ── */
-  let filter = false, sidsteTegning = null, filterNat = null;
-  /* Dagen er statusdagen: i går, eller om natten i forgårs (som Overblikket). null = intet at filtrere (fx samlet). */
-  function filterDag(data) {
-    if (!filter || samlet || !Array.isArray(data.angreb_dage) || !data.angreb_dage.length) return null;
-    const r = R.tilstand.raekker.find(x => x.id === zoneId), nat = Boolean(r && r.opdateres);
-    filterNat = nat;
-    const d = data.angreb_dage[nat ? 1 : 0];
-    return d ? { ...d, ord: nat ? Sp.T.dagIForgaars : Sp.T.dagIGaar } : null;
+  /* ── søjlerne og tabellen ── */
+  function dageTop(dage) {
+    const sumD = dage.reduce((s, d) => s + d.n, 0), mx = dage.reduce((a, d) => (d.n > a.n ? d : a), dage[0] || { n: 0 });
+    const b = el('b', { textContent: tal(sumD) }), ud = [b, ' ', L.ialt];
+    if (mx && mx.n) ud.push(' · ', knap(fmt(L.maks, { n: tal(mx.n), d: V.datoLang(mx.dag) }), medPeriode('dag', mx.dag), 'link dyk-celle'));
+    return ud;
   }
-  /* Data til tegningen og chippens tekst. Har cachen ingen enkelte angreb for dagen, vises reglerne bag dem i stedet. */
-  function filtrer(data, d) {
-    const k = d.seneste.length, n = d.angreb;
-    if (k) return { data: { ...data, seneste: d.seneste }, maal: 'vg-seneste', tekst: fmt(k < n ? Sp.T.fNogle : Sp.T.fAlle, { k, n: tal(n), dag: d.ord }) };
-    const navne = new Set(d.regler.map(x => x.navn));
-    if (navne.size) return { data: { ...data, seneste: [], h_regler: data.h_regler.filter(rg => navne.has(rg.navn)) }, maal: 'vg-regler', tekst: fmt(Sp.T.fRegler, { n: tal(n), dag: d.ord }) };
-    return { data: { ...data, seneste: [] }, maal: 'vg-regler', tekst: fmt(Sp.T.fIngen, { dag: d.ord }) };
+  function dageTabel(dage) {
+    const kol = (tekst, klasse) => { const th = el('th', { textContent: tekst, className: klasse || '' }); th.setAttribute('scope', 'col'); return th; };
+    const raekker = dage.slice().reverse().map(d => {
+      if (d.hentet === false) return el('tr', { className: 'hul-raekke' }, el('th', { scope: 'row', textContent: V.datoLang(d.dag) }), el('td', { className: 'tal-kol', textContent: T.hulIngen }), el('td', { className: 'tal-kol', textContent: T.hulIngen }));
+      const dag = V.datoLang(d.dag), q = medPeriode('dag', d.dag), label = fmt(T.dykDag, { d: dag, n: tal(d.n) });
+      return el('tr', {}, el('th', { scope: 'row' }, d.n ? knap(dag, q, 'link dyk-celle', label) : dag), el('td', { className: 'tal-kol' }, d.n ? knap(tal(d.n), q, 'link dyk-celle', label) : tal(d.n)), el('td', { className: 'tal-kol', textContent: tal(d.alle) }));
+    });
+    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel' }, el('thead', {}, el('tr', {}, kol(L.dag), kol(ord() === T.dykAfvist ? L.antal : ord(), 'tal-kol'), kol(L.trafik, 'tal-kol'))), el('tbody', {}, ...raekker)));
+    rul.setAttribute('role', 'region');
+    rul.setAttribute('aria-label', L.vis);
+    return rul;
   }
-  function visFilterChip(f) {
-    const maal = document.getElementById(f.maal);
-    if (!maal) return;
-    const chip = document.createElement('p'), tekst = document.createElement('span'), x = document.createElement('button');
-    chip.className = 'vg-filter';
-    chip.id = 'vg-filter';
-    chip.setAttribute('role', 'status');
-    tekst.textContent = f.tekst;
-    x.type = 'button';
-    x.className = 'luk';
-    x.textContent = '×';
-    x.setAttribute('aria-label', Sp.T.fFjern);
-    x.title = Sp.T.fFjern;
-    x.addEventListener('click', () => R.gaaTil('vaernet', new URLSearchParams({ zone: zoneId, navn: domaene })));
-    chip.append(tekst, ' ', x);
-    maal.before(chip);
-    if (maal.scrollIntoView && !R.genbesoeg()) maal.scrollIntoView({ block: 'start' }); // tilbage/frem gendanner selv rullepositionen
+  /* Går perioden længere tilbage end sikkerhedshændelserne, står trafikken for hele perioden, og angrebene kun, hvor de findes. Én dag har ingen søjler. */
+  function soejleBlok(d) {
+    if (har('dag')) return [];
+    const fra = d.periode.sikkerhed_fra, sikre = d.trafik_serie.length ? d.dage.filter(x => x.dag >= fra) : d.dage, h = fmt(erRobot() ? T.dykRobotDage : T.dykEdge, { p: periodeTekst() });
+    const rul = el('div', { className: 'vg-soejler-rul' }, V.soejler(sikre, { titel: `${fmt(L.dageTitel, { p: periodeTekst() })}. ${T.tastatur}`, dyk: dag => medPeriode('dag', dag) }));
+    rul.setAttribute('role', 'region');
+    rul.setAttribute('aria-label', fmt(L.dageTitel, { p: periodeTekst() }));
+    const top = el('p', { className: 'vg-tavle-top' }, ...dageTop(sikre)), tavle = el('div', { className: 'vg-tavle vg-tavle-pad' }, top, rul);
+    const tabel = el('details', { className: 'vg-tal' }, el('summary', { textContent: L.vis }), dageTabel(sikre));
+    tabel.dataset.noegle = 'dage';
+    const trafik = d.trafik_serie.length ? [V.blok(T.dykTrafikDage, T.dykTrafikDageP, el('div', { className: 'vg-tavle vg-tavle-pad' }, el('div', { className: 'vg-soejler-rul' }, V.soejler(d.trafik_serie, { titel: T.dykTrafikSoejle, hul: T.dykTrafikHul, dyk: dag => trafikQ(dag, dag) }))))] : [];
+    return [...trafik, afsnit('vg-dage', h, filtre().length ? T.dykEdgeP : L.dageP, tavle, tabel)];
   }
 
-  /* ── tegning og start ── */
-  function besked(tekst, farve = 'roed') {
-    rod.removeAttribute('aria-busy');
-    rod.innerHTML = `<p class="vg-advarsel vg-${farve}" role="alert">${esc(tekst)}</p>`;
+  /* ── lister, regler og de andre afsnit ── */
+  const RAEKKER = {
+    land: x => ({ navn: V.land(x.v) }),
+    netvaerk: x => ({ navn: x.v }),
+    sti: x => ({ navn: x.v, kode: true }),
+    colo: x => ({ navn: V.colo(x.v) }),
+    metode: x => ({ navn: x.v }),
+    handling: x => ({ navn: T.dykHandling[x.v] || x.v }),
+    robot: x => ({ navn: V.robotNavn(x.v) }),
+    status: x => ({ navn: x.v }),
+  };
+  /* "Reglerne, der slog til": et klik lægger reglen på som filter. Med et regelfilter er reglen hovedet og får intet kort. */
+  function reglerBlok(d, liste) {
+    /* En regel, der kun er set i dag, er ikke i de hele dage: uden filter og valgt dag står den alligevel og åbner dagen i dag. */
+    const nye = !liste.length && !har('dag') && !har('fra') && !har('slags') && vaern && vaern.h_regler ? vaern.h_regler.filter(rg => !rg.h30 && rg.idag > 0) : [];
+    const regler = d.sum ? d.regler : [];
+    if (!regler.length && !nye.length) return [];
+    const u = [...liste.map(f => filterNavn(f, d)), ...(har('dag') ? [V.datoLang(params.get('dag'))] : [])].join(' · ') || periodeTekst();
+    const kort = regler.map(rg => {
+      const navn = V.regelVis(rg).overskrift, labyrint = rg.navn === 'linkMaze';
+      return V.regelKort(rg, { dyk: medFilter('regel', rg.navn), n: rg.h30, enhed: labyrint ? T.lokketInd : T.dykKortN, label: fmt(T.dykAabn, { navn, n: tal(rg.h30) }), ...(labyrint ? { under: fmt(T.faelderSat, { n: tal(rg.faelder30) }) } : {}), sti: x => kopi(p => { p.set('regel', rg.navn); p.set('sti', x); }), land: k => kopi(p => { p.set('regel', rg.navn); p.set('land', k); }) });
+    });
+    for (const rg of nye) {
+      const omDagen = fn => kopi(p => { PERIODE.forEach(x => p.delete(x)); p.set('regel', rg.navn); p.set('dag', d.i_dag); fn(p); });
+      kort.push(V.regelKort(rg, { dyk: omDagen(() => { }), n: rg.h30, enhed: T.dykKortN, label: fmt(T.dykAabnRegelIDag, { navn: V.regelVis(rg).overskrift, n: tal(rg.idag) }), under: fmt(L.d1Sub, { n: tal(rg.idag) }), sti: x => omDagen(p => p.set('sti', x)), land: k => omDagen(p => p.set('land', k)) }));
+    }
+    return [afsnit('vg-regler', fmt(T.dykReglerH, { u }), fmt(L.reglerP, { domaene }), el('div', { className: 'vg-regler' }, ...kort), el('p', { className: 'vg-note', textContent: L.reglerNote }))];
   }
-  /* advarsel: [tekst, 'gul' | 'roed'] eller null. Gul prik, når tallene ikke er friske (henter, eller hentningen fejlede). */
-  function tegn(alle, status, henter, advarsel) {
-    sidsteTegning = [alle, status, henter, advarsel];
-    const d = filterDag(alle), f = d ? filtrer(alle, d) : null, data = f ? f.data : alle, genaabn = V.husk(rod);
-    rod.innerHTML = `<div class="vg-bjaelke"><p class="vg-status">${esc(status)}</p></div>${advarsel ? `<p class="vg-advarsel vg-${advarsel[1]}" role="alert">${esc(advarsel[0])}</p>` : ''}` + vaern(data);
-    fyld(data);
+  /* Top 5 fremme, resten bag "Vis top 20". Et filter er sat for dimensionen: listen står ikke. Reglerne står som kort (reglerBlok). */
+  function lister(d) {
+    const boks = el('div', { className: 'vg-tre dyk-lister' });
+    for (const dim of erRobot() ? ['robot', 'sti', 'status'] : ['land', 'netvaerk', 'sti', 'colo', 'metode', 'handling']) {
+      if ((har(dim) && !(dim === 'robot' && V.ROBOT_SLAGS.includes(params.get('robot')))) || (har('forsoeg') && dim !== 'sti')) continue;
+      /* Svarkoden er ikke et filter: den tal fører ingen steder hen. */
+      const maal = x => (dim === 'status' ? {} : { dyk: har('forsoeg') ? medForsoegSti(x.v) : dim === 'robot' ? medFilter('robot', robotFilter(x.v)) : medFilter(dim, x.v) });
+      const rk = d.top[dim].map(x => ({ ...RAEKKER[dim](x), n: x.n, ...maal(x) }));
+      if (!rk.length) continue;
+      boks.append(el('div', {}, el('h3', { textContent: T.dykLister[dim] }), ...V.listeFlere(rk, TOP_SYNLIGE, dim, fmt(T.dykFlere, { n: tal(d.antal[dim]) }))));
+    }
+    return boks.childElementCount ? [V.blok(T.dykListerH, T.dykListerP, boks)] : [];
+  }
+  const medForsoegSti = sti => medFilter('forsoeg', sti);
+  /* Et navn i listen over fx de udklædte: samme slags, nu kun den robot. */
+  const robotFilter = navn => { const v = params.get('robot'); return !v || v === 'alle' ? navn : `${v}:${navn}`; };
+  function andre(d, liste) {
+    if (!d.domaener.length) return [];
+    const h = har('regel') && liste.length === 1 ? T.dykAndreRegel : liste.length ? fmt(T.dykAndre, { navn: liste.map(f => filterNavn(f, d)).join(' · ') }) : T.dykAndreAlt;
+    const rk = d.domaener.map(x => {
+      const q = kopi(p => { p.delete('samlet'); p.set('zone', x.zone); p.set('navn', x.navn); });
+      return { navn: x.navn, n: x.n, dyk: q, domaene: true, label: fmt(T.dykSkift, { navn: x.navn, n: tal(x.n) }) };
+    });
+    return [V.blok(h, '', el('div', { className: 'dyk-andre' }, V.liste(rk)))];
+  }
+  function enkelte(d) {
+    if (!d.enkelte.length) return [];
+    const kilde = new Map(d.top.regel.map(x => [x.v, x.art]));
+    /* Domænet i det samlede: samme filter på det domæne. */
+    const domaeneCelle = navn => {
+      const r = R.tilstand.raekker.find(x => x.navn === navn), td = el('td');
+      if (!r) td.append(navn); else td.append(V.knap(navn, ren() ? { gaa: 'vaernet?' + new URLSearchParams({ zone: r.id, navn: r.navn }) } : kopi(p => { p.delete('samlet'); p.set('zone', r.id); p.set('navn', r.navn); }), 'link dyk-celle', fmt(T.aabnFor, { navn })));
+      return td;
+    };
+    const til = (dim, v) => (dim === 'dag' ? (har('dag') ? null : medPeriode('dag', v)) : har(dim) ? null : medFilter(dim, v));
+    const tabel = V.senesteTabel(d.enkelte, { til, domaene: domaeneCelle, cve: true, uden: har('regel') ? ['regel'] : [], art: v => kilde.get(v) }), e = d.enkelte_info;
+    if (!e) return [afsnit('vg-seneste', T.dykSenesteH, T.dykSenesteP, tabel)];
+    const tekst = [fmt(T.dykVisNafM, { n: tal(e.vist), m: tal(e.i_alt) }), ...(e.loft ? [T.dykLoft200] : [])].join(' ');
+    const side = n => kopi(p => { if (n > 1) p.set('side', n); });
+    const nav = el('nav', { className: 'dyk-sider' }, ...(e.side > 1 ? [knap(T.dykForrige, side(e.side - 1), 'knap')] : []), el('span', { textContent: fmt(T.dykSideN, { a: tal(e.side), b: tal(e.sider) }) }), ...(e.side < e.sider ? [knap(T.dykNaeste, side(e.side + 1), 'knap')] : []));
+    nav.setAttribute('aria-label', T.dykSiderH);
+    return [afsnit('vg-seneste', T.dykSenesteH, tekst, tabel, ...(e.sider > 1 ? [nav] : []))];
+  }
+  /* "Hvad de ledte efter": kun uden filtre, for et 404-svar har hverken land, regel eller slags. En kategori og en sti lægger forsøget på som filter. */
+  const visForsoeg = d => Boolean(d.forsoeg && d.forsoeg.kategorier.length) && !filtre().length && !har('slags');
+  function forsoegPunkt(k, i, m) {
+    const [navn, forkl] = T.kat[k.id] || [k.id, ''];
+    const li = el('li', {}, el('div', { className: 'vg-p-hoved' }, el('span', { className: 'vg-p-nr', textContent: `§ ${i + 1}` }), el('h3', {}, knap(navn, medFilter('forsoeg', k.id), 'link dyk-celle', fmt(T.dykAabn, { navn, n: tal(k.n) }))), el('b', { textContent: tal(k.n) })),
+      el('i', { className: V.bredde(100 * k.n / m) }), el('p', { textContent: forkl }));
+    if (k.stier && k.stier.length) li.append(el('p', { className: 'vg-p-stier' }, ...k.stier.slice(0, 5).flatMap(s => [knap(V.sti(s.sti), medFilter('forsoeg', s.sti), 'link dyk-celle', fmt(T.dykAabn, { navn: s.sti, n: tal(s.n) })), ' '])));
+    return li;
+  }
+  function forsoegBlok(d) {
+    if (!visForsoeg(d)) return [];
+    const fk = d.forsoeg.kategorier, fm = Math.max(1, ...fk.map(k => k.n));
+    return [afsnit('vg-forsoeg', L.forsoegH, fmt(samlet() ? L.forsoegPP : L.forsoegP, { domaene }), el('ol', { className: 'vg-protokol' }, ...fk.map((k, i) => forsoegPunkt(k, i, fm))))];
+  }
+
+  /* "Dit sites teknologi" for ét domæne uden filtre: valgene og forslaget (hmTegn.tekKort), og de generiske slags, som ikke har et valg. Valgene sættes på #teknologi og er ikke tal for perioden. Pladsen fyldes bagefter: tallene skal ikke vente. */
+  function tekBlok(g) {
+    let plads = el('div');
+    const z = zone(), foerst = plads;
+    const fyld = async () => {
+      let t;
+      try { t = await invoke('teknologi_hent', { zone: z }); } catch (e) { return; }
+      if (g !== gen || !plads.isConnected) return;
+      const saet = async (tek, valg) => { try { await invoke('teknologi_saet', { zone: z, tek, valg, besked: false }); await R.hentOverblik(); fyld(); } catch (e) { /* valget står */ } };
+      const dele = V.tekKort({ zone: z, navn: domaene, linjer: t.linjer, saet });
+      if (t.generiske.length) {
+        const liste = el('ul', { className: 'tek-generiske' }, ...t.generiske.map(x => { const n = (T.kat[x.id] || [x.id])[0]; return el('li', {}, V.knap(`${n}: ${fmt(T.tekForsoeg, { n: tal(x.forsoeg30) })}`, kopi(p => { PERIODE.forEach(k => p.delete(k)); p.set('periode', '30'); p.set('forsoeg', x.id); }))); }));
+        dele.push(el('h3', { textContent: T.tekGeneriskH }), el('p', { className: 'vg-note', textContent: T.tekGeneriskP }), liste);
+      }
+      const ny = afsnit('vg-teknologi', T.tekH, '', ...dele);
+      plads.replaceWith(ny);
+      plads = ny;
+      if (params.get('vis') === 'teknologi' && !stat.henter) {
+        /* Tallene fra cachen tegnes, mens de friske er på vej. Først de friske er sidste tegning. */
+        params.delete('vis');
+        const s = $('vg-teknologi');
+        if (s && s.scrollIntoView) s.scrollIntoView({ block: 'start' });
+      }
+    };
+    queueMicrotask(fyld);
+    return [foerst];
+  }
+  /* "Hvad angrebene var rettet mod". Står ikke, når der allerede er filtreret på én teknologi. */
+  const rettetBlok = d => (d.rettet_mod.length && !har('teknologi') && !erRobot() && !har('forsoeg') ? [V.blok(T.rettetH, T.rettetP, V.rettetMod(d.rettet_mod, t => kopi(p => { p.set('teknologi', t); p.set('slags', 'angreb'); })))] : []);
+  /* "Mails sendt i dit domænes navn", kun fra cachen og for perioden. Fejler opslaget, står afsnittet ikke. Rækkerne har ikke mere bag sig, så intet her er klikbart ud over guiden. */
+  function emailIndhold(m) {
+    const fod = [el('p', { className: 'vg-note', textContent: T.emailNote })], intro = fmt(T.emailP, { p: periodeTekst() });
+    const guide = () => { const b = S.bog('dmarc_til'); return el('details', { className: 'dyk-guide' }, el('summary', { textContent: T.emailGuide }), el('p', { textContent: b.alle }), el('ol', {}, ...b.ja.map(t => el('li', { textContent: t })))); };
+    if (!m.mails) {
+      const linje = m.fejl ? fmt(T.emailFejl, { f: m.fejl }) : m.hentede_dage ? T.emailTom : T.emailVenter;
+      return V.blok(T.emailH, '', el('p', { className: 'email-tom', textContent: linje }), ...(m.hentede_dage && !m.fejl ? [guide()] : []));
+    }
+    const top = el('p', { className: 'email-linje', textContent: m.fejlet ? fmt(T.emailLinje, { n: tal(m.mails), m: tal(m.fejlet), k: m.afsendere }) : fmt(T.emailLinjeOk, { n: tal(m.mails) }) });
+    if (!m.liste.length) return V.blok(T.emailH, intro, top);
+    const th = (t, k) => { const e = el('th', { textContent: t, className: k || 'v' }); e.setAttribute('scope', 'col'); return e; };
+    const rk = m.liste.map(x => el('tr', {}, el('td', { className: 'v', textContent: x.afsender || T.emailUkendt }), el('td', { className: 'v', textContent: x.land || '–' }), el('td', { className: 'tal-kol', textContent: tal(x.fejlet) }), el('td', { className: 'tal-kol', textContent: tal(x.mails) })));
+    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel email-tabel' }, el('thead', {}, el('tr', {}, th(T.emailAfsender), th(T.emailLand), th(T.emailFejlet, 'tal-kol'), th(T.emailMails, 'tal-kol'))), el('tbody', {}, ...rk)));
+    rul.setAttribute('role', 'region');
+    rul.setAttribute('aria-label', T.emailH);
+    return V.blok(T.emailH, intro, top, rul, ...fod);
+  }
+  function emailBlok(d, g) {
+    const plads = el('div'), z = zone();
+    plads.dataset.plads = 'email';
+    queueMicrotask(async () => {
+      let m;
+      try { m = await invoke('email_oversigt', { zone: z, fra: d.periode.fra, til: d.periode.til }); } catch (e) { return; }
+      if (g === gen && plads.isConnected && m) plads.replaceChildren(emailIndhold(m));
+    });
+    return [plads];
+  }
+  /* "Vurdering": for én dag på ét domæne. Uden en valgt dag er det i går. */
+  const vurdering = d => [V.vurderingBoks({ zone: zone(), navn: domaene, dag: har('dag') ? params.get('dag') : d.i_gaar })];
+
+  /* ── afsnittet "Trafik den …" ── */
+  const pct = (a, b) => `${tal(Math.round(100 * a / b))}${S.lang === 'da' ? ' %' : '%'}`;
+  /* Sætninger i klarsprog, kun når én ting fylder mere end halvdelen. Tallene siger, hvor trafikken kom fra, ikke hvad den var. */
+  function trafikOrd(t) {
+    const ud = [], [land] = t.lande, [kode] = t.status, [robot] = t.robotter, stor = (n, i) => i > 0 && 2 * n > i;
+    if (land && stor(land.n, t.lande_i_alt)) ud.push(fmt(T.trafikEtLand, { p: pct(land.n, t.lande_i_alt), land: V.land(land.v) }));
+    if (stor(t.server_fejl, t.status_i_alt)) ud.push(fmt(T.trafik52, { p: pct(t.server_fejl, t.status_i_alt) }));
+    else if (kode && stor(kode.n, t.status_i_alt)) ud.push(fmt(T.trafikKode, { p: pct(kode.n, t.status_i_alt), k: kode.v }));
+    if (robot && stor(robot.n, t.i_alt)) ud.push(fmt(T.trafikRobot, { r: V.robotNavn(robot.v) }));
+    return ud;
+  }
+  /* Et land kan kun åbnes, hvis Cloudflare stoppede noget derfra den dag: forespørgslerne selv har vi kun som tal. Svarkoderne er rene tal. */
+  function trafikAfsnit(t) {
+    const uden = fn => kopi(p => { p.delete('trafik'); fn(p); });
+    const normalt = t.median === null ? '' : fmt(T.trafikNormalt, { m: tal(Math.round(t.median)) });
+    const dele = [el('div', { className: 'vg-fliser' }, flise(t.i_alt, T.trafikIAlt, normalt, '', true), ...(t.sikkerhed ? [flise(t.stoppet, T.trafikStoppet, '', uden(() => { }), false)] : [flise(t.trusler, T.trafikTrusler, '', '', true), flise(t.cachet, T.trafikCachet, '', '', true)]))];
+    if (!t.sikkerhed) dele.push(el('p', { className: 'vg-note', textContent: T.trafikKunAar }));
+    const tekst = trafikOrd(t);
+    if (tekst.length) dele.push(el('ul', { className: 'vg-fordeling' }, ...tekst.map(x => el('li', { textContent: x }))));
+    if (!t.ekstra) dele.push(el('p', { className: 'vg-note', textContent: T.trafikIngenEkstra }));
+    const kol = (h, rk) => (rk.length ? [el('div', {}, el('h3', { textContent: h }), V.liste(rk))] : []);
+    const lande = kol(T.trafikLande, t.lande.map(x => ({ navn: V.land(x.v), n: x.n, ...(x.angreb ? { dyk: uden(p => p.set('land', x.v)) } : {}) })));
+    if (lande.length) dele.push(el('div', { className: 'dyk-lister dyk-trafik-lande' }, ...lande));
+    const boks = el('div', { className: 'vg-tre dyk-lister' },
+      ...kol(T.trafikStatus, t.status.map(x => ({ navn: x.v, n: x.n }))),
+      ...kol(T.trafikRobotter, t.robotter.map(x => ({ navn: V.robotNavn(x.v), n: x.n, dyk: uden(p => p.set('robot', x.v)) }))));
+    if (boks.childElementCount) dele.push(V.blok(T.dykListerH, T.dykTrafikP, boks));
+    else if (t.ekstra && !lande.length) dele.push(el('p', { className: 'vg-status dyk-tom', textContent: T.trafikTomt }));
+    dele.push(el('details', { className: 'dyk-guide' }, el('summary', { textContent: T.gTrafikH }), ...V.bogAfsnit('trafik'), el('h4', { textContent: T.gDnsH }), ...V.bogAfsnit('dns')));
+    return afsnit('vg-trafik-dag', fmt(T.dykTrafikH, { v: V.interval(t.dag, t.til) }), '', ...dele);
+  }
+
+  /* ── tegning ── */
+  /* Det valg, der havde fokus, da siden skiftede: "Henter …" fjerner det, og det skal have fokus igen bagefter. */
+  let valgtFokus = null;
+  const fokusNu = () => (document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.fokus : null);
+  function tegn(d, trafik) {
+    const liste = filtre(), g = gen, skjult = [], et = !samlet() && Boolean(zone());
+    S.saetDomaene(domaene, samlet());
+    R.titel();
+    visOverskrift();
+    chips(d, liste);
+    const p = params.get('periode'), fast = !har('dag') && !har('fra');
+    $('dyk-periode').replaceChildren(segment('dyk-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p !== '30' && p !== 'alt'], [T.dykP30, medPeriode('periode', '30'), fast && p === '30']]));
+    const genaabn = V.husk(rod), fokus = fokusNu() || valgtFokus;
+    const vaelger = V.datoVaelger({ visning: 'vaernet', periode: d.periode, nulstil: medPeriode('periode', 'alt'), gaa: (a, b) => R.gaaTil('vaernet', kopi(q => { PERIODE.forEach(x => q.delete(x)); q.set('fra', a); q.set('til', b); })) });
+    const bjaelke = el('div', { className: 'vg-bjaelke' }, el('p', { className: 'vg-status', textContent: stat.tekst }));
+    const advarsel = stat.advarsel ? [el('p', { className: `vg-advarsel vg-${stat.advarsel[1]}`, textContent: stat.advarsel[0] })] : [];
+    advarsel.forEach(a => a.setAttribute('role', 'alert'));
+    const filter = liste.length > 0, vurd = et && (har('dag') || !filter);
+    if (et && !vurd) skjult.push(L.vurderingNavn);
+    if (har('dag') && d.sum) skjult.push(L.soejlerNavn);
+    /* Samme rækkefølge som altid: fliser → fordeling → kort → lister → søjler → regler → resten, og "De seneste" sidst. */
+    const dele = [bjaelke, ...advarsel, ...kunIDag(d, liste), ...trafikLinjer(d), vaelger, ...kunTrafik(d), ...(trafik ? [trafikAfsnit(trafik)] : []), ...hoved(d), ...(har('regel') || har('forsoeg') || erRobot() ? [] : [slagsVaelger(d)]), fliser(d), ...(kunTrafik(d).length ? [] : V.daekning(d.periode)), ...fordeling(d), ...(vurd ? vurdering(d) : [])];
+    if (d.loft) dele.push(el('p', { className: 'vg-advarsel vg-gul', textContent: T.dykLoft }));
+    if (d.sum) dele.push(...kortBlok(d), ...lister(d), ...soejleBlok(d), ...reglerBlok(d, liste));
+    else dele.push(el('p', { className: 'vg-status dyk-tom', textContent: T.dykTomt }), ...reglerBlok(d, liste));
+    if (et && !filter) dele.push(...tekBlok(g)); else if (et) skjult.push(T.tekH);
+    if (d.sum) dele.push(...rettetBlok(d));
+    if (et && !filter) dele.push(...emailBlok(d, g)); else if (et) skjult.push(T.emailH);
+    if (visForsoeg(d)) dele.push(...forsoegBlok(d)); else if (d.forsoeg && d.forsoeg.kategorier.length && !har('forsoeg')) skjult.push(L.forsoegH);
+    dele.push(...andre(d, liste));
+    if (d.sum) dele.push(...enkelte(d));
+    if (skjult.length && (filter || har('slags') || har('dag'))) dele.push(el('p', { className: 'vg-note ang-skjult', textContent: fmt(L.skjult, { liste: skjult.join(', ') }) }));
+    dele.push(el('p', { className: 'vg-note', textContent: T.dykNote }));
+    rod.replaceChildren(...dele);
+    tegnMoenster();
     genaabn();
     rod.querySelectorAll('.vg-soejler-rul').forEach(r => { r.scrollLeft = r.scrollWidth; });
-    rod.classList.toggle('vg-henter', henter || Boolean(advarsel));
-    if (henter) rod.setAttribute('aria-busy', 'true'); else rod.removeAttribute('aria-busy');
-    const ramme = rod.querySelector('.vg-kortramme');
-    const midt = () => { if (ramme.scrollWidth > ramme.clientWidth) ramme.scrollLeft = (ramme.scrollWidth - ramme.clientWidth) * 0.5; };
-    midt();
-    rod.querySelectorAll('.vg-zoom button').forEach(b => b.addEventListener('click', () => {
-      rod.querySelectorAll('.vg-zoom button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-      ramme.replaceChildren(V.kort(kortData(data), b.getAttribute('data-vis'), kortOpt(data))); midt();
-    }));
-    if (f) visFilterChip(f);
+    rod.classList.toggle('vg-henter', stat.henter || Boolean(stat.advarsel));
+    if (stat.henter) rod.setAttribute('aria-busy', 'true'); else rod.removeAttribute('aria-busy');
+    const igen = fokus ? [...document.querySelectorAll('[data-fokus]')].find(x => x.dataset.fokus === fokus) : null;
+    if (igen) igen.focus();
+    valgtFokus = null;
+    /* "Se de N angreb": første gang rulles der til listen, eller til reglerne, når de enkelte angreb ikke er gemt. Tilbage/frem gendanner selv rullepositionen. */
+    if (params.get('vis') === 'seneste') {
+      params.delete('vis');
+      const maal = $('vg-seneste') || $('vg-regler');
+      if (maal && maal.scrollIntoView && !R.genbesoeg()) maal.scrollIntoView({ block: 'start' });
+    }
+  }
+  function besked(tekst, farve = 'roed') {
+    rod.removeAttribute('aria-busy');
+    const p = el('p', { className: `vg-advarsel vg-${farve}`, textContent: tekst });
+    p.setAttribute('role', 'alert');
+    rod.replaceChildren(p);
+    $('dyk-filtre').hidden = true;
+    $('dyk-periode').replaceChildren();
   }
 
   /* ── etiketterne ── */
-  /* De valgte domæner som etiketter (P2): de første 8, resten bag "+ N flere". Hver etiket åbner domænets eget Angreb.
-     Domæner uden tal står stiplet. */
+  /* De valgte domæner som etiketter: de første 8, resten bag "+ N flere". Hver etiket åbner domænets eget Angreb. Domæner uden tal står stiplet. */
   const VALGTE_SYNLIGE = 8;
   function visValgte(valgte) {
-    const boks = document.getElementById('valgte');
+    const boks = $('valgte');
     boks.replaceChildren();
     boks.hidden = !valgte.length;
     const liste = rk => {
-      const ul = document.createElement('ul');
-      ul.className = 'hm-valgte-liste';
+      const ul = el('ul', { className: 'hm-valgte-liste' });
       for (const v of rk) {
-        const a = document.createElement('a');
-        a.href = '#vaernet?' + new URLSearchParams({ zone: v.id, navn: v.navn });
-        a.textContent = v.navn;
-        const li = document.createElement('li');
+        const a = el('a', { href: '#vaernet?' + new URLSearchParams({ zone: v.id, navn: v.navn }), textContent: v.navn }), li = el('li');
         if (!v.med_tal) {
           li.className = 'hm-valgt-uden';
-          const sr = document.createElement('span');
-          sr.className = 'sr-only';
-          sr.textContent = ` (${T.udenTal})`;
-          a.append(sr);
+          a.append(el('span', { className: 'sr-only', textContent: ` (${L.udenTal})` }));
         }
         li.append(a);
         ul.append(li);
@@ -359,21 +546,15 @@
       return ul;
     };
     const synlige = liste(valgte.slice(0, VALGTE_SYNLIGE));
-    synlige.setAttribute('aria-label', T.valgteH);
+    synlige.setAttribute('aria-label', L.valgteH);
     boks.append(synlige);
     const rest = valgte.slice(VALGTE_SYNLIGE);
-    if (rest.length) {
-      const flere = document.createElement('details'), sum = document.createElement('summary');
-      flere.className = 'hm-valgte-flere';
-      sum.textContent = fmt(T.flere, { n: rest.length });
-      flere.append(sum, liste(rest));
-      boks.append(flere);
-    }
+    if (rest.length) boks.append(el('details', { className: 'hm-valgte-flere' }, el('summary', { textContent: fmt(L.flere, { n: rest.length }) }), liste(rest)));
   }
   function visDomaene(tekst, flertal) {
     domaene = tekst;
-    Sp.saetDomaene(tekst, flertal);
-    document.getElementById('vaernet-under').textContent = samlet && !flertal ? '' : tekst;
+    S.saetDomaene(tekst, flertal);
+    visOverskrift();
     R.titel();
   }
 
@@ -384,100 +565,147 @@
     aktiv = null;
     for (const f of afmeld.splice(0)) f();
   }
-  async function start(params) {
+  /* Tallene for perioden og filtrene, kun fra cachen. */
+  async function hentTal(g) {
+    let d, t = null;
+    const trafik = erTrafik();
+    try {
+      [d, t] = await Promise.all([
+        invoke('dyk', { omfang, filtre: filtre(), periode: periodeArg(), slags: params.get('slags'), side: Number(params.get('side')) || undefined }),
+        trafik ? invoke('trafik_dag', { omfang, dag: params.get('dag') || params.get('fra'), til: params.get('til') }) : null,
+      ]);
+    } catch (e) { if (g === gen) besked(S.fejl(e)); return; }
+    if (g === gen) tegn(d, t);
+  }
+  /* Tegn igen, når køen melder nyt, højst hvert 3. sekund. */
+  function lytPaaKoe(gaelder, igen) {
+    let sidst = Date.now(), ventende = null;
+    const snart = () => {
+      if (ventende) return;
+      ventende = setTimeout(() => { ventende = null; sidst = Date.now(); igen(); }, Math.max(0, sidst + 3000 - Date.now()));
+    };
+    afmeld.push(R.paa('hentekoe', k => { k = k || {}; if (!k.zone || gaelder(k.zone)) snart(); }), () => clearTimeout(ventende));
+  }
+  /* Filtrene og "Hent nu" ændrer ikke, hvor man står, når man kommer tilbage ad sidebjælken: kun domænet og perioden huskes. */
+  const husket = p => { const q = new URLSearchParams(); for (const [k, v] of p) if (['zone', 'navn', 'samlet', 'periode'].includes(k)) q.set(k, v); return q.toString(); };
+  async function start(p) {
     stop();
     const g = gen;
-    aktiv = params.toString();
-    sidste = aktiv;
-    zoneId = params.get('zone') || '';
-    samlet = params.get('samlet') === '1';
-    filter = params.get('vis') === 'angreb-i-gaar';
-    vis = params.get('vis');
-    sidsteTegning = null;
-    filterNat = null;
-    afmeld.push(R.paa('raekker', () => { if (rod.querySelector('[data-plads="fliser"]')) tegnMoenster(); }));
-    // Overblikket (og dermed "opdateres") kan komme efter første tegning: tegn igen, hvis statusdagen skifter.
-    if (filter) afmeld.push(R.paa('raekker', () => {
-      const r = R.tilstand.raekker.find(x => x.id === zoneId);
-      if (sidsteTegning && filterNat !== null && Boolean(r && r.opdateres) !== filterNat) tegn(...sidsteTegning);
-    }));
-    visDomaene(samlet ? '…' : (params.get('navn') || '').slice(0, 253) || '…', samlet);
+    aktiv = p.toString();
+    sidste = husket(p);
+    params = new URLSearchParams(p);
+    valgtFokus = fokusNu() || null;
+    vaern = null;
+    stat = { tekst: '', henter: false, advarsel: null };
+    omfang = null;
+    afmeld.push(R.paa('raekker', () => { if (rod.querySelector('.vg-bjaelke')) tegnMoenster(); }));
+    visDomaene(samlet() ? '…' : (p.get('navn') || '').slice(0, 253) || '…', samlet());
     R.visVaelger();
-    document.getElementById('valgte').hidden = true;
-    document.getElementById('valgte').replaceChildren();
+    $('valgte').hidden = true;
+    $('valgte').replaceChildren();
     rod.setAttribute('aria-busy', 'true');
-    rod.innerHTML = `<p class="vg-status">${esc(T.henter)}</p>`;
-    if (!invoke) return besked(T.mangler);
-    if (!samlet && !zoneId) return besked(T.ingenZone);
-    try { await V.klar(); } catch (e) { if (g === gen) besked(fmt(T.fejl, { f: fejltekst(e) })); return; }
+    rod.replaceChildren(el('p', { className: 'vg-status', textContent: L.henter }));
+    if (!invoke) return besked(L.mangler);
+    if (!samlet() && !zone()) return besked(L.ingenZone);
+    try { await V.klar(); } catch (e) { if (g === gen) besked(fmt(L.fejl, { f: S.fejl(e) })); return; }
     if (g !== gen) return;
-    if (samlet) return startSamlet(g);
-    const prioriter = () => invoke('koe_prioritet', { zone: zoneId }).catch(() => { });
+    if (samlet()) await startSamlet(g); else await startZone(g);
+    if (g !== gen) return;
+    /* Et klik på et filter fjerner det, der blev klikket på: fokus går til overskriften, så Tab fortsætter ved chips og vælgere. */
+    if (!ren() && !R.genbesoeg() && !fokusNu()) $('vaernet-h').focus({ preventScroll: true });
+  }
+  async function startZone(g) {
+    const z = zone();
+    omfang = { zone: z };
+    const prioriter = () => invoke('koe_prioritet', { zone: z }).catch(() => { });
     prioriter(); // zonen på skærmen kommer først i køen
     window.addEventListener('online', prioriter);
     afmeld.push(() => window.removeEventListener('online', prioriter));
-    const zone = zoneId;
-    const gemte = () => invoke('vaern_cache', { zoneId: zone }).catch(() => null);
-    const foer = await gemte();
+    const gemte = () => invoke('vaern_cache', { zoneId: z }).catch(() => null);
+    vaern = await gemte();
     if (g !== gen) return;
-    if (foer) tegn(foer, fmt(T.opdaterer, { t: kl(foer.genereret) }), true);
+    if (!ren()) {
+      /* Et filter eller en periode: kun det gemte. Køen kan stadig melde nyt. */
+      stat = { tekst: vaern ? fmt(L.opdateret, { t: kl(vaern.genereret) }) : '', henter: false, advarsel: null };
+      await hentTal(g);
+      if (g === gen) lytPaaKoe(x => x === z, () => hentTal(g));
+      return;
+    }
+    if (vaern) {
+      stat = { tekst: fmt(L.opdaterer, { t: kl(vaern.genereret) }), henter: true, advarsel: null };
+      await hentTal(g);
+      if (g !== gen) return;
+    }
     /* Ét forsøg på at hente nye tal: 'ok', 'net' (prøv igen) eller 'stop'. Svar til et domæne, der ikke vises mere, kasseres. */
     async function hent() {
       try {
-        const ny = await invoke('vaern_oversigt', { zoneId: zone });
+        const ny = await invoke('vaern_oversigt', { zoneId: z });
         if (g !== gen) return 'stop';
-        tegn(ny, fmt(T.opdateret, { t: kl(ny.genereret) }), false);
+        vaern = ny;
+        stat = { tekst: fmt(L.opdateret, { t: kl(ny.genereret) }), henter: false, advarsel: null };
+        await hentTal(g);
         return 'ok';
       } catch (e) {
         if (g !== gen) return 'stop';
-        const net = erNet(e), efter = await gemte(); // dage, der nåede at komme hjem før fejlen, er gemt
+        const net = S.erNet(e), efter = await gemte(); // dage, der nåede at komme hjem før fejlen, er gemt
         if (g !== gen) return 'stop';
-        if (efter) tegn(efter, fmt(T.opdateret, { t: kl(efter.genereret) }), false, [fmt(T.fejlGemte, { f: fejltekst(e), t: kl(efter.genereret) }), net ? 'gul' : 'roed']);
-        else besked(fmt(T.fejl, { f: fejltekst(e) }));
+        if (efter) {
+          vaern = efter;
+          stat = { tekst: fmt(L.opdateret, { t: kl(efter.genereret) }), henter: false, advarsel: [fmt(L.fejlGemte, { f: S.fejl(e), t: kl(efter.genereret) }), net ? 'gul' : 'roed'] };
+          await hentTal(g);
+        } else besked(fmt(L.fejl, { f: S.fejl(e) }));
         return net ? 'net' : 'stop';
       }
     }
-    const gf = window.hmGenforsoeg(document.getElementById('vg-genforsoeg'), hent);
+    const gf = window.hmGenforsoeg($('vg-genforsoeg'), hent);
     afmeld.push(gf.fjern);
     await gf.start();
   }
-  /* Det samlede Angreb: valget fra Rust, tallene fra cachen; køen henter, og visningen tegnes igen, når den melder nyt. */
+  /* Det samlede: valget fra Rust, tallene fra cachen; køen henter, og siden tegnes igen, når den melder nyt. */
   async function startSamlet(g) {
     let valg;
-    try { valg = await invoke('valg_hent'); } catch (e) { if (g === gen) besked(fmt(T.fejl, { f: fejltekst(e) })); return; }
+    try { valg = await invoke('valg_hent'); } catch (e) { if (g === gen) besked(fmt(L.fejl, { f: S.fejl(e) })); return; }
     if (g !== gen) return;
-    samletValg = valg;
-    if (!valg.length) { visDomaene(Sp.T.domaener(0), true); rod.removeAttribute('aria-busy'); rod.replaceChildren(window.hmVelkomst.intetValgt()); return; }
-    visDomaene(Sp.T.domaener(valg.length), true);
+    if (!valg.length) {
+      visDomaene(T.domaener(0), true);
+      rod.removeAttribute('aria-busy');
+      $('dyk-filtre').hidden = true;
+      $('dyk-periode').replaceChildren();
+      rod.replaceChildren(window.hmVelkomst.intetValgt());
+      return;
+    }
+    omfang = { zoner: valg };
+    visDomaene(T.domaener(valg.length), true);
+    R.visVaelger();
     async function tegnSamlet() {
       let s, k = null;
-      try { s = await invoke('vaern_samlet_cache', { zoner: valg }); } catch (e) { if (g === gen) besked(fmt(T.fejl, { f: fejltekst(e) })); return; }
+      try { s = await invoke('vaern_samlet_cache', { zoner: valg }); } catch (e) { if (ren()) { if (g === gen) besked(fmt(L.fejl, { f: S.fejl(e) })); return; } s = {}; }
       try { k = await invoke('koe_status'); } catch (e) { k = null; }
       if (g !== gen) return;
       visValgte(s.valgte || []);
       const henter = Boolean(k && (k.tilstand === 'henter' || k.tilstand === 'pause' || k.tilstand === 'venter_kvote'));
-      if (!s.vaern) return besked(T.ingenTalSamlet, 'gul');
-      const advarsel = s.med_tal < s.domaener ? [fmt(T.mAfN, { m: s.med_tal, n: s.domaener }), 'gul'] : null;
-      tegn(s.vaern, fmt(henter ? T.opdatererSamlet : T.opdateretSamlet, { t: kl(s.vaern.genereret) }), henter, advarsel);
+      if (!s.vaern && ren()) return besked(L.ingenTalSamlet, 'gul');
+      vaern = s.vaern || null;
+      stat = { tekst: vaern ? fmt(henter ? L.opdatererSamlet : L.opdateretSamlet, { t: kl(vaern.genereret) }) : '', henter, advarsel: s.med_tal < s.domaener ? [fmt(L.mAfN, { m: s.med_tal, n: s.domaener }), 'gul'] : null };
+      await hentTal(g);
     }
     await tegnSamlet();
-    if (g !== gen) return;
-    let sidst = Date.now(), ventende = null;
-    const snart = () => {
-      if (ventende) return;
-      ventende = setTimeout(() => { ventende = null; sidst = Date.now(); tegnSamlet(); }, Math.max(0, sidst + 3000 - Date.now()));
-    };
-    afmeld.push(R.paa('hentekoe', p => { p = p || {}; if (!p.zone || valg.includes(p.zone)) snart(); }), () => clearTimeout(ventende));
+    if (g === gen) lytPaaKoe(x => valg.includes(x), tegnSamlet);
   }
   R.registrer('vaernet', {
     domaener: true,
-    hvad: () => ({ samlet, zone: zoneId, navn: domaene }),
-    skift: q => R.gaaTil('vaernet', q),
+    hvad: () => ({ samlet: samlet(), zone: zone(), navn: domaene }),
+    /* Et andet domæne: samme filtre og periode. */
+    skift(q) {
+      const ny = new URLSearchParams(q);
+      for (const [k, v] of params) if (!['zone', 'navn', 'samlet', 'side'].includes(k)) ny.append(k, v);
+      R.gaaTil('vaernet', ny);
+    },
     /* #vaernet uden parametre: det sidst viste (eller det samlede). Samme adresse igen (fx efter "Glem"/nyt token): bliv. */
-    vis(params, { samme } = {}) {
-      const p = params.toString() ? params : new URLSearchParams(sidste);
-      if (samme && aktiv === p.toString()) return;
-      start(p);
+    vis(p, { samme } = {}) {
+      const q = p.toString() ? p : new URLSearchParams(sidste);
+      if (samme && aktiv === q.toString()) return;
+      start(q);
     },
     skjul: stop,
     sidste: () => sidste,

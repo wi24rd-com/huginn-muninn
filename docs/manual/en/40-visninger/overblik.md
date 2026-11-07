@@ -48,7 +48,7 @@ If a new domain appears on your Cloudflare account, the Overview shows a discree
 | Click | Opens |
 |---|---|
 | The rest of a row (or Enter on the row) | [Attacks](vaernet.md) for the domain |
-| A figure under Refused or Attacks | A [drill-down](dyk.md) into that very figure |
+| A figure under Refused or Attacks | [Attacks](vaernet.md) with that very figure as filter |
 | **Attacks for all** (the button at the top right) | [Attacks](vaernet.md) for all chosen domains combined |
 | **What do I do?** / **What does it mean? →** | Plain-language advice for that very situation |
 | **more** | The rest of the explanation |

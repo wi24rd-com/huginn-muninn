@@ -1,6 +1,6 @@
 # Teknologi pr. domæne
 
-Ingen genvej. Du kommer dertil fra **Indstillinger → Domæner → Teknologi pr. domæne →** eller fra **Ret teknologier** i Angreb og i et dyk.
+Ingen genvej. Du kommer dertil fra **Indstillinger → Domæner → Teknologi pr. domæne →** eller fra **Ret teknologier** i Angreb.
 
 ## Hvad viser den?
 
@@ -33,7 +33,7 @@ Fanen **Alle teknologier**: kataloget i grupper med søgning og antal angreb på
 
 ## Klik videre
 
-Tallet i en celle åbner angrebene mod teknologien på domænet i et [dyk](dyk.md). **⋯** viser kolonnens eller domænets handlinger.
+Tallet i en celle åbner angrebene mod teknologien på domænet i [Angreb](vaernet.md). **⋯** viser kolonnens eller domænets handlinger.
 
 Tastatur: tabellen er ét Tab-stop. Piletasterne flytter mellem cellerne, mellemrum skifter valg, og Enter går ind i gruppen, hvor piletasterne vælger, til Esc.
 

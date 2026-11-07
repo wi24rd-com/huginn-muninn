@@ -36,7 +36,7 @@ The paths can also be edited under **Settings → Notifications → Login paths 
 
 ## Click on
 
-Clicking a figure, a path, a country or a network stays in Login with one more filter. Only a path on which the Edge has stopped something opens a [drill-down](dyk.md), because the drill-down only knows what the Edge stopped. **Show only …** under leaked passwords filters on a day or a path. **Edit paths** opens the list of paths.
+Clicking a figure, a path, a country or a network stays in Login with one more filter. Only a path on which the Edge has stopped something opens [Attacks](vaernet.md), because Attacks only knows what the Edge stopped. **Show only …** under leaked passwords filters on a day or a path. **Edit paths** opens the list of paths.
 
 ## Figures and terms
 

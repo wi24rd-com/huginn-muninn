@@ -18,11 +18,13 @@ use crate::store::{Raekke, Store};
 use crate::teknologi;
 use crate::vaern::{
     angreb_fra_raekker, dag_ms, dag_noegle, forsoeg_kategori, offentlig_sti, regel, regelkort, seneste_fra_raekker, tjek_zone, Bue,
-    KortSum, Regel, Seneste, ANGREB_MAKS, DOEGN_MS, RUTINE_NAVNE,
+    Kategori, KortSum, Regel, Seneste, StiN, ANGREB_MAKS, DOEGN_MS, RUTINE_NAVNE,
 };
 
 /// Så mange rækker pr. top-liste sendes til visningen (de 5 første står fremme, resten bag "Vis top 20").
 pub const TOP: usize = 20;
+/// Så mange stier står under hver kategori i "Hvad de ledte efter".
+const FORSOEG_STIER: usize = 6;
 /// Så mange buer tegnes, som i Angreb.
 const BUER: usize = 60;
 /// Højst så mange tegn i en filterværdi (Cloudflares felter er kortere).
@@ -256,6 +258,8 @@ pub struct DagUd {
     pub dag: String,
     pub n: i64,
     pub hentet: bool,
+    /// Alle forespørgsler den dag, til tabellen under søjlerne.
+    pub alle: i64,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
@@ -278,6 +282,13 @@ pub struct Top {
     pub handling: Vec<VaerdiN>,
     pub robot: Vec<VaerdiN>,
     pub status: Vec<VaerdiN>,
+}
+
+/// "Hvad de ledte efter" for perioden: alle forsøg og dem, der hører til en kategori.
+#[derive(Serialize, Default, Debug, Clone, PartialEq)]
+pub struct ForsoegUd {
+    pub n: i64,
+    pub kategorier: Vec<Kategori>,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
@@ -339,6 +350,8 @@ pub struct KunIDag {
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct DykUd {
     pub periode: PeriodeUd,
+    /// "Hvad de ledte efter" for perioden. 404-svar har ingen land, regel eller slags, så filtrene gælder ikke her.
+    pub forsoeg: ForsoegUd,
     /// "Hvad angrebene var rettet mod" i udsnittet.
     pub rettet_mod: Vec<RettetMod>,
     /// I går (d-1), til flisen "Afvist i går", og i dag, til "i dag hidtil".
@@ -601,6 +614,31 @@ fn rettet_mod_liste(t: HashMap<String, i64>, profiler: &[teknologi::Profil]) -> 
 }
 
 /// Svaret ud fra det læste. Ren funktion.
+/// Stierne med 404 i perioden sorteret i kategorier, de største først. Stierne står renset, og ens stier efter rensningen lægges sammen.
+fn forsoeg_ud(pr_sti: &HashMap<&str, i64>) -> ForsoegUd {
+    let mut kat: HashMap<&'static str, (i64, HashMap<String, i64>)> = HashMap::new();
+    for (sti, n) in pr_sti {
+        let Some(k) = forsoeg_kategori(sti) else { continue };
+        let x = kat.entry(k).or_default();
+        x.0 += n;
+        *x.1.entry(offentlig_sti(sti)).or_default() += n;
+    }
+    let mut kategorier: Vec<Kategori> = kat
+        .into_iter()
+        .map(|(id, (n, stier))| {
+            let mut stier: Vec<StiN> = stier.into_iter().map(|(sti, n)| StiN { sti, n }).collect();
+            stier.sort_by(|a, b| b.n.cmp(&a.n).then_with(|| a.sti.cmp(&b.sti)));
+            stier.truncate(FORSOEG_STIER);
+            Kategori { id: id.into(), n, stier }
+        })
+        .collect();
+    kategorier.sort_by(|a, b| b.n.cmp(&a.n).then_with(|| a.id.cmp(&b.id)));
+    ForsoegUd {
+        n: pr_sti.values().sum(),
+        kategorier,
+    }
+}
+
 pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
     let d = |i: i64| dag_noegle(nu - i * DOEGN_MS);
     let (d0, d1, d7, d30) = (d(0), d(1), d(7), d(30));
@@ -625,6 +663,7 @@ pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
         HashMap::new(),
     );
     let mut par: HashMap<(&str, &str), i64> = HashMap::new();
+    let mut t_probe: HashMap<&str, i64> = HashMap::new();
     let mut t_tek: HashMap<String, i64> = HashMap::new();
     let mut zone_dag: HashMap<(&str, &str), i64> = HashMap::new();
     let mut angreb_dag: HashMap<(&str, &str), i64> = HashMap::new();
@@ -651,6 +690,9 @@ pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
     for (z, r) in &l.rows {
         let dag = r.dag.as_str();
         let n = r.n;
+        if r.art == "probe" && i_perioden(dag) {
+            *t_probe.entry(r.noegle.as_str()).or_default() += n;
+        }
         if robot {
             let Some(x) = robot_linje(s, r) else { continue };
             tael(dag, n);
@@ -804,12 +846,14 @@ pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
     domaener.sort_by(|a, b| b.n.cmp(&a.n).then_with(|| a.navn.cmp(&b.navn)));
 
     let (fra_ms, til_ms) = (dag_ms(&fra).unwrap_or(0), dag_ms(&til).unwrap_or(0));
+    let alle_pr_dag = trafik_pr_dag(l, &fra, &til);
     let dage: Vec<DagUd> = (0..=(til_ms - fra_ms) / DOEGN_MS)
         .map(|i| {
             let dag = dag_noegle(fra_ms + i * DOEGN_MS);
             DagUd {
                 n: per_dag.get(dag.as_str()).copied().unwrap_or(0),
                 hentet: l.hentet.contains(&dag),
+                alle: alle_pr_dag.get(dag.as_str()).copied().unwrap_or(0),
                 dag,
             }
         })
@@ -874,6 +918,7 @@ pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
         None => (enkelte(s, l, &fra, &til), None),
     };
     DykUd {
+        forsoeg: forsoeg_ud(&t_probe),
         periode: PeriodeUd {
             data_fra: alle_dage.iter().min().cloned(),
             trafik_fra: l.trafik_dage.iter().min().cloned(),
@@ -889,10 +934,14 @@ pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
                 let pr_dag = trafik_pr_dag(l, &fra, &til);
                 robotter::dage_i(&fra, &til)
                     .into_iter()
-                    .map(|dag| DagUd {
-                        n: pr_dag.get(dag.as_str()).copied().unwrap_or(0),
-                        hentet: pr_dag.contains_key(dag.as_str()),
-                        dag,
+                    .map(|dag| {
+                        let n = pr_dag.get(dag.as_str()).copied().unwrap_or(0);
+                        DagUd {
+                            n,
+                            hentet: pr_dag.contains_key(dag.as_str()),
+                            alle: n,
+                            dag,
+                        }
                     })
                     .collect()
             })
@@ -1090,6 +1139,52 @@ mod tests {
             noegle: noegle.into(),
             n,
         }
+    }
+
+    /// "Hvad de ledte efter" følger perioden, står uden for filtrene og har rensede stier.
+    #[test]
+    fn forsoeg_foelger_perioden_og_ikke_filtrene() {
+        let dage = vec![
+            dag_noegle(NU - DOEGN_MS),
+            dag_noegle(NU - 2 * DOEGN_MS),
+            dag_noegle(NU - 20 * DOEGN_MS),
+        ];
+        let rows = vec![
+            ("z", raekke_b3(dage[0].clone(), "probe", "/.env", 5)),
+            ("z", raekke_b3(dage[1].clone(), "probe", "/wp-login.php", 7)),
+            ("z", raekke_b3(dage[1].clone(), "probe", "/favicon.ico", 2)),
+            ("z", raekke_b3(dage[2].clone(), "probe", "/.env", 100)),
+        ];
+        let l = laest_b3(rows, &dage);
+        let syv = regn(&spoerg_b3(&["z"], Vec::new(), Periode::D7), &l, NU);
+        assert_eq!(syv.forsoeg.n, 14);
+        assert_eq!(
+            syv.forsoeg.kategorier.iter().map(|k| (k.id.as_str(), k.n)).collect::<Vec<_>>(),
+            [("wordpress", 7), ("hemmeligheder", 5)]
+        );
+        assert_eq!(syv.forsoeg.kategorier[1].stier[0].sti, offentlig_sti("/.env"));
+        let tredive = regn(&spoerg_b3(&["z"], Vec::new(), Periode::D30), &l, NU);
+        assert_eq!(
+            (tredive.forsoeg.n, tredive.forsoeg.kategorier[0].id.as_str()),
+            (114, "hemmeligheder")
+        );
+        let dag = regn(&spoerg_b3(&["z"], Vec::new(), Periode::Dag(dage[0].clone())), &l, NU);
+        assert_eq!(dag.forsoeg.n, 5);
+        let land = vec![Filter {
+            dim: Dim::Land,
+            vaerdi: "PL".into(),
+        }];
+        assert_eq!(regn(&spoerg_b3(&["z"], land, Periode::D7), &l, NU).forsoeg.n, 14);
+    }
+
+    /// Tabellen under søjlerne har alle forespørgsler pr. dag.
+    #[test]
+    fn dagene_har_alle_forespoergsler() {
+        let dag = dag_noegle(NU - DOEGN_MS);
+        let l = laest_b3(vec![("z", raekke_b3(dag.clone(), "alle", "", 4200))], std::slice::from_ref(&dag));
+        let u = regn(&spoerg_b3(&["z"], Vec::new(), Periode::D7), &l, NU);
+        assert_eq!(u.dage.iter().find(|d| d.dag == dag).map(|d| d.alle), Some(4200));
+        assert!(u.dage.iter().filter(|d| d.dag != dag).all(|d| d.alle == 0));
     }
 
     fn spoerg_b3(zoner: &[&str], filtre: Vec<Filter>, periode: Periode) -> Spoergsmaal {

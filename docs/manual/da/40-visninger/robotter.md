@@ -39,7 +39,7 @@ Derunder: de mest læste sider, de udklædte, hvilke robotter der blev stoppet v
 
 ## Klik videre
 
-Hver gruppe, hver robot og hver side åbner de samme tal i et [dyk](dyk.md), hvor du kan lægge flere filtre på. Robotter kan kombineres med en sti, men ikke med andre filtre. **7 dage** / **30 dage** og datovælgeren skifter perioden.
+Hver gruppe, hver robot og hver side åbner de samme tal i [Angreb](vaernet.md), hvor du kan lægge flere filtre på. Robotter kan kombineres med en sti, men ikke med andre filtre. **7 dage** / **30 dage** og datovælgeren skifter perioden.
 
 ## Tal og begreber
 

@@ -27,7 +27,7 @@ Om natten (til kl. 03 UTC), før i går er hentet færdigt, viser den status for
 | Et domænekort | [Angreb](vaernet.md) for domænet |
 | Chippen med status eller mærke ("Handl", "Ligner …") | Guiden: hvad det betyder, og hvad du gør |
 | En samlelinje ("2 domæner: alt roligt") | [Overblik](overblik.md) |
-| Linjen om en ny AI-robot | Robotten i et [dyk](dyk.md) |
+| Linjen om en ny AI-robot | Robotten i [Angreb](vaernet.md) |
 | **Til overblikket** | [Overblik](overblik.md) |
 
 ## Tal og begreber

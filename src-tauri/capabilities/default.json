@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Hovedvinduet: kernens standardrettigheder minus core:tray:default og core:menu:default (webvisningen kan hverken ændre menulinjeikonet eller erstatte programmenuen; begge bygges i Rust), plus core:window:allow-start-dragging (båndet øverst er vinduets trækbare titellinje, titleBarStyle Overlay), og appens egne kommandoer. Ingen fs, shell, http, opener, tray, menu, autostart:* eller notification:* (start ved login går gennem autostart_hent/autostart_saet; notifikationer sendes og klik håndteres i Rust; Hent nu går gennem hent_nu; et klik på et CVE-nummer går gennem aabn_cve, som kun åbner cve.org i brugerens browser; kildelinjen under Radar-tal går gennem aabn_radar, som kun åbner radar.cloudflare.com).",
+  "description": "Hovedvinduet: kernens standardrettigheder minus core:tray:default og core:menu:default (webvisningen kan hverken ændre menulinjeikonet eller erstatte programmenuen; begge bygges i Rust), plus core:window:allow-start-dragging (båndet øverst er vinduets trækbare titellinje, titleBarStyle Overlay), og appens egne kommandoer. Ingen fs, shell, http, opener, tray, menu, autostart:* eller notification:* (start ved login går gennem autostart_hent/autostart_saet; notifikationer sendes og klik håndteres i Rust; Hent nu går gennem hent_nu; et klik på et CVE-nummer går gennem aabn_cve, som kun åbner cve.org i brugerens browser; kildelinjen under Radar-tal går gennem aabn_radar, som kun åbner radar.cloudflare.com; Åbn vejledningen går gennem aabn_vejledning, som kun åbner faste adresser på wi24rd.com).",
   "windows": ["main"],
   "permissions": [
     "core:path:default",
@@ -54,6 +54,7 @@
     "allow-vurdering",
     "allow-teknologi-nulstil",
     "allow-aabn-api-token",
+    "allow-aabn-vejledning",
     "allow-land-visning",
     "allow-radar-opdater",
     "allow-aabn-radar",

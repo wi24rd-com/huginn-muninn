@@ -95,18 +95,21 @@
   <Color x:Key="Raw.Color.BoardLight.Ok">#FF166534</Color>
   <Color x:Key="Raw.Color.BoardLight.ZoomBg">#EBFFFFFF</Color>
   <Color x:Key="Raw.Color.BoardLight.OnColo">#FFFFFFFF</Color>
-  <Color x:Key="Raw.Color.KortDark.Hav">#FF1E5581</Color>
+  <Color x:Key="Raw.Color.KortDark.Hav">#FF1B4E76</Color>
   <Color x:Key="Raw.Color.KortDark.Land">#FF272C32</Color>
   <Color x:Key="Raw.Color.KortDark.Graense">#FF454C55</Color>
   <Color x:Key="Raw.Color.KortDark.Gitter">#FF245F8E</Color>
   <Color x:Key="Raw.Color.KortDark.Dc">#FF4A7DAA</Color>
   <Color x:Key="Raw.Color.KortDark.Halo">#FF060B14</Color>
   <Color x:Key="Raw.Color.KortDark.Bue">#F2FF8F80</Color>
-  <Color x:Key="Raw.Color.KortDark.Angreb1">#FFFB7C6C</Color>
-  <Color x:Key="Raw.Color.KortDark.Angreb2">#FFFC9284</Color>
-  <Color x:Key="Raw.Color.KortDark.Angreb3">#FFFCA79C</Color>
-  <Color x:Key="Raw.Color.KortDark.Angreb4">#FFFFBBB2</Color>
-  <Color x:Key="Raw.Color.KortDark.Angreb5">#FFFFD0CA</Color>
+  <Color x:Key="Raw.Color.KortDark.Ring">#FFFFC24D</Color>
+  <Color x:Key="Raw.Color.KortDark.RingFyld">#42FFC24D</Color>
+  <Color x:Key="Raw.Color.KortDark.Hover">#FF060B14</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb1">#FFF86A5A</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb2">#FFFA9084</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb3">#FFFCB4AC</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb4">#FFFDD9D4</Color>
+  <Color x:Key="Raw.Color.KortDark.Angreb5">#FFFFFFFF</Color>
   <Color x:Key="Raw.Color.KortLight.Hav">#FFCFE4F3</Color>
   <Color x:Key="Raw.Color.KortLight.Land">#FFF4EDDD</Color>
   <Color x:Key="Raw.Color.KortLight.Graense">#FFCDBFA3</Color>
@@ -114,6 +117,9 @@
   <Color x:Key="Raw.Color.KortLight.Dc">#FF8CB3DA</Color>
   <Color x:Key="Raw.Color.KortLight.Halo">#FFFFFFFF</Color>
   <Color x:Key="Raw.Color.KortLight.Bue">#E6CC333A</Color>
+  <Color x:Key="Raw.Color.KortLight.Ring">#FFA8222B</Color>
+  <Color x:Key="Raw.Color.KortLight.RingFyld">#29A8222B</Color>
+  <Color x:Key="Raw.Color.KortLight.Hover">#FFFFFFFF</Color>
   <Color x:Key="Raw.Color.KortLight.Angreb1">#FFDE4A41</Color>
   <Color x:Key="Raw.Color.KortLight.Angreb2">#FFC43229</Color>
   <Color x:Key="Raw.Color.KortLight.Angreb3">#FFA02120</Color>
@@ -208,6 +214,9 @@
   <SolidColorBrush x:Key="Light.Kort.Dc" Color="#FF8CB3DA"/>
   <SolidColorBrush x:Key="Light.Kort.Halo" Color="#FFFFFFFF"/>
   <SolidColorBrush x:Key="Light.Kort.Bue" Color="#E6CC333A"/>
+  <SolidColorBrush x:Key="Light.Kort.Ring" Color="#FFA8222B"/>
+  <SolidColorBrush x:Key="Light.Kort.RingFyld" Color="#29A8222B"/>
+  <SolidColorBrush x:Key="Light.Kort.Hover" Color="#FFFFFFFF"/>
   <SolidColorBrush x:Key="Light.Kort.Angreb1" Color="#FFDE4A41"/>
   <SolidColorBrush x:Key="Light.Kort.Angreb2" Color="#FFC43229"/>
   <SolidColorBrush x:Key="Light.Kort.Angreb3" Color="#FFA02120"/>
@@ -290,18 +299,21 @@
   <FontFamily x:Key="Dark.Shadow.Card">0 30px 60px -40px rgba(0, 0, 0, .9)</FontFamily>
   <SolidColorBrush x:Key="Dark.Nav.SelectedBg" Color="#293B8DFF"/>
   <SolidColorBrush x:Key="Dark.Nav.SelectedText" Color="#FFFFFFFF"/>
-  <SolidColorBrush x:Key="Dark.Kort.Hav" Color="#FF1E5581"/>
+  <SolidColorBrush x:Key="Dark.Kort.Hav" Color="#FF1B4E76"/>
   <SolidColorBrush x:Key="Dark.Kort.Land" Color="#FF272C32"/>
   <SolidColorBrush x:Key="Dark.Kort.Graense" Color="#FF454C55"/>
   <SolidColorBrush x:Key="Dark.Kort.Gitter" Color="#FF245F8E"/>
   <SolidColorBrush x:Key="Dark.Kort.Dc" Color="#FF4A7DAA"/>
   <SolidColorBrush x:Key="Dark.Kort.Halo" Color="#FF060B14"/>
   <SolidColorBrush x:Key="Dark.Kort.Bue" Color="#F2FF8F80"/>
-  <SolidColorBrush x:Key="Dark.Kort.Angreb1" Color="#FFFB7C6C"/>
-  <SolidColorBrush x:Key="Dark.Kort.Angreb2" Color="#FFFC9284"/>
-  <SolidColorBrush x:Key="Dark.Kort.Angreb3" Color="#FFFCA79C"/>
-  <SolidColorBrush x:Key="Dark.Kort.Angreb4" Color="#FFFFBBB2"/>
-  <SolidColorBrush x:Key="Dark.Kort.Angreb5" Color="#FFFFD0CA"/>
+  <SolidColorBrush x:Key="Dark.Kort.Ring" Color="#FFFFC24D"/>
+  <SolidColorBrush x:Key="Dark.Kort.RingFyld" Color="#42FFC24D"/>
+  <SolidColorBrush x:Key="Dark.Kort.Hover" Color="#FF060B14"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb1" Color="#FFF86A5A"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb2" Color="#FFFA9084"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb3" Color="#FFFCB4AC"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb4" Color="#FFFDD9D4"/>
+  <SolidColorBrush x:Key="Dark.Kort.Angreb5" Color="#FFFFFFFF"/>
   <SolidColorBrush x:Key="Dark.Board.Bg" Color="#FF060B14"/>
   <SolidColorBrush x:Key="Dark.Board.Bg2" Color="#FF0F1B30"/>
   <SolidColorBrush x:Key="Dark.Board.Land" Color="#FF1B2731"/>

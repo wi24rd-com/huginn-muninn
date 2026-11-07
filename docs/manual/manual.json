@@ -433,64 +433,7 @@
     "fil": "en/40-visninger/dyk.md",
     "titel": "Drill-down"
    },
-   "billeder": [
-    {
-     "id": "dyk",
-     "tema": "light",
-     "sprog": "da",
-     "fil": "img/dyk--light-da-1200x860.webp",
-     "sha256": "47313b6b7ab7af97216d257652bcdc95e5ca1db16cb65d0e659080cafc72e8a3"
-    },
-    {
-     "id": "dyk-regel",
-     "tema": "light",
-     "sprog": "da",
-     "fil": "img/dyk-regel--light-da-1200x860.webp",
-     "sha256": "4a2ee59687218e617a7e75c51208607149945d9931d1e3224a534db7d5f98173"
-    },
-    {
-     "id": "dyk-land",
-     "tema": "light",
-     "sprog": "da",
-     "fil": "img/dyk-land--light-da-1200x860.webp",
-     "sha256": "541cd395a2c1f1f811a04c6d37acb4552fa5f830f6a22d869cff9e40927cd005"
-    },
-    {
-     "id": "trafik-dyk",
-     "tema": "light",
-     "sprog": "da",
-     "fil": "img/trafik-dyk--light-da-1200x860.webp",
-     "sha256": "33c537e45632983a55cd66d46158cf3324c223332006c38358c94b6b98df57dc"
-    },
-    {
-     "id": "dyk",
-     "tema": "light",
-     "sprog": "en",
-     "fil": "img/dyk--light-en-1200x860.webp",
-     "sha256": "0dd03bf37f50076c2a8def539f9880ff2e8101016717eb83aef656a1deaf647d"
-    },
-    {
-     "id": "dyk-regel",
-     "tema": "light",
-     "sprog": "en",
-     "fil": "img/dyk-regel--light-en-1200x860.webp",
-     "sha256": "e88d32d565c0a00caa65a516eddb1ea3d4e4d27091dc0ce2aff41e1ca1ab1fa2"
-    },
-    {
-     "id": "dyk-land",
-     "tema": "light",
-     "sprog": "en",
-     "fil": "img/dyk-land--light-en-1200x860.webp",
-     "sha256": "2f5cc6e2f7f7066b01f805287947b8843699ed19e77e4f98be409bf5da58f17e"
-    },
-    {
-     "id": "trafik-dyk",
-     "tema": "light",
-     "sprog": "en",
-     "fil": "img/trafik-dyk--light-en-1200x860.webp",
-     "sha256": "e4fcff7bb7ff00fdb6721690d8dd2bf88421025791ebc6940139d2d4a4414b0a"
-    }
-   ]
+   "billeder": []
   },
   {
    "id": "40-visninger/indstillinger",
@@ -760,6 +703,48 @@
      "sprog": "en",
      "fil": "img/angreb-samlet--light-en-1200x860.webp",
      "sha256": "d57e18c4dd35ec969480ebc4a7b0e6ba0e224da592fc8a6a924dac7e0e802fe0"
+    },
+    {
+     "id": "dyk-regel",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/dyk-regel--light-da-1200x860.webp",
+     "sha256": "4a2ee59687218e617a7e75c51208607149945d9931d1e3224a534db7d5f98173"
+    },
+    {
+     "id": "dyk-land",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/dyk-land--light-da-1200x860.webp",
+     "sha256": "541cd395a2c1f1f811a04c6d37acb4552fa5f830f6a22d869cff9e40927cd005"
+    },
+    {
+     "id": "trafik-dyk",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/trafik-dyk--light-da-1200x860.webp",
+     "sha256": "33c537e45632983a55cd66d46158cf3324c223332006c38358c94b6b98df57dc"
+    },
+    {
+     "id": "dyk-regel",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/dyk-regel--light-en-1200x860.webp",
+     "sha256": "e88d32d565c0a00caa65a516eddb1ea3d4e4d27091dc0ce2aff41e1ca1ab1fa2"
+    },
+    {
+     "id": "dyk-land",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/dyk-land--light-en-1200x860.webp",
+     "sha256": "2f5cc6e2f7f7066b01f805287947b8843699ed19e77e4f98be409bf5da58f17e"
+    },
+    {
+     "id": "trafik-dyk",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/trafik-dyk--light-en-1200x860.webp",
+     "sha256": "e4fcff7bb7ff00fdb6721690d8dd2bf88421025791ebc6940139d2d4a4414b0a"
     }
    ]
   }

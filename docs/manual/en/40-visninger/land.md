@@ -34,7 +34,7 @@ A source country alone cannot be trusted: the attack may come through a VPN or r
 
 - **… your curve rises, but the world's does not?** Then the rise is your own. The Overview says the same under Why ("The world was normal yesterday, so the rise is yours"). See [Attacks](vaernet.md) for what happened.
 - **… your curve follows the world's?** Then you are following a global trend. It does not change the status, but it explains the figure.
-- **… a country is marked "Especially you"?** The country weighs much more for you than for the country as a whole. Click it to see the attacks in a drill-down.
+- **… a country is marked "Especially you"?** The country weighs much more for you than for the country as a whole. Click it to see the attacks in Attacks.
 - **… it says "The figures from Cloudflare Radar are not up to date"?** Radar is not answering right now. Your own figures still work, and the program tries again.
 
 ## Changing country
@@ -43,7 +43,7 @@ The selector in the blue band and **Settings → General → Country** save your
 
 ## Click on
 
-A country in the list of where attacks on your domains came from opens a [drill-down](dyk.md) into the attacks from the country. **Day by day** unfolds the curve. **7 days** / **4 weeks** change the period in the comparison (Radar does not know 30 days here). **Denmark** / **World** switch tabs. A country in **Most targeted countries** opens a look at that country.
+A country in the list of where attacks on your domains came from opens [Attacks](vaernet.md) with the country as filter. **Day by day** unfolds the curve. **7 days** / **4 weeks** change the period in the comparison (Radar does not know 30 days here). **Denmark** / **World** switch tabs. A country in **Most targeted countries** opens a look at that country.
 
 ## Figures and terms
 

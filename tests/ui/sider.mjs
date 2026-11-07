@@ -40,7 +40,7 @@ export const vaernUd = x => Object.assign({
   i_gaar: 1373, i_dag_hidtil: 58, hele7: 3816, hele30: 11006, ugen_foer: 3117, alle_hele7: 30513,
   fordeling: { d30: { blokeret: 676, udfordret: 4278, labyrint: 6124, andet: 0, faelder: 0 }, i_gaar: { blokeret: 30, udfordret: 134, labyrint: 1200, andet: 0, faelder: 0 } },
   h_dage: dage, h_lande: [{ kode: 'US', n: 80 }], h_netvaerk: [{ navn: 'Google LLC', n: 80 }], h_colos: [{ kode: 'EWR', n: 80 }], h_buer: [{ land: 'US', colo: 'EWR', n: 80 }], h_buer_i_alt: 1, h_idag: '2026-11-03',
-  h_forsoeg: (x && x.forsoeg) || { i7: 5849, kategorier: [] },
+  h_forsoeg: (x && x.forsoeg) || { i7: 5849, kategorier: [{ id: 'hemmeligheder', n: 5849, stier: [{ sti: '/.env', n: 5849 }] }] },
 }, x, { h_regler: (x && x.h_regler) || ((x && x.regler) || [{ navn: 'React - RCE - CVE:CVE-2025-55182', produkt: 'React', type: 'RCE', cve: 'CVE-2025-55182', n7: 20, n30: 80, foerst: '2026-10-05', sidst: '2026-11-02', stier: [{ sti: '/', n: 80 }], lande: [{ kode: 'US', n: 80 }] }]).map(r => kortRegel(r)) });
 export const KORT = { verden: JSON.parse(ui('assets/verden.json')), colo: JSON.parse(ui('assets/colo.json')), tidszoner: JSON.parse(ui('assets/tidszoner.json')) };
 /* Angreb-visningen bor i rammen: rammen spørger selv om token og overblik. */
@@ -60,8 +60,8 @@ export const B2 = x => Object.assign({
   kortdata: KORT, vaern_cache: vaernUd(), vaern_oversigt: vaernUd(), vaern_samlet_cache: { vaern: vaernUd(), valgte: [], domaener: 1, med_tal: 1 },
 }, x);
 export const REACT = 'React - RCE - CVE:CVE-2025-55182';
-export const dykDage = Array.from({ length: 30 }, (_, i) => ({ dag: new Date(Date.UTC(2026, 9, 5 + i)).toISOString().slice(0, 10), n: i % 4 && i !== 2 ? i : 0, hentet: i !== 2 }));
-export const dykSvar = x => Object.assign({ rettet_mod: [], trafik_serie: [],
+export const dykDage = Array.from({ length: 30 }, (_, i) => ({ dag: new Date(Date.UTC(2026, 9, 5 + i)).toISOString().slice(0, 10), n: i % 4 && i !== 2 ? i : 0, hentet: i !== 2, alle: 100 * i }));
+export const dykSvar = x => Object.assign({ rettet_mod: [], trafik_serie: [], forsoeg: { n: 120, kategorier: [{ id: 'hemmeligheder', n: 80, stier: [{ sti: '/.env', n: 80 }] }, { id: 'wordpress', n: 40, stier: [{ sti: '/wp-login.php', n: 40 }] }] },
   trafik: { i_alt: 0, dage: [] }, kun_i_dag: null, periode: { fra: '2026-10-05', til: '2026-11-03', dage: 30 }, i_gaar: '2026-11-03', i_dag: '2026-11-04', sum: 198, noegletal: { i_gaar: 6, i_dag_hidtil: 2, hele7: 57, hele30: 198, alt: 240 },
   foerst: '2026-10-05', sidst: '2026-11-03', dage: dykDage, fordeling: { blokeret: 190, udfordret: 5, labyrint: 3, andet: 0, faelder: 21 },
   top: { robot: [], status: [], regel: [{ v: REACT, n: 150 }, { v: 'botFight', n: 48 }], land: ['PL', 'US', 'DE', 'NL', 'SG', 'FR', 'T1', 'XX'].map((v, i) => ({ v, n: 80 - i * 9 })), netvaerk: [{ v: 'AT&T Services, Inc.', n: 60 }, { v: '<b>Fed</b> net', n: 2 }], sti: [{ v: '/wp-config%2ephp', n: 40 }, { v: '/', n: 20 }], colo: [{ v: 'WAW', n: 67 }, { v: 'EWR', n: 40 }], metode: [{ v: 'POST', n: 190 }, { v: 'GET', n: 8 }], handling: [{ v: 'blokeret', n: 190 }, { v: 'udfordret', n: 5 }, { v: 'labyrint', n: 3 }] },
@@ -70,6 +70,19 @@ export const dykSvar = x => Object.assign({ rettet_mod: [], trafik_serie: [],
   enkelte: [{ t: '2026-11-03T21:00:00Z', regel: REACT, cve: 'CVE-2025-55182', land: 'PL', sti: '[hemmeligheder]', colo: 'WAW', metode: 'POST' }], slags: { angreb: 150, rutine: 48 }, loft: false,
   regler: [{ navn: REACT, produkt: 'React', type: 'RCE', cve: 'CVE-2025-55182', art: 'angreb', h30: 150, h7: 0, idag: 0, faelder30: 0, foerst: '2026-11-01', sidst: '2026-11-03', stier: [{ sti: '/api', n: 100 }], lande: [{ kode: 'PL', n: 120 }] }, { navn: 'botFight', produkt: '', type: '', cve: null, art: 'rutine', h30: 48, h7: 0, idag: 0, faelder30: 0, foerst: '2026-11-02', sidst: '2026-11-02', stier: [], lande: [] }],
 }, x);
+/* Svaret fra dyk med de samme tal som et vaernUd: siden tegner fra dyk, og tests af Angreb skriver deres tal i vaern_cache. */
+export const dykFraVaern = v => {
+  const hul = new Set(v.uhentet || []), dg = v.h_dage.map(d => ({ dag: d.dag, n: d.n, hentet: !hul.has(d.dag), alle: d.alle || 0 })), sidst = dg.at(-1), med = n => dg.slice(-n).filter(d => d.hentet).length;
+  const f = v.h_forsoeg || {}, vn = (l, k) => l.map(x => ({ v: x[k], n: x.n }));
+  return dykSvar({
+    forsoeg: { n: f.i7 || 0, kategorier: f.kategorier || [] }, periode: { fra: dg[0]?.dag || '2026-10-05', til: sidst?.dag || '2026-11-03', dage: dg.length, med: dg.filter(d => d.hentet).length },
+    i_gaar: sidst?.dag || '2026-11-03', i_dag: v.h_idag, sum: v.hele30, noegletal: { i_gaar: v.i_gaar, i_dag_hidtil: v.i_dag_hidtil, hele7: v.hele7, hele30: v.hele30, alt: v.hele30, med7: Math.min(7, med(7)), med30: Math.min(30, med(30)) },
+    foerst: null, sidst: null, dage: dg, fordeling: (v.fordeling && v.fordeling.d30) || {}, buer: v.h_buer, buer_i_alt: v.h_buer_i_alt,
+    top: { robot: [], status: [], regel: v.h_regler.map(r => ({ v: r.navn, n: r.h30, art: r.art })), land: vn(v.h_lande, 'kode'), netvaerk: vn(v.h_netvaerk, 'navn'), sti: [], colo: vn(v.h_colos, 'kode'), metode: [], handling: [] },
+    antal: { regel: v.h_regler.length, land: v.h_lande.length, netvaerk: v.h_netvaerk.length, sti: 0, colo: v.h_colos.length, metode: 0, handling: 0 },
+    domaener: [], enkelte: v.seneste || [], slags: { angreb: v.hele30, rutine: 0 }, regler: v.h_regler.filter(r => r.h30 || !r.idag), trafik: { i_alt: 0, dage: v.trafik || [] },
+  });
+};
 export const REGEL_HOVED = { navn: REACT, produkt: 'React', type: 'RCE', cve: 'CVE-2025-55182', art: 'angreb' };
 export const landDage = Array.from({ length: 30 }, (_, i) => ({ dag: new Date(Date.UTC(2026, 9, 4 + i)).toISOString().slice(0, 10), mit: i === 3 ? null : i % 5 ? 4 : 0, mit_indeks: i === 3 ? null : i % 5 ? 125 : 0, verden_indeks: 90 + i }));
 export const LAND_UD = {
@@ -111,7 +124,7 @@ export const LOGIN_STIER = { stier: [{ sti: '/login', til: true, start: true }, 
 const zoner = OVERBLIK.map(r => ({ id: r.id, navn: r.navn })), vaern = vaernUd();
 export const svar = {
   ...B2(), valg_hent: zoner.map(z => z.id), domaener_hent: zoner.map((z, i) => ({ ...z, til: true, ny: i === 2 })), vaern_samlet_cache: { vaern, valgte: zoner.map(z => ({ ...z, med_tal: true })), domaener: zoner.length, med_tal: zoner.length },
-  siden_sidst: { vis: true, nye: [], raekker: SIDEN_RK }, dyk: dykSvar({ regel: REGEL_HOVED }), robotter: ROBOT_UD, login: LOGIN_UD, login_stier: LOGIN_STIER, land_hent: { land: 'DK', forslag: 'US' }, land_visning: { ...LAND_UD, udfald_verden: B2C_VERDEN, udfald_verden_hentet: true }, trafik_dag: B2C_TRAFIK, teknologi_hent: B2C_TEK, huller: B2C_HULLER,
+  siden_sidst: { vis: true, nye: [], raekker: SIDEN_RK }, dyk: dykSvar(), dyk_regel: dykSvar({ regel: REGEL_HOVED, regler: [] }), robotter: ROBOT_UD, login: LOGIN_UD, login_stier: LOGIN_STIER, land_hent: { land: 'DK', forslag: 'US' }, land_visning: { ...LAND_UD, udfald_verden: B2C_VERDEN, udfald_verden_hentet: true }, trafik_dag: B2C_TRAFIK, teknologi_hent: B2C_TEK, huller: B2C_HULLER,
 };
 Object.assign(svar, { teknologi_oversigt: { zoner: { z1: 2, z2: 1 }, valg: true }, teknologi_side: { domaener: [{ zone: 'z1', navn: 'wi24rd.com', valg: { php: ['bruger', true], wordpress: ['bruger_ikke', false] }, antal: { php: 204, wordpress: 12 } }, { zone: 'z2', navn: 'xyz.wi24rd.com', valg: {}, antal: { php: 3 } }], katalog: [{ tek: 'php', navn: 'PHP', gruppe: 'server', angreb: 207, set: true, vis: true, ny: false }, { tek: 'wordpress', navn: 'WordPress', gruppe: 'cms', angreb: 12, set: true, vis: true, ny: true }, { tek: 'magento', navn: 'Magento', gruppe: 'cms', angreb: 0, set: false, vis: false, ny: false }] }, teknologi_hent: { linjer: [{ tek: 'php', angreb30: 3, forsoeg30: 40, foerst: '2026-10-05', sidst: '2026-11-02', valg: 'bruger', besked: true, forslag: false }, { tek: 'wordpress', angreb30: 12, forsoeg30: 0, foerst: '2026-10-05', sidst: '2026-11-02', valg: 'ved_ikke', besked: false, forslag: true }], generiske: [] } });
 export const VURD7 = { dag: '2026-11-02', maal_ja: false, foreloebig: false, rekog_ja: false, maal: [{ id: 'stigning', ok: true, n: 40, m: 2, navn: null, domaener: [] }, { id: 'net_andre', ok: false, n: 9, m: 30, navn: 'Mal AS', domaener: [{ zone: 'z2', navn: 'xyz.wi24rd.com', n: 9 }] }, { id: 'radar', ok: null, n: 0, m: 1.3, navn: null, domaener: [] }], rekog: [{ id: 'stier', ok: false, n: 12, m: 100, navn: null, domaener: [] }] };
@@ -120,9 +133,9 @@ export const dom = 'zone=z1&navn=wi24rd.com';
 /* Hver post er én visning. id giver filnavnet i fotobogen og må ikke skifte. hash står uden #. aabn klikkes, rod er det, der skal være synligt bagefter, og luk lukker igen. visning står kun, når en anden visning end den i hash skal vises.
    ekstra lægges oven på svar: de poster kræver deres egen indlæsning, for rammen spørger kun om token og domæner, når den starter. */
 export const SIDER = [
-  { id: 'overblik', navn: 'Overblik', hash: 'overblik' }, { id: 'siden-sidst', navn: 'Siden sidst', hash: 'siden-sidst' }, { id: 'angreb-samlet', navn: 'Angreb samlet', hash: 'vaernet?samlet=1' }, { id: 'angreb', navn: 'Angreb', hash: 'vaernet?' + dom }, { id: 'dyk', navn: 'dyk', hash: 'dyk?' + dom }, { id: 'dyk-regel', navn: 'dyk i en regel', hash: `dyk?${dom}&regel=${encodeURIComponent(REACT)}` }, { id: 'dyk-to-filtre', navn: 'dyk med to filtre', hash: `dyk?${dom}&land=FR&dag=2026-11-03` },
-  { id: 'robotter', navn: 'Robotter', hash: 'robotter?' + dom }, { id: 'login', navn: 'Login', hash: 'login?' + dom, aabn: ['details.login-ret summary'] }, { id: 'land-dk', navn: 'Danmark lige nu', hash: 'land' }, { id: 'land-verden', navn: 'Verden', hash: 'land?fane=verden' }, { id: 'dyk-land', navn: 'dyk i et land', hash: 'dyk?' + dom + '&land=PL' }, { id: 'indstillinger', navn: 'Indstillinger', hash: 'indstillinger', aabn: ['#skift-noegle'] },
-  { id: 'trafik-dyk', navn: 'trafik-dyk', hash: `dyk?${dom}&dag=2026-11-02&trafik=1` }, { id: 'hjaelp', navn: 'hjælpen', hash: 'overblik', aabn: ['#hjaelp-knap'], rod: '#hjaelp', luk: '#hjaelp-luk' }, { id: 'glem-dialog', navn: 'bekræftelsen', hash: 'indstillinger', aabn: ['#glem'], rod: '#glem-dialog' },
+  { id: 'overblik', navn: 'Overblik', hash: 'overblik' }, { id: 'siden-sidst', navn: 'Siden sidst', hash: 'siden-sidst' }, { id: 'angreb-samlet', navn: 'Angreb samlet', hash: 'vaernet?samlet=1' }, { id: 'angreb', navn: 'Angreb', hash: 'vaernet?' + dom }, { id: 'dyk', navn: 'dyk', hash: 'vaernet?' + dom + '&periode=30' }, { id: 'dyk-regel', navn: 'dyk i en regel', hash: `vaernet?${dom}&periode=30&regel=${encodeURIComponent(REACT)}` }, { id: 'dyk-to-filtre', navn: 'dyk med to filtre', hash: `vaernet?${dom}&land=FR&dag=2026-11-03` },
+  { id: 'robotter', navn: 'Robotter', hash: 'robotter?' + dom }, { id: 'login', navn: 'Login', hash: 'login?' + dom, aabn: ['details.login-ret summary'] }, { id: 'land-dk', navn: 'Danmark lige nu', hash: 'land' }, { id: 'land-verden', navn: 'Verden', hash: 'land?fane=verden' }, { id: 'dyk-land', navn: 'dyk i et land', hash: 'vaernet?' + dom + '&periode=30&land=PL' }, { id: 'indstillinger', navn: 'Indstillinger', hash: 'indstillinger', aabn: ['#skift-noegle'] },
+  { id: 'trafik-dyk', navn: 'trafik-dyk', hash: `vaernet?${dom}&dag=2026-11-02&trafik=1` }, { id: 'hjaelp', navn: 'hjælpen', hash: 'overblik', aabn: ['#hjaelp-knap'], rod: '#hjaelp', luk: '#hjaelp-luk' }, { id: 'glem-dialog', navn: 'bekræftelsen', hash: 'indstillinger', aabn: ['#glem'], rod: '#glem-dialog' },
   { id: 'teknologi', navn: 'Teknologi', hash: 'teknologi' },
   { id: 'opsaetning', navn: 'opsætningen', hash: 'overblik', visning: 'opsaetning', ekstra: { token_status: { sat: false } } },
   { id: 'alle-fra', navn: 'velkomsten', hash: 'overblik', ekstra: { domaener_hent: zoner.map(z => ({ ...z, til: false, ny: false })), overblik: [], valg_hent: [] } },

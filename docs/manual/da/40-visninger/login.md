@@ -36,7 +36,7 @@ Stierne kan også rettes under **Indstillinger → Notifikationer → Login-stie
 
 ## Klik videre
 
-Et klik på et tal, en sti, et land eller et netværk bliver i Login med et filter mere. Kun en sti, som Edge har stoppet noget på, åbner et [dyk](dyk.md), for dyk kender kun det, Edge stoppede. **Vis kun …** under lækkede kodeord filtrerer på en dag eller en sti. **Ret stier** åbner listen over stier.
+Et klik på et tal, en sti, et land eller et netværk bliver i Login med et filter mere. Kun en sti, som Edge har stoppet noget på, åbner [Angreb](vaernet.md), for Angreb kender kun det, Edge stoppede. **Vis kun …** under lækkede kodeord filtrerer på en dag eller en sti. **Ret stier** åbner listen over stier.
 
 ## Tal og begreber
 

@@ -120,7 +120,7 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .vg-fyld.vg-trin-4 { fill: var(--kort-angreb-4); }
 .vg-fyld.vg-trin-5 { fill: var(--kort-angreb-5); }
 .vg-bue { fill: none; stroke: var(--kort-bue); stroke-linecap: round; animation: vg-flyd 1.8s linear infinite; }
-.vg-land { fill: var(--board-attack-fill); stroke: var(--board-attack); }
+.vg-land { fill: var(--kort-ring-fyld); stroke: var(--kort-ring); }
 .vg-colo { fill: var(--board-colo); stroke: var(--board-bg); }
 @keyframes vg-flyd { to { stroke-dashoffset: -12; } }
 @media (prefers-reduced-motion: reduce) { .vg-bue { animation: none; } }
@@ -140,7 +140,7 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .vg-skala-trin .vg-trin-3 { background: var(--kort-angreb-3); }
 .vg-skala-trin .vg-trin-4 { background: var(--kort-angreb-4); }
 .vg-skala-trin .vg-trin-5 { background: var(--kort-angreb-5); }
-.vg-leg-land { border-radius: 50% !important; background: var(--board-attack-fill); border: 1px solid var(--board-attack); }
+.vg-leg-land { border-radius: 50% !important; background: var(--kort-ring-fyld); border: 1px solid var(--kort-ring); }
 .vg-leg-colo { background: var(--board-colo); transform: rotate(45deg) scale(.8); border-radius: 1px !important; }
 .vg-leg-bue { width: 20px !important; height: 0 !important; border-top: 2px dashed var(--board-attack); border-radius: 0 !important; }
 
@@ -183,7 +183,6 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .vg-cve-knap { position: relative; z-index: 1; min-height: 0; font: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .vg-regel-l .dyk-celle { position: relative; z-index: 1; }
 .vg-tabel .vg-cve-knap { font-family: var(--font-mono); font-size: var(--font-size-sm); }
-.vg-filter { display: flex; align-items: center; gap: 6px; width: fit-content; margin: 0 0 8px; padding: 2px 4px 2px 12px; border: 1px solid var(--color-accent); border-radius: 999px; background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
 .vg-regel h3 { font-size: var(--font-size-md); line-height: 1.35; }
 .vg-rutine { border-top-color: var(--status-none-dot); }
 /* Hele kortet åbner reglens dyk: knappen i overskriften strækkes over kortet, og CVE-knappen ligger ovenpå. */
@@ -205,12 +204,9 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .link[data-dyk]:hover, .link[data-gaa]:hover, .link[data-rul]:hover { text-decoration: underline; text-underline-offset: 2px; }
 .dyk-flise:hover, .gruppe-kort:hover, .dyk-l:hover { border-color: var(--color-accent); background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
 #dyk-under:not(:empty)::before { content: "· "; }
-.dyk-tilbage { margin: 0 0 12px; }
-.dyk-tilbage .knap { max-width: 100%; height: auto; min-height: var(--control-height); padding-block: 4px; overflow-wrap: anywhere; white-space: normal; text-align: left; }
 #dyk-h { min-width: 0; overflow-wrap: anywhere; }
-.dyk-udsnit { flex: none; padding: 1px 8px; border-radius: var(--chip-radius); background: var(--color-accent-soft); color: var(--color-accent-text); font-size: var(--font-size-xs); font-weight: 600; }
 .dyk-raekke { align-items: flex-start; }
-.dyk-filtre { flex: 1 1 16rem; min-width: 0; }
+.dyk-filtre { flex: 1 1 16rem; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .dyk-filtre ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
 .dyk-filter { max-width: 100%; min-height: 28px; padding: 2px 10px; border: 1px solid var(--color-border-strong); border-radius: 14px; background: var(--color-surface); color: var(--color-text); font-size: var(--font-size-sm); font-weight: 600; overflow-wrap: anywhere; text-align: left; cursor: pointer; }
 .dyk-filter:hover { border-color: var(--color-accent); background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
@@ -276,8 +272,8 @@ button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--ho
 /* Den usynlige klikflade under et mærke forbliver usynlig: musen lyser mærket op (.vg-over). */
 .dyk-hit { fill: transparent; }
 .dyk-hit-bue { fill: none; stroke: transparent; }
-.vg-fyld[data-dyk]:hover, .vg-fyld.dyk-maerke:focus-visible { stroke: var(--board-text); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.vg-land.dyk-maerke:hover, .vg-land.dyk-maerke:focus-visible, .vg-land.vg-over { fill: var(--board-attack); }
+.vg-fyld[data-dyk]:hover, .vg-fyld.dyk-maerke:focus-visible { stroke: var(--kort-hover); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.vg-land.dyk-maerke:hover, .vg-land.dyk-maerke:focus-visible, .vg-land.vg-over { fill: var(--kort-ring); }
 .vg-colo.dyk-maerke:hover, .vg-colo.dyk-maerke:focus-visible, .vg-colo.vg-over { stroke: var(--board-text); }
 .vg-bue.dyk-maerke:hover, .vg-bue.dyk-maerke:focus-visible, .vg-bue.vg-over { stroke: var(--board-attack); }
 

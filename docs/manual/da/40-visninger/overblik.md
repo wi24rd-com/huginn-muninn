@@ -48,7 +48,7 @@ Kommer der et nyt domæne på din Cloudflare-konto, viser Overblik en diskret li
 | Klik på | Åbner |
 |---|---|
 | Resten af en række (eller Enter på rækken) | [Angreb](vaernet.md) for domænet |
-| Et tal under Afvist eller Angreb | Et [dyk](dyk.md) i netop det tal |
+| Et tal under Afvist eller Angreb | [Angreb](vaernet.md) med netop det tal som filter |
 | **Angreb for alle** (knappen øverst til højre) | [Angreb](vaernet.md) for alle valgte domæner samlet |
 | **Hvad gør jeg?** / **Hvad betyder det? →** | Et råd i klart sprog til netop den situation |
 | **mere** | Resten af forklaringen |

@@ -39,7 +39,7 @@ Below: the most read pages, those in disguise, which robots were stopped at the 
 
 ## Click on
 
-Each group, each robot and each page opens the same figures in a [drill-down](dyk.md), where you can add more filters. Robots can be combined with a path, but not with other filters. **7 days** / **30 days** and the date picker change the period.
+Each group, each robot and each page opens the same figures in [Attacks](vaernet.md), where you can add more filters. Robots can be combined with a path, but not with other filters. **7 days** / **30 days** and the date picker change the period.
 
 ## Figures and terms
 

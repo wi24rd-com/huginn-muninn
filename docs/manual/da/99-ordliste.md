@@ -20,7 +20,7 @@
 
 **DNS-rekognoscering** · Nogen spørger efter mange navne under dit domæne, der ikke findes, for at finde servere og tjenester.
 
-**Dyk** · En visning af de gemte tal for netop det, du klikkede på, med filtre, du kan lægge oven i.
+**Dyk** · Det gamle navn for filtrene i Angreb: de gemte tal for netop det, du klikkede på.
 
 **Edge – første forsvarslinje** · Cloudflares netværk af datacentre. Dit site svarer fra dem alle (anycast), så et angreb stoppes nær angriberen, længe før det når din server. Gælder kun DNS-poster med orange sky.
 

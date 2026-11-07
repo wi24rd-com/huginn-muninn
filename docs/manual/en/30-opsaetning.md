@@ -23,7 +23,7 @@ How to do it:
 5. Click **Continue to summary**, check that only **Analytics: Read** and **Zone: Read** are listed, and click **Create Token**.
 6. Copy the API Token. Cloudflare shows it only once.
 
-Each step is shown with screenshots in [Create an API Token at Cloudflare – step by step](31-cloudflare.md). The program's own list under **How to create an API Token** (in setup and under **Settings → Connection**) still uses Cloudflare's older words *Permissions* and *Zone Resources*; the fields are the same.
+Each step is shown with screenshots in [Create an API Token at Cloudflare – step by step](31-cloudflare.md).
 
 **Did your IT company give you an API Token?** Then skip step 1 and paste the one you were given. An API Token that only sees one domain gives a program that only shows that domain.
 

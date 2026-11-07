@@ -386,13 +386,18 @@ fn vurdering_for(lager: &Store, zone: &str, dag: &str, nu: i64) -> Result<overbl
 
 /// "Mails sendt i dit domænes navn" for de 30 hele dage, kun fra cachen.
 #[tauri::command]
-async fn email_oversigt(zone: String, tilstand: State<'_, Tilstand>) -> Svar<dmarc::EmailUd> {
+async fn email_oversigt(zone: String, fra: Option<String>, til: Option<String>, tilstand: State<'_, Tilstand>) -> Svar<dmarc::EmailUd> {
     let zone = vaern::tjek_zone(&zone)?;
+    if [&fra, &til].into_iter().flatten().any(|d| vaern::dag_ms(d).is_none()) {
+        return Err(Fejl::UgyldigDato);
+    }
     let lager = laas(&tilstand)?;
+    let fra = fra.unwrap_or_else(|| overblik::hele_fra(nu_ms()));
     let rows: Vec<store::Raekke> = lager
-        .raekker_art(std::slice::from_ref(&zone), &["dmarc"], &overblik::hele_fra(nu_ms()))?
+        .raekker_art(std::slice::from_ref(&zone), &["dmarc"], &fra)?
         .into_iter()
         .map(|(_, r)| r)
+        .filter(|r| til.as_ref().is_none_or(|t| r.dag <= *t))
         .collect();
     let fejl = lager.afsnit_fejl(store::DMARC_FEJL, &zone)?;
     Ok(dmarc::oversigt(&rows, lager.hentet_dmarc(&zone)?.len(), fejl))
@@ -1495,6 +1500,56 @@ async fn aabn_api_token() -> Svar<()> {
         .map_err(|_| Fejl::Intern)
 }
 
+/// Manualen på wi24rd.com: forsiden på hvert sprog. Programmet henter intet derfra; adressen åbnes i brugerens browser.
+const VEJLEDNING_DA: &str = "https://wi24rd.com/dokumentation/huginn-muninn/";
+const VEJLEDNING_EN: &str = "https://wi24rd.com/en/docs/huginn-muninn/";
+/// `sider[].id` i `docs/manual/manual.json`. Kun disse kan åbnes; listen læses ikke ved kørsel.
+const VEJLEDNING_SIDER: &[&str] = &[
+    "00-index",
+    "10-foer-du-starter",
+    "20-installation",
+    "30-opsaetning",
+    "31-cloudflare",
+    "50-indstillinger",
+    "60-notifikationer",
+    "70-data",
+    "80-fejlfinding",
+    "85-opdatering",
+    "90-afinstallation",
+    "95-genveje",
+    "99-ordliste",
+    "40-visninger/dyk",
+    "40-visninger/indstillinger",
+    "40-visninger/land",
+    "40-visninger/login",
+    "40-visninger/opsaetning",
+    "40-visninger/overblik",
+    "40-visninger/robotter",
+    "40-visninger/siden-sidst",
+    "40-visninger/teknologi",
+    "40-visninger/vaernet",
+];
+
+/// Adressen på manualen for sproget og eventuelt én side. Et andet sprog end `en` er dansk, som overalt i programmet. Et id uden for listen afvises.
+fn vejledning_adresse(sprog: &str, side: Option<&str>) -> Result<String, Fejl> {
+    let basis = if sprog == "en" { VEJLEDNING_EN } else { VEJLEDNING_DA };
+    match side {
+        None => Ok(basis.to_string()),
+        Some(id) if VEJLEDNING_SIDER.contains(&id) => Ok(format!("{basis}{id}/")),
+        Some(_) => Err(Fejl::UgyldigtFilter),
+    }
+}
+
+/// "Åbn vejledningen": manualen i brugerens browser. Faste adresser; webvisningen vælger kun sprog og et id fra listen.
+#[tauri::command]
+async fn aabn_vejledning(sprog: String, side: Option<String>) -> Svar<()> {
+    let url = vejledning_adresse(&sprog, side.as_deref())?;
+    tauri::async_runtime::spawn_blocking(move || aabn_i_browser(&url))
+        .await
+        .map_err(|_| Fejl::Intern)?
+        .map_err(|_| Fejl::Intern)
+}
+
 /// Webvisningen må kun vise appens egne sider: Tauris egen protokol, og under `tauri dev` den indbyggede dev-server.
 fn tilladt_adresse(url: &Url) -> bool {
     let app = matches!(
@@ -1605,6 +1660,7 @@ pub fn run() {
             teknologi_nulstil,
             vurdering,
             aabn_api_token,
+            aabn_vejledning,
             land_visning,
             radar_opdater,
             aabn_radar,
@@ -1937,6 +1993,62 @@ mod tests {
             (q["accountId"].as_str(), q["zoneId"].as_str(), q["name"].as_str()),
             ("*", "all", "Huginn and Muninn")
         );
+    }
+
+    #[test]
+    fn vejledningen_aabner_kun_faste_adresser_paa_wi24rd_com() {
+        assert_eq!(
+            vejledning_adresse("da", None).unwrap(),
+            "https://wi24rd.com/dokumentation/huginn-muninn/"
+        );
+        assert_eq!(vejledning_adresse("en", None).unwrap(), "https://wi24rd.com/en/docs/huginn-muninn/");
+        assert_eq!(
+            vejledning_adresse("da", Some("40-visninger/vaernet")).unwrap(),
+            "https://wi24rd.com/dokumentation/huginn-muninn/40-visninger/vaernet/"
+        );
+        assert_eq!(
+            vejledning_adresse("en", Some("50-indstillinger")).unwrap(),
+            "https://wi24rd.com/en/docs/huginn-muninn/50-indstillinger/"
+        );
+        for sprog in ["da", "en", "xx"] {
+            for side in VEJLEDNING_SIDER {
+                let u = Url::parse(&vejledning_adresse(sprog, Some(side)).unwrap()).unwrap();
+                assert_eq!((u.scheme(), u.host_str()), ("https", Some("wi24rd.com")));
+            }
+        }
+    }
+
+    #[test]
+    fn vejledningen_afviser_alt_uden_for_listen() {
+        for side in [
+            "",
+            "ukendt",
+            "../../evil",
+            "40-visninger/vaernet/../..",
+            "//evil.example/",
+            "https://evil.example/",
+            "40-visninger/vaernet?x=1",
+            "40-visninger/VAERNET",
+        ] {
+            assert!(matches!(vejledning_adresse("da", Some(side)), Err(Fejl::UgyldigtFilter)), "{side}");
+            assert!(matches!(vejledning_adresse("en", Some(side)), Err(Fejl::UgyldigtFilter)), "{side}");
+        }
+    }
+
+    #[test]
+    fn vejledningens_liste_er_manualens_sider() {
+        let manual: serde_json::Value = serde_json::from_str(include_str!("../../docs/manual/manual.json")).unwrap();
+        let mut ids: Vec<&str> = manual["sider"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s["id"].as_str().unwrap())
+            .collect();
+        let mut her = VEJLEDNING_SIDER.to_vec();
+        ids.sort_unstable();
+        ids.dedup();
+        her.sort_unstable();
+        assert_eq!(her, ids);
     }
 
     #[test]

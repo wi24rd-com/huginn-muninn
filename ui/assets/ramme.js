@@ -1,5 +1,5 @@
 /* Huginn and Muninn — programrammen. Én side med hash-navigation: #overblik, #siden-sidst, #vaernet?zone=<id>&navn=…
-   (eller ?samlet=1), #dyk?zone=<id>&navn=…&regel=… (visning-dyk.js), #robotter?zone=…, #login?zone=…, #land?kode=DK (visning-land.js) og #indstillinger. Uden token står opsætningen i indholdsområdet, og visningerne er slået fra (kun
+   (eller ?samlet=1; perioden og filtrene står i samme adresse), #robotter?zone=…, #login?zone=…, #land?kode=DK (visning-land.js) og #indstillinger. Uden token står opsætningen i indholdsområdet, og visningerne er slået fra (kun
    Indstillinger kan åbnes). Rammen ejer den delte tilstand (token, zoner, overblikkets rækker, valget, køens status) og er
    den eneste, der lytter på Rust-hændelserne: 'hentekoe' (køen), 'siden_sidst' (menulinjen/en notifikation), 'visning'
    (programmenuen på macOS: ⌘1–6, ⌘, og Om), 'historik' (Vis → Tilbage/Frem), 'ekstra' (de ekstra tal for et domæne er gemt) og 'radar' (nye tal fra Radar). Visningerne (visning-*.js) registrerer sig med
@@ -36,7 +36,7 @@
   const antalAbonnenter = navn => (abonnenter[navn] ? abonnenter[navn].size : 0);
 
   /* ── visninger og router ── */
-  const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'dyk', 'robotter', 'login', 'land', 'teknologi', 'indstillinger'];
+  const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'robotter', 'login', 'land', 'teknologi', 'indstillinger'];
   const visninger = {};
   const registrer = (navn, v) => { visninger[navn] = v; };
   const sektion = navn => document.querySelector(`section[data-visning="${navn}"]`);
@@ -44,6 +44,21 @@
   function laesHash() {
     const h = location.hash.replace(/^#/, ''), i = h.indexOf('?');
     return { navn: i < 0 ? h : h.slice(0, i), params: new URLSearchParams(i < 0 ? '' : h.slice(i + 1)) };
+  }
+  /* #dyk?… er en gammel adresse, og data-dyk er stadig dens forespørgsel: den lander på Angreb med samme parametre. Dyk uden periode var 30 hele dage, Angreb uden periode er 7, så tallet, der blev klikket på, skal have sin periode med. */
+  const PERIODE = ['periode', 'dag', 'fra', 'til'];
+  function fraDyk(q) {
+    const p = new URLSearchParams(q);
+    if (!PERIODE.some(k => p.has(k))) p.set('periode', '30');
+    return p.toString();
+  }
+  /* vis=angreb-i-gaar er en gammel adresse: nu er det statusdagen med "Kun angreb". Kendes rækken ikke endnu, er det i går. */
+  function fraIGaar(params) {
+    const p = new URLSearchParams(params), r = tilstand.raekker.find(x => x.id === p.get('zone'));
+    p.set('vis', 'seneste');
+    p.set('dag', (r && r.status_dag) || new Date(Date.now() - 864e5).toISOString().slice(0, 10));
+    p.set('slags', 'angreb');
+    return p.toString();
   }
   /* Skift visning. Er adressen allerede den samme, tegnes den igen (hashchange kommer ikke). */
   function gaaTil(navn, query) {
@@ -54,6 +69,11 @@
   }
   function route() {
     let { navn, params } = laesHash();
+    /* Adressen erstattes: det er stadig ét trin i historikken. */
+    if (navn === 'dyk' || (navn === 'vaernet' && params.get('vis') === 'angreb-i-gaar')) {
+      history.replaceState(history.state, '', '#vaernet?' + (navn === 'dyk' ? fraDyk(params) : fraIGaar(params)));
+      return route();
+    }
     if (!VISNINGER.includes(navn)) {
       if (tilstand.visning && navn) return; // fx #indhold (spring til indhold): bliv
       navn = 'overblik';
@@ -71,7 +91,7 @@
     tilstand.visning = navn;
     tilstand.params = params;
     document.querySelectorAll('section[data-visning]').forEach(s => { s.hidden = s.getAttribute('data-visning') !== navn; });
-    const punkt = navn === 'teknologi' ? 'indstillinger' : navn !== 'dyk' ? navn : params.has('robot') || params.has('robotgruppe') ? 'robotter' : 'vaernet';
+    const punkt = navn === 'teknologi' ? 'indstillinger' : navn === 'vaernet' && (params.has('robot') || params.has('robotgruppe')) ? 'robotter' : navn;
     document.querySelectorAll('#side a[data-visning]').forEach(a => {
       if (a.getAttribute('data-visning') === punkt) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
@@ -162,7 +182,7 @@
   });
   paa('raekker', visVaelger);
 
-  /* ── klikbart med data bag: data-dyk = forespørgslen til #dyk, data-gaa = en anden visning ("vaernet?zone=…"), data-cve = cve.org,
+  /* ── klikbart med data bag: data-dyk = en forespørgsel til Angreb (uden periode: 30 dage, se fraDyk), data-gaa = en anden visning ("vaernet?zone=…"), data-cve = cve.org,
      data-radar = Radars forside (kildelinjen), data-rul = et afsnit i samme visning ── */
   const maal = t => (t && t.closest ? t.closest('[data-dyk], [data-gaa], [data-cve], [data-radar], [data-rul]') : null);
   function rulTil(id) {
@@ -177,7 +197,7 @@
     if (e.hasAttribute('data-radar')) return invoke ? invoke('aabn_radar').catch(() => { }) : null;
     if (rul) return rulTil(rul);
     if (e.closest('#hjaelp')) hjaelp(false);
-    if (!gaa) return gaaTil('dyk', e.getAttribute('data-dyk'));
+    if (!gaa) return gaaTil('vaernet', fraDyk(e.getAttribute('data-dyk')));
     const i = gaa.indexOf('?');
     return i < 0 ? gaaTil(gaa) : gaaTil(gaa.slice(0, i), gaa.slice(i + 1));
   }
@@ -531,17 +551,23 @@
   document.querySelectorAll('[data-token-hjaelp]').forEach(plads => {
     const aabn = el('button', { type: 'button', className: 'knap', textContent: T.tokenAabn });
     aabn.addEventListener('click', () => { if (invoke) invoke('aabn_api_token').catch(() => { }); });
-    const trin = el('details', { className: 'hm-hjaelp token-trin' }, el('summary', { textContent: T.hjaelpTokenH }), el('ol', {}, ...T.tokenTrin.map(t => el('li', { textContent: t }))));
+    const trin = el('details', { className: 'hm-hjaelp token-trin' }, el('summary', { textContent: T.hjaelpTokenH }), el('ol', {}, ...T.tokenTrin.map(t => el('li', { textContent: t }))), el('p', { className: 'note', textContent: T.tokenTrinNote }));
     plads.append(aabn, el('p', { className: 'note', textContent: T.tokenAabnNote }), trin);
   });
   $('token-form').addEventListener('submit', ev => { ev.preventDefault(); gemNoegle($('token'), $('token-knap'), $('token-status')); });
+
+  /* "Åbn vejledningen": Rust åbner en fast adresse på wi24rd.com i brugerens browser. Herfra sendes kun sproget og manualens side for visningen (sider[].id i docs/manual/manual.json); Rust afviser alt andet. Uden side er det manualens forside. */
+  const VEJLEDNING = { overblik: '40-visninger/overblik', 'siden-sidst': '40-visninger/siden-sidst', vaernet: '40-visninger/vaernet', dyk: '40-visninger/vaernet', robotter: '40-visninger/robotter', login: '40-visninger/login', land: '40-visninger/land', teknologi: '40-visninger/teknologi', indstillinger: '50-indstillinger', opsaetning: '30-opsaetning' };
+  const aabnVejledning = side => (invoke ? invoke('aabn_vejledning', { sprog: S.lang, side: side || null }).catch(() => { }) : null);
+  $('hjaelp-vejledning').setAttribute('aria-label', T.vejledningLabel);
+  $('hjaelp-vejledning').addEventListener('click', () => aabnVejledning(VEJLEDNING[tilstand.visning]));
 
   /* Et klik på et CVE-nummer: Rust åbner cve.org i brugerens browser (aabn_cve validerer igen). */
   const CVE = /^CVE-[0-9]{4}-[0-9]{4,7}$/;
   const aabnCve = id => (invoke && CVE.test(id) ? invoke('aabn_cve', { id }).catch(() => { }) : null);
 
   window.hmRamme = {
-    aabnCve, erCve: id => CVE.test(String(id)), visVaelger,
+    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, aabnVejledning, vejledning: VEJLEDNING,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
     platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
   };

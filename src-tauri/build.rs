@@ -42,6 +42,7 @@ const KOMMANDOER: &[&str] = &[
     "vurdering",
     "teknologi_nulstil",
     "aabn_api_token",
+    "aabn_vejledning",
     "land_visning",
     "radar_opdater",
     "aabn_radar",
