@@ -1,0 +1,586 @@
+{
+ "produkt": "huginn-muninn",
+ "navn": "Wi24rd Huginn and Muninn",
+ "version": "0.1.0",
+ "dato": "2026-11-07",
+ "commit": "906585c",
+ "fotobog_commit": "71c3c2e",
+ "fotobog_dato": "2026-11-07",
+ "sprog": [
+  "da",
+  "en"
+ ],
+ "sider": [
+  {
+   "id": "00-index",
+   "da": {
+    "fil": "da/00-index.md",
+    "titel": "Wi24rd Huginn and Muninn – brugervejledning"
+   },
+   "en": {
+    "fil": "en/00-index.md",
+    "titel": "Wi24rd Huginn and Muninn – user guide"
+   },
+   "billeder": [
+    {
+     "id": "hjaelp",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/hjaelp--light-da-1200x860.webp",
+     "sha256": "30c0f9587fb1c87a9ace06592133dba19a808d9d0d53040ddef4db9762ce632d"
+    },
+    {
+     "id": "hjaelp",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/hjaelp--light-en-1200x860.webp",
+     "sha256": "316e356784fca9a036142f72f8000f4647034ee3e5080278802f0bb3f31f94fd"
+    }
+   ]
+  },
+  {
+   "id": "10-foer-du-starter",
+   "da": {
+    "fil": "da/10-foer-du-starter.md",
+    "titel": "Før du starter"
+   },
+   "en": {
+    "fil": "en/10-foer-du-starter.md",
+    "titel": "Before you start"
+   },
+   "billeder": []
+  },
+  {
+   "id": "20-installation",
+   "da": {
+    "fil": "da/20-installation.md",
+    "titel": "Installation"
+   },
+   "en": {
+    "fil": "en/20-installation.md",
+    "titel": "Installation"
+   },
+   "billeder": []
+  },
+  {
+   "id": "30-opsaetning",
+   "da": {
+    "fil": "da/30-opsaetning.md",
+    "titel": "Opsætning"
+   },
+   "en": {
+    "fil": "en/30-opsaetning.md",
+    "titel": "Setup"
+   },
+   "billeder": [
+    {
+     "id": "opsaetning",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/opsaetning--light-da-1200x860.webp",
+     "sha256": "4eb143f819f595bd59d28a6d4db6daf20af9b5084751f38460c08dc35e648e11"
+    },
+    {
+     "id": "alle-fra",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/alle-fra--light-da-1200x860.webp",
+     "sha256": "b3d6c4d93db7c9817427761deb51ad658331c2c40703864b4318c6c016b0144f"
+    },
+    {
+     "id": "opsaetning",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/opsaetning--light-en-1200x860.webp",
+     "sha256": "1cf11cb378cbfbe5cfad9577b471691a81bad27d1c822b9aa29798e1f5c57bf9"
+    },
+    {
+     "id": "alle-fra",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/alle-fra--light-en-1200x860.webp",
+     "sha256": "7f400d98334d9309f68a2d58b3be900095a6d0bcb3faf24dd43122e82c7b5fee"
+    }
+   ]
+  },
+  {
+   "id": "50-indstillinger",
+   "da": {
+    "fil": "da/50-indstillinger.md",
+    "titel": "Indstillinger"
+   },
+   "en": {
+    "fil": "en/50-indstillinger.md",
+    "titel": "Settings"
+   },
+   "billeder": [
+    {
+     "id": "overblik",
+     "tema": "dark",
+     "sprog": "da",
+     "fil": "img/overblik--dark-da-1200x860.webp",
+     "sha256": "61655646b2d565584a3ffb04ace0a38f917f1a0ba5463a32019f098a7e0d2e2c"
+    },
+    {
+     "id": "indstillinger",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/indstillinger--light-da-1200x860.webp",
+     "sha256": "9826af348e09cf71e47c26e8c23c8cd731b6463a05452b162a7e4ab6635ae88e"
+    },
+    {
+     "id": "glem-dialog",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/glem-dialog--light-da-1200x860.webp",
+     "sha256": "9e10c4e0b7e2bcfcde7d13c01b279857b3fed87dff7b874b86ab5d3810f5718d"
+    },
+    {
+     "id": "overblik",
+     "tema": "dark",
+     "sprog": "en",
+     "fil": "img/overblik--dark-en-1200x860.webp",
+     "sha256": "10319d2ab1de524258606ebe7e79cad38e622e4d7813870ab66d61bbae872a21"
+    },
+    {
+     "id": "indstillinger",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/indstillinger--light-en-1200x860.webp",
+     "sha256": "4d006e7afe19f1ad2eb87ba92676648561b090eed29a177b05ac7931ca36114f"
+    },
+    {
+     "id": "glem-dialog",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/glem-dialog--light-en-1200x860.webp",
+     "sha256": "d7561bcb5fe55cce20cf503a1ca462b15102b6178ebff0c509e19c3dd9f0b4e4"
+    }
+   ]
+  },
+  {
+   "id": "60-notifikationer",
+   "da": {
+    "fil": "da/60-notifikationer.md",
+    "titel": "Notifikationer og baggrund"
+   },
+   "en": {
+    "fil": "en/60-notifikationer.md",
+    "titel": "Notifications and background"
+   },
+   "billeder": []
+  },
+  {
+   "id": "70-data",
+   "da": {
+    "fil": "da/70-data.md",
+    "titel": "Data og historik"
+   },
+   "en": {
+    "fil": "en/70-data.md",
+    "titel": "Data and history"
+   },
+   "billeder": []
+  },
+  {
+   "id": "80-fejlfinding",
+   "da": {
+    "fil": "da/80-fejlfinding.md",
+    "titel": "Fejlfinding"
+   },
+   "en": {
+    "fil": "en/80-fejlfinding.md",
+    "titel": "Troubleshooting"
+   },
+   "billeder": []
+  },
+  {
+   "id": "85-opdatering",
+   "da": {
+    "fil": "da/85-opdatering.md",
+    "titel": "Opdatering"
+   },
+   "en": {
+    "fil": "en/85-opdatering.md",
+    "titel": "Updating"
+   },
+   "billeder": []
+  },
+  {
+   "id": "90-afinstallation",
+   "da": {
+    "fil": "da/90-afinstallation.md",
+    "titel": "Afinstallation"
+   },
+   "en": {
+    "fil": "en/90-afinstallation.md",
+    "titel": "Uninstalling"
+   },
+   "billeder": []
+  },
+  {
+   "id": "95-genveje",
+   "da": {
+    "fil": "da/95-genveje.md",
+    "titel": "Tastaturgenveje"
+   },
+   "en": {
+    "fil": "en/95-genveje.md",
+    "titel": "Keyboard shortcuts"
+   },
+   "billeder": []
+  },
+  {
+   "id": "99-ordliste",
+   "da": {
+    "fil": "da/99-ordliste.md",
+    "titel": "Ordliste"
+   },
+   "en": {
+    "fil": "en/99-ordliste.md",
+    "titel": "Glossary"
+   },
+   "billeder": []
+  },
+  {
+   "id": "40-visninger/dyk",
+   "da": {
+    "fil": "da/40-visninger/dyk.md",
+    "titel": "Dyk"
+   },
+   "en": {
+    "fil": "en/40-visninger/dyk.md",
+    "titel": "Drill-down"
+   },
+   "billeder": [
+    {
+     "id": "dyk",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/dyk--light-da-1200x860.webp",
+     "sha256": "47313b6b7ab7af97216d257652bcdc95e5ca1db16cb65d0e659080cafc72e8a3"
+    },
+    {
+     "id": "dyk-regel",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/dyk-regel--light-da-1200x860.webp",
+     "sha256": "4a2ee59687218e617a7e75c51208607149945d9931d1e3224a534db7d5f98173"
+    },
+    {
+     "id": "dyk-land",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/dyk-land--light-da-1200x860.webp",
+     "sha256": "541cd395a2c1f1f811a04c6d37acb4552fa5f830f6a22d869cff9e40927cd005"
+    },
+    {
+     "id": "trafik-dyk",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/trafik-dyk--light-da-1200x860.webp",
+     "sha256": "33c537e45632983a55cd66d46158cf3324c223332006c38358c94b6b98df57dc"
+    },
+    {
+     "id": "dyk",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/dyk--light-en-1200x860.webp",
+     "sha256": "0dd03bf37f50076c2a8def539f9880ff2e8101016717eb83aef656a1deaf647d"
+    },
+    {
+     "id": "dyk-regel",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/dyk-regel--light-en-1200x860.webp",
+     "sha256": "e88d32d565c0a00caa65a516eddb1ea3d4e4d27091dc0ce2aff41e1ca1ab1fa2"
+    },
+    {
+     "id": "dyk-land",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/dyk-land--light-en-1200x860.webp",
+     "sha256": "2f5cc6e2f7f7066b01f805287947b8843699ed19e77e4f98be409bf5da58f17e"
+    },
+    {
+     "id": "trafik-dyk",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/trafik-dyk--light-en-1200x860.webp",
+     "sha256": "e4fcff7bb7ff00fdb6721690d8dd2bf88421025791ebc6940139d2d4a4414b0a"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/indstillinger",
+   "da": {
+    "fil": "da/40-visninger/indstillinger.md",
+    "titel": "Indstillinger (visningen)"
+   },
+   "en": {
+    "fil": "en/40-visninger/indstillinger.md",
+    "titel": "Settings (the view)"
+   },
+   "billeder": [
+    {
+     "id": "indstillinger",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/indstillinger--light-da-1200x860.webp",
+     "sha256": "9826af348e09cf71e47c26e8c23c8cd731b6463a05452b162a7e4ab6635ae88e"
+    },
+    {
+     "id": "indstillinger",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/indstillinger--light-en-1200x860.webp",
+     "sha256": "4d006e7afe19f1ad2eb87ba92676648561b090eed29a177b05ac7931ca36114f"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/land",
+   "da": {
+    "fil": "da/40-visninger/land.md",
+    "titel": "Dit land lige nu og Verden"
+   },
+   "en": {
+    "fil": "en/40-visninger/land.md",
+    "titel": "Your country now and the World"
+   },
+   "billeder": [
+    {
+     "id": "land-dk",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/land-dk--light-da-1200x860.webp",
+     "sha256": "d23e29de99bc70a8870850f18092b5a33bf227065d9c8fcb9f85e41bd2e3f31f"
+    },
+    {
+     "id": "land-verden",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/land-verden--light-da-1200x860.webp",
+     "sha256": "a3cba11142e426eb38c5cb2be0a495e3ea0ef5c82d5d24cf0b325a29f4cda91d"
+    },
+    {
+     "id": "land-dk",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/land-dk--light-en-1200x860.webp",
+     "sha256": "1e1996cfad9daa53c1fcdacbe774c2bbeed740f2f599ff1e5b88a896f44236fb"
+    },
+    {
+     "id": "land-verden",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/land-verden--light-en-1200x860.webp",
+     "sha256": "3c1e1076b5c306f6d847cb6dc2328aeddb2a86d14aa9114e11b38491485ff4c8"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/login",
+   "da": {
+    "fil": "da/40-visninger/login.md",
+    "titel": "Login"
+   },
+   "en": {
+    "fil": "en/40-visninger/login.md",
+    "titel": "Login"
+   },
+   "billeder": [
+    {
+     "id": "login",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/login--light-da-1200x860.webp",
+     "sha256": "72ebb3386cffa026b9434e05d82aeed5184cffe97fffb59acd13a906fd95f853"
+    },
+    {
+     "id": "login",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/login--light-en-1200x860.webp",
+     "sha256": "cfaf18bc6fa3a60cb35310cc3e60d94b895224dd3c73db53ccf9460b92064dec"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/opsaetning",
+   "da": {
+    "fil": "da/40-visninger/opsaetning.md",
+    "titel": "Forbind med Cloudflare (opsætningen)"
+   },
+   "en": {
+    "fil": "en/40-visninger/opsaetning.md",
+    "titel": "Connect to Cloudflare (setup)"
+   },
+   "billeder": [
+    {
+     "id": "opsaetning",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/opsaetning--light-da-1200x860.webp",
+     "sha256": "4eb143f819f595bd59d28a6d4db6daf20af9b5084751f38460c08dc35e648e11"
+    },
+    {
+     "id": "opsaetning",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/opsaetning--light-en-1200x860.webp",
+     "sha256": "1cf11cb378cbfbe5cfad9577b471691a81bad27d1c822b9aa29798e1f5c57bf9"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/overblik",
+   "da": {
+    "fil": "da/40-visninger/overblik.md",
+    "titel": "Overblik"
+   },
+   "en": {
+    "fil": "en/40-visninger/overblik.md",
+    "titel": "Overview"
+   },
+   "billeder": [
+    {
+     "id": "overblik",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/overblik--light-da-1200x860.webp",
+     "sha256": "9ec50607a85e8e825969f401b2c4637c853a2ac4f5f2ac5e536993d01ce0326c"
+    },
+    {
+     "id": "overblik",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/overblik--light-en-1200x860.webp",
+     "sha256": "ad754c5d318e60fa795eceb7e1bda5a7290270dd346a78c45cfe670c0136bf9a"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/robotter",
+   "da": {
+    "fil": "da/40-visninger/robotter.md",
+    "titel": "Robotter"
+   },
+   "en": {
+    "fil": "en/40-visninger/robotter.md",
+    "titel": "Robots"
+   },
+   "billeder": [
+    {
+     "id": "robotter",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/robotter--light-da-1200x860.webp",
+     "sha256": "3e2b5d18cb8a4dd637031f1ffc3793ea4c4322ba6977d6b44479b0911a935d21"
+    },
+    {
+     "id": "robotter",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/robotter--light-en-1200x860.webp",
+     "sha256": "559e424ded2000e363db35cc587b678565b56396d13d110d0f09d4cc43c81d6b"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/siden-sidst",
+   "da": {
+    "fil": "da/40-visninger/siden-sidst.md",
+    "titel": "Siden sidst"
+   },
+   "en": {
+    "fil": "en/40-visninger/siden-sidst.md",
+    "titel": "Since last time"
+   },
+   "billeder": [
+    {
+     "id": "siden-sidst",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/siden-sidst--light-da-1200x860.webp",
+     "sha256": "b0da7fc16d0226bb149d2108c0716c7794cb255e24276ecc7bff2d766721e095"
+    },
+    {
+     "id": "siden-sidst",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/siden-sidst--light-en-1200x860.webp",
+     "sha256": "8c6253277e39ca1e8be7a55d0b2aebe25b5702e65d001a4b988fb96d7ba36766"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/teknologi",
+   "da": {
+    "fil": "da/40-visninger/teknologi.md",
+    "titel": "Teknologi pr. domæne"
+   },
+   "en": {
+    "fil": "en/40-visninger/teknologi.md",
+    "titel": "Technology by domain"
+   },
+   "billeder": [
+    {
+     "id": "teknologi",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/teknologi--light-da-1200x860.webp",
+     "sha256": "8bfdd96f5cfed2f8523b20e158354fdb4d9540cd068c41c4b200294098692c1f"
+    },
+    {
+     "id": "teknologi",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/teknologi--light-en-1200x860.webp",
+     "sha256": "775718539e9cbfcd8499da148536c297815217c8871c0ac176ad64dac7dbb904"
+    }
+   ]
+  },
+  {
+   "id": "40-visninger/vaernet",
+   "da": {
+    "fil": "da/40-visninger/vaernet.md",
+    "titel": "Angreb"
+   },
+   "en": {
+    "fil": "en/40-visninger/vaernet.md",
+    "titel": "Attacks"
+   },
+   "billeder": [
+    {
+     "id": "angreb",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/angreb--light-da-1200x860.webp",
+     "sha256": "967184f487a96eb91be91330d5dd14294941a7ea7e17cc40ded08081117f0321"
+    },
+    {
+     "id": "angreb-samlet",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/angreb-samlet--light-da-1200x860.webp",
+     "sha256": "e1097a330afd37e0562edc686a488df513fee2c29125ba9fbca3bfb59251abc4"
+    },
+    {
+     "id": "angreb",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/angreb--light-en-1200x860.webp",
+     "sha256": "1fc8725e815fb81d68cb9ceaf748c5fd256f1249052f98dabdaeb72cde88921f"
+    },
+    {
+     "id": "angreb-samlet",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/angreb-samlet--light-en-1200x860.webp",
+     "sha256": "d57e18c4dd35ec969480ebc4a7b0e6ba0e224da592fc8a6a924dac7e0e802fe0"
+    }
+   ]
+  }
+ ]
+}

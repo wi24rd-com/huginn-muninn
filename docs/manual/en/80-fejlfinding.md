@@ -1,0 +1,59 @@
+# Troubleshooting
+
+The program only shows its own error texts in plain language, never raw technical errors. Here is each text, what it means, and what you do.
+
+## Error texts about the connection
+
+| The text | Means | Do |
+|---|---|---|
+| **No connection to Cloudflare. Check your internet connection.** | The computer cannot reach `api.cloudflare.com`. | Check the network. The program tries again by itself and shows **Try again now**. |
+| **Cloudflare is not answering right now.** | Cloudflare did not answer, or answered with a server error. | Wait. The program tries again by itself. |
+| **Cloudflare asks us to wait a little (too many requests).** | Cloudflare has a limit on how many calls may come. | Nothing. The program pauses and says "Trying again at …" in the status pill. |
+| **Cloudflare Radar is not answering right now.** | Only the country view is affected. | Your own figures still work. The program tries again. |
+| **Cloudflare answered with HTTP …** / **Cloudflare answered with an error: …** / **Unexpected answer from Cloudflare.** | An answer the program could not use. | Try **Fetch now**. If it keeps happening, it is worth reporting as a bug. |
+| **Cloudflare could not deliver the figures for …** | One day could not be fetched. | The day becomes a gap, and the program tries again later, as long as Cloudflare still has the day. |
+| **The figures from Cloudflare Radar are not up to date: … Your own figures still work.** | Radar did not answer. | Nothing. |
+| **Fetching in the background has stopped: …** | Fetching stopped on an error. | Read the error in the text; typically an API Token that has expired. |
+
+## Error texts about the API Token
+
+| The text | Means | Do |
+|---|---|---|
+| **The field is empty. Paste your API Token.** | You clicked Save and connect with nothing in the field. | Paste the API Token. |
+| **What was pasted does not look like a Cloudflare API Token (only letters, digits and symbols without spaces).** | Something else came along, such as a space or a line break. | Copy the API Token again from Cloudflare, with nothing around it. |
+| **Cloudflare rejected the API Token. It may have expired or lack permissions.** | Cloudflare does not know the token, or it has expired. | Create a new API Token following [Setup](30-opsaetning.md), and paste it under **Settings → Connection → Change API Token…**. |
+| **The API Token is not active (status: …). Create a new read-only API Token.** | The token is disabled or expired at Cloudflare. | Create a new one. |
+| **The API Token cannot see any domains: it lacks the permission Zone › Zone › Read, or the domain is not under Zone Resources.** | The token may not see the zone list, or no zones are included. | Fix the token at Cloudflare: **Permissions** must have `Zone › Zone › Read`, and **Zone Resources** must include the domain (or All zones). |
+| **The API Token lacks the permission Zone › Analytics › Read, so the program cannot read the figures.** | The token may see zones, but not figures. | Add `Zone › Analytics › Read` at Cloudflare. |
+| **No API Token is saved. Paste your API Token under Connect to Cloudflare.** | The keychain has no token (for example after **Forget API Token**). | Connect again. |
+| **The zone does not exist, or the API Token has no access to it.** | A domain has been removed from the account, or the token no longer sees it. | Clear the domain under **Settings → Domains**, or fix the token. |
+
+## Error texts about the computer
+
+| The text | Means | Do |
+|---|---|---|
+| **The keychain could not be used.** | The program could not read or write in macOS Keychain / Credential Manager. | Try again. If macOS asks for access to the keychain, allow it. |
+| **The local database could not be used.** | The file in the data folder could not be opened or written. | Check that there is space on the disk, and that the data folder is not read-only. See [Data and history](70-data.md). |
+| **The local database is from a newer version of the program (schema …).** | You opened an older version of the program with a newer database. | Update the program. The file is not touched. |
+| **Start at login could not be read or changed.** | The operating system refused to create or remove the autostart entry. | Try again. On macOS the entry is the file `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist`; see [Uninstalling](90-afinstallation.md). |
+| **An error occurred in the program.** | An error the program cannot explain itself. | Try again. If it happens again, it is worth reporting as a bug. |
+
+## Other texts
+
+| The text | Means |
+|---|---|
+| **Invalid zone ID.** / **Invalid date.** / **The filter in the address cannot be used.** | The address in the back/forward history was wrong. Go to the Overview and click your way forward again. |
+| **You can have at most 20 login paths of your own per domain. Remove one before adding a new one.** | The limit for your own login paths is reached. |
+| **“From” must be on or before “To”.** | The date picker got a period the wrong way round. |
+| **not available** | Your Cloudflare plan lacks the fields for those figures (for example Login or "stopped at the Edge" per robot). The rest works. |
+
+## It is not an error
+
+- **Status "Unknown"** or **"No figures yet – fetching"**: the domain was just chosen. Wait for the fetch.
+- **"updating …"** next to the status at night (until 03:00 UTC): yesterday is not fully fetched yet.
+- **The figures do not match Cloudflare's dashboard**: the dashboard shows sampled estimates and local time; the program shows whole days in UTC and only what has been fetched. Large differences over long periods are typically due to sampling.
+- **A yellow line about a gap**: the program was off. See [Data and history](70-data.md).
+
+## Report a bug
+
+The program is open source. Bugs are reported in the source code's repository (the link is under **Settings → About** once it is released). Never write your API Token, account ID or zone ID in a bug report.

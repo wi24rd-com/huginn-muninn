@@ -24,7 +24,8 @@ src-tauri/gen/schemas/
 /.claude/
 
 # Arbejdsfiler: beslutninger, idéer og research
-/docs/
+/docs/*
+!/docs/manual/
 /AGENTS.md
 /CLAUDE.md
 
