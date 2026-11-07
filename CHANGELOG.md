@@ -4,6 +4,34 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-07 23:30 — Verdenskort med farver og ét Tab-stop pr. domæne
+#### Tilføjet
+- Verdenskortet i Angreb og dyk har hav, land og landegrænser som et rigtigt kort i lyst og mørkt tema.
+- Lande fyldes i fem trin efter antal angreb. Trinene fordeles efter de viste tal, så ét land med alt ikke gør de andre usynlige.
+- Forklaringen under kortet viser skalaen med tal ved enderne og siger, at landet er det, Cloudflare så angrebet komme fra, og at det kan være en VPN eller proxy.
+- Et land med angreb kan klikkes med samme mål som ringen og viser land og tal, når musen står på det.
+#### Ændret
+- Cloudflares datacentre står som svage blå prikker, tydeligt svagere end det datacenter, der stoppede angrebet.
+- Mørkt tema: havet er lysere og blåere, så hav og land skilles klart. Skalaen, buerne, prikkerne og gitteret følger med, og her betyder lysere rød flere angreb.
+- Rækkens handlinger på `#teknologi` står bag én knap "⋯": ét Tab-stop pr. domæne. Piletasterne flytter i menuen, også i kolonnerne, og Esc lukker.
+- Glorien om ringene er en smal streg, der ikke vokser ved hover eller fokus.
+#### Rettet
+- Kortets usynlige klikflader males ikke længere af musen. Den store mørke skive om ringen og det brede bånd langs buen er væk, og mærket lyser op i stedet.
+
+### 2026-11-07 23:30 — Klart sprog i Vurdering og bedre login-forslag
+#### Ændret
+- Vurdering hedder "Hvorfor fik dagen (ikke) et mærke?" og samler alle tre mærker med ja, nej eller "ja, foreløbigt".
+- Grænser står som hele tal, rundet op. Er der intet at sammenligne med, står betingelsen uden ✓ eller ✗. Mærkernes logik er uændret.
+- `none` fra Cloudflares tjek står som "Ikke et login-forsøg (intet kodeord sendt)" og tæller stadig aldrig som læk.
+- Login-ordene matcher som hele ord og stidele, også i flertal, så `/badminton` og `/accounting` ikke foreslås.
+- Ord for login-handlinger er tilføjet: `authenticate`, `authorize`, `oauth`, `token`, `sso`, `saml`, `2fa`, `mfa`, `otp`, `password`, `passwd` og `reset`.
+- Det foreløbige mærke har samme tekst overalt: "Foreløbig — afgøres, når dagen efter er hentet".
+- Teknologinavne staves ens på regelkortet, i listen, på `#teknologi` og i Overblik.
+- Linjen under "Mails sendt i dit domænes navn" gentager ikke overskriften.
+#### Rettet
+- Stier, der kun ligner et login på navnet, foreslås ikke: `/wp-admin/admin-ajax.php`, `/wp-admin/admin-post.php`, `/author`, `/authors` og `/wp-json/…/users`. Har tjekket set et kodeord på stien, kan den stadig foreslås.
+- Statuslinjen i menuen skelner "Ligner DNS-rekognoscering" fra "Ligner rekognoscering".
+
 ### 2026-11-06 23:30 — DNS, DMARC og lækkede kodeord
 #### Tilføjet
 - "Mails sendt i dit domænes navn" i Angreb, fra `dmarcReportsSourcesAdaptiveGroups`: tal, afsendere, der fejlede DMARC, og en tom tilstand med guide. Hold øje ved en ny afsender, der fejler, eller en markant større andel. Ingen IP-adresser.
