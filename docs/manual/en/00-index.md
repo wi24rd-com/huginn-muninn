@@ -37,7 +37,7 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 The rest is for those who want to understand more. Everything in the program that has figures behind it can be clicked, so you can see what the figure is made of.
 
 ![The help panel opened over the Overview](../img/hjaelp--light-en-1200x860.webp)
-*The **?** button at the top right opens the help for the view you are in and lists the shortcuts. Esc closes it again.*
+*The **?** button at the top right opens the help for the view you are in and lists the shortcuts. **Open the guide** at the top of the help opens this guide on wi24rd.com in your browser. Esc closes it again.*
 
 ## Licence and trademark
 

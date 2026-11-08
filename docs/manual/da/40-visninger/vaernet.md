@@ -36,10 +36,13 @@ Længere nede på siden:
 - **Hvad angrebene var rettet mod**: teknologierne, angrebene gik efter, og om dit site bruger dem.
 - **Mails sendt i dit domænes navn** (kun for ét domæne): hvor mange mails der blev sendt i domænets navn i perioden, hvor mange der fejlede DMARC, og fra hvilke afsendere. Kræver DMARC Management hos Cloudflare.
 - **Følsomme filer, der svarede 200** (kun for ét domæne): 39 faste stier, der aldrig bør svare 200, fx `/.env`, `/.git/config` og `/.aws/credentials`, med antal svar, svarenes gennemsnitlige størrelse og en vurdering. Et klik på en sti viser angrebene på den. **Ligner filen** betyder, at svaret er højst 8 KB, mere end 25 % fra forsidens størrelse, og at domænet ikke svarer 200 på mere end 6 af stierne; kun da står domænet på **Handl**. **Ligner sidens almindelige side** betyder, at sitet svarer med sin almindelige side på adresser, der ikke findes (mange sites gør det), og ændrer ikke status. Tallene findes for dage, der er hentet efter opdateringen 8. november 2026.
-- **Cloudflares egne fund** (kun for ét domæne): det, Cloudflares egen skanning af domænets opsætning har fundet (Security Insights), med alvor, titel og dato. Et klik åbner Security Insights hos Cloudflare i din browser. Kræver én valgfri rettighed mere på API Tokenet, se [Opret API Token hos Cloudflare](../31-cloudflare.md). Uden den står der, at den kan tilføjes, og resten virker. Et kritisk fund giver **Hold øje**.
+- **Cloudflares egne fund** (kun for ét domæne): det, Cloudflares egen skanning af domænets opsætning har fundet (Security Insights), med alvor, titel og dato. Et klik åbner Security Insights hos Cloudflare i din browser. Kræver én valgfri rettighed mere på API Tokenet, se [Opret API Token hos Cloudflare](../31-cloudflare.md). Uden den står der, at den kan tilføjes, og resten virker. Cloudflare skanner hver 7. dag på Free og hver 3. dag på Pro og Business. Et kritisk fund giver **Hold øje**.
 - **Hvad de ledte efter**: de stier, scannerne spurgte efter, sorteret i kategorier.
 - **På dine andre domæner**: det samme på dine andre valgte domæner.
 - **De seneste**: de seneste afviste forespørgsler, renset for IP-adresser og forespørgselsdel.
+
+![Følsomme filer og Cloudflares egne fund](../../img/angreb-fund--light-da-1200x860.webp)
+*Kun `/.env` ligner filen; de to andre stier svarer med sitets almindelige side. Under **Cloudflares egne fund** er det kritiske fund, at Always Use HTTPS ikke er slået til.*
 
 Den grønne prik øverst ("Hentet fra Cloudflare …") siger, hvornår tallene sidst blev hentet. Dage, der ikke er hentet, tegnes ikke som 0: summer siger "N af M dage".
 
@@ -92,5 +95,8 @@ Tastatur: kortet er ét Tab-stop; piletasterne flytter mellem landene og ringene
 - Edge er Cloudflares netværk af datacentre. Dit site svarer fra dem alle, så et angreb stoppes i det datacenter, der ligger nærmest angriberen, længe før det når din server. Det gælder kun DNS-poster med orange sky. Kender en angriber serverens egen IP-adresse, kan den gå uden om edge, medmindre serveren kun tager imod trafik fra Cloudflare.
 - Labyrinten stopper ikke robotten; den viser falske sider. Cloudflare regner den ikke for en blokering, og det gør programmet heller ikke.
 - Stier står uden forespørgselsdel, og lange koder er skjult. IP-adresser findes ikke i programmet.
-- Tallene kommer fra Cloudflares GraphQL Analytics API. Antallet af afviste er Cloudflares estimat ud fra en stikprøve, så det kan være højere end antallet af enkelte hændelser. Dage hentet før 8. november 2026, som Cloudflare ikke længere har, er talte rækker; går perioden over grænsen, siger en note det.
+- Tallene kommer fra Cloudflares GraphQL Analytics API. Antallet af afviste er Cloudflares estimat ud fra en stikprøve, så det kan være højere end antallet af enkelte hændelser. Dage, som Cloudflare ikke længere havde, da programmet første gang hentede efter opdateringen, er talte rækker. Går perioden over grænsen, siger en note det, fx "Før 10. oktober er tallene talte rækker, derefter Cloudflares estimat."
 - Står en dag på Cloudflares grænse på 10.000 hændelser, mangler dagens ældste timer, og siden siger "Der er mindst …".
+
+![Grænsen på 10.000 hændelser og noten om talte rækker](../../img/angreb-estimat--light-da-1200x860.webp)
+*Den gule boks siger, at mindst én dag står på Cloudflares grænse. Noten under den siger, fra hvilken dag tallene er Cloudflares estimat.*

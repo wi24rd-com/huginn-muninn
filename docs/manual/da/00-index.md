@@ -37,7 +37,7 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 Resten er for dig, der vil forstå mere. Alt i programmet, der har tal bag sig, kan klikkes, så du kan se, hvad tallet består af.
 
 ![Hjælpepanelet åbnet oven på Overblik](../img/hjaelp--light-da-1200x860.webp)
-*Knappen **?** øverst til højre åbner hjælpen til den visning, du står i, og viser genvejene. Esc lukker den igen.*
+*Knappen **?** øverst til højre åbner hjælpen til den visning, du står i, og viser genvejene. **Åbn vejledningen** øverst i hjælpen åbner denne vejledning på wi24rd.com i din browser. Esc lukker den igen.*
 
 ## Licens og varemærke
 

@@ -36,10 +36,13 @@ Further down the page:
 - **What the attacks were aimed at**: the technologies the attacks went for, and whether your site uses them.
 - **Mail sent in your domain's name** (one domain only): how many emails were sent in the domain's name in the period, how many failed DMARC, and from which senders. Requires DMARC Management at Cloudflare.
 - **Sensitive files that answered 200** (one domain only): 39 fixed paths that should never answer 200, for example `/.env`, `/.git/config` and `/.aws/credentials`, with the number of answers, the answers' average size and an assessment. A click on a path shows the attacks on it. **Looks like the file** means the answer is at most 8 KB, more than 25% away from the front page's size, and the domain does not answer 200 on more than 6 of the paths; only then does the domain show **Act**. **Looks like the site's ordinary page** means the site answers with its ordinary page at addresses that do not exist (many sites do), and it does not change the status. The figures exist for days fetched after the update of 8 November 2026.
-- **Cloudflare's own findings** (one domain only): what Cloudflare's own scan of the domain's setup has found (Security Insights), with severity, title and date. A click opens Security Insights at Cloudflare in your browser. Requires one more optional permission on the API Token, see [Create an API Token at Cloudflare](../31-cloudflare.md). Without it the section says it can be added, and the rest works. A critical finding gives **Watch**.
+- **Cloudflare's own findings** (one domain only): what Cloudflare's own scan of the domain's setup has found (Security Insights), with severity, title and date. A click opens Security Insights at Cloudflare in your browser. Requires one more optional permission on the API Token, see [Create an API Token at Cloudflare](../31-cloudflare.md). Without it the section says it can be added, and the rest works. Cloudflare scans every 7 days on Free and every 3 days on Pro and Business. A critical finding gives **Watch**.
 - **What they were looking for**: the paths the scanners asked for, sorted into categories.
 - **On your other domains**: the same on your other chosen domains.
 - **The latest**: the latest refused requests, cleaned of IP addresses and query strings.
+
+![Sensitive files and Cloudflare's own findings](../../img/angreb-fund--light-en-1200x860.webp)
+*Only `/.env` looks like the file; the two other paths answer with the site's ordinary page. Under **Cloudflare's own findings** the critical finding is that Always Use HTTPS is not turned on.*
 
 The green dot at the top ("Fetched from Cloudflare …") says when the figures were last fetched. Days that have not been fetched are not drawn as 0: sums say "N of M days".
 
@@ -92,5 +95,8 @@ Keyboard: the map is one Tab stop; the arrow keys move between the countries and
 - The Edge is Cloudflare's network of data centres. Your site answers from all of them, so an attack is stopped in the data centre nearest the attacker, long before it reaches your server. This applies only to DNS records with the orange cloud. If an attacker knows the server's own IP address, it can go around the edge, unless the server only accepts traffic from Cloudflare.
 - The labyrinth does not stop the robot; it shows fake pages. Cloudflare does not count it as a block, and neither does the program.
 - Paths are shown without query strings, and long codes are hidden. IP addresses do not exist in the program.
-- The figures come from Cloudflare's GraphQL Analytics API. The number refused is Cloudflare's estimate from a sample, so it can be higher than the number of single events. Days fetched before 8 November 2026 that Cloudflare no longer has are counted rows; if the period crosses the boundary, a note says so.
+- The figures come from Cloudflare's GraphQL Analytics API. The number refused is Cloudflare's estimate from a sample, so it can be higher than the number of single events. Days that Cloudflare no longer had when the program first fetched after the update are counted rows. If the period crosses the boundary, a note says so, for example "Before 10 October the figures are counted rows, after that Cloudflare's estimate."
 - If a day is at Cloudflare's limit of 10,000 events, the oldest hours of that day are missing, and the page says "There are at least …".
+
+![The limit of 10,000 events and the note about counted rows](../../img/angreb-estimat--light-en-1200x860.webp)
+*The yellow box says that at least one day is at Cloudflare's limit. The note below it says from which day the figures are Cloudflare's estimate.*

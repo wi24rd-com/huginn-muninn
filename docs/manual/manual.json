@@ -2,10 +2,10 @@
  "produkt": "huginn-muninn",
  "navn": "Wi24rd Huginn and Muninn",
  "version": "0.1.0",
- "dato": "2026-11-07",
- "commit": "0698741",
- "fotobog_commit": "71c3c2e",
- "fotobog_dato": "2026-11-07",
+ "dato": "2026-11-08",
+ "commit": "e0ce910",
+ "fotobog_commit": "60c5559",
+ "fotobog_dato": "2026-11-08",
  "sprog": [
   "da",
   "en"
@@ -27,14 +27,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/hjaelp--light-da-1200x860.webp",
-     "sha256": "30c0f9587fb1c87a9ace06592133dba19a808d9d0d53040ddef4db9762ce632d"
+     "sha256": "a3d20658405e5b162d341a813f4342749bee3fd48c8f9eb0932e143d758a88dc"
     },
     {
      "id": "hjaelp",
      "tema": "light",
      "sprog": "en",
      "fil": "img/hjaelp--light-en-1200x860.webp",
-     "sha256": "316e356784fca9a036142f72f8000f4647034ee3e5080278802f0bb3f31f94fd"
+     "sha256": "ce8fe9ea40992ce9db84a8b692fcfde1761673b94a681e2409e864e665c1cdf6"
     }
    ]
   },
@@ -307,14 +307,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/indstillinger--light-da-1200x860.webp",
-     "sha256": "9826af348e09cf71e47c26e8c23c8cd731b6463a05452b162a7e4ab6635ae88e"
+     "sha256": "bad33a520015d6e7c9656b6eb6b54c1ff672e5ea3f31f13be72bba3484c3157d"
     },
     {
      "id": "glem-dialog",
      "tema": "light",
      "sprog": "da",
      "fil": "img/glem-dialog--light-da-1200x860.webp",
-     "sha256": "9e10c4e0b7e2bcfcde7d13c01b279857b3fed87dff7b874b86ab5d3810f5718d"
+     "sha256": "4cea599648a69cc11937ea7e0403839f71938b6f715394d2647234376978e0cb"
     },
     {
      "id": "overblik",
@@ -328,14 +328,14 @@
      "tema": "light",
      "sprog": "en",
      "fil": "img/indstillinger--light-en-1200x860.webp",
-     "sha256": "4d006e7afe19f1ad2eb87ba92676648561b090eed29a177b05ac7931ca36114f"
+     "sha256": "93cd15681062121832fe0ffabe90bd4d3b8438359c1d795292fa8ba528f58414"
     },
     {
      "id": "glem-dialog",
      "tema": "light",
      "sprog": "en",
      "fil": "img/glem-dialog--light-en-1200x860.webp",
-     "sha256": "d7561bcb5fe55cce20cf503a1ca462b15102b6178ebff0c509e19c3dd9f0b4e4"
+     "sha256": "8c44a16674305d67ab831358d61fcddcffbbac4fb7d188a9954fbcad7bb02f81"
     }
    ]
   },
@@ -451,14 +451,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/indstillinger--light-da-1200x860.webp",
-     "sha256": "9826af348e09cf71e47c26e8c23c8cd731b6463a05452b162a7e4ab6635ae88e"
+     "sha256": "bad33a520015d6e7c9656b6eb6b54c1ff672e5ea3f31f13be72bba3484c3157d"
     },
     {
      "id": "indstillinger",
      "tema": "light",
      "sprog": "en",
      "fil": "img/indstillinger--light-en-1200x860.webp",
-     "sha256": "4d006e7afe19f1ad2eb87ba92676648561b090eed29a177b05ac7931ca36114f"
+     "sha256": "93cd15681062121832fe0ffabe90bd4d3b8438359c1d795292fa8ba528f58414"
     }
    ]
   },
@@ -519,14 +519,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/login--light-da-1200x860.webp",
-     "sha256": "72ebb3386cffa026b9434e05d82aeed5184cffe97fffb59acd13a906fd95f853"
+     "sha256": "e501f225eddf0746701b9de52dc06d5fa364aeb74a3c3d67049be895aa9722ba"
     },
     {
      "id": "login",
      "tema": "light",
      "sprog": "en",
      "fil": "img/login--light-en-1200x860.webp",
-     "sha256": "cfaf18bc6fa3a60cb35310cc3e60d94b895224dd3c73db53ccf9460b92064dec"
+     "sha256": "d524752eebe8a4d0039a214178dd5c0e45afd405e05c01357582cc1e3752ad0e"
     }
    ]
   },
@@ -681,70 +681,98 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/angreb--light-da-1200x860.webp",
-     "sha256": "967184f487a96eb91be91330d5dd14294941a7ea7e17cc40ded08081117f0321"
+     "sha256": "7055d4e657936413c15e4c9fbf3f918f98e8157bbcd4469efa18fcefe98f23c5"
     },
     {
      "id": "angreb-samlet",
      "tema": "light",
      "sprog": "da",
      "fil": "img/angreb-samlet--light-da-1200x860.webp",
-     "sha256": "e1097a330afd37e0562edc686a488df513fee2c29125ba9fbca3bfb59251abc4"
+     "sha256": "9eb6ccb89058e6c36a6e8cad3575442a3a90a54422d9476db998b8e7ba653a7b"
     },
     {
      "id": "angreb",
      "tema": "light",
      "sprog": "en",
      "fil": "img/angreb--light-en-1200x860.webp",
-     "sha256": "1fc8725e815fb81d68cb9ceaf748c5fd256f1249052f98dabdaeb72cde88921f"
+     "sha256": "25a6a77a05f34d7f11294fca9b3c37a7d410b93401311503f14a88ee95f1e41f"
     },
     {
      "id": "angreb-samlet",
      "tema": "light",
      "sprog": "en",
      "fil": "img/angreb-samlet--light-en-1200x860.webp",
-     "sha256": "d57e18c4dd35ec969480ebc4a7b0e6ba0e224da592fc8a6a924dac7e0e802fe0"
+     "sha256": "988523d7e090f0d435c983374d3f2af4ba1a3ded003f0efd9e835818a85ad0f9"
     },
     {
      "id": "dyk-regel",
      "tema": "light",
      "sprog": "da",
      "fil": "img/dyk-regel--light-da-1200x860.webp",
-     "sha256": "4a2ee59687218e617a7e75c51208607149945d9931d1e3224a534db7d5f98173"
+     "sha256": "8691dd5d5357284837057ac3ea950d0abee557dbb1ba0df18e749b2a5301b68f"
     },
     {
      "id": "dyk-land",
      "tema": "light",
      "sprog": "da",
      "fil": "img/dyk-land--light-da-1200x860.webp",
-     "sha256": "541cd395a2c1f1f811a04c6d37acb4552fa5f830f6a22d869cff9e40927cd005"
+     "sha256": "db33fc7fb70a08cbc61b1f327e341fecf9363fd6520a0fb060b7fa1c83f6f129"
     },
     {
      "id": "trafik-dyk",
      "tema": "light",
      "sprog": "da",
      "fil": "img/trafik-dyk--light-da-1200x860.webp",
-     "sha256": "33c537e45632983a55cd66d46158cf3324c223332006c38358c94b6b98df57dc"
+     "sha256": "c11749d930840a1e651c54568848b09995277252a2bd810ac70eeea4336c5fa4"
     },
     {
      "id": "dyk-regel",
      "tema": "light",
      "sprog": "en",
      "fil": "img/dyk-regel--light-en-1200x860.webp",
-     "sha256": "e88d32d565c0a00caa65a516eddb1ea3d4e4d27091dc0ce2aff41e1ca1ab1fa2"
+     "sha256": "a9ded983efa2c750d41af3f3811450713d95c36466a1e7ab23770b5fc7eadef4"
     },
     {
      "id": "dyk-land",
      "tema": "light",
      "sprog": "en",
      "fil": "img/dyk-land--light-en-1200x860.webp",
-     "sha256": "2f5cc6e2f7f7066b01f805287947b8843699ed19e77e4f98be409bf5da58f17e"
+     "sha256": "cf404b4e4cbd93eecabb6ba06dec4c55af1aff981ebc5384632f4cf0a65354bb"
     },
     {
      "id": "trafik-dyk",
      "tema": "light",
      "sprog": "en",
      "fil": "img/trafik-dyk--light-en-1200x860.webp",
-     "sha256": "e4fcff7bb7ff00fdb6721690d8dd2bf88421025791ebc6940139d2d4a4414b0a"
+     "sha256": "7b9d71f8758ac9ec64182783457f32d176910666541df9ea042a74446e39ba11"
+    },
+    {
+     "id": "angreb-fund",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/angreb-fund--light-da-1200x860.webp",
+     "sha256": "276b25131656a29b011e488760b6a026bc1406f4e723fed948fac2a681a81736"
+    },
+    {
+     "id": "angreb-fund",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/angreb-fund--light-en-1200x860.webp",
+     "sha256": "c5ae24dcd6000d57db126acd956f201b7e933a0669a7b4efc258076f155603b7"
+    },
+    {
+     "id": "angreb-estimat",
+     "tema": "light",
+     "sprog": "da",
+     "fil": "img/angreb-estimat--light-da-1200x860.webp",
+     "sha256": "f19487a2dbb985e2291bb6c87c716cdd8f4a354aee6a262e0b914b561ff5b789"
+    },
+    {
+     "id": "angreb-estimat",
+     "tema": "light",
+     "sprog": "en",
+     "fil": "img/angreb-estimat--light-en-1200x860.webp",
+     "sha256": "e83feb85f2ff9f1a3a8ff70dd2c1b9a04bc4b2bd767a03ddd64a3e643c1c53c7"
     }
    ]
   }
