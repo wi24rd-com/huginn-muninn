@@ -1712,7 +1712,9 @@ pub fn run() {
         .setup(move |app| {
             let mappe = app.path().app_data_dir()?;
             std::fs::create_dir_all(&mappe)?;
-            let lager = Store::aaben(&mappe.join(DATABASE))?;
+            let mut lager = Store::aaben(&mappe.join(DATABASE))?;
+            // V-SAMPLE.1: én gang hentes de færdige døgn i hentevinduet igen med Cloudflares estimat. Fejler det, prøves der igen ved næste start.
+            let _ = vaern::fw_vaegt_en_gang(&mut lager, nu_ms());
             let sprog = sprog_fra(&lager);
             app.manage(Tilstand {
                 lager: Mutex::new(lager),

@@ -92,4 +92,5 @@ Keyboard: the map is one Tab stop; the arrow keys move between the countries and
 - The Edge is Cloudflare's network of data centres. Your site answers from all of them, so an attack is stopped in the data centre nearest the attacker, long before it reaches your server. This applies only to DNS records with the orange cloud. If an attacker knows the server's own IP address, it can go around the edge, unless the server only accepts traffic from Cloudflare.
 - The labyrinth does not stop the robot; it shows fake pages. Cloudflare does not count it as a block, and neither does the program.
 - Paths are shown without query strings, and long codes are hidden. IP addresses do not exist in the program.
-- The figures come from Cloudflare's GraphQL Analytics API and can be sampled over long periods.
+- The figures come from Cloudflare's GraphQL Analytics API. The number refused is Cloudflare's estimate from a sample, so it can be higher than the number of single events. Days fetched before 8 November 2026 that Cloudflare no longer has are counted rows; if the period crosses the boundary, a note says so.
+- If a day is at Cloudflare's limit of 10,000 events, the oldest hours of that day are missing, and the page says "There are at least …".

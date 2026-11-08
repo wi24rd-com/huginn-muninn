@@ -25,6 +25,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - **Nulstil historik** under **Indstillinger → Data** sletter alle tal på din computer og henter dem forfra. Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år — alt ældre er væk for altid; dialogen siger hvilke datoer, og hvor mange dage der forsvinder.
 
 ## Angreb
+- **Afviste som Cloudflares estimat:** antallet af afviste er summen af Cloudflares stikprøve-vægt, ikke antallet af rækker, så det kan være højere end på wi24rd.com.
 - **Én side pr. domæne:** alt om angrebene står på samme side, og overskriften siger fx "Angreb · wi24rd.com". Siden viser 7 hele dage som standard. Vælg **30 dage**, **Fra** og **Til** i datovælgeren, eller **Nulstil** for hele historikken.
 - **Filtre:** et klik på et tal, et land, en regel eller en sti forudindstiller perioden og filtret på samme side. Filtrene står som chips under overskriften: × fjerner ét, og **Nulstil** fjerner dem alle. **Vis** skifter mellem **Alt**, **Kun angreb** og **Kun rutine**. Tilbage og frem går ét trin ad gangen.
 - **Alle afsnit følger perioden og filtrene.** Et afsnit, der ikke kan filtreres sådan, står ikke, og en linje siger hvilke. Med et filter vises de gemte tal, og intet hentes fra Cloudflare.

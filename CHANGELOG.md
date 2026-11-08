@@ -4,6 +4,14 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-08 23:30 — Afviste som Cloudflares estimat, ikke som antal rækker
+#### Ændret
+- **Afviste tælles som Cloudflares estimat** (IDEA-009): hovedhentningen henter feltet `sampleInterval` på hver afvist forespørgsel og lægger det sammen i stedet for at tælle rækker. Det er det samme tal, Cloudflares `firewallEventsAdaptiveGroups` ville give, men virker på Free-planen og koster ikke et ekstra kald. Målt: på travle døgn stiger tallet 11–56 %; stille domæner er uændrede. Overblik, Angreb, kortet, listerne, status, mærkerne og notifikationerne følger med. "De seneste" og de enkelte angreb tæller stadig hændelser.
+- **De sidste 30 dage hentes igen én gang** efter opdateringen, i køens normale tempo, så snit og mærker ikke sammenligner estimater med rækketal. Ældre dage beholder de talte rækker; går en periode på Angreb over grænsen, siger en note det.
+- **10.000-grænsen** afgøres nu af antallet af hændelser i Cloudflares svar (gemt for sig), ikke af det estimerede tal. Står en dag på grænsen, siger Angreb "Der er mindst …". Et svar på grænsen erstatter aldrig et højere tal, der allerede er gemt.
+- Teksterne om stikprøver (fodnoten på Angreb, "Det, der ikke gemmes" og manualen) siger nu, at tallet er Cloudflares estimat ud fra en stikprøve, i stedet for "kan være samplet og er derfor omtrentlige".
+- HAM og wi24rd.com viser forskellige tal på travle domæner: wi24rd.com tæller rækker.
+
 ### 2026-11-08 23:30 — Følsomme filer, der svarede 200, og Cloudflares egne fund
 #### Tilføjet
 - **Følsomme filer, der svarede 200** (IDEA-011): hovedhentningen spørger nu også, om 39 faste stier, der aldrig bør svare 200 (fx `/.env`, `/.git/config`, `/.aws/credentials`), fik svar 200, og hvor store svarene var. Det koster ikke et ekstra kald. Afsnittet står på Angreb for ét domæne med sti, antal, snitstørrelse og vurdering, og hver sti filtrerer Angreb på stien.

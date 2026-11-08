@@ -14,11 +14,11 @@ use crate::overblik::{
     SERVER_KODER, UDFORDRET,
 };
 use crate::robotter::{self, GRUPPER};
-use crate::store::{Raekke, Store};
+use crate::store::{Raekke, Store, FW_VAEGT};
 use crate::teknologi;
 use crate::vaern::{
     angreb_fra_raekker, dag_ms, dag_noegle, forsoeg_kategori, offentlig_sti, regel, regelkort, seneste_fra_raekker, tjek_zone, Bue,
-    Kategori, KortSum, Regel, Seneste, StiN, ANGREB_MAKS, DOEGN_MS, RUTINE_NAVNE,
+    Kategori, KortSum, Regel, Seneste, StiN, ANGREB_MAKS, DOEGN_MS, FW_HAENDELSER, RUTINE_NAVNE,
 };
 
 /// Så mange rækker pr. top-liste sendes til visningen (de 5 første står fremme, resten bag "Vis top 20").
@@ -165,6 +165,10 @@ pub struct Laest {
     /// Dage, hvor mindst én zone i omfanget er hentet.
     pub hentet: HashSet<String>,
     pub navne: HashMap<String, String>,
+    /// Antal hændelser pr. zone-døgn i perioden (art `vaern::FW_HAENDELSER`), til loftet. Døgn hentet før V-SAMPLE.1 har ingen.
+    pub haendelser: Vec<(String, Raekke)>,
+    /// Første dag, hvis `fw`-tal er Cloudflares estimat (`store::FW_VAEGT`). Ældre døgn er talte rækker.
+    pub vaegt_fra: Option<String>,
 }
 
 /// Første og sidste dag i perioden. Hele historikken går fra første hentede dag til i går.
@@ -203,6 +207,8 @@ pub fn laes(lager: &Store, s: &Spoergsmaal, nu: i64) -> Result<Laest, Fejl> {
         profiler: s.zoner.iter().map(|z| teknologi::profil(lager, z)).collect::<Result<_, _>>()?,
         hentet,
         navne,
+        haendelser: lager.raekker_art(&s.zoner, &[FW_HAENDELSER], &fra)?,
+        vaegt_fra: lager.indstilling(FW_VAEGT)?,
     })
 }
 
@@ -375,8 +381,10 @@ pub struct DykUd {
     /// Sat, når `enkelte` er de gemte angreb. Ellers er det de 12 seneste af alle slags.
     pub enkelte_info: Option<EnkelteInfo>,
     pub slags: SlagsTal,
-    /// Et zone-døgn i perioden står på loftet.
+    /// Et zone-døgn i perioden står på loftet: Cloudflare sendte `LOFT` hændelser, så de ældste timer mangler, og tallene er mindst det, der står.
     pub loft: bool,
+    /// Perioden krydser `Laest::vaegt_fra`: før dagen er `fw`-tallene talte rækker, fra den Cloudflares estimat. Kun for afviste (ikke forsøg og robotter).
+    pub vaegt_fra: Option<String>,
     /// Forespørgslerne i perioden, så angrebene kan holdes op imod dem.
     pub trafik: TrafikPeriode,
     /// Forespørgslerne dag for dag, når perioden går længere tilbage end sikkerhedstallene. Ellers tom.
@@ -973,7 +981,12 @@ pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
         enkelte: liste,
         enkelte_info,
         slags,
-        loft: zone_dag.values().any(|n| *n >= LOFT),
+        loft: paa_loftet(&zone_dag, l, &fra, &til),
+        vaegt_fra: if robot || forsoeg.is_some() {
+            None
+        } else {
+            vaegt_graense(l, &fra, &til)
+        },
         trafik: trafik_i(l, &fra, &til, nu),
         kun_i_dag,
         regler: if vaerdi(s, Dim::Regel).is_some() {
@@ -982,6 +995,25 @@ pub fn regn(s: &Spoergsmaal, l: &Laest, nu: i64) -> DykUd {
             regelkort(kort)
         },
     }
+}
+
+/// Står et zone-døgn i perioden på loftet? Med antal hændelser (`FW_HAENDELSER`) afgør det; et døgn uden (hentet før V-SAMPLE.1, `fw`
+/// er talte rækker) afgøres af `fw`-summen som før. `fw` alene kan ikke bruges på nye døgn: estimatet passerer 10.000 længe før svaret.
+fn paa_loftet(zone_dag: &HashMap<(&str, &str), i64>, l: &Laest, fra: &str, til: &str) -> bool {
+    let haendelser: HashMap<(&str, &str), i64> = l
+        .haendelser
+        .iter()
+        .filter(|(_, r)| r.art == FW_HAENDELSER && r.dag.as_str() >= fra && r.dag.as_str() <= til)
+        .map(|(z, r)| ((z.as_str(), r.dag.as_str()), r.n))
+        .collect();
+    haendelser.values().any(|n| *n >= LOFT) || zone_dag.iter().any(|(k, n)| !haendelser.contains_key(k) && *n >= LOFT)
+}
+
+/// Grænsen mellem talte rækker og estimater, hvis perioden krydser den: dagen ligger i perioden, og mindst én hentet dag i perioden
+/// ligger før den. Uden gamle døgn (ny installation, eller efter Nulstil historik) er der ingen grænse at vise.
+fn vaegt_graense(l: &Laest, fra: &str, til: &str) -> Option<String> {
+    let g = l.vaegt_fra.as_deref()?;
+    (fra < g && g <= til && l.hentet.iter().any(|d| d.as_str() >= fra && d.as_str() < g)).then(|| g.to_string())
 }
 
 // ── Trafik-dyk ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -1527,6 +1559,7 @@ mod tests {
                 ("z2".into(), "b.wi24rd.com".into()),
                 ("z3".into(), "a.wi24rd.com".into()),
             ]),
+            ..Laest::default()
         }
     }
 
@@ -1557,6 +1590,7 @@ mod tests {
             andre: vec![art("z2", &d(1), "bot", "GPTBot\t\tAI Crawler\t/\t200", 11)],
             hentet: (0..=31).map(d).collect(),
             navne: HashMap::from([("z1".into(), "eksempel.wi24rd.com".into()), ("z2".into(), "b.wi24rd.com".into())]),
+            ..Laest::default()
         }
     }
 
@@ -2218,6 +2252,78 @@ mod tests {
         assert_eq!(v, [("a.wi24rd.com", 30), ("b.wi24rd.com", 9)], "z1 er omfanget, z4 har intet navn");
         let u = regn(&spoerg(vec![filter(Dim::Land, "US")], Periode::D30, None), &l, NU);
         assert!(u.domaener.is_empty(), "ingen tal på de andre");
+    }
+
+    /// V-SAMPLE.1: `fw` er et estimat og kan passere 10.000, uden at svaret er afkortet. Loftet afgøres af antal hændelser (`fwn`); et
+    /// gammelt døgn uden `fwn` (talte rækker) af `fw` som før.
+    #[test]
+    fn loft_efter_antal_haendelser_ikke_estimatet() {
+        let s = spoerg(vec![], Periode::D30, None);
+        let mut l = Laest::default();
+        l.rows.push(r(&d(1), react("PL", "/", "WAW"), 14_000));
+        l.haendelser.push(art("z1", &d(1), FW_HAENDELSER, "", 6_000));
+        assert!(!regn(&s, &l, NU).loft, "14.000 estimeret af 6.000 hændelser er et helt døgn");
+        l.haendelser[0].1.n = LOFT;
+        assert!(regn(&s, &l, NU).loft, "10.000 hændelser: afkortet");
+        let u = regn(&spoerg(vec![], Periode::Dag(d(2)), None), &l, NU);
+        assert!(!u.loft, "kun dage i perioden");
+        let mut gammel = Laest {
+            hentet: (1..=40).map(d).collect(),
+            ..Laest::default()
+        };
+        gammel.rows.push(r(&d(40), react("PL", "/", "WAW"), LOFT));
+        assert!(
+            regn(&spoerg(vec![], Periode::Alt, None), &gammel, NU).loft,
+            "gammelt døgn uden fwn: rækketallet afgør"
+        );
+    }
+
+    /// Noten "Før X er tallene talt rækker": kun når perioden krydser grænsen, og der er hentede dage før den.
+    #[test]
+    fn vaegt_graensen_vises_kun_naar_perioden_krydser_den() {
+        let mut l = Laest {
+            hentet: (0..=40).map(d).collect(),
+            vaegt_fra: Some(d(20)),
+            ..Laest::default()
+        };
+        l.rows.push(r(&d(25), react("PL", "/", "WAW"), 3));
+        l.rows.push(r(&d(5), react("PL", "/", "WAW"), 3));
+        let g = |p: Periode, f: Vec<Filter>, l: &Laest| regn(&spoerg(f, p, None), l, NU).vaegt_fra;
+        assert_eq!(g(Periode::D30, vec![], &l), Some(d(20)), "30 dage krydser grænsen");
+        assert_eq!(g(Periode::Alt, vec![], &l), Some(d(20)));
+        assert_eq!(g(Periode::D7, vec![], &l), None, "7 dage ligger efter grænsen");
+        assert_eq!(
+            g(Periode::Spaend { fra: d(40), til: d(25) }, vec![], &l),
+            None,
+            "helt før grænsen krydser den ikke"
+        );
+        assert_eq!(
+            g(Periode::Spaend { fra: d(21), til: d(20) }, vec![], &l),
+            Some(d(20)),
+            "grænsedagen er den første med estimater"
+        );
+        assert_eq!(g(Periode::Spaend { fra: d(20), til: d(19) }, vec![], &l), None);
+        assert_eq!(
+            g(Periode::D30, vec![filter(Dim::Forsoeg, ALLE_FORSOEG)], &l),
+            None,
+            "forsøg (404) er ikke vægtet"
+        );
+        assert_eq!(
+            g(Periode::D30, vec![filter(Dim::Robot, "alle")], &l),
+            None,
+            "robotter er ikke vægtet"
+        );
+        let ny = Laest {
+            hentet: (0..=20).map(d).collect(),
+            ..l.clone()
+        };
+        assert_eq!(
+            g(Periode::D30, vec![], &ny),
+            None,
+            "ingen hentede dage før grænsen (ny installation)"
+        );
+        let uden = Laest { vaegt_fra: None, ..l };
+        assert_eq!(g(Periode::D30, vec![], &uden), None);
     }
 
     #[test]

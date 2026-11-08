@@ -142,6 +142,7 @@ export const SIDER = [
   { id: 'trafik-dyk', navn: 'trafik-dyk', hash: `vaernet?${dom}&dag=2026-11-02&trafik=1` }, { id: 'hjaelp', navn: 'hjælpen', hash: 'overblik', aabn: ['#hjaelp-knap'], rod: '#hjaelp', luk: '#hjaelp-luk' }, { id: 'glem-dialog', navn: 'bekræftelsen', hash: 'indstillinger', aabn: ['#glem'], rod: '#glem-dialog' },
   { id: 'teknologi', navn: 'Teknologi', hash: 'teknologi' },
   { id: 'angreb-fund', navn: 'Angreb: følsomme filer og Cloudflares fund', hash: 'vaernet?' + dom, rul: '[data-plads="sti200"]' },
+  { id: 'angreb-estimat', navn: 'Angreb: loftet og grænsen mellem talte rækker og estimater', hash: 'vaernet?' + dom + '&periode=30', rul: '.vg-loft', rulTekst: true, ekstra: { dyk: dykSvar({ vaegt_fra: '2026-10-10', loft: true }) } },
   { id: 'opsaetning', navn: 'opsætningen', hash: 'overblik', visning: 'opsaetning', ekstra: { token_status: { sat: false } } },
   { id: 'alle-fra', navn: 'velkomsten', hash: 'overblik', ekstra: { domaener_hent: zoner.map(z => ({ ...z, til: false, ny: false })), overblik: [], valg_hent: [] } },
 ];

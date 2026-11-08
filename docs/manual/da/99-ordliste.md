@@ -50,7 +50,7 @@
 
 **Rutine** · Cloudflares automatiske bot-tjek: labyrinten, Bot Fight Mode og browsertjekket. Tæller som afvist, men aldrig som angreb.
 
-**Sampling (stikprøver)** · Over lange perioder tæller Cloudflare ikke alt, men regner fra en stikprøve. Tallene er derfor omtrentlige. Programmet henter én dag ad gangen for at mindske det.
+**Sampling (stikprøver)** · Cloudflare gemmer ikke hver hændelse, men en stikprøve, hvor hver hændelse oplyser, hvor mange den står for. Programmet lægger det sammen, så antallet af afviste er Cloudflares estimat, ikke et antal rækker. Det kan derfor være højere end antallet af enkelte hændelser. Programmet henter én dag ad gangen, så stikprøven dækker så kort tid som muligt.
 
 **Snusere** · Forespørgsler efter filer, der ikke findes: scannere, der leder efter kendte huller.
 

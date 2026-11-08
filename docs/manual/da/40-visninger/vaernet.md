@@ -92,4 +92,5 @@ Tastatur: kortet er ét Tab-stop; piletasterne flytter mellem landene og ringene
 - Edge er Cloudflares netværk af datacentre. Dit site svarer fra dem alle, så et angreb stoppes i det datacenter, der ligger nærmest angriberen, længe før det når din server. Det gælder kun DNS-poster med orange sky. Kender en angriber serverens egen IP-adresse, kan den gå uden om edge, medmindre serveren kun tager imod trafik fra Cloudflare.
 - Labyrinten stopper ikke robotten; den viser falske sider. Cloudflare regner den ikke for en blokering, og det gør programmet heller ikke.
 - Stier står uden forespørgselsdel, og lange koder er skjult. IP-adresser findes ikke i programmet.
-- Tallene kommer fra Cloudflares GraphQL Analytics API og kan være samplet over lange perioder.
+- Tallene kommer fra Cloudflares GraphQL Analytics API. Antallet af afviste er Cloudflares estimat ud fra en stikprøve, så det kan være højere end antallet af enkelte hændelser. Dage hentet før 8. november 2026, som Cloudflare ikke længere har, er talte rækker; går perioden over grænsen, siger en note det.
+- Står en dag på Cloudflares grænse på 10.000 hændelser, mangler dagens ældste timer, og siden siger "Der er mindst …".

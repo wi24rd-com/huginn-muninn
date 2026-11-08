@@ -3779,7 +3779,7 @@ const DOMV = (fravalgte = [], x) => {
       mal(proeve, 'kontrolprøve', kontrol);
       document.body.textContent = 'MAALT:' + JSON.stringify({ sider, ud, baand, kontrol: kontrol.map(k => k.t) }) + ':SLUT';
     })();`;
-    const vaern = vaernUd(), MED = SIDER.filter(s => !s.ekstra), OPS = SIDER.find(s => s.id === 'opsaetning'), FRA = SIDER.find(s => s.id === 'alle-fra');
+    const vaern = vaernUd(), MED = SIDER.filter(s => !s.ekstra), OPS = SIDER.find(s => s.id === 'opsaetning'), FRA = SIDER.find(s => s.id === 'alle-fra'), EST = SIDER.find(s => s.id === 'angreb-estimat');
     const koer = (navn, tema, ekstra, sider, bredde = 1400, tekst = 'normal') => {
       const stub = `<script>localStorage.setItem('hm-sprog','da');localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';window.__HM_MAAL__=${JSON.stringify(sider)};const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':c;return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
       const html = ui('index.html').replace('<script src="assets/tema.js"></script>', UR_STUB + stub + '<script src="assets/tema.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
@@ -3798,7 +3798,7 @@ const DOMV = (fravalgte = [], x) => {
       /* DMARC-afsnittet og den åbne kolonnemenu. */
       const TEK5 = { domaener: [{ zone: 'z1', navn: 'eksempel.wi24rd.com', valg: { react: ['bruger', false] }, antal: { react: 4 } }], katalog: [{ tek: 'react', navn: 'React', gruppe: 'ramme', angreb: 4, set: true, vis: true, ny: false }] };
       const FIX5 = koer('fix5', tema, { email_oversigt: { mails: 1200, fejlet: 41, afsendere: 2, hentede_dage: 30, fejl: null, liste: [{ afsender: 'Ond Afsender', land: 'RU', mails: 40, fejlet: 40 }, { afsender: '', land: '', mails: 9, fejlet: 1 }] }, teknologi_side: TEK5 }, [{ navn: 'Angreb med DMARC', hash: 'vaernet?' + dom }, { navn: '#teknologi med åben kolonnemenu', hash: 'teknologi', aabn: ['.tek-kol-knap'] }]);
-      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [{ ...OPS, aabn: ['.hm-hjaelp summary'] }]), koer('velkomst', tema, FRA.ekstra, [FRA])];
+      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [{ ...OPS, aabn: ['.hm-hjaelp summary'] }]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST])];
       /* Gradienten er lysest længst mod højre, så båndet måles også i det smalleste vindue og i standardvinduet. */
       const smalle = [900, 1200].map(b => koer('baand' + b, tema, {}, [{ navn: `båndet ved ${b} px`, hash: 'vaernet?samlet=1' }], b));
       const sider = r.flatMap(x => (x ? x.sider : [])), ud = [...r, ...smalle].flatMap(x => (x ? x.ud : [])), klasser = new Set(sider.flatMap(s => s.klasser));
@@ -4365,6 +4365,20 @@ const DOMV = (fravalgte = [], x) => {
   tjek('V-TOKEN.1: "Hvad gør jeg?" står ved begge, og guiden har afsnittene (da, en)', vo.d.querySelectorAll('#overblik-raekker .hv-guide').length === 2 && ['sti200', 'cf_fund'].every(id => vo.w.hmSprog.bog(id).ja.length >= 3 && voEn.w.hmSprog.bog(id).alle.length > 20) && vo.w.hmSprog.T.gSti200H && voEn.w.hmSprog.T.gCfFundH);
   tjek('V-TOKEN.1: token-trinnet nævner den valgfri rettighed (da, en)', [vo.w.hmSprog.T, voEn.w.hmSprog.T].every(x => x.tokenTrin.some(t => t.includes('Security Center Insights › Read') && /Valgfrit|Optional/.test(t))), vo.w.hmSprog.T.tokenTrin.join(' | '));
   tjek('V-TOKEN.1: de tre nye kommandoer står i capabilities, build.rs og handleren', ['sti200_oversigt', 'sikkerhedsfund_oversigt', 'aabn_sikkerhedsfund'].every(c => cap.permissions.includes('allow-' + c.replace(/_/g, '-')) && bygg.includes(`"${c}",`) && lib5.includes(`            ${c},`)));
+
+  /* V-SAMPLE.1: afviste som Cloudflares estimat (sampleInterval), grænsen mod de talte rækker og "mindst N" ved loftet. */
+  const VS = x => DYK({ dyk: () => dykSvar(x) });
+  const vs1 = side('#dyk?' + dykQ({ periode: '30' }), VS({ vaegt_fra: '2026-10-10', loft: true })), vs2 = side('#dyk?' + dykQ({ periode: '30' }), VS({ vaegt_fra: '2026-10-10', loft: true }), 'en');
+  const vs3 = side('#dyk?' + dykQ({ periode: '30' }), VS({ vaegt_fra: null }));
+  await sov(150);
+  const vsN = x => x.d.querySelector('.vg-vaegt'), vsL = x => [...x.d.querySelectorAll('.vg-advarsel.vg-gul')].map(p => p.textContent).find(t => t.includes('10.000') || t.includes('10,000')) || '';
+  const vsF = x => [...x.d.querySelectorAll('#vagt .vg-note')].at(-1)?.textContent || '';
+  tjek('V-SAMPLE.1: note, når perioden krydser grænsen (da)', vsN(vs1)?.textContent === 'Før 10. oktober er tallene talte rækker, derefter Cloudflares estimat.', vsN(vs1)?.textContent);
+  tjek('V-SAMPLE.1: note, når perioden krydser grænsen (en)', vsN(vs2)?.textContent === 'Before 10 October the figures are counted rows, after that Cloudflare’s estimate.', vsN(vs2)?.textContent);
+  tjek('V-SAMPLE.1: ingen note uden grænse i perioden, og noten er ikke klikbar', !vsN(vs3) && !vsN(vs1).querySelector('button, a') && !vsN(vs1).closest('button, a'));
+  tjek('V-SAMPLE.1: loftet siger "mindst N" (da, en)', vsL(vs1).endsWith('Der er mindst 198.') && vsL(vs2).endsWith('There are at least 198.'), vsL(vs1) + ' | ' + vsL(vs2));
+  tjek('V-SAMPLE.1: fodnoten siger Cloudflares estimat ud fra en stikprøve (da, en)', vsF(vs1).endsWith('Tallene er Cloudflares estimat ud fra en stikprøve.') && vsF(vs2).endsWith('The figures are Cloudflare’s estimate from a sample.') && !/kan sample|may sample/.test(vsF(vs1) + vsF(vs2)), vsF(vs1) + ' | ' + vsF(vs2));
+  tjek('V-SAMPLE.1: "Det, der ikke gemmes" siger estimat, ikke "omtrentlige" (da, en)', vs1.w.hmSprog.T.m4.includes('Cloudflares estimat ud fra en stikprøve') && vs2.w.hmSprog.T.m4.includes('Cloudflare’s estimate from a sample') && !/omtrentlige|approximate/.test(vs1.w.hmSprog.T.m4 + vs2.w.hmSprog.T.m4), vs1.w.hmSprog.T.m4);
 
   /* Det faste ur. */
   urSkift = 400 * 864e5;

@@ -423,9 +423,10 @@ pub fn forsoeg_kategori(sti: &str) -> Option<&'static str> {
 }
 
 // ── GraphQL: ét UTC-døgn pr. forespørgsel, alle værdier som variabler ───────────────────────────────────────────────
-/// Samme aliaser, grænser, filtre og felter som W `doegnForespoergsel` (vagt.js:121-134); kun zone og tider er variabler.
+/// Samme aliaser, grænser, filtre og felter som W `doegnForespoergsel` (vagt.js:121-134), plus `sampleInterval` på `fw` (V-SAMPLE.1); kun zone og tider er variabler.
+/// HAM tæller Cloudflares estimat (summen af `sampleInterval`); W tæller rækker. Tallene afviger derfor på travle domæner.
 pub const DOEGN_QUERY: &str = r#"query Vaernet($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
-    fw: firewallEventsAdaptive(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[datetime_DESC]) { action source description clientCountryName clientRequestPath clientRequestHTTPMethodName clientASNDescription edgeColoName datetime }
+    fw: firewallEventsAdaptive(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[datetime_DESC]) { action source description clientCountryName clientRequestPath clientRequestHTTPMethodName clientASNDescription edgeColoName datetime sampleInterval }
     alle: httpRequestsAdaptiveGroups(limit:1, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[count_DESC]) { count dimensions { date } }
     probes: httpRequestsAdaptiveGroups(limit:400, filter:{datetime_geq:$since, datetime_lt:$until, edgeResponseStatus:404}, orderBy:[count_DESC]) { count dimensions { clientRequestPath } }
     bots: httpRequestsAdaptiveGroups(limit:1500, filter:{datetime_geq:$since, datetime_lt:$until, verifiedBotCategory_neq:""}, orderBy:[count_DESC]) { count dimensions { verifiedBotCategory userAgent clientRequestPath edgeResponseStatus } }
@@ -453,6 +454,12 @@ pub(crate) fn tom_ved_null<'de, D: Deserializer<'de>, T: Deserialize<'de> + Defa
     Ok(Option::<T>::deserialize(d)?.unwrap_or_default())
 }
 
+/// `sampleInterval` som heltal. Et decimaltal rundes; alt andet (tekst, null) er 0, så ét mærkeligt felt aldrig koster hele døgnets svar.
+fn mild_vaegt<'de, D: Deserializer<'de>>(d: D) -> Result<i64, D::Error> {
+    let v = Value::deserialize(d)?;
+    Ok(v.as_i64().or_else(|| v.as_f64().map(|f| f.round() as i64)).unwrap_or(0))
+}
+
 #[derive(Deserialize, Default, Debug, Clone)]
 pub struct Fw {
     #[serde(default, deserialize_with = "tom_ved_null")]
@@ -473,6 +480,16 @@ pub struct Fw {
     pub colo: String,
     #[serde(default, deserialize_with = "tom_ved_null")]
     pub datetime: String,
+    /// Cloudflares `sampleInterval`: hændelsen står for så mange (1 = talt én gang). Kun i `DOEGN_QUERY`; mangler det, er det 0.
+    #[serde(default, deserialize_with = "mild_vaegt", rename = "sampleInterval")]
+    pub vaegt: i64,
+}
+
+impl Fw {
+    /// Hvor mange hændelser denne ene række står for: `sampleInterval`, eller 1, hvis feltet mangler eller er 0.
+    pub fn antal(&self) -> i64 {
+        self.vaegt.max(1)
+    }
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -568,7 +585,8 @@ impl Taeller {
 }
 
 // ── Døgnrækker ─────────────────────────────────────────────────────────────────────────────────────────────────────
-/// Et døgns svar → rækker (art, nøgle, n) — W `doegnRaekker`. Ren funktion.
+/// Et døgns svar → rækker (art, nøgle, n) — W `doegnRaekker`, men art `fw` tæller Cloudflares estimat (`Fw::antal`, summen af
+/// `sampleInterval`) og ikke rækker. Uden `sampleInterval` i svaret er tallene W's. Ren funktion.
 pub fn doegn_raekker(z: &Doegn) -> Vec<(String, String, i64)> {
     let mut rk = Taeller::default();
     let mut add = |art: &str, noegle: &str, n: i64| rk.inc(&format!("{art}\u{1}{noegle}"), n);
@@ -586,7 +604,7 @@ pub fn doegn_raekker(z: &Doegn) -> Vec<(String, String, i64)> {
             &e.action,
         ]
         .join("\t");
-        add("fw", &noegle, 1);
+        add("fw", &noegle, e.antal());
     }
     add("alle", "", z.alle.first().map_or(0, |g| g.count));
     for g in &z.probes {
@@ -683,6 +701,39 @@ pub fn seneste_raekker(z: &Doegn) -> Vec<(String, String, i64)> {
         );
     }
     t.orden.into_iter().map(|(k, n)| ("seneste".to_string(), k, n)).collect()
+}
+
+/// Art med antallet af hændelser (rækker) i døgnets `fw`-svar, nøgle "". Kun til 10.000-loftet (`crate::dyk::LOFT`): art `fw` er
+/// Cloudflares estimat og kan passere 10.000, uden at svaret er afkortet. Døgn hentet før V-SAMPLE.1 har den ikke.
+pub const FW_HAENDELSER: &str = "fwn";
+
+/// Rækken med antal hændelser i døgnets svar (art `FW_HAENDELSER`).
+pub fn haendelser_raekke(z: &Doegn) -> (String, String, i64) {
+    (FW_HAENDELSER.to_string(), String::new(), z.fw.len() as i64)
+}
+
+/// "Overskriv aldrig fulde tal med reducerede": står det nye svar på loftet (`crate::dyk::LOFT` hændelser, de ældste timer
+/// mangler), og er dets `fw`-sum lavere end den gemte, beholdes de gemte `fw`-rækker. Returnerer, om de blev beholdt. Ren funktion.
+pub fn behold_fuldt_fw(raekker: &mut Vec<(String, String, i64)>, gemt_fw: &[(String, i64)], haendelser: usize) -> bool {
+    if (haendelser as i64) < crate::dyk::LOFT {
+        return false;
+    }
+    let ny: i64 = raekker.iter().filter(|r| r.0 == "fw").map(|r| r.2).sum();
+    let gammel: i64 = gemt_fw.iter().map(|r| r.1).sum();
+    if gammel <= ny {
+        return false;
+    }
+    raekker.retain(|r| r.0 != "fw");
+    raekker.extend(gemt_fw.iter().map(|(k, n)| ("fw".to_string(), k.clone(), *n)));
+    true
+}
+
+/// V-SAMPLE.1, én gang: de færdige døgn i hentevinduet (fra `HENT_DAGE` dage siden til i forgårs) hentes igen i køens normale
+/// tempo, så snit og median ikke sammenligner Cloudflares estimat med rækketal. I dag og i går hentes alligevel. Ældre døgn kan
+/// Cloudflare ikke levere igen; de beholder rækketallene, og den første dag med estimater gemmes (`store::FW_VAEGT`).
+/// Returnerer, om det skete nu.
+pub fn fw_vaegt_en_gang(lager: &mut Store, nu: i64) -> Result<bool, Fejl> {
+    lager.fw_vaegt_en_gang(&dag_noegle(nu - HENT_DAGE * DOEGN_MS), &dag_noegle(nu - DOEGN_MS))
 }
 
 // ── Oversigten (samme JSON-form som `data` i W's /api/maskine/vaern) ───────────────────────────────────────────────
@@ -1442,7 +1493,13 @@ where
                 raekker.extend(seneste_raekker(&z));
                 raekker.extend(angreb_raekker(&z));
                 raekker.extend(crate::sti200::raekker(&z.sti200, &z.forside));
-                laas(lager)?.gem_doegn(zone, &dag, &raekker, &tid)?;
+                raekker.push(haendelser_raekke(&z));
+                let mut l = laas(lager)?;
+                if z.fw.len() as i64 >= crate::dyk::LOFT {
+                    let gemt = l.doegn_art(zone, &dag, "fw")?;
+                    behold_fuldt_fw(&mut raekker, &gemt, z.fw.len());
+                }
+                l.gem_doegn(zone, &dag, &raekker, &tid)?;
                 antal += 1;
                 paa_doegn(&dag, Doegnudfald::Gemt);
             }

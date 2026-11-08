@@ -107,8 +107,14 @@ DELETE FROM hentet_laek;
 const SKEMA_16: &str = "
 CREATE TABLE IF NOT EXISTS sikkerhedsfund (zone TEXT NOT NULL, id TEXT NOT NULL, alvor TEXT NOT NULL, klasse TEXT NOT NULL, type TEXT NOT NULL, siden TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, id));
 ";
-/// Arterne fra hovedhentningen (`vaern::DOEGN_QUERY` og `sti200::hoved_query`): dem, `gem_doegn` erstatter.
-pub const DOEGN_ARTER: &[&str] = &["alle", "angreb", "bot", "falsk", "fw", "probe", "seneste", "sti200", "sti200b"];
+/// Arterne fra hovedhentningen (`vaern::DOEGN_QUERY` og `sti200::hoved_query`): dem, `gem_doegn` erstatter. `fwn` er antal hændelser
+/// i `fw`-svaret (`vaern::FW_HAENDELSER`, kun til loftet).
+pub const DOEGN_ARTER: &[&str] = &[
+    "alle", "angreb", "bot", "falsk", "fw", "fwn", "probe", "seneste", "sti200", "sti200b",
+];
+/// `indstillinger`: sat, når de færdige døgn i hentevinduet én gang er sat til at blive hentet igen med Cloudflares estimat
+/// (`vaern::fw_vaegt_en_gang`). Værdien er den første dag, hvis `fw`-tal er estimater; ældre døgn er talte rækker.
+pub const FW_VAEGT: &str = "fw_vaegt_v1";
 /// Arterne fra `adgang::ADGANG_QUERY`: dem, `gem_ekstra` erstatter.
 pub const EKSTRA_ARTER: &[&str] = &["post", "status", "land", "login", "stoppet", "asn"];
 /// Foran zone-id'et i `indstillinger`: Cloudflare svarede ikke på de ekstra tal for domænet (værdien er den rensede fejl).
@@ -305,6 +311,38 @@ impl Store {
             )
             .map(|_| ())
             .map_err(lagerfejl)
+    }
+
+    /// Én arts rækker (nøgle, n) for ét døgn, i den rækkefølge de blev gemt.
+    pub fn doegn_art(&self, zone: &str, dag: &str, art: &str) -> Result<Vec<(String, i64)>, Fejl> {
+        let mut st = self
+            .db
+            .prepare("SELECT noegle, n FROM vagt_dag WHERE zone = ?1 AND dag = ?2 AND art = ?3 ORDER BY rowid")
+            .map_err(lagerfejl)?;
+        let rk = st.query_map([zone, dag, art], |r| Ok((r.get(0)?, r.get(1)?))).map_err(lagerfejl)?;
+        rk.collect::<Result<_, _>>().map_err(lagerfejl)
+    }
+
+    /// Én gang (`FW_VAEGT`): døgnene fra `fra` til før `i_gaar` markeres som hentet, før døgnet var slut, så hovedhentningen
+    /// henter dem igen i sit normale tempo. Kun `hentet`: de ekstra tal, trafikken og alt andet røres ikke, og ingen tal slettes.
+    /// `fra` gemmes som den første dag med estimater. Én transaktion. Returnerer, om det skete nu.
+    pub fn fw_vaegt_en_gang(&mut self, fra: &str, i_gaar: &str) -> Result<bool, Fejl> {
+        if self.indstilling(FW_VAEGT)?.is_some() {
+            return Ok(false);
+        }
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        tx.execute(
+            "UPDATE hentet SET hentet_utc = dag || 'T00:00:00.000Z' WHERE dag >= ?1 AND dag < ?2",
+            [fra, i_gaar],
+        )
+        .map_err(lagerfejl)?;
+        tx.execute(
+            "INSERT OR REPLACE INTO indstillinger (noegle, vaerdi) VALUES (?1, ?2)",
+            [FW_VAEGT, fra],
+        )
+        .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)?;
+        Ok(true)
     }
 
     /// Erstatter ét døgns enkelthændelser og noterer det i `hentet_angreb`. Én transaktion.

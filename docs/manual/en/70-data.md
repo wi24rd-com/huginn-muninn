@@ -42,6 +42,7 @@ That is why **Start at login** is on by default. With it, the program also start
 ## Fetching
 
 - The program asks for today and yesterday, one day at a time, so Cloudflare does not have to sample a long period. Older days are only fetched if they are missing.
+- The number refused is Cloudflare's estimate: each event in the sample states how many it stands for, and the program adds that up. The first time the program starts after the update of 8 November 2026, it fetches the last 30 days again at the normal pace, so the figures can be compared. Older days cannot be delivered again by Cloudflare; they keep the counted rows.
 - At most two calls at a time and at least 1.1 seconds apart, for all domains together. If Cloudflare asks it to wait, the program pauses and says "Trying again at …" in the status pill.
 - The figures for Login and "stopped at the Edge" per robot are fetched afterwards at a slow pace and only for finished days.
 - **Quota at Cloudflare** under Settings → Data shows how many calls Cloudflare allows, and how many the program used in the last round.

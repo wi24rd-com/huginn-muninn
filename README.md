@@ -25,6 +25,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - **Reset history** under **Settings → Data** deletes all figures on your computer and fetches them again. Cloudflare only has security events for the last month and traffic figures for the last year — anything older is gone for good; the dialog tells you which dates, and how many days are lost.
 
 ## Attacks
+- **Refused as Cloudflare's estimate:** the number refused is the sum of Cloudflare's sample weight, not the number of rows, so it can be higher than on wi24rd.com.
 - **One page per domain:** everything about the attacks is on one page, and the heading says, for example, "Attacks · wi24rd.com". The page shows 7 whole days by default. Choose **30 days**, **From** and **To** in the date picker, or **Reset** for all history.
 - **Filters:** clicking a figure, a country, a rule or a path presets the period and the filter on the same page. The filters are chips under the heading: × removes one, and **Reset** removes them all. **Show** switches between **All**, **Attacks only** and **Routine only**. Back and forward go one step at a time.
 - **All sections follow the period and the filters.** A section that cannot be filtered that way is left out, and a line says which. With a filter the saved figures are shown, and nothing is fetched from Cloudflare.

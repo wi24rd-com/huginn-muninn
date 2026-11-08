@@ -52,7 +52,7 @@
 
 **Routine** · Cloudflare's automatic bot checks: the labyrinth, Bot Fight Mode and the browser check. Counts as refused, but never as an attack.
 
-**Sampling** · Over long periods Cloudflare does not count everything, but works it out from a sample. The figures are therefore approximate. The program fetches one day at a time to reduce it.
+**Sampling** · Cloudflare does not keep every event but a sample, where each event states how many it stands for. The program adds that up, so the number refused is Cloudflare's estimate, not a number of rows. It can therefore be higher than the number of single events. The program fetches one day at a time, so the sample covers as short a time as possible.
 
 **Snoopers** · Requests for files that do not exist: scanners looking for known holes.
 

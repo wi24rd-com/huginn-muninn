@@ -547,7 +547,9 @@
     if (har('dag') && d.sum) skjult.push(L.soejlerNavn);
     /* Samme rækkefølge som altid: datovælger → Vis → trafik og hoved → fliser → fordeling → kort → lister → søjler → regler → resten, og "De seneste" sidst. */
     const dele = [bjaelke, ...advarsel, ...kunIDag(d, liste), ...trafikLinjer(d), vaelger, ...(har('regel') || har('forsoeg') || erRobot() ? [] : [slagsVaelger(d)]), ...kunTrafik(d), ...(trafik ? [trafikAfsnit(trafik)] : []), ...hoved(d), fliser(d), ...(kunTrafik(d).length ? [] : V.daekning(d.periode)), ...fordeling(d), ...(vurd ? vurdering(d) : [])];
-    if (d.loft) dele.push(el('p', { className: 'vg-advarsel vg-gul', textContent: T.dykLoft }));
+    if (d.loft) dele.push(el('p', { className: 'vg-advarsel vg-gul vg-loft', textContent: fmt(T.dykLoft, { n: tal(d.sum) }) }));
+    /* V-SAMPLE.1: ældre døgn er talte rækker, nyere Cloudflares estimat. Kun når perioden krydser grænsen. */
+    if (d.vaegt_fra) dele.push(el('p', { className: 'vg-note vg-vaegt', textContent: fmt(T.dykVaegtGraense, { d: V.datoLang(d.vaegt_fra) }) }));
     if (d.sum) dele.push(...kortBlok(d), ...lister(d), ...soejleBlok(d), ...reglerBlok(d, liste));
     else dele.push(el('p', { className: 'vg-status dyk-tom', textContent: T.dykTomt }), ...reglerBlok(d, liste));
     if (et && !filter) dele.push(...tekBlok(g)); else if (et) skjult.push(T.tekH);

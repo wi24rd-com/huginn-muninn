@@ -64,6 +64,7 @@ fn haendelse(source: &str, n: usize) -> Fw {
         asn: "AS".into(),
         colo: "CPH".into(),
         datetime: "2026-11-03T05:17:00Z".into(),
+        vaegt: 0,
     }
 }
 
@@ -99,11 +100,13 @@ fn angreb_raekker_200_seneste_uden_rutine() {
     assert_eq!(angreb_raekker(&sammen)[0].2, 2, "samme nøgle lægges sammen");
 }
 
-/// Ingen IP-adresse og ingen brugeragent i forespørgslen, og den er `DOEGN_QUERY`s firewall-del ordret.
+/// Ingen IP-adresse og ingen brugeragent i forespørgslen, og den er `DOEGN_QUERY`s firewall-del ordret, bortset fra `sampleInterval`:
+/// enkelthændelserne (art `angreb`) tæller hændelser, ikke vægt (V-SAMPLE.1).
 #[test]
 fn angreb_query_er_firewall_delen_uden_ip_og_brugeragent() {
     let fw = ANGREB_QUERY.lines().nth(1).unwrap();
-    assert!(DOEGN_QUERY.contains(fw));
+    assert!(DOEGN_QUERY.replacen(" datetime sampleInterval }", " datetime }", 1).contains(fw));
+    assert!(!ANGREB_QUERY.contains("sampleInterval"), "angreb tæller hændelser");
     for felt in ["clientIP", "userAgent", "clientIp"] {
         assert!(!ANGREB_QUERY.contains(felt), "{felt}");
     }
@@ -351,11 +354,19 @@ fn paritet_forespoergslen_har_samme_felter_som_w() {
         .replace("\"abc\"", "$zoneTag")
         .replace("\"2026-10-28T00:00:00Z\"", "$since")
         .replace("\"2026-10-29T00:00:00Z\"", "$until");
+    // V-SAMPLE.1: W's forespørgsel + feltet `sampleInterval` på `fw` (HAM tæller Cloudflares estimat, W tæller rækker). Alt andet er ordret.
+    let gammel = "clientASNDescriptionedgeColoNamedatetime}";
+    assert_eq!(w.matches(gammel).count(), 1, "W har én fw-node");
+    let w = w.replacen(gammel, "clientASNDescriptionedgeColoNamedatetimesampleInterval}", 1);
     let mig = ingen_mellemrum(DOEGN_QUERY);
     let mig = mig
         .strip_prefix("queryVaernet($zoneTag:string!,$since:Time!,$until:Time!)")
         .expect("hoved med tre variabler");
-    assert_eq!(mig, w, "samme aliaser, grænser, filtre og felter; kun zone og tider er variabler");
+    assert_eq!(
+        mig, w,
+        "samme aliaser, grænser, filtre og felter plus sampleInterval; kun zone og tider er variabler"
+    );
+    assert_eq!(DOEGN_QUERY.matches("sampleInterval").count(), 1, "kun på fw");
 }
 
 #[test]
@@ -678,4 +689,197 @@ fn testenes_ur_er_fast() {
     let vaerdi = std::env::var("HM_NU").unwrap_or_else(|_| TEST_NU.to_string());
     assert_eq!(ur_ms(), parse_iso(&vaerdi).unwrap());
     assert_eq!(ur_ms(), ur_ms(), "uret går ikke i testene");
+}
+
+// ════ D. V-SAMPLE.1: Cloudflares estimat (`sampleInterval`) i stedet for rækker ══════════════════════════════════════
+
+/// Fordelingen målt på domæne-C 5. nov. (INVESTIGATION-V-TOKEN.1 §A1): `sampleInterval` → antal rækker.
+const FORDELING_C: [(i64, usize); 7] = [(1, 1094), (2, 612), (4, 91), (6, 12), (3, 16), (10, 2), (20, 2)];
+
+/// Et døgns svar som JSON, med `sampleInterval` fra fordelingen. Tre regler og to lande, så nøglerne er flere end én.
+fn vaegtet_doegn(fordeling: &[(i64, usize)]) -> Doegn {
+    let mut fw = Vec::new();
+    for &(vaegt, antal) in fordeling {
+        for i in 0..antal {
+            fw.push(json!({ "action": "block", "source": "firewallManaged", "description": format!("Regel {}", i % 3), "clientCountryName": if i % 2 == 0 { "US" } else { "NL" }, "clientRequestPath": "/", "clientRequestHTTPMethodName": "GET", "clientASNDescription": "AS", "edgeColoName": "CPH", "datetime": "2026-11-05T12:00:00Z", "sampleInterval": vaegt }));
+        }
+    }
+    doegn(json!({ "fw": fw }))
+}
+
+fn fw_sum(rk: &[(String, String, i64)]) -> i64 {
+    rk.iter().filter(|r| r.0 == "fw").map(|r| r.2).sum()
+}
+
+#[test]
+fn fordelingen_giver_2862_af_1829_raekker() {
+    let z = vaegtet_doegn(&FORDELING_C);
+    assert_eq!(z.fw.len(), 1829, "rækker");
+    let rk = doegn_raekker(&z);
+    assert_eq!(fw_sum(&rk), 2862, "Cloudflares estimat (summen af sampleInterval)");
+    assert_eq!(
+        haendelser_raekke(&z),
+        (FW_HAENDELSER.to_string(), String::new(), 1829),
+        "antal hændelser gemmes for sig"
+    );
+    let v = bygg_vaern(&som_rows("2026-10-29", &rk), NU, vec![]);
+    assert_eq!(v.perioder.d1, 2862, "Overblik/Angreb bygger på art fw og får estimatet");
+}
+
+#[test]
+fn manglende_0_null_og_maerkelige_vaegte_taeller_1() {
+    let haendelse = |si: Option<Value>| {
+        let mut e = json!({ "action": "block", "source": "firewallManaged", "description": "R", "clientCountryName": "US", "clientRequestPath": "/", "datetime": "2026-11-05T12:00:00Z" });
+        if let Some(v) = si {
+            e["sampleInterval"] = v;
+        }
+        e
+    };
+    let tal = |si: Option<Value>| fw_sum(&doegn_raekker(&doegn(json!({ "fw": [haendelse(si)] }))));
+    assert_eq!(tal(None), 1, "uden feltet (W's forespørgsel)");
+    assert_eq!(tal(Some(json!(0))), 1, "0");
+    assert_eq!(tal(Some(Value::Null)), 1, "null");
+    assert_eq!(tal(Some(json!(-3))), 1, "negativ");
+    assert_eq!(tal(Some(json!("x"))), 1, "tekst vælter ikke døgnet");
+    assert_eq!(tal(Some(json!(2.0))), 2, "decimaltal rundes");
+    assert_eq!(tal(Some(json!(7))), 7);
+}
+
+#[test]
+fn seneste_og_angreb_taeller_haendelser_ikke_vaegt() {
+    let z = vaegtet_doegn(&[(10, 300)]);
+    assert_eq!(fw_sum(&doegn_raekker(&z)), 3000);
+    let sum = |rk: Vec<(String, String, i64)>| rk.iter().map(|r| r.2).sum::<i64>();
+    assert_eq!(sum(seneste_raekker(&z)), 12, "de 12 seneste hændelser, ikke 120");
+    assert_eq!(sum(angreb_raekker(&z)), ANGREB_MAKS as i64, "de 200 seneste angreb, ikke 2000");
+}
+
+/// W-paritet er kun opgivet for selve tællingen: med `sampleInterval` = 3 på hver hændelse er nøgler, rækkefølge og alle andre
+/// arter som `paritet.json`, og kun `fw`-tallene er 3 gange W's.
+#[test]
+fn paritet_kun_taellingen_afviger() {
+    for (dag, z) in ORAKEL["doegn"].as_object().unwrap() {
+        let mut z = z.clone();
+        for e in z["fw"].as_array_mut().into_iter().flatten() {
+            e["sampleInterval"] = json!(3);
+        }
+        let rk = doegn_raekker(&doegn(z));
+        let w: Vec<(String, String, i64)> = serde_json::from_value(ORAKEL["raekker"][dag].clone()).unwrap();
+        assert_eq!(rk.len(), w.len(), "{dag}");
+        for (mig, w) in rk.iter().zip(&w) {
+            assert_eq!((&mig.0, &mig.1), (&w.0, &w.1), "samme rensning, kategorier og robotter ({dag})");
+            assert_eq!(mig.2, if w.0 == "fw" { 3 * w.2 } else { w.2 }, "{dag}: {}", w.1);
+        }
+    }
+}
+
+#[test]
+fn afkortet_svar_erstatter_aldrig_et_fuldt_doegn() {
+    let gemt = vec![("a".to_string(), 7000), ("b".to_string(), 5000)];
+    let nyt = |n: i64| vec![("fw".to_string(), "a".to_string(), n), ("alle".to_string(), String::new(), 1)];
+    let mut rk = nyt(10_000);
+    assert!(behold_fuldt_fw(&mut rk, &gemt, 10_000), "afkortet og lavere: det gemte bliver");
+    assert_eq!(fw_sum(&rk), 12_000);
+    assert!(rk.contains(&("alle".to_string(), String::new(), 1)), "kun fw røres");
+    let mut rk = nyt(500);
+    assert!(
+        !behold_fuldt_fw(&mut rk, &gemt, 500),
+        "ikke afkortet: det nye svar er rigtigt, også når det er lavere"
+    );
+    assert_eq!(fw_sum(&rk), 500);
+    let mut rk = nyt(13_000);
+    assert!(!behold_fuldt_fw(&mut rk, &gemt, 10_000), "afkortet, men højere: det nye bliver");
+    assert_eq!(fw_sum(&rk), 13_000);
+}
+
+#[tokio::test]
+async fn opdater_beholder_det_fulde_doegn_ved_afkortet_svar() {
+    let lager = Mutex::new(Store::i_hukommelse().unwrap());
+    let dag = dag_noegle(NU - DOEGN_MS); // i går: hentes igen ved hver runde
+    lager
+        .lock()
+        .unwrap()
+        .gem_doegn(
+            "zone",
+            &dag,
+            &[("fw".into(), "gammel".into(), 12_000), ("fwn".into(), String::new(), 9_000)],
+            &format!("{dag}T12:00:00.000Z"), // hentet, mens døgnet var i gang: hentes igen
+        )
+        .unwrap();
+    // Kun testdøgnet får det store svar; de andre døgn i vinduet er tomme, så testen er hurtig.
+    let svar = |n: usize, vaegt: i64| {
+        let (z, maal) = (vaegtet_doegn(&[(vaegt, n)]), dag.clone());
+        move |d: String| {
+            let z = if d == maal { z.clone() } else { Doegn::default() };
+            async move { Ok(z) }
+        }
+    };
+    let gemt = |l: &Mutex<Store>| {
+        let s = l.lock().unwrap();
+        (s.doegn_art("zone", &dag, "fw").unwrap(), s.doegn_art("zone", &dag, "fwn").unwrap())
+    };
+    opdater(&lager, "zone", NU, &svar(10_000, 1), |_, _| {}).await.unwrap();
+    let (fw, fwn) = gemt(&lager);
+    assert_eq!(
+        fw,
+        [("gammel".to_string(), 12_000)],
+        "10.000 afkortede hændelser erstatter ikke 12.000"
+    );
+    assert_eq!(fwn, [(String::new(), 10_000)], "døgnet er markeret som afkortet");
+    opdater(&lager, "zone", NU, &svar(10_000, 2), |_, _| {}).await.unwrap();
+    assert_eq!(
+        gemt(&lager).0.iter().map(|x| x.1).sum::<i64>(),
+        20_000,
+        "afkortet, men højere: det nye bliver"
+    );
+    opdater(&lager, "zone", NU, &svar(100, 1), |_, _| {}).await.unwrap();
+    assert_eq!(
+        gemt(&lager).0.iter().map(|x| x.1).sum::<i64>(),
+        100,
+        "et fuldt svar erstatter altid"
+    );
+}
+
+#[test]
+fn genhentning_af_30_doegn_sker_en_gang() {
+    let mut s = Store::i_hukommelse().unwrap();
+    let dag = |i: i64| dag_noegle(NU - i * DOEGN_MS);
+    for i in 0..=40 {
+        s.gem_doegn("z1", &dag(i), &[("fw".into(), "k".into(), 1)], &iso(NU - 3_600_000))
+            .unwrap();
+    }
+    s.gem_ekstra("z1", &dag(5), &[("stoppet".into(), "k".into(), 1)], &iso(NU)).unwrap();
+    let foer = s.hentet("z1").unwrap();
+    assert!(foer.iter().all(|(d, h)| er_faerdig(d, h) || *d >= dag(1)));
+
+    assert!(fw_vaegt_en_gang(&mut s, NU).unwrap(), "første start efter opdateringen");
+    let efter = s.hentet("z1").unwrap();
+    assert_eq!(efter.len(), foer.len(), "ingen døgn forsvinder (ingen huller)");
+    assert_eq!(
+        s.indstilling(crate::store::FW_VAEGT).unwrap(),
+        Some(dag(HENT_DAGE)),
+        "første dag med estimater"
+    );
+    let igen = dage_at_hente(NU, &efter);
+    assert_eq!(igen.len(), 31, "i dag, i går og de 29 færdige døgn i vinduet");
+    assert_eq!((igen.first(), igen.last()), (Some(&dag(0)), Some(&dag(HENT_DAGE))));
+    for i in [0, 1, 31, 40] {
+        assert_eq!(efter[&dag(i)], foer[&dag(i)], "dag {i} er urørt");
+    }
+    assert_eq!(s.hentet_ekstra("z1").unwrap()[&dag(5)], iso(NU), "de ekstra tal røres ikke");
+    assert_eq!(
+        s.doegn_art("z1", &dag(5), "fw").unwrap(),
+        [("k".to_string(), 1)],
+        "ingen tal slettes"
+    );
+
+    // Køen henter døgnet igen; næste start rører det ikke.
+    s.gem_doegn("z1", &dag(5), &[("fw".into(), "k".into(), 2)], &iso(NU)).unwrap();
+    assert!(!fw_vaegt_en_gang(&mut s, NU + 3 * DOEGN_MS).unwrap(), "kun én gang");
+    assert_eq!(s.hentet("z1").unwrap()[&dag(5)], iso(NU));
+    assert_eq!(
+        s.indstilling(crate::store::FW_VAEGT).unwrap(),
+        Some(dag(HENT_DAGE)),
+        "grænsen flytter sig ikke"
+    );
 }

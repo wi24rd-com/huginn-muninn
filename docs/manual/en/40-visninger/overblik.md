@@ -60,5 +60,5 @@ Nothing without figures behind it looks clickable.
 ## Figures and terms
 
 - All days are whole days in **UTC**. "Yesterday" is therefore yesterday in UTC, not in your local time.
-- Figures over long periods may be **sampled** by Cloudflare and are therefore approximate.
+- The number refused is **Cloudflare's estimate** from a sample: Cloudflare does not keep every event, but states for each how many it stands for, and the program adds that up. See [Sampling](../99-ordliste.md).
 - **Fetch now** in the band (⌘R) fetches new figures at once. Otherwise the program fetches by itself in the background.

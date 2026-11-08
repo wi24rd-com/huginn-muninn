@@ -60,5 +60,5 @@ Intet uden tal bag sig ser klikbart ud.
 ## Tal og begreber
 
 - Alle dage er hele døgn i **UTC**. "I går" er derfor gårsdagen i UTC, ikke i dansk tid.
-- Tal over lange perioder kan være **samplet** af Cloudflare og er derfor omtrentlige.
+- Antallet af afviste er **Cloudflares estimat** ud fra en stikprøve: Cloudflare gemmer ikke hver hændelse, men oplyser for hver, hvor mange den står for, og programmet lægger det sammen. Se [Sampling](../99-ordliste.md).
 - **Hent nu** i båndet (⌘R) henter nye tal med det samme. Ellers henter programmet selv i baggrunden.
