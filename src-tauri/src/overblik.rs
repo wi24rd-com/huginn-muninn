@@ -1040,6 +1040,14 @@ pub fn med_tilstand(r: &mut Raekke1, fund: Vec<TilstandFund>) {
     r.tilstand = fund;
 }
 
+/// Cloudflares egne fund for domænet: Critical giver mindst Hold øje, aldrig Handl, og status bliver aldrig lavere end før. Ren funktion.
+pub fn med_fund(r: &mut Raekke1, fund: &[crate::sikkerhed::Fund]) {
+    r.cf_fund = crate::sikkerhed::hoeje(fund);
+    if r.cf_fund.is_some() && r.status == Status::Groen {
+        r.status = Status::Gul;
+    }
+}
+
 /// Et døgn med usædvanlig meget trafik: forespørgslerne, domænets median for de 30 døgn og det, Cloudflare stoppede (`er_afvist`).
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct TrafikDag {
@@ -1178,6 +1186,10 @@ pub struct Raekke1 {
     pub dmarc: Option<DmarcFund>,
     /// Pause, ikke aktiv, phishing eller udviklertilstand hos Cloudflare (`med_tilstand`).
     pub tilstand: Vec<TilstandFund>,
+    /// En følsom fil (fx `/.env`) svarede 200 i statusdøgnet, og svaret ligner filen, ikke sidens almindelige side (`sti200::fund`). Giver Handl.
+    pub sti200: Option<crate::sti200::Sti200Dag>,
+    /// Cloudflares egne fund med alvor Critical (Security Center Insights, `med_fund`). Giver mindst Hold øje, aldrig Handl.
+    pub cf_fund: Option<crate::sikkerhed::HoejeFund>,
     /// "Ligner rekognoscering" eller "Ligner målrettet". Ændrer aldrig status (J5).
     pub moenster: Option<Moenster>,
     /// "Ligner målrettet", der er afgjort: døgnet efter er hentet. Kun den giver besked.
@@ -1240,8 +1252,9 @@ pub fn raekke_med(zone: &Zone, hentet: &HashMap<String, String>, rows: &[Raekke]
         .flatten();
     let laek = aktuel.then(|| laek_i(rows, &dag(1))).flatten();
     let dmarc = aktuel.then(|| dmarc::fund(rows, &dag(1))).flatten();
-    // Hold øje, men aldrig mindre, end angrebene alene gav. Noget, der nåede serveren, er altid Handl.
-    let status = if vurdering.naaet.is_some() || laek.as_ref().is_some_and(|l| l.naaet > 0) {
+    let sti200 = aktuel.then(|| crate::sti200::fund(rows, &dag(1))).flatten();
+    // Hold øje, men aldrig mindre, end angrebene alene gav. Noget, der nåede serveren, og en følsom fil, der ligner filen, er altid Handl.
+    let status = if vurdering.naaet.is_some() || laek.as_ref().is_some_and(|l| l.naaet > 0) || sti200.is_some() {
         Status::Roed
     } else if angreb_status == Status::Groen
         && (server.is_some() || trafik.is_some() || vurdering.uventet.is_some() || laek.is_some() || dmarc.is_some())
@@ -1289,6 +1302,8 @@ pub fn raekke_med(zone: &Zone, hentet: &HashMap<String, String>, rows: &[Raekke]
         laek,
         dmarc,
         tilstand: vec![],
+        sti200,
+        cf_fund: None,
         moenster: None,
         afgjort: None,
         efterslaeb: vec![],
@@ -1651,6 +1666,72 @@ mod tests {
             None,
             "kun statusdøgnet"
         );
+    }
+
+    /// En følsom sti med antal og snit (bytes) i døgn `i` før `NU`.
+    fn sti200(i: i64, sti: &str, n: i64, snit: i64) -> [Raekke; 2] {
+        let r = |art: &str, n: i64| Raekke {
+            dag: d(i),
+            art: art.into(),
+            noegle: sti.into(),
+            n,
+        };
+        [r(crate::sti200::ART, n), r(crate::sti200::ART_BYTES, n * snit)]
+    }
+
+    /// V-TOKEN.1: en lille fil, der ikke ligner forsiden, giver Handl. Det, der ligner sidens almindelige side (målt på 3 af 13 domæner), ændrer intet.
+    #[test]
+    fn foelsom_fil_med_svar_200_giver_handl_kun_naar_den_ligner_filen() {
+        let med = |dele: Vec<[Raekke; 2]>| {
+            let rows: Vec<Raekke> = dele.into_iter().flatten().collect();
+            raekke(&zone("a.wi24rd.com"), &hentet_alt(), &rows, NU)
+        };
+        let r = med(vec![sti200(1, "/", 40, 30_000), sti200(1, "/.env", 2, 900)]);
+        assert_eq!(r.status, Status::Roed);
+        assert_eq!(
+            r.sti200.as_ref().map(|f| (f.n, f.stier.clone())),
+            Some((2, vec!["/.env".to_string()]))
+        );
+        let side = med(vec![sti200(1, "/", 40, 1_675), sti200(1, "/.env", 27, 1_647)]);
+        assert_eq!((side.status, side.sti200), (Status::Groen, None), "som forsiden");
+        let stor = med(vec![sti200(1, "/", 40, 10_015), sti200(1, "/.git/HEAD", 2, 20_778)]);
+        assert_eq!((stor.status, stor.sti200), (Status::Groen, None), "en side, ikke en fil");
+        let gammel = med(vec![sti200(1, "/", 40, 30_000), sti200(2, "/.env", 2, 900)]);
+        assert_eq!(gammel.sti200, None, "kun statusdøgnet");
+        // Mutation: uden reglen ville den troværdige træffer ikke give Handl.
+        assert_ne!(r.angreb_status, Status::Roed, "det er filen, ikke angrebene, der giver Handl");
+    }
+
+    #[test]
+    fn cloudflares_kritiske_fund_giver_hold_oeje_aldrig_handl_og_aldrig_lavere() {
+        let f = |alvor: &str| crate::sikkerhed::Fund {
+            zone: "a".into(),
+            id: "a-x".into(),
+            alvor: alvor.into(),
+            klasse: "always_use_https_not_enabled".into(),
+            type_: "insecure_configuration".into(),
+            siden: "2026-04-24".into(),
+        };
+        let groen = raekke(&zone("a.wi24rd.com"), &hentet_alt(), &[], NU);
+        assert_eq!(groen.status, Status::Groen);
+        let mut r = groen.clone();
+        med_fund(&mut r, &[f("Critical")]);
+        assert_eq!((r.status, r.cf_fund.as_ref().map(|c| c.n)), (Status::Gul, Some(1)));
+        let mut r = groen.clone();
+        med_fund(&mut r, &[f("Low"), f("Moderate")]);
+        assert_eq!((r.status, r.cf_fund), (Status::Groen, None), "Low og Moderate giver intet");
+        let mut r = Raekke1 {
+            status: Status::Roed,
+            ..groen.clone()
+        };
+        med_fund(&mut r, &[f("Critical")]);
+        assert_eq!(r.status, Status::Roed, "aldrig lavere end før");
+        let mut r = Raekke1 {
+            status: Status::Graa,
+            ..groen
+        };
+        med_fund(&mut r, &[f("Critical")]);
+        assert_eq!(r.status, Status::Graa, "uden tal er der intet at sige");
     }
 
     fn stand(status: &str, paused: bool, dev_sek: i64, phishing: bool) -> crate::cf::ZoneStand {
@@ -2640,6 +2721,8 @@ mod tests {
             laek: None,
             dmarc: None,
             tilstand: vec![],
+            sti200: None,
+            cf_fund: None,
             moenster: None,
             afgjort: None,
             efterslaeb: vec![],

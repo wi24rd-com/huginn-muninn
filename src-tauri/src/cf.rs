@@ -727,6 +727,61 @@ impl Klient {
         Ok(alle)
     }
 
+    /// Cloudflares egne sikkerhedsfund (`sikkerhed.rs`): kontoerne fra GET /zones, og for hver GET accounts/{id}/security-center/insights. Kontoens id bruges kun i
+    /// adressen. Følger tempoet som `zone_stand`. 401/403 er `Fejl::Afvist`: den valgfri rettighed mangler.
+    pub async fn sikkerhedsfund(&self, t: &Hemmelig) -> Result<Vec<crate::sikkerhed::Fund>, Fejl> {
+        let mut konti = Vec::new();
+        for side in 1..=MAKS_ZONESIDER {
+            let _plads = self.begraenser.tur().await;
+            let j = self.get(t, &format!("zones?per_page=50&page={side}")).await?;
+            for k in crate::sikkerhed::konti(&j) {
+                if !konti.contains(&k) {
+                    konti.push(k);
+                }
+            }
+            let sider = j.pointer("/result_info/total_pages").and_then(Value::as_u64).unwrap_or(1);
+            if u64::from(side) >= sider {
+                break;
+            }
+        }
+        // En konto uden rettigheden springes over, så de andre stadig vises. Mangler den på alle, er det `Afvist`.
+        let (mut alle, mut svarede, mut afvist) = (Vec::new(), 0, None);
+        'konti: for k in &konti {
+            let mut set = 0;
+            for side in 1..=crate::sikkerhed::MAKS_SIDER {
+                let _plads = self.begraenser.tur().await;
+                let j = match self
+                    .get(
+                        t,
+                        &format!(
+                            "accounts/{k}/security-center/insights?per_page={}&page={side}",
+                            crate::sikkerhed::PR_SIDE
+                        ),
+                    )
+                    .await
+                {
+                    Err(e @ Fejl::Afvist(_)) => {
+                        afvist = Some(e);
+                        continue 'konti;
+                    }
+                    svar => svar?,
+                };
+                let n = j.pointer("/result/issues").and_then(Value::as_array).map_or(0, Vec::len);
+                let (fund, count) = crate::sikkerhed::fra_svar(&j)?;
+                alle.extend(fund);
+                set += n;
+                if n == 0 || set >= count {
+                    break;
+                }
+            }
+            svarede += 1;
+        }
+        match afvist {
+            Some(e) if svarede == 0 => Err(e),
+            _ => Ok(alle),
+        }
+    }
+
     /// GET /zones/{id}: zonens tilstand. Køens eneste REST-kald i runden, så det følger tempoet og venter en pause ud.
     pub async fn zone_stand(&self, t: &Hemmelig, zone: &str) -> Result<ZoneStand, Fejl> {
         let _plads = self.begraenser.tur().await;

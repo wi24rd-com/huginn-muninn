@@ -99,6 +99,10 @@ pub trait Henter: Sync {
     fn historik<'a>(&'a self, zone: &'a str, fra: &'a str, til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a;
     /// Henter og gemmer zonens tilstand hos Cloudflare.
     fn tilstand<'a>(&'a self, zone: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a;
+    /// Henter og gemmer Cloudflares egne sikkerhedsfund for kontoen, højst én gang i timen (`sikkerhed::skal_hente`). Udfaldet noteres af henteren selv.
+    fn fund(&self) -> impl Future<Output = ()> + Send + '_ {
+        async {}
+    }
 }
 
 /// DNS og DMARC: så mange døgn tilbage hentes de, når de mangler. Cloudflare gemmer dem i 31 og 32 dage (målt live). Er det ældste døgn for gammelt, noteres det som tomt.
@@ -395,6 +399,13 @@ impl Koe {
                 return false;
             }
             let _ = h.tilstand(&z.id).await;
+        }
+        // Cloudflares egne fund: ét kald pr. konto, højst én gang i timen, og kun med valgte domæner. En fejl stopper ingenting.
+        if !zoner.is_empty() {
+            if self.stoppet() {
+                return false;
+            }
+            h.fund().await;
         }
         let mut opgivet: HashSet<&str> = HashSet::new();
         for dag in adgang::vinduet(nu()) {
@@ -936,6 +947,9 @@ mod tests {
             self.tilstand_kald.lock().unwrap().push(zone.to_string());
             self.log.lock().unwrap().push("tilstand");
             self.tilstand_svar.clone()
+        }
+        async fn fund(&self) {
+            self.log.lock().unwrap().push("fund");
         }
 
         async fn ekstra(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
@@ -1714,7 +1728,11 @@ mod tests {
         f.log.lock().unwrap().clear();
         assert!(!ekstra(&koe, &lager, &f).await);
         let log = f.log.lock().unwrap().clone();
-        assert_eq!(log[..2], ["tilstand", "tilstand"], "tilstanden først: den er lille");
+        assert_eq!(
+            log[..3],
+            ["tilstand", "tilstand", "fund"],
+            "tilstanden først: den er lille, og så fundene, én gang for alle domæner"
+        );
         assert_eq!(log[log.len() - 2..], ["historik", "historik"], "årstallene sidst");
         assert!(log.iter().filter(|x| **x == "historik").count() == 2 && log.contains(&"laek") && log.contains(&"angreb"));
         let kald = f.historik_kald.lock().unwrap().clone();
@@ -1722,7 +1740,11 @@ mod tests {
         assert_eq!(kald[0].2, dag_noegle(NU - DOEGN_MS));
         f.log.lock().unwrap().clear();
         assert!(!ekstra(&koe, &lager, &f).await);
-        assert_eq!(*f.log.lock().unwrap(), ["tilstand", "tilstand"], "alt er hentet: kun tilstanden");
+        assert_eq!(
+            *f.log.lock().unwrap(),
+            ["tilstand", "tilstand", "fund"],
+            "alt er hentet: kun tilstanden og fundene (som selv holder timen)"
+        );
     }
 
     /// En fejl i kaldet stopper ikke resten, og kun valgte domæner spørges.

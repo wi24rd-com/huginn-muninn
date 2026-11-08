@@ -487,12 +487,21 @@ pub struct Dim {
     pub status: i64,
 }
 
+/// `sum { edgeResponseBytes }`: kun på aliaserne i `sti200::hoved_query`.
+#[derive(Deserialize, Default, Debug, Clone)]
+pub struct Sum {
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "edgeResponseBytes")]
+    pub bytes: i64,
+}
+
 #[derive(Deserialize, Default, Debug, Clone)]
 pub struct Gruppe {
     #[serde(default, deserialize_with = "tom_ved_null")]
     pub count: i64,
     #[serde(default, deserialize_with = "tom_ved_null")]
     pub dimensions: Dim,
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    pub sum: Sum,
 }
 
 /// Ét døgns svar for zonen (`data.viewer.zones[0]`).
@@ -512,6 +521,11 @@ pub struct Doegn {
     pub f2: Vec<Gruppe>,
     #[serde(default, deserialize_with = "tom_ved_null")]
     pub f3: Vec<Gruppe>,
+    /// Følsomme filer med svar 200 og forsiden (`sti200::hoved_query`). Tomme i W's forespørgsel.
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    pub sti200: Vec<Gruppe>,
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    pub forside: Vec<Gruppe>,
 }
 
 pub fn doegn_fra_svar(data: &Value) -> Result<Doegn, Fejl> {
@@ -1427,6 +1441,7 @@ where
                 let mut raekker = doegn_raekker(&z);
                 raekker.extend(seneste_raekker(&z));
                 raekker.extend(angreb_raekker(&z));
+                raekker.extend(crate::sti200::raekker(&z.sti200, &z.forside));
                 laas(lager)?.gem_doegn(zone, &dag, &raekker, &tid)?;
                 antal += 1;
                 paa_doegn(&dag, Doegnudfald::Gemt);

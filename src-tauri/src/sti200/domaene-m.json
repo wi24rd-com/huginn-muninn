@@ -1,0 +1,330 @@
+{
+ "sti200": [
+  {
+   "count": 27,
+   "dimensions": {
+    "clientRequestPath": "/.env"
+   },
+   "sum": {
+    "edgeResponseBytes": 44464
+   }
+  },
+  {
+   "count": 23,
+   "dimensions": {
+    "clientRequestPath": "/.git/config"
+   },
+   "sum": {
+    "edgeResponseBytes": 39021
+   }
+  },
+  {
+   "count": 18,
+   "dimensions": {
+    "clientRequestPath": "/.env.production"
+   },
+   "sum": {
+    "edgeResponseBytes": 30470
+   }
+  },
+  {
+   "count": 18,
+   "dimensions": {
+    "clientRequestPath": "/.env.backup"
+   },
+   "sum": {
+    "edgeResponseBytes": 31987
+   }
+  },
+  {
+   "count": 17,
+   "dimensions": {
+    "clientRequestPath": "/.env.local"
+   },
+   "sum": {
+    "edgeResponseBytes": 28431
+   }
+  },
+  {
+   "count": 17,
+   "dimensions": {
+    "clientRequestPath": "/.env.bak"
+   },
+   "sum": {
+    "edgeResponseBytes": 29501
+   }
+  },
+  {
+   "count": 15,
+   "dimensions": {
+    "clientRequestPath": "/.env.old"
+   },
+   "sum": {
+    "edgeResponseBytes": 24746
+   }
+  },
+  {
+   "count": 14,
+   "dimensions": {
+    "clientRequestPath": "/api/.env"
+   },
+   "sum": {
+    "edgeResponseBytes": 22905
+   }
+  },
+  {
+   "count": 13,
+   "dimensions": {
+    "clientRequestPath": "/.env.development"
+   },
+   "sum": {
+    "edgeResponseBytes": 21545
+   }
+  },
+  {
+   "count": 13,
+   "dimensions": {
+    "clientRequestPath": "/.env.save"
+   },
+   "sum": {
+    "edgeResponseBytes": 21589
+   }
+  },
+  {
+   "count": 12,
+   "dimensions": {
+    "clientRequestPath": "/.aws/credentials"
+   },
+   "sum": {
+    "edgeResponseBytes": 20754
+   }
+  },
+  {
+   "count": 11,
+   "dimensions": {
+    "clientRequestPath": "/backend/.env"
+   },
+   "sum": {
+    "edgeResponseBytes": 18580
+   }
+  },
+  {
+   "count": 10,
+   "dimensions": {
+    "clientRequestPath": "/.env.staging"
+   },
+   "sum": {
+    "edgeResponseBytes": 16761
+   }
+  },
+  {
+   "count": 10,
+   "dimensions": {
+    "clientRequestPath": "/.env.dev"
+   },
+   "sum": {
+    "edgeResponseBytes": 16056
+   }
+  },
+  {
+   "count": 10,
+   "dimensions": {
+    "clientRequestPath": "/.htpasswd"
+   },
+   "sum": {
+    "edgeResponseBytes": 15870
+   }
+  },
+  {
+   "count": 10,
+   "dimensions": {
+    "clientRequestPath": "/.env.prod"
+   },
+   "sum": {
+    "edgeResponseBytes": 16552
+   }
+  },
+  {
+   "count": 10,
+   "dimensions": {
+    "clientRequestPath": "/app/.env"
+   },
+   "sum": {
+    "edgeResponseBytes": 16752
+   }
+  },
+  {
+   "count": 9,
+   "dimensions": {
+    "clientRequestPath": "/.env.docker"
+   },
+   "sum": {
+    "edgeResponseBytes": 14299
+   }
+  },
+  {
+   "count": 9,
+   "dimensions": {
+    "clientRequestPath": "/id_rsa"
+   },
+   "sum": {
+    "edgeResponseBytes": 15418
+   }
+  },
+  {
+   "count": 9,
+   "dimensions": {
+    "clientRequestPath": "/config/.env"
+   },
+   "sum": {
+    "edgeResponseBytes": 15178
+   }
+  },
+  {
+   "count": 9,
+   "dimensions": {
+    "clientRequestPath": "/laravel/.env"
+   },
+   "sum": {
+    "edgeResponseBytes": 14308
+   }
+  },
+  {
+   "count": 9,
+   "dimensions": {
+    "clientRequestPath": "/public/.env"
+   },
+   "sum": {
+    "edgeResponseBytes": 14522
+   }
+  },
+  {
+   "count": 8,
+   "dimensions": {
+    "clientRequestPath": "/.env.swp"
+   },
+   "sum": {
+    "edgeResponseBytes": 12906
+   }
+  },
+  {
+   "count": 8,
+   "dimensions": {
+    "clientRequestPath": "/.svn/entries"
+   },
+   "sum": {
+    "edgeResponseBytes": 12679
+   }
+  },
+  {
+   "count": 7,
+   "dimensions": {
+    "clientRequestPath": "/.hg/hgrc"
+   },
+   "sum": {
+    "edgeResponseBytes": 11111
+   }
+  },
+  {
+   "count": 6,
+   "dimensions": {
+    "clientRequestPath": "/.npmrc"
+   },
+   "sum": {
+    "edgeResponseBytes": 10633
+   }
+  },
+  {
+   "count": 6,
+   "dimensions": {
+    "clientRequestPath": "/.ssh/id_rsa"
+   },
+   "sum": {
+    "edgeResponseBytes": 10198
+   }
+  },
+  {
+   "count": 6,
+   "dimensions": {
+    "clientRequestPath": "/.git/HEAD"
+   },
+   "sum": {
+    "edgeResponseBytes": 10973
+   }
+  },
+  {
+   "count": 5,
+   "dimensions": {
+    "clientRequestPath": "/.svn/wc.db"
+   },
+   "sum": {
+    "edgeResponseBytes": 8625
+   }
+  },
+  {
+   "count": 5,
+   "dimensions": {
+    "clientRequestPath": "/.env~"
+   },
+   "sum": {
+    "edgeResponseBytes": 7935
+   }
+  },
+  {
+   "count": 5,
+   "dimensions": {
+    "clientRequestPath": "/secrets.json"
+   },
+   "sum": {
+    "edgeResponseBytes": 8215
+   }
+  },
+  {
+   "count": 4,
+   "dimensions": {
+    "clientRequestPath": "/credentials.json"
+   },
+   "sum": {
+    "edgeResponseBytes": 7056
+   }
+  },
+  {
+   "count": 3,
+   "dimensions": {
+    "clientRequestPath": "/docker-compose.yml"
+   },
+   "sum": {
+    "edgeResponseBytes": 5461
+   }
+  },
+  {
+   "count": 2,
+   "dimensions": {
+    "clientRequestPath": "/.DS_Store"
+   },
+   "sum": {
+    "edgeResponseBytes": 3039
+   }
+  },
+  {
+   "count": 2,
+   "dimensions": {
+    "clientRequestPath": "/.aws/config"
+   },
+   "sum": {
+    "edgeResponseBytes": 3863
+   }
+  }
+ ],
+ "forside": [
+  {
+   "count": 287,
+   "dimensions": {
+    "clientRequestPath": "/"
+   },
+   "sum": {
+    "edgeResponseBytes": 480768
+   }
+  }
+ ]
+}

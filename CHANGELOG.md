@@ -4,6 +4,16 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-08 23:30 — Følsomme filer, der svarede 200, og Cloudflares egne fund
+#### Tilføjet
+- **Følsomme filer, der svarede 200** (IDEA-011): hovedhentningen spørger nu også, om 39 faste stier, der aldrig bør svare 200 (fx `/.env`, `/.git/config`, `/.aws/credentials`), fik svar 200, og hvor store svarene var. Det koster ikke et ekstra kald. Afsnittet står på Angreb for ét domæne med sti, antal, snitstørrelse og vurdering, og hver sti filtrerer Angreb på stien.
+- Et svar, der ligner selve filen, giver **Handl** med teksten "En følsom fil (…) svarede 200 i går – den kan ligge åbent" og et råd bag **Hvad gør jeg?**. Det ligner filen, når det er højst 8 KB, mere end 25 % fra forsidens størrelse, og domænet ikke svarer 200 på mere end 6 af stierne. Målt på 13 domæner svarede 3 med deres almindelige side på næsten alle stierne; de står på Angreb som "Ligner sidens almindelige side" og ændrer ikke status.
+- **Cloudflares egne fund** (IDEA-036, Security Center Insights): afsnittet på Angreb for ét domæne viser alvor, titel og dato, og hvert fund åbner Cloudflares side for Security Insights. Fundene hentes højst én gang i timen efter den normale runde. Et kritisk fund giver **Hold øje**, aldrig Handl.
+- Kræver én valgfri ekstra rettighed på API Tokenet, *Security Center Insights › Read* (Cloudflares dokumentation: *Account Security Center Insights*). Uden den siger afsnittet, at rettigheden kan tilføjes, og resten af programmet virker. Token-trinene i programmet og manualen har trinnet som valgfrit.
+- Databasen får skema 16 med tabellen `sikkerhedsfund`. **Nulstil historik** sletter også den.
+#### Ikke med
+- Sampling-justerede totaler (IDEA-009) er ikke bygget: `firewallEventsAdaptiveGroups` er slået fra på Free-planen (målt). Se INVESTIGATION-V-TOKEN.1 for en vej uden den.
+
 ### 2026-11-07 23:30 — Huginn starter selv én gang om dagen
 #### Tilføjet
 - Daglig start kl. 12 lokal tid, så historikken ikke får huller, når programmet er afsluttet, eller maskinen ikke har været logget ud i ugevis. macOS: LaunchAgenten `com.wi24rd.huginn-muninn.dagligt`, indlæst med det samme. Sover Mac'en, sker det, når den vågner.

@@ -20,6 +20,8 @@ mod overblik;
 mod programmenu;
 mod radar;
 mod robotter;
+mod sikkerhed;
+mod sti200;
 mod store;
 mod teknologi;
 mod token;
@@ -234,7 +236,7 @@ async fn hent_zone(
                     return Err(f);
                 }
                 let data = klient
-                    .graphql(token, vaern::DOEGN_QUERY, vaern::doegn_variabler(zone, &dag)?)
+                    .graphql(token, &sti200::hoved_query(), sti200::variabler(zone, &dag)?)
                     .await
                     .map_err(|e| e.for_dag(&dag))?;
                 vaern::doegn_fra_svar(&data)
@@ -340,6 +342,36 @@ async fn hent_tilstand(tilstand: &Tilstand, token: &Hemmelig, zone: &str) -> Res
     laas(tilstand)?.gem_zone_tilstand(zone, &z, &vaern::iso(nu_ms()))
 }
 
+/// Cloudflares egne sikkerhedsfund: højst én gang i timen (`sikkerhed::skal_hente`, regnet fra sidste forsøg), efter zonernes tilstand i `ekstra_runde`. Kun fund for
+/// zoner i zonelisten gemmes. Uden rettigheden noteres det, de gamle fund slettes (de kan ikke længere holdes ajour), og resten af programmet virker. En anden fejl
+/// lader de gamle fund stå.
+async fn hent_fund(tilstand: &Tilstand, token: &Hemmelig) {
+    let nu = nu_ms();
+    let sidst = laas(tilstand)
+        .ok()
+        .and_then(|l| l.indstilling(sikkerhed::HENTET).ok().flatten())
+        .and_then(|s| vaern::parse_iso(&s));
+    if !sikkerhed::skal_hente(sidst, nu) {
+        return;
+    }
+    let svar = tilstand.klient.sikkerhedsfund(token).await;
+    let Ok(mut l) = laas(tilstand) else { return };
+    let tid = vaern::iso(nu);
+    let _ = l.gem_indstilling(sikkerhed::HENTET, &tid);
+    let _ = l.gem_indstilling(sikkerhed::TILSTAND, &sikkerhed::tilstand_efter(svar.as_ref().err()));
+    match svar {
+        Ok(fund) => {
+            let kendte: HashSet<String> = l.zoner().map(|z| z.0.into_iter().map(|z| z.id).collect()).unwrap_or_default();
+            let fund: Vec<sikkerhed::Fund> = fund.into_iter().filter(|f| kendte.contains(&f.zone)).collect();
+            let _ = l.gem_sikkerhedsfund(&fund, &tid);
+        }
+        Err(Fejl::Afvist(_)) => {
+            let _ = l.gem_sikkerhedsfund(&[], &tid);
+        }
+        Err(_) => {}
+    }
+}
+
 /// Henter i dag, i går og manglende døgn fra Cloudflare, gemmer dem og returnerer Værnet (W's felter som `data` i W's
 /// /api/maskine/vaern + hele døgn). Fejler hentningen, er de døgn, der nåede at komme hjem, alligevel gemt. Kører der
 /// allerede en hentning for zonen (fra køen), venter denne, til den er færdig (lås pr. zone).
@@ -406,6 +438,48 @@ async fn email_oversigt(zone: String, fra: Option<String>, til: Option<String>, 
     Ok(dmarc::oversigt(&rows, lager.hentet_dmarc(&zone)?.len(), fejl))
 }
 
+/// "Følsomme filer, der svarede 200" på Angreb for ét domæne og en periode, kun fra cachen (`sti200.rs`).
+#[tauri::command]
+async fn sti200_oversigt(zone: String, fra: Option<String>, til: Option<String>, tilstand: State<'_, Tilstand>) -> Svar<sti200::Sti200Ud> {
+    let zone = vaern::tjek_zone(&zone)?;
+    if [&fra, &til].into_iter().flatten().any(|d| vaern::dag_ms(d).is_none()) {
+        return Err(Fejl::UgyldigDato);
+    }
+    let lager = laas(&tilstand)?;
+    let nu = nu_ms();
+    let fra = fra.unwrap_or_else(|| vaern::dag_noegle(nu - 7 * vaern::DOEGN_MS));
+    let til = til.unwrap_or_else(|| vaern::dag_noegle(nu - vaern::DOEGN_MS));
+    let rows: Vec<store::Raekke> = lager
+        .raekker_art(std::slice::from_ref(&zone), &[sti200::ART, sti200::ART_BYTES], &fra)?
+        .into_iter()
+        .map(|(_, r)| r)
+        .collect();
+    // Døgn hentet med hovedhentningen i perioden. Døgn fra før V-TOKEN.1 har ingen af arterne, men står som hentet: teksten siger det.
+    let hentede = lager.hentet(&zone)?.keys().filter(|d| **d >= fra && **d <= til).count();
+    Ok(sti200::oversigt(&rows, &fra, &til, hentede))
+}
+
+/// "Cloudflares egne fund" på Angreb for ét domæne, kun fra cachen (`sikkerhed.rs`).
+#[tauri::command]
+async fn sikkerhedsfund_oversigt(zone: String, tilstand: State<'_, Tilstand>) -> Svar<sikkerhed::FundUd> {
+    let zone = vaern::tjek_zone(&zone)?;
+    let lager = laas(&tilstand)?;
+    Ok(sikkerhed::oversigt(
+        lager.sikkerhedsfund(Some(&zone))?,
+        lager.indstilling(sikkerhed::TILSTAND)?.as_deref(),
+        lager.indstilling(sikkerhed::HENTET)?,
+    ))
+}
+
+/// Et klik på et af Cloudflares egne fund: Cloudflares faste side for Security Insights i brugerens browser (`sikkerhed::DASH`). Webvisningen kan ikke vælge en anden adresse.
+#[tauri::command]
+async fn aabn_sikkerhedsfund() -> Svar<()> {
+    tauri::async_runtime::spawn_blocking(|| aabn_i_browser(sikkerhed::DASH))
+        .await
+        .map_err(|_| Fejl::Intern)?
+        .map_err(|_| Fejl::Intern)
+}
+
 #[tauri::command]
 async fn vurdering(zone: String, dag: String, tilstand: State<'_, Tilstand>) -> Svar<overblik::Vurdering> {
     let zone = vaern::tjek_zone(&zone)?;
@@ -428,6 +502,7 @@ fn byg_overblik(lager: &Store, nu: i64) -> Result<Vec<overblik::Raekke1>, Fejl> 
     let lokal_dag = notify::tidszone(lager)?.dag(nu);
     let vurderet = lager.vurderet()?;
     let (tz, stande) = (notify::tidszone(lager)?, lager.zone_tilstande()?);
+    let alle_fund = lager.sikkerhedsfund(None)?;
     let mut data = Vec::with_capacity(zoner.len());
     for z in &zoner {
         let rows = lager.raekker_tal(&z.id, &fra)?;
@@ -463,6 +538,8 @@ fn byg_overblik(lager: &Store, nu: i64) -> Result<Vec<overblik::Raekke1>, Fejl> 
             let fund = overblik::tilstand_fund(z, vaern::parse_iso(hentet).unwrap_or(nu), nu, &kl);
             overblik::med_tilstand(&mut r, fund);
         }
+        let fund: Vec<sikkerhed::Fund> = alle_fund.iter().filter(|f| f.zone == r.id).cloned().collect();
+        overblik::med_fund(&mut r, &fund);
         ud.push(r);
     }
     overblik::sorter(&mut ud);
@@ -976,6 +1053,9 @@ impl Henter for KoeHenter<'_> {
     }
     async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
         hent_tilstand(self.tilstand, self.token, zone).await
+    }
+    async fn fund(&self) {
+        hent_fund(self.tilstand, self.token).await
     }
 }
 
@@ -1698,6 +1778,9 @@ pub fn run() {
             teknologi_kolonne,
             teknologi_tilfoej,
             email_oversigt,
+            sti200_oversigt,
+            sikkerhedsfund_oversigt,
+            aabn_sikkerhedsfund,
             huller,
             hul_luk,
             land_hent,

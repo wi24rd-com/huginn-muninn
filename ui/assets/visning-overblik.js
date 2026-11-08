@@ -72,12 +72,21 @@
   const trafik = r => (r.trafik ? ' ' + fmt(T.hvTrafik, { n: S.tal(r.trafik.n), m: S.tal(Math.round(r.trafik.median)), stop: S.trafikStop(r.trafik.n, r.trafik.stoppet) }) : '');
   /* Lækkede kodeord (notify::laek_tekst): aldrig stien. */
   const laek = r => (r.laek ? ' ' + fmt(r.laek.naaet ? T.hvLaekNaaet : T.hvLaek, { n: S.tal(r.laek.n), k: S.tal(r.laek.naaet), d: forgaars(r) ? T.hvForgaarsOrd : T.hvIGaarOrd }) : '');
+  /* En følsom fil, der svarede 200 og ligner filen (notify::sti200_tekst): højst 3 stier. */
+  const STI200_NAEVN = 3;
+  function sti200(r) {
+    if (!r.sti200) return '';
+    const st = r.sti200.stier, s = st.slice(0, STI200_NAEVN).join(', ') + (st.length > STI200_NAEVN ? ', …' : '');
+    return ' ' + fmt(st.length > 1 ? T.hvSti200Flere : T.hvSti200, { s, d: forgaars(r) ? T.hvForgaarsOrd : T.hvIGaarOrd });
+  }
+  /* Cloudflares egne kritiske fund (notify::cf_fund_tekst). */
+  const cfFund = r => (r.cf_fund ? ' ' + (r.cf_fund.n > 1 ? fmt(T.hvCfFundFlere, { n: S.tal(r.cf_fund.n) }) : T.hvCfFund) : '');
   /* Domænets tilstand hos Cloudflare (notify::tilstand_tekst) står først. */
   const tilstand = r => (r.tilstand || []).map(f => fmt(T.hvTilstand[f.slags] || T.hvTilstand.inaktiv, { s: f.status || '', k: f.kl || '' })).join(' ');
   const maerke = r => (r.moenster ? ' ' + S.moensterTekst(r.moenster) : '');
   /* DMARC (notify::dmarc_tekst). */
   const dmarc = r => (r.dmarc ? (r.dmarc.nye.length ? ' ' + fmt(T.hvDmarcNy, { l: r.dmarc.nye.join(', ') }) : '') + (r.dmarc.stiger ? ' ' + fmt(T.hvDmarcAndel, { p: S.tal(r.dmarc.procent), m: S.tal(r.dmarc.normalt) }) : '') : '');
-  const tillaeg = r => teknologi(r) + laek(r) + dmarc(r) + trafik(r) + server(r) + maerke(r);
+  const tillaeg = r => teknologi(r) + laek(r) + sti200(r) + dmarc(r) + cfFund(r) + trafik(r) + server(r) + maerke(r);
   function hvorfor(r) {
     const foran = tilstand(r), resten = hvorforTal(r);
     return foran ? `${foran} ${resten}` : resten;
@@ -121,7 +130,7 @@
     /* Mærket åbner dagens forespørgsler (trafik-dyk), ikke det, Cloudflare stoppede. */
     if (r.trafik) { const m = window.hmTegn.knap(T.trafikMaerke, dykQ(r, { dag: r.trafik.dag, trafik: '1' }), 'trafik-maerke', fmt(T.trafikAabn, { navn: r.navn, d: window.hmTegn.datoLang(r.trafik.dag), n: S.tal(r.trafik.n) })); m.dataset.fokus = 'trafik'; td.append(' ', m); }
     if (r.tek_spoerg && kraever(r) && r.angreb_status !== 'groen') { const m = window.hmTegn.knap(fmt(T.hvSpoerg, { t: tekNavn(r.tek_spoerg) }), tekMaal(r), 'link hv-spoerg'); m.dataset.fokus = 'tek'; td.append(' ', m); }
-    if (kraever(r) || r.moenster || r.server || r.trafik || r.uventet || r.laek || r.dmarc || (r.tilstand || []).length) {
+    if (kraever(r) || r.moenster || r.server || r.trafik || r.uventet || r.laek || r.sti200 || r.dmarc || r.cf_fund || (r.tilstand || []).length) {
       const m = el('button', { type: 'button', className: 'link hv-guide', textContent: T.gTitel });
       m.setAttribute('aria-label', `${T.gTitel} (${r.navn})`);
       m.dataset.fokus = 'guide';
@@ -155,7 +164,7 @@
     kort.append(el('h3', {}, el('span', { textContent: r.navn }), ' ', chip(r)));
     const a = r.angreb_i_gaar || 0;
     kort.append(el('p', { className: 'g-hvad' }, el('b', { textContent: T.gHvad }), ' ', a ? hvorforStart(r) + tillaeg(r) : hvorfor(r)));
-    const afsnit = [...(r.tilstand || []).map(f => [T.gTilstandH[f.slags] || T.gTilstandH.inaktiv, T.gTilstandH[f.slags] ? f.slags : 'inaktiv']), ...(r.laek ? [[T.gLaekH, 'laek']] : []), ...(r.dmarc ? [[T.gDmarcH, 'dmarc']] : []), ...(r.moenster ? [{ maalrettet: [T.gMaalH, 'maalrettet'], dns_rekognoscering: [T.gDnsRekogH, 'dns_rekognoscering'] }[r.moenster.slags] || [T.gRekogH, 'rekognoscering']] : []), ...(r.trafik ? [[T.gTrafikH, 'trafik']] : []), ...(r.server ? [[T.gServerH, 'server']] : []), ...(r.trafik || r.server ? [[T.gDnsH, 'dns']] : [])];
+    const afsnit = [...(r.tilstand || []).map(f => [T.gTilstandH[f.slags] || T.gTilstandH.inaktiv, T.gTilstandH[f.slags] ? f.slags : 'inaktiv']), ...(r.laek ? [[T.gLaekH, 'laek']] : []), ...(r.sti200 ? [[T.gSti200H, 'sti200']] : []), ...(r.dmarc ? [[T.gDmarcH, 'dmarc']] : []), ...(r.cf_fund ? [[T.gCfFundH, 'cf_fund']] : []), ...(r.moenster ? [{ maalrettet: [T.gMaalH, 'maalrettet'], dns_rekognoscering: [T.gDnsRekogH, 'dns_rekognoscering'] }[r.moenster.slags] || [T.gRekogH, 'rekognoscering']] : []), ...(r.trafik ? [[T.gTrafikH, 'trafik']] : []), ...(r.server ? [[T.gServerH, 'server']] : []), ...(r.trafik || r.server ? [[T.gDnsH, 'dns']] : [])];
     for (const [h, id] of afsnit) {
       const afsnit = el('div', { className: 'g-afsnit' }, el('h4', { textContent: h }), ...window.hmTegn.bogAfsnit(id));
       afsnit.dataset.kategori = id;

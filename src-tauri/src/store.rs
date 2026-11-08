@@ -15,7 +15,8 @@ use crate::cf::{Fejl, Zone};
 /// 1: vagt_dag + hentet. 2: + zoner. 3: + valg. 4: + indstillinger. 5: + notifikation_zone, meldt. 6: + login_sti, hentet_ekstra.
 /// 7: + radar_dag. 8: valg → fravalgt. 9: fravalgt → valgt, + afvist_ny, ny_zone. 10: + teknologi, Radar-serier uden brug væk.
 /// 11: + hentet_angreb (art `angreb`). 12: + vurderet, hentet_angreb tømt, så angrebene hentes igen med netværket. 13: + hentet_historik, hentet_laek, zone_tilstand.
-const SKEMA_VERSION: i64 = 15;
+/// 14: + tek_vis. 15: + hentet_dns, hentet_dmarc. 16: + sikkerhedsfund.
+const SKEMA_VERSION: i64 = 16;
 const SKEMA_1: &str = "
 CREATE TABLE IF NOT EXISTS vagt_dag (zone TEXT NOT NULL, dag TEXT NOT NULL, art TEXT NOT NULL, noegle TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (zone, dag, art, noegle));
 CREATE TABLE IF NOT EXISTS hentet (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
@@ -101,8 +102,13 @@ CREATE TABLE IF NOT EXISTS hentet_dns (zone TEXT NOT NULL, dag TEXT NOT NULL, he
 CREATE TABLE IF NOT EXISTS hentet_dmarc (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
 DELETE FROM hentet_laek;
 ";
-/// Arterne fra `vaern::DOEGN_QUERY`: dem, `gem_doegn` erstatter.
-pub const DOEGN_ARTER: &[&str] = &["alle", "angreb", "bot", "falsk", "fw", "probe", "seneste"];
+/// `sikkerhedsfund`: Cloudflares egne aktive fund (Security Center Insights, `sikkerhed.rs`) for zonerne, som de sidst blev hentet. Ingen konto-id, intet domænenavn
+/// og ingen IP-adresse: kun zone, Cloudflares id, alvor, klasse, type og dato. Tabellen erstattes helt ved hver hentning. Ingen eksisterende række ændres.
+const SKEMA_16: &str = "
+CREATE TABLE IF NOT EXISTS sikkerhedsfund (zone TEXT NOT NULL, id TEXT NOT NULL, alvor TEXT NOT NULL, klasse TEXT NOT NULL, type TEXT NOT NULL, siden TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, id));
+";
+/// Arterne fra hovedhentningen (`vaern::DOEGN_QUERY` og `sti200::hoved_query`): dem, `gem_doegn` erstatter.
+pub const DOEGN_ARTER: &[&str] = &["alle", "angreb", "bot", "falsk", "fw", "probe", "seneste", "sti200", "sti200b"];
 /// Arterne fra `adgang::ADGANG_QUERY`: dem, `gem_ekstra` erstatter.
 pub const EKSTRA_ARTER: &[&str] = &["post", "status", "land", "login", "stoppet", "asn"];
 /// Foran zone-id'et i `indstillinger`: Cloudflare svarede ikke på de ekstra tal for domænet (værdien er den rensede fejl).
@@ -112,6 +118,8 @@ pub const DNS_FEJL: &str = "dns_fejl:";
 pub const DMARC_FEJL: &str = "dmarc_fejl:";
 /// Foran `indstillinger`-nøglerne for Radar (`radar::SIDST`, `radar::FEJL`): de hører til de hentede tal, ikke til brugerens valg.
 pub const RADAR_PRAEFIKS: &str = "radar_";
+/// Foran `indstillinger`-nøglerne for sikkerhedsfundene (`sikkerhed::HENTET`, `sikkerhed::TILSTAND`): de hører til de hentede tal.
+pub const SIKKERHED_PRAEFIKS: &str = "sikkerhedsfund_";
 
 /// Én række i `radar_dag`.
 #[derive(Debug, Clone, PartialEq)]
@@ -210,6 +218,9 @@ impl Store {
         }
         if v < 15 {
             tx.execute_batch(SKEMA_15).map_err(lagerfejl)?;
+        }
+        if v < 16 {
+            tx.execute_batch(SKEMA_16).map_err(lagerfejl)?;
         }
         tx.pragma_update(None, "user_version", SKEMA_VERSION).map_err(lagerfejl)?;
         tx.commit().map_err(lagerfejl)?;
@@ -450,6 +461,43 @@ impl Store {
                     phishing: r.get(4)?,
                 };
                 Ok((r.get(0)?, (z, r.get(5)?)))
+            })
+            .map_err(lagerfejl)?;
+        rk.collect::<Result<_, _>>().map_err(lagerfejl)
+    }
+
+    /// Erstatter alle gemte sikkerhedsfund med `fund`. Én transaktion.
+    pub fn gem_sikkerhedsfund(&mut self, fund: &[crate::sikkerhed::Fund], hentet_utc: &str) -> Result<(), Fejl> {
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        tx.execute("DELETE FROM sikkerhedsfund", []).map_err(lagerfejl)?;
+        {
+            let mut ind = tx
+                .prepare("INSERT OR REPLACE INTO sikkerhedsfund (zone, id, alvor, klasse, type, siden, hentet_utc) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)")
+                .map_err(lagerfejl)?;
+            for f in fund {
+                ind.execute(params![f.zone, f.id, f.alvor, f.klasse, f.type_, f.siden, hentet_utc])
+                    .map_err(lagerfejl)?;
+            }
+        }
+        tx.commit().map_err(lagerfejl)
+    }
+
+    /// De gemte sikkerhedsfund for én zone (`None`: alle zoner).
+    pub fn sikkerhedsfund(&self, zone: Option<&str>) -> Result<Vec<crate::sikkerhed::Fund>, Fejl> {
+        let mut st = self
+            .db
+            .prepare("SELECT zone, id, alvor, klasse, type, siden FROM sikkerhedsfund WHERE ?1 IS NULL OR zone = ?1 ORDER BY zone, id")
+            .map_err(lagerfejl)?;
+        let rk = st
+            .query_map(params![zone], |r| {
+                Ok(crate::sikkerhed::Fund {
+                    zone: r.get(0)?,
+                    id: r.get(1)?,
+                    alvor: r.get(2)?,
+                    klasse: r.get(3)?,
+                    type_: r.get(4)?,
+                    siden: r.get(5)?,
+                })
             })
             .map_err(lagerfejl)?;
         rk.collect::<Result<_, _>>().map_err(lagerfejl)
@@ -1011,17 +1059,17 @@ impl Store {
         tx.commit().map_err(lagerfejl)
     }
 
-    /// "Nulstil historik": alle hentede tal (vagt_dag, hentet, hentet_ekstra, radar_dag og fejlene og tidspunkterne for dem) slettes i én transaktion;
+    /// "Nulstil historik": alle hentede tal (vagt_dag, hentet, hentet_ekstra, radar_dag, sikkerhedsfund og fejlene og tidspunkterne for dem) slettes i én transaktion;
     /// indstillingerne, zonelisten, valget, notifikationsvalget pr. domæne, login-stierne og det meldte bliver (J6: `meldt` er en log over beskeder, ikke hentede tal, og uden
     /// den kunne en besked for i går komme igen; den rydder sig selv efter `notify::MELDT_DOEGN`). `VACUUM` bagefter frigiver
     /// pladsen (det kan ikke stå i en transaktion). Filen selv bliver.
     pub fn nulstil_historik(&mut self) -> Result<(), Fejl> {
         let tx = self.db.transaction().map_err(lagerfejl)?;
         tx.execute_batch(
-            "DELETE FROM vagt_dag; DELETE FROM hentet; DELETE FROM hentet_ekstra; DELETE FROM hentet_angreb; DELETE FROM hentet_laek; DELETE FROM hentet_dns; DELETE FROM hentet_dmarc; DELETE FROM hentet_historik; DELETE FROM radar_dag;",
+            "DELETE FROM vagt_dag; DELETE FROM hentet; DELETE FROM hentet_ekstra; DELETE FROM hentet_angreb; DELETE FROM hentet_laek; DELETE FROM hentet_dns; DELETE FROM hentet_dmarc; DELETE FROM hentet_historik; DELETE FROM radar_dag; DELETE FROM sikkerhedsfund;",
         )
         .map_err(lagerfejl)?;
-        for praefiks in [ADGANG_FEJL, DNS_FEJL, DMARC_FEJL, RADAR_PRAEFIKS] {
+        for praefiks in [ADGANG_FEJL, DNS_FEJL, DMARC_FEJL, RADAR_PRAEFIKS, SIKKERHED_PRAEFIKS] {
             tx.execute("DELETE FROM indstillinger WHERE noegle LIKE ?1", [format!("{praefiks}%")])
                 .map_err(lagerfejl)?;
         }
@@ -1056,11 +1104,53 @@ mod tests {
         s.db.execute_batch("PRAGMA user_version = 14; DROP TABLE hentet_dns; DROP TABLE hentet_dmarc;")
             .unwrap();
         let s = Store::klar(std::mem::replace(&mut s.db, Connection::open_in_memory().unwrap())).unwrap();
-        assert_eq!(s.skema_version().unwrap(), 15);
+        assert_eq!(s.skema_version().unwrap(), SKEMA_VERSION);
         assert!(s.hentet_laek("z").unwrap().is_empty());
         assert_eq!(s.hentet_ekstra("z").unwrap().len(), 1);
         assert_eq!(s.raekker("z", "0000-00-00").unwrap().len(), 2, "rækkerne står");
         assert!(s.hentet_dns("z").unwrap().is_empty() && s.hentet_dmarc("z").unwrap().is_empty());
+    }
+
+    /// Skema 16: tabellen `sikkerhedsfund` kommer til, og intet andet ændres. Fundene erstattes helt ved hver hentning.
+    #[test]
+    fn skema_16_tilfoejer_sikkerhedsfund_og_roerer_intet_andet() {
+        let mut s = Store::i_hukommelse().unwrap();
+        s.gem_doegn("z", "2026-11-01", &[rk("fw", "a", 3)], "t").unwrap();
+        s.gem_indstilling("x", "y").unwrap();
+        s.db.execute_batch("PRAGMA user_version = 15; DROP TABLE sikkerhedsfund;").unwrap();
+        let mut s = Store::klar(std::mem::replace(&mut s.db, Connection::open_in_memory().unwrap())).unwrap();
+        assert_eq!(s.skema_version().unwrap(), 16);
+        assert_eq!(s.raekker("z", "0000-00-00").unwrap().len(), 1, "rækkerne står");
+        assert_eq!(s.indstilling("x").unwrap().as_deref(), Some("y"));
+        assert!(s.sikkerhedsfund(None).unwrap().is_empty());
+        let f = |zone: &str, id: &str, alvor: &str| crate::sikkerhed::Fund {
+            zone: zone.into(),
+            id: id.into(),
+            alvor: alvor.into(),
+            klasse: "k".into(),
+            type_: "t".into(),
+            siden: "2026-04-24".into(),
+        };
+        s.gem_sikkerhedsfund(&[f("z", "z-a", "Low"), f("y", "y-a", "Critical")], "t1")
+            .unwrap();
+        assert_eq!(s.sikkerhedsfund(Some("z")).unwrap(), vec![f("z", "z-a", "Low")]);
+        assert_eq!(s.sikkerhedsfund(None).unwrap().len(), 2);
+        s.gem_sikkerhedsfund(&[f("y", "y-b", "Low")], "t2").unwrap();
+        assert_eq!(s.sikkerhedsfund(None).unwrap(), vec![f("y", "y-b", "Low")], "erstattes helt");
+        let sql: String =
+            s.db.query_row("SELECT sql FROM sqlite_master WHERE name = 'sikkerhedsfund'", [], |r| r.get(0))
+                .unwrap();
+        assert!(
+            !sql.to_lowercase().contains("konto") && !sql.to_lowercase().contains("account") && !sql.contains("navn"),
+            "{sql}"
+        );
+        s.gem_indstilling(crate::sikkerhed::HENTET, "t2").unwrap();
+        s.gem_indstilling(crate::sikkerhed::TILSTAND, "ok").unwrap();
+        s.nulstil_historik().unwrap();
+        assert!(s.sikkerhedsfund(None).unwrap().is_empty(), "nulstil sletter fundene");
+        assert_eq!(s.indstilling(crate::sikkerhed::HENTET).unwrap(), None);
+        assert_eq!(s.indstilling(crate::sikkerhed::TILSTAND).unwrap(), None);
+        assert_eq!(s.indstilling("x").unwrap().as_deref(), Some("y"), "indstillingerne bliver");
     }
 
     /// Ingen kolonne til en IP-adresse: DNS og DMARC ligger i `vagt_dag`, og tabellerne har kun zone, dag og tidspunkt.

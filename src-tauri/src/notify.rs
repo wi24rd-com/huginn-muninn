@@ -648,6 +648,38 @@ fn dmarc_tekst(r: &Raekke1, sprog: Sprog) -> String {
     ud
 }
 
+/// En følsom fil, der svarede 200 og ligner filen (`sti200` i visning-overblik.js), med mellemrum foran. Højst `sti200::NAEVN` stier.
+fn sti200_tekst(r: &Raekke1, sprog: Sprog) -> String {
+    let Some(f) = &r.sti200 else { return String::new() };
+    let mut stier = f.stier.iter().take(crate::sti200::NAEVN).cloned().collect::<Vec<_>>().join(", ");
+    if f.stier.len() > crate::sti200::NAEVN {
+        stier.push_str(", …");
+    }
+    let dag = match (sprog == Sprog::Da, forgaars(r)) {
+        (true, false) => "i går",
+        (true, true) => "i forgårs",
+        (false, false) => "yesterday",
+        (false, true) => "the day before yesterday",
+    };
+    match (sprog == Sprog::Da, f.stier.len() > 1) {
+        (true, false) => format!(" En følsom fil ({stier}) svarede 200 {dag} – den kan ligge åbent."),
+        (true, true) => format!(" Følsomme filer ({stier}) svarede 200 {dag} – de kan ligge åbent."),
+        (false, false) => format!(" A sensitive file ({stier}) answered 200 {dag} – it may be exposed."),
+        (false, true) => format!(" Sensitive files ({stier}) answered 200 {dag} – they may be exposed."),
+    }
+}
+
+/// Cloudflares egne kritiske fund (`cfFund` i visning-overblik.js), med mellemrum foran.
+fn cf_fund_tekst(r: &Raekke1, sprog: Sprog) -> String {
+    let Some(f) = &r.cf_fund else { return String::new() };
+    match (sprog == Sprog::Da, f.n) {
+        (true, 1) => " Cloudflare har et kritisk sikkerhedsfund for domænet.".into(),
+        (true, n) => format!(" Cloudflare har {n} kritiske sikkerhedsfund for domænet."),
+        (false, 1) => " Cloudflare has a critical security finding for the domain.".into(),
+        (false, n) => format!(" Cloudflare has {n} critical security findings for the domain."),
+    }
+}
+
 /// Lækkede kodeord i statusdøgnet (`laek` i visning-overblik.js), med mellemrum foran. Aldrig stien.
 fn laek_tekst(r: &Raekke1, sprog: Sprog) -> String {
     let Some(l) = &r.laek else { return String::new() };
@@ -940,10 +972,12 @@ fn aarsag_tal(r: &Raekke1, sprog: Sprog) -> String {
         .as_ref()
         .map_or_else(String::new, |m| format!(" {}", moenster_tekst(m, sprog)));
     let server = format!(
-        "{}{}{}{}{}{maerke}",
+        "{}{}{}{}{}{}{}{maerke}",
         tek_tekst(r, sprog),
         laek_tekst(r, sprog),
+        sti200_tekst(r, sprog),
         dmarc_tekst(r, sprog),
+        cf_fund_tekst(r, sprog),
         trafik_tekst(r, sprog),
         server_tekst(r, sprog)
     );
@@ -1101,8 +1135,12 @@ pub fn tekst(b: &Besked, sprog: Sprog, dato_fmt: &DatoFormat) -> (String, String
             _ if !r.tilstand.is_empty() => format!("{}: the domain at Cloudflare", r.navn),
             _ if r.laek.is_some() && da => format!("{}: login med lækket kodeord", r.navn),
             _ if r.laek.is_some() => format!("{}: login with a leaked password", r.navn),
+            _ if r.sti200.is_some() && da => format!("{}: en følsom fil svarede 200", r.navn),
+            _ if r.sti200.is_some() => format!("{}: a sensitive file answered 200", r.navn),
             (Status::Gul, Status::Groen, true) if r.dmarc.is_some() => format!("{}: mails i dit navn fejlede DMARC", r.navn),
             (Status::Gul, Status::Groen, false) if r.dmarc.is_some() => format!("{}: mail in your name failed DMARC", r.navn),
+            (Status::Gul, Status::Groen, true) if r.cf_fund.is_some() => format!("{}: Cloudflare har et kritisk fund", r.navn),
+            (Status::Gul, Status::Groen, false) if r.cf_fund.is_some() => format!("{}: Cloudflare has a critical finding", r.navn),
             (Status::Roed, _, _) if r.naaet.is_some() && da => format!("{}: et angreb nåede din server", r.navn),
             (Status::Roed, _, _) if r.naaet.is_some() => format!("{}: an attack reached your server", r.navn),
             (Status::Roed, _, true) => format!("{}: usædvanligt mange angreb", r.navn),
@@ -1260,6 +1298,8 @@ mod tests {
             laek: None,
             dmarc: None,
             tilstand: vec![],
+            sti200: None,
+            cf_fund: None,
             moenster: None,
             afgjort: None,
             efterslaeb: vec![],
@@ -1416,6 +1456,62 @@ mod tests {
     }
 
     /// Stien når aldrig en notifikation, og tilstanden melder, også når tallene er gamle.
+    /// V-TOKEN.1: en følsom fil med svar 200 er Handl og meldes med sin egen titel; Cloudflares kritiske fund er Hold øje og følger niveauet.
+    #[test]
+    fn foelsom_fil_og_cloudflares_fund_i_beskeden() {
+        use crate::sikkerhed::HoejeFund;
+        use crate::sti200::Sti200Dag;
+        let fmt = DatoFormat::default();
+        let besked = |r: &Raekke1, n: Niveau| beslut(std::slice::from_ref(r), &ind(n), &intet(), NU);
+        let f = Raekke1 {
+            sti200: Some(Sti200Dag {
+                n: 3,
+                stier: vec!["/.env".into()],
+            }),
+            ..r("f", "f.wi24rd.com", Status::Roed, 0, 0.0)
+        };
+        let (titel, t) = tekst(besked(&f, Niveau::Standard).as_ref().unwrap(), Sprog::Da, &fmt);
+        assert_eq!(titel, "f.wi24rd.com: en følsom fil svarede 200");
+        assert_eq!(
+            t,
+            "Ingen angreb i går. En følsom fil (/.env) svarede 200 i går – den kan ligge åbent."
+        );
+        assert_eq!(
+            aarsag(&f, Sprog::En),
+            "No attacks yesterday. A sensitive file (/.env) answered 200 yesterday – it may be exposed."
+        );
+        let mange = Raekke1 {
+            sti200: Some(Sti200Dag {
+                n: 9,
+                stier: vec!["/.env".into(), "/.git/config".into(), "/.git/HEAD".into(), "/.npmrc".into()],
+            }),
+            ..f.clone()
+        };
+        assert!(aarsag(&mange, Sprog::Da)
+            .contains("Følsomme filer (/.env, /.git/config, /.git/HEAD, …) svarede 200 i går – de kan ligge åbent."));
+        assert!(aarsag(&mange, Sprog::En)
+            .contains("Sensitive files (/.env, /.git/config, /.git/HEAD, …) answered 200 yesterday – they may be exposed."));
+        let c = Raekke1 {
+            cf_fund: Some(HoejeFund {
+                n: 1,
+                klasser: vec!["always_use_https_not_enabled".into()],
+            }),
+            angreb_status: Status::Groen,
+            ..r("c", "c.wi24rd.com", Status::Gul, 0, 0.0)
+        };
+        assert_eq!(besked(&c, Niveau::Standard), None, "Hold øje følger niveauet");
+        let (titel, t) = tekst(besked(&c, Niveau::Alt).as_ref().unwrap(), Sprog::Da, &fmt);
+        assert_eq!(titel, "c.wi24rd.com: Cloudflare har et kritisk fund");
+        assert_eq!(t, "Ingen angreb i går. Cloudflare har et kritisk sikkerhedsfund for domænet.");
+        let (titel, _) = tekst(besked(&c, Niveau::Alt).as_ref().unwrap(), Sprog::En, &fmt);
+        assert_eq!(titel, "c.wi24rd.com: Cloudflare has a critical finding");
+        let to = Raekke1 {
+            cf_fund: Some(HoejeFund { n: 2, klasser: vec![] }),
+            ..c
+        };
+        assert!(aarsag(&to, Sprog::En).ends_with("Cloudflare has 2 critical security findings for the domain."));
+    }
+
     #[test]
     fn laek_og_tilstand_i_beskeden() {
         use crate::overblik::{LaekDag, TilstandFund};

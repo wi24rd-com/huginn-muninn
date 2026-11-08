@@ -25,7 +25,11 @@ Fold **Analytics & Logs** ud. Her skal **Analytics** have hak i **Read**.
 ![Analytics & Logs med Analytics › Read valgt](../img/cf-03-analytics-read.webp)
 *Under **Analytics & Logs** er kun **Analytics › Read** valgt. Det giver programmet lov til at læse tallene.*
 
-Alle andre grupper skal stå på **0**. Giv aldrig **Edit** til noget: programmet læser kun, og et API Token uden skriverettigheder kan ikke ændre noget hos Cloudflare, uanset hvad der sker med din computer.
+Alle andre grupper skal stå på **0** (undtagen den valgfri rettighed nedenfor, hvis du vil have den). Giv aldrig **Edit** til noget: programmet læser kun, og et API Token uden skriverettigheder kan ikke ændre noget hos Cloudflare, uanset hvad der sker med din computer.
+
+### Valgfrit: Cloudflares egne fund
+
+Vil du se Cloudflares egne sikkerhedsfund (Security Insights) under Angreb, giver du tokenet én rettighed mere: **Security Center Insights › Read**. I Cloudflares dokumentation hedder den *Account Security Center Insights* og står blandt kontorettighederne. Den kan kun læse. Uden den virker programmet som før, og afsnittet **Cloudflares egne fund** siger, at rettigheden kan tilføjes.
 
 ## Trin 3 – Vælg, hvilke domæner API Tokenet må se
 
@@ -59,7 +63,7 @@ Klik på **Continue to summary**.
 ![Token Summary](../img/cf-08-summary.webp)
 *Opsummeringen viser navnet, udløbet, hvilke domæner tokenet gælder for, og de to rettigheder **Analytics: Read** og **Zone: Read**.*
 
-Står der andet end **Analytics: Read** og **Zone: Read** under **Permission policies**, så klik **Back** og ret det. Ellers klik **Create Token**.
+Står der andet end **Analytics: Read** og **Zone: Read** (og **Security Center Insights: Read**, hvis du tilføjede den) under **Permission policies**, så klik **Back** og ret det. Ellers klik **Create Token**.
 
 ## Trin 6 – Kopiér API Tokenet
 

@@ -46,8 +46,10 @@ const GANG = `addEventListener('load', async () => {
   const sov = ms => new Promise(r => setTimeout(r, ms)), v = window.__HM_POST__, F = window.__HM_FEJL__;
   await sov(350);
   for (const a of v.aabn || []) { const e = document.querySelector(a); if (e) { e.click(); await sov(120); } else F.push('gennemløb: aabn rammer ikke ' + a); }
+  if (v.rul) setTimeout(() => { const e = document.querySelector(v.rul); if (e) e.scrollIntoView({ block: 'start' }); }, 1500);
   if (!window.__HM_TJEK__) return;
   await sov(${VENT});
+  if (v.rul && !document.querySelector(v.rul + ' h2')) F.push('gennemløb: rul rammer ikke et afsnit: ' + v.rul);
   const set = [...document.querySelectorAll('section.visning:not([hidden])')].map(e => e.dataset.visning).join(), vil = v.visning || v.hash.split('?')[0];
   if (set !== vil) F.push('gennemløb: viser ' + (set || 'ingenting') + ', ikke ' + vil);
   if (v.rod) { const e = document.querySelector(v.rod); if (!e || !e.checkVisibility()) F.push('gennemløb: rod er ikke synlig: ' + v.rod); }

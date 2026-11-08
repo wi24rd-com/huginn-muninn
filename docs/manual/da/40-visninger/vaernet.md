@@ -35,6 +35,8 @@ Længere nede på siden:
 - **Dit sites teknologi** (kun for ét domæne): hvad du har fortalt programmet, at sitet bruger, med **Ret teknologier**. Se [Teknologi pr. domæne](teknologi.md).
 - **Hvad angrebene var rettet mod**: teknologierne, angrebene gik efter, og om dit site bruger dem.
 - **Mails sendt i dit domænes navn** (kun for ét domæne): hvor mange mails der blev sendt i domænets navn i perioden, hvor mange der fejlede DMARC, og fra hvilke afsendere. Kræver DMARC Management hos Cloudflare.
+- **Følsomme filer, der svarede 200** (kun for ét domæne): 39 faste stier, der aldrig bør svare 200, fx `/.env`, `/.git/config` og `/.aws/credentials`, med antal svar, svarenes gennemsnitlige størrelse og en vurdering. Et klik på en sti viser angrebene på den. **Ligner filen** betyder, at svaret er højst 8 KB, mere end 25 % fra forsidens størrelse, og at domænet ikke svarer 200 på mere end 6 af stierne; kun da står domænet på **Handl**. **Ligner sidens almindelige side** betyder, at sitet svarer med sin almindelige side på adresser, der ikke findes (mange sites gør det), og ændrer ikke status. Tallene findes for dage, der er hentet efter opdateringen 8. november 2026.
+- **Cloudflares egne fund** (kun for ét domæne): det, Cloudflares egen skanning af domænets opsætning har fundet (Security Insights), med alvor, titel og dato. Et klik åbner Security Insights hos Cloudflare i din browser. Kræver én valgfri rettighed mere på API Tokenet, se [Opret API Token hos Cloudflare](../31-cloudflare.md). Uden den står der, at den kan tilføjes, og resten virker. Et kritisk fund giver **Hold øje**.
 - **Hvad de ledte efter**: de stier, scannerne spurgte efter, sorteret i kategorier.
 - **På dine andre domæner**: det samme på dine andre valgte domæner.
 - **De seneste**: de seneste afviste forespørgsler, renset for IP-adresser og forespørgselsdel.
@@ -57,7 +59,7 @@ Et klik på et tal, et land, en regel eller en sti lægger et filter på samme s
 ![Angreb filtreret på ét land](../../img/dyk-land--light-da-1200x860.webp)
 *Med et land som filter viser fliserne og kortet kun angrebene derfra.*
 
-Alle afsnit følger perioden og filtrene. Et afsnit, der ikke kan følge filtret, står ikke, og en linje nederst på siden siger hvilke. Det gælder fx **Dit sites teknologi**, **Mails sendt i dit domænes navn** og **Hvad de ledte efter**, for de tal har hverken land eller regel. Med et filter eller en valgt periode viser siden de gemte tal og henter intet fra Cloudflare.
+Alle afsnit følger perioden og filtrene. Et afsnit, der ikke kan følge filtret, står ikke, og en linje nederst på siden siger hvilke. Det gælder fx **Dit sites teknologi**, **Mails sendt i dit domænes navn**, **Følsomme filer, der svarede 200**, **Cloudflares egne fund** og **Hvad de ledte efter**, for de tal har hverken land eller regel. Med et filter eller en valgt periode viser siden de gemte tal og henter intet fra Cloudflare.
 
 ## Trafik den …
 
@@ -74,6 +76,8 @@ Klikker du på en dag med **usædvanlig meget trafik** (fra Overblik, en notifik
 - **… din egen regel har mange hits?** Så virker den. Klik på reglen for at se, hvad den stoppede.
 - **… du vil vide, om det er rettet mod dig?** Se **På dine andre domæner**. Mærket **Ligner målrettet** sættes netop, når angrebene steg her, men ikke på dine andre domæner, og en stor del kom fra ét netværk.
 - **… en sti dukker op igen og igen?** Klik på stien. Er det `wp-login.php` eller lignende, er det rutine fra scannere; se også [Login](login.md).
+- **… en følsom fil svarede 200?** Se afsnittet **Følsomme filer, der svarede 200**. Står der **Ligner filen**, så åbn adressen i din browser og se, hvad der kommer; **Hvad gør jeg?** giver rådene. Står der **Ligner sidens almindelige side**, svarer sitet med forsiden på alle adresser, og der er ikke noget at gøre.
+- **… Cloudflare har et kritisk fund?** Klik på fundet under **Cloudflares egne fund**. Cloudflare forklarer det i Security Insights; de fleste fund er råd om indstillinger.
 - **… en dag skiller sig ud?** Vælg dagen i datovælgeren eller klik på søjlen, og fold **Hvorfor fik dagen (ikke) et mærke?** ud.
 
 ## Klik videre

@@ -25,7 +25,11 @@ Unfold **Analytics & Logs**. Here **Analytics** must be ticked under **Read**.
 ![Analytics & Logs with Analytics › Read chosen](../img/cf-03-analytics-read.webp)
 *Under **Analytics & Logs** only **Analytics › Read** is chosen. That lets the program read the figures.*
 
-All other groups must stay at **0**. Never give **Edit** to anything: the program only reads, and an API Token without write permissions cannot change anything at Cloudflare, whatever happens to your computer.
+All other groups must stay at **0** (except the optional permission below, if you want it). Never give **Edit** to anything: the program only reads, and an API Token without write permissions cannot change anything at Cloudflare, whatever happens to your computer.
+
+### Optional: Cloudflare's own findings
+
+If you want to see Cloudflare's own security findings (Security Insights) under Attacks, give the token one more permission: **Security Center Insights › Read**. Cloudflare's documentation calls it *Account Security Center Insights* and lists it among the account permissions. It can only read. Without it the program works as before, and the section **Cloudflare's own findings** says the permission can be added.
 
 ## Step 3 – Choose which domains the API Token may see
 
@@ -59,7 +63,7 @@ Click **Continue to summary**.
 ![Token Summary](../img/cf-08-summary.webp)
 *The summary shows the name, the expiration, which domains the token applies to, and the two permissions **Analytics: Read** and **Zone: Read**.*
 
-If anything other than **Analytics: Read** and **Zone: Read** is listed under **Permission policies**, click **Back** and fix it. Otherwise click **Create Token**.
+If anything other than **Analytics: Read** and **Zone: Read** (and **Security Center Insights: Read**, if you added it) is listed under **Permission policies**, click **Back** and fix it. Otherwise click **Create Token**.
 
 ## Step 6 – Copy the API Token
 

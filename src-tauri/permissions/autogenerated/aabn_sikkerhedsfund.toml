@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-aabn-sikkerhedsfund"
+description = "Enables the aabn_sikkerhedsfund command without any pre-configured scope."
+commands.allow = ["aabn_sikkerhedsfund"]
+
+[[permission]]
+identifier = "deny-aabn-sikkerhedsfund"
+description = "Denies the aabn_sikkerhedsfund command without any pre-configured scope."
+commands.deny = ["aabn_sikkerhedsfund"]

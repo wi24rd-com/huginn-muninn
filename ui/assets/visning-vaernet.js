@@ -432,6 +432,64 @@
     });
     return [plads];
   }
+  /* "Følsomme filer, der svarede 200" (sti200.rs), kun fra cachen og for perioden. Hver sti åbner Angreb filtreret på stien. Antal, snit og vurdering har intet mere bag sig. */
+  const bytes = b => (b < 1024 ? `${tal(b)} B` : `${tal(Math.round(b / 102.4) / 10)} KB`);
+  function sti200Indhold(o) {
+    const intro = fmt(T.sti200P, { p: periodeTekst(), n: tal(o.liste) });
+    if (!o.stier.length) return V.blok(T.sti200H, intro, el('p', { className: 'sti200-tom', textContent: o.hentede_dage ? fmt(T.sti200Ingen, { n: tal(o.liste) }) : T.sti200Venter }));
+    const th = (t, k) => { const e = el('th', { textContent: t, className: k || 'v' }); e.setAttribute('scope', 'col'); return e; };
+    const rk = o.stier.map(x => {
+      const b = knap(x.sti, medFilter('sti', x.sti), 'link dyk-celle', fmt(T.sti200Aabn, { sti: x.sti }));
+      b.dataset.fokus = 'sti200:' + x.sti;
+      return el('tr', { className: x.troevaerdig ? 'sti200-fil' : '' }, el('td', { className: 'v' }, b), el('td', { className: 'tal-kol', textContent: tal(x.n) }), el('td', { className: 'tal-kol', textContent: bytes(x.snit) }), el('td', { className: 'v', textContent: x.troevaerdig ? T.sti200Fil : T.sti200Side }));
+    });
+    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel sti200-tabel' }, el('thead', {}, el('tr', {}, th(T.sti200ThSti), th(T.sti200ThN, 'tal-kol'), th(T.sti200ThSnit, 'tal-kol'), th(T.sti200ThVurd))), el('tbody', {}, ...rk)));
+    rul.setAttribute('role', 'region');
+    rul.setAttribute('aria-label', T.sti200H);
+    const fod = [el('p', { className: 'vg-note', textContent: fmt(T.sti200Note, { f: o.forside ? bytes(o.forside) : T.sti200UdenForside }) })];
+    if (o.stier.some(x => x.troevaerdig)) { const b = S.bog('sti200'); fod.push(el('details', { className: 'dyk-guide' }, el('summary', { textContent: T.sti200Guide }), el('p', { textContent: b.alle }), el('ol', {}, ...b.ja.map(t => el('li', { textContent: t }))))); }
+    return V.blok(T.sti200H, intro, rul, ...fod);
+  }
+  function sti200Blok(d, g) {
+    const plads = el('div'), z = zone();
+    plads.dataset.plads = 'sti200';
+    queueMicrotask(async () => {
+      let o;
+      try { o = await invoke('sti200_oversigt', { zone: z, fra: d.periode.fra, til: d.periode.til }); } catch (e) { return; }
+      if (g === gen && plads.isConnected && o) plads.replaceChildren(sti200Indhold(o));
+    });
+    return [plads];
+  }
+  /* "Cloudflares egne fund" (sikkerhed.rs), kun fra cachen. Hvert fund åbner Cloudflares faste side for Security Insights (aabn_sikkerhedsfund). Uden rettigheden står kun teksten om den. */
+  const ALVOR_CHIP = { critical: 'roed', high: 'roed', moderate: 'gul', low: 'graa' };
+  function cfIndhold(f) {
+    const linjer = [];
+    if (f.tilstand === 'mangler_ret') linjer.push(el('p', { className: 'cf-ret', textContent: T.cfManglerRet }));
+    else if (f.tilstand === 'venter') linjer.push(el('p', { className: 'cf-tom', textContent: T.cfVenter }));
+    else if (f.tilstand === 'fejl') linjer.push(el('p', { className: 'vg-advarsel vg-gul', textContent: fmt(T.cfFejl, { f: f.fejl || '' }) }));
+    if (f.tilstand !== 'mangler_ret' && f.fund.length) {
+      linjer.push(el('ul', { className: 'cf-liste' }, ...f.fund.map(x => {
+        const alvor = String(x.alvor || '').toLowerCase(), titel = T.cfKlasse[x.klasse] || String(x.klasse || '').replace(/_/g, ' ');
+        const b = el('button', { type: 'button', className: 'link cf-fund', textContent: titel });
+        b.setAttribute('aria-label', fmt(T.cfAabn, { t: titel }));
+        b.dataset.fokus = 'cf:' + x.klasse;
+        b.addEventListener('click', () => { if (invoke) invoke('aabn_sikkerhedsfund').catch(() => { }); });
+        return el('li', {}, el('span', { className: 'chip chip-' + (ALVOR_CHIP[alvor] || 'graa'), textContent: T.cfAlvor[alvor] || x.alvor }), ' ', b, x.siden ? el('small', { className: 'cf-siden', textContent: ' · ' + fmt(T.cfSiden, { d: V.datoLang(x.siden) }) }) : '');
+      })));
+    } else if (f.tilstand === 'ok') linjer.push(el('p', { className: 'cf-tom', textContent: T.cfIngen }));
+    if (f.hentet && f.tilstand !== 'venter') linjer.push(el('p', { className: 'vg-note', textContent: fmt(T.cfHentet, { t: V.datoLang(f.hentet.slice(0, 10)) }) }));
+    return V.blok(T.cfH, T.cfP, ...linjer);
+  }
+  function cfBlok(g) {
+    const plads = el('div'), z = zone();
+    plads.dataset.plads = 'cf';
+    queueMicrotask(async () => {
+      let f;
+      try { f = await invoke('sikkerhedsfund_oversigt', { zone: z }); } catch (e) { return; }
+      if (g === gen && plads.isConnected && f) plads.replaceChildren(cfIndhold(f));
+    });
+    return [plads];
+  }
   /* "Vurdering": for én dag på ét domæne. Uden en valgt dag er det i går. */
   const vurdering = d => [V.vurderingBoks({ zone: zone(), navn: domaene, dag: har('dag') ? params.get('dag') : d.i_gaar })];
 
@@ -495,6 +553,7 @@
     if (et && !filter) dele.push(...tekBlok(g)); else if (et) skjult.push(T.tekH);
     if (d.sum) dele.push(...rettetBlok(d));
     if (et && !filter) dele.push(...emailBlok(d, g)); else if (et) skjult.push(T.emailH);
+    if (et && !filter) dele.push(...sti200Blok(d, g), ...cfBlok(g)); else if (et) skjult.push(T.sti200H, T.cfH);
     if (visForsoeg(d)) dele.push(...forsoegBlok(d)); else if (d.forsoeg && d.forsoeg.kategorier.length && !har('forsoeg')) skjult.push(L.forsoegH);
     dele.push(...andre(d, liste));
     if (d.sum) dele.push(...enkelte(d));

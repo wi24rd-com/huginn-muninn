@@ -35,6 +35,8 @@ Further down the page:
 - **Your site's technology** (one domain only): what you have told the program the site uses, with **Edit technologies**. See [Technology by domain](teknologi.md).
 - **What the attacks were aimed at**: the technologies the attacks went for, and whether your site uses them.
 - **Mail sent in your domain's name** (one domain only): how many emails were sent in the domain's name in the period, how many failed DMARC, and from which senders. Requires DMARC Management at Cloudflare.
+- **Sensitive files that answered 200** (one domain only): 39 fixed paths that should never answer 200, for example `/.env`, `/.git/config` and `/.aws/credentials`, with the number of answers, the answers' average size and an assessment. A click on a path shows the attacks on it. **Looks like the file** means the answer is at most 8 KB, more than 25% away from the front page's size, and the domain does not answer 200 on more than 6 of the paths; only then does the domain show **Act**. **Looks like the site's ordinary page** means the site answers with its ordinary page at addresses that do not exist (many sites do), and it does not change the status. The figures exist for days fetched after the update of 8 November 2026.
+- **Cloudflare's own findings** (one domain only): what Cloudflare's own scan of the domain's setup has found (Security Insights), with severity, title and date. A click opens Security Insights at Cloudflare in your browser. Requires one more optional permission on the API Token, see [Create an API Token at Cloudflare](../31-cloudflare.md). Without it the section says it can be added, and the rest works. A critical finding gives **Watch**.
 - **What they were looking for**: the paths the scanners asked for, sorted into categories.
 - **On your other domains**: the same on your other chosen domains.
 - **The latest**: the latest refused requests, cleaned of IP addresses and query strings.
@@ -57,7 +59,7 @@ Clicking a figure, a country, a rule or a path adds a filter on the same page. T
 ![Attacks filtered on one country](../../img/dyk-land--light-en-1200x860.webp)
 *With a country as filter, the tiles and the map show only the attacks from there.*
 
-All sections follow the period and the filters. A section that cannot follow the filter is left out, and a line at the bottom of the page says which. That applies to **Your site's technology**, **Mail sent in your domain's name** and **What they were looking for**, for example, because those figures have neither country nor rule. With a filter or a chosen period the page shows the saved figures and fetches nothing from Cloudflare.
+All sections follow the period and the filters. A section that cannot follow the filter is left out, and a line at the bottom of the page says which. That applies to **Your site's technology**, **Mail sent in your domain's name**, **Sensitive files that answered 200**, **Cloudflare's own findings** and **What they were looking for**, for example, because those figures have neither country nor rule. With a filter or a chosen period the page shows the saved figures and fetches nothing from Cloudflare.
 
 ## Traffic on …
 
@@ -74,6 +76,8 @@ If you click a day with **unusually much traffic** (from Overview, a notificatio
 - **… your own rule has many hits?** Then it works. Click the rule to see what it stopped.
 - **… you want to know whether it is aimed at you?** See **On your other domains**. The label **Looks targeted** is set exactly when the attacks rose here, but not on your other domains, and a large part came from one network.
 - **… a path turns up again and again?** Click the path. If it is `wp-login.php` or similar, it is routine from scanners; see also [Login](login.md).
+- **… a sensitive file answered 200?** See the section **Sensitive files that answered 200**. If it says **Looks like the file**, open the address in your browser and see what comes back; **What do I do?** gives the advice. If it says **Looks like the site's ordinary page**, the site answers with its front page at every address, and there is nothing to do.
+- **… Cloudflare has a critical finding?** Click the finding under **Cloudflare's own findings**. Cloudflare explains it in Security Insights; most findings are advice about settings.
 - **… a day stands out?** Choose the day in the date picker or click its bar, and unfold **Why did the day (not) get a label?**.
 
 ## Click on

@@ -14,13 +14,15 @@ An **API Token** is a key you create in your Cloudflare account that lets a prog
 
 That is all. Without write permissions the program cannot change anything at Cloudflare, whatever happens to your computer.
 
+**Optional:** if you want to see Cloudflare's own security findings under Attacks, add one more permission, **Security Center Insights › Read** (in Cloudflare's documentation: *Account Security Center Insights*). It can also only read. The program works without it.
+
 How to do it:
 
 1. Click **Create API Token at Cloudflare** in the program. It opens Cloudflare's page **Create Token** in your browser with the name *Huginn and Muninn* and the two permissions filled in. (If you are not logged in, log in first.)
 2. Check under **Policies** that **DNS & Zones** shows 1 chosen (**Zone › Read**) and **Analytics & Logs** shows 1 chosen (**Analytics › Read**), and that all other groups are at 0. Give it no **Edit** permissions.
 3. Leave **Include · All zones** if Huginn should be able to see all your domains. If the API Token should only see one domain, choose **Specific zone** and the domain.
 4. Leave **Token expiration** at **No expiration**, and leave **Client IP address filtering** empty.
-5. Click **Continue to summary**, check that only **Analytics: Read** and **Zone: Read** are listed, and click **Create Token**.
+5. Click **Continue to summary**, check that only **Analytics: Read** and **Zone: Read** are listed (and **Security Center Insights: Read**, if you added it), and click **Create Token**.
 6. Copy the API Token. Cloudflare shows it only once.
 
 Each step is shown with screenshots in [Create an API Token at Cloudflare – step by step](31-cloudflare.md).

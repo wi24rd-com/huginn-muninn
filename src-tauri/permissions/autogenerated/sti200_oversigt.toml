@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-sti200-oversigt"
+description = "Enables the sti200_oversigt command without any pre-configured scope."
+commands.allow = ["sti200_oversigt"]
+
+[[permission]]
+identifier = "deny-sti200-oversigt"
+description = "Denies the sti200_oversigt command without any pre-configured scope."
+commands.deny = ["sti200_oversigt"]
