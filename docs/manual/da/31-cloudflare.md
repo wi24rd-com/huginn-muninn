@@ -29,7 +29,19 @@ Alle andre grupper skal stå på **0** (undtagen den valgfri rettighed nedenfor,
 
 ### Valgfrit: Cloudflares egne fund
 
-Vil du se Cloudflares egne sikkerhedsfund (Security Insights) under Angreb, giver du tokenet én rettighed mere: **Security Center Insights › Read**. I Cloudflares dokumentation hedder den *Account Security Center Insights* og står blandt kontorettighederne. Den kan kun læse. Uden den virker programmet som før, og afsnittet **Cloudflares egne fund** siger, at rettigheden kan tilføjes.
+Vil du se Cloudflares egne sikkerhedsfund (Security Insights) under Angreb, giver du tokenet én rettighed mere: **Account Security Center Insights › Read**. Den hører til kontoen, ikke til domænerne, så den skal i en ny politik for kontoen. Den kan kun læse. Uden den virker programmet som før, og afsnittet **Cloudflares egne fund** siger, at rettigheden kan tilføjes.
+
+1. Klik på **Add new policy** under politikken med de to rettigheder, og vælg **Add new Account policy**.
+
+![Add new policy med valget Add new Account policy](../img/cf-13-add-account-policy.webp)
+*Menuen under **Add new policy**: vælg **Add new Account policy**, ikke **Add new Zone policy**.*
+
+2. Lad **Include** og **All accounts** stå. Skriv `Security Center` i søgefeltet, og sæt hak i **Read** ud for **Account Security Center Insights**.
+
+![Account Security Center Insights med Read valgt](../img/cf-14-account-insights-read.webp)
+*Den nye kontopolitik med **Account Security Center Insights › Read**. Den første politik står foldet sammen ovenover med **Analytics Read, Zone Read**.*
+
+Søger du efter `Security Center` i den første politik, finder du **Zone Security Center Insights**. Den virker ikke med programmet: Cloudflare svarer kun på kontoens fund. Brug **Account Security Center Insights**.
 
 ## Trin 3 – Vælg, hvilke domæner API Tokenet må se
 
@@ -63,7 +75,10 @@ Klik på **Continue to summary**.
 ![Token Summary](../img/cf-08-summary.webp)
 *Opsummeringen viser navnet, udløbet, hvilke domæner tokenet gælder for, og de to rettigheder **Analytics: Read** og **Zone: Read**.*
 
-Står der andet end **Analytics: Read** og **Zone: Read** (og **Security Center Insights: Read**, hvis du tilføjede den) under **Permission policies**, så klik **Back** og ret det. Ellers klik **Create Token**.
+![Token Summary med den valgfri rettighed](../img/cf-15-summary-insights.webp)
+*Med den valgfri rettighed står der en politik mere: **All accounts** med **Account Security Center Insights: Read**.*
+
+Står der andet end **Analytics: Read** og **Zone: Read** (og **Account Security Center Insights: Read**, hvis du tilføjede den) under **Permission policies**, så klik **Back** og ret det. Ellers klik **Create Token**.
 
 ## Trin 6 – Kopiér API Tokenet
 

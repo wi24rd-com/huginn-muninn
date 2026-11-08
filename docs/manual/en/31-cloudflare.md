@@ -29,7 +29,19 @@ All other groups must stay at **0** (except the optional permission below, if yo
 
 ### Optional: Cloudflare's own findings
 
-If you want to see Cloudflare's own security findings (Security Insights) under Attacks, give the token one more permission: **Security Center Insights › Read**. Cloudflare's documentation calls it *Account Security Center Insights* and lists it among the account permissions. It can only read. Without it the program works as before, and the section **Cloudflare's own findings** says the permission can be added.
+If you want to see Cloudflare's own security findings (Security Insights) under Attacks, give the token one more permission: **Account Security Center Insights › Read**. It belongs to the account, not to the domains, so it goes in a new policy for the account. It can only read. Without it the program works as before, and the section **Cloudflare's own findings** says the permission can be added.
+
+1. Click **Add new policy** below the policy with the two permissions, and choose **Add new Account policy**.
+
+![Add new policy with the choice Add new Account policy](../img/cf-13-add-account-policy.webp)
+*The menu under **Add new policy**: choose **Add new Account policy**, not **Add new Zone policy**.*
+
+2. Leave **Include** and **All accounts** as they are. Type `Security Center` in the search field, and tick **Read** next to **Account Security Center Insights**.
+
+![Account Security Center Insights with Read selected](../img/cf-14-account-insights-read.webp)
+*The new account policy with **Account Security Center Insights › Read**. The first policy is folded above it with **Analytics Read, Zone Read**.*
+
+If you search for `Security Center` in the first policy, you find **Zone Security Center Insights**. It does not work with the program: Cloudflare only answers with the account's findings. Use **Account Security Center Insights**.
 
 ## Step 3 – Choose which domains the API Token may see
 
@@ -63,7 +75,10 @@ Click **Continue to summary**.
 ![Token Summary](../img/cf-08-summary.webp)
 *The summary shows the name, the expiration, which domains the token applies to, and the two permissions **Analytics: Read** and **Zone: Read**.*
 
-If anything other than **Analytics: Read** and **Zone: Read** (and **Security Center Insights: Read**, if you added it) is listed under **Permission policies**, click **Back** and fix it. Otherwise click **Create Token**.
+![Token Summary with the optional permission](../img/cf-15-summary-insights.webp)
+*With the optional permission there is one more policy: **All accounts** with **Account Security Center Insights: Read**.*
+
+If anything other than **Analytics: Read** and **Zone: Read** (and **Account Security Center Insights: Read**, if you added it) is listed under **Permission policies**, click **Back** and fix it. Otherwise click **Create Token**.
 
 ## Step 6 – Copy the API Token
 

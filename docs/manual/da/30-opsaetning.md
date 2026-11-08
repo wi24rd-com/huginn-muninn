@@ -14,7 +14,7 @@ Et **API Token** er en nøgle, du opretter i din Cloudflare-konto, og som giver 
 
 Det er alt. Uden skriverettigheder kan programmet ikke ændre noget hos Cloudflare, uanset hvad der sker med din computer.
 
-**Valgfrit:** vil du se Cloudflares egne sikkerhedsfund under Angreb, tilføjer du én rettighed mere, **Security Center Insights › Read** (i Cloudflares dokumentation: *Account Security Center Insights*). Den kan også kun læse. Programmet virker uden.
+**Valgfrit:** vil du se Cloudflares egne sikkerhedsfund under Angreb, tilføjer du én rettighed mere: **Account Security Center Insights › Read** i en ny politik for kontoen (**Add new policy** › **Add new Account policy**), ikke zone-udgaven. Den kan også kun læse. Programmet virker uden. Se [Opret API Token hos Cloudflare](31-cloudflare.md).
 
 Sådan gør du:
 
@@ -22,7 +22,7 @@ Sådan gør du:
 2. Tjek under **Policies**, at **DNS & Zones** viser 1 valgt (**Zone › Read**) og **Analytics & Logs** viser 1 valgt (**Analytics › Read**), og at alle andre grupper står på 0. Giv det ingen **Edit**-rettigheder.
 3. Lad **Include · All zones** stå, hvis Huginn skal kunne se alle dine domæner. Skal API Tokenet kun se ét domæne, vælger du **Specific zone** og domænet.
 4. Lad **Token expiration** stå på **No expiration**, og lad **Client IP address filtering** være tomt.
-5. Klik **Continue to summary**, tjek, at der kun står **Analytics: Read** og **Zone: Read** (og **Security Center Insights: Read**, hvis du tilføjede den), og klik **Create Token**.
+5. Klik **Continue to summary**, tjek, at der kun står **Analytics: Read** og **Zone: Read** (og **Account Security Center Insights: Read**, hvis du tilføjede den), og klik **Create Token**.
 6. Kopiér API Tokenet. Cloudflare viser det kun én gang.
 
 Hvert trin er vist med skærmbilleder i [Opret API Token hos Cloudflare – trin for trin](31-cloudflare.md).

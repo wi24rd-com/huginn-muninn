@@ -281,6 +281,27 @@
      "sprog": "begge",
      "fil": "img/cf-12-delete-confirm.webp",
      "sha256": "2f3cbcdad4704581458f3285a23e18ea8a90423f9e946e011664e6f46240de47"
+    },
+    {
+     "id": "cf-13-add-account-policy",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-13-add-account-policy.webp",
+     "sha256": "ea1538a934f2a480b90b735301e7c5adb46d28850daaedf67269992f8c9dd2ff"
+    },
+    {
+     "id": "cf-14-account-insights-read",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-14-account-insights-read.webp",
+     "sha256": "0947f23e15868fa639aec2b2aaf11fac97ba176480943bbc4ce4156ecbf7da48"
+    },
+    {
+     "id": "cf-15-summary-insights",
+     "tema": "light",
+     "sprog": "begge",
+     "fil": "img/cf-15-summary-insights.webp",
+     "sha256": "e8dc690116ff4ffbaee07c1c58d2dbd85d88a63d3d87fd3856f5f5de367ff5ec"
     }
    ]
   },
