@@ -6,6 +6,7 @@
 //! hentes uden for køen (`radar`).
 mod adgang;
 mod agent;
+mod besoeg;
 mod cf;
 mod dagligt;
 mod dmarc;
@@ -336,6 +337,25 @@ async fn hent_historik(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &
         .await?;
     let dage = robotter::dage_i(fra, til);
     laas(tilstand)?.gem_historik(zone, &dage, &historik::raekker(&svar)?, &vaern::iso(nu_ms()))
+}
+
+/// Unikke besøgende for døgn, der blev hentet før tallet kom med: ét kald med `historik::HISTORIK_QUERY`, og kun `unikke` gemmes (`Store::gem_unikke`).
+async fn hent_unikke(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, historik::HISTORIK_QUERY, historik::variabler(zone, fra, til))
+        .await?;
+    laas(tilstand)?.gem_unikke(zone, &historik::unikke_raekker(&svar)?)
+}
+
+/// Besøg pr. land for døgnene `fra`…`til`: ét kald med `besoeg::BESOEG_QUERY`.
+async fn hent_besoeg(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, besoeg::BESOEG_QUERY, besoeg::variabler(zone, fra, til)?)
+        .await?;
+    let dage = robotter::dage_i(fra, til);
+    laas(tilstand)?.gem_besoeg(zone, &dage, &besoeg::raekker(&svar, &dage)?, &vaern::iso(nu_ms()))
 }
 
 /// Zonens tilstand: GET /zones/{id}, Zone Read, som tokenet har i forvejen.
@@ -858,6 +878,20 @@ async fn robotter(omfang: dyk::Omfang, periode: dyk::Periode, tilstand: State<'_
     Ok(robotter::regn(&spoerg.periode, &laest, nu))
 }
 
+/// Besøgende: unikke besøgende pr. dag og besøg pr. land for ét domæne eller de valgte tilsammen, kun fra cachen (intet netværk). `land`: grafen viser besøg fra det land.
+#[tauri::command]
+async fn besoegende(
+    omfang: dyk::Omfang,
+    periode: dyk::Periode,
+    land: Option<String>,
+    tilstand: State<'_, Tilstand>,
+) -> Svar<besoeg::BesoegUd> {
+    let spoerg = dyk::tjek(omfang, Vec::new(), periode, None)?;
+    let land = besoeg::tjek_land(land)?;
+    let laest = besoeg::laes(&*laas(&tilstand)?, &spoerg.zoner)?;
+    Ok(besoeg::regn(&spoerg.periode, land.as_deref(), &laest, nu_ms()))
+}
+
 /// Login: de gemte tal for domænets login-stier, kun fra cachen (intet netværk).
 #[tauri::command]
 async fn login(omfang: dyk::Omfang, periode: dyk::Periode, filter: login::Filter, tilstand: State<'_, Tilstand>) -> Svar<login::LoginUd> {
@@ -1052,6 +1086,12 @@ impl Henter for KoeHenter<'_> {
     }
     async fn historik(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
         hent_historik(self.tilstand, self.token, zone, fra, til).await
+    }
+    async fn unikke(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+        hent_unikke(self.tilstand, self.token, zone, fra, til).await
+    }
+    async fn besoeg(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+        hent_besoeg(self.tilstand, self.token, zone, fra, til).await
     }
     async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
         hent_tilstand(self.tilstand, self.token, zone).await
@@ -1742,6 +1782,8 @@ pub fn run() {
             let mut lager = Store::aaben(&mappe.join(DATABASE))?;
             // V-SAMPLE.1: én gang hentes de færdige døgn i hentevinduet igen med Cloudflares estimat. Fejler det, prøves der igen ved næste start.
             let _ = vaern::fw_vaegt_en_gang(&mut lager, nu_ms());
+            // V-BESOEG.1: én gang hentes unikke besøgende for de døgn i året, der allerede er hentet. Fejler det, prøves der igen ved næste start.
+            let _ = lager.unikke_en_gang(&vaern::dag_noegle(nu_ms()));
             let sprog = sprog_fra(&lager);
             app.manage(Tilstand {
                 lager: Mutex::new(lager),
@@ -1799,6 +1841,7 @@ pub fn run() {
             vaern_samlet_cache,
             dyk,
             robotter,
+            besoegende,
             login,
             login_stier,
             login_sti_saet,

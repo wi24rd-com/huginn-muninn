@@ -16,6 +16,7 @@ const KOMMANDOER: &[&str] = &[
     "vaern_samlet_cache",
     "dyk",
     "robotter",
+    "besoegende",
     "login",
     "login_stier",
     "login_sti_saet",

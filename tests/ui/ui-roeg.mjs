@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import http from 'node:http';
 import { spawn, spawnSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
-import { dykFraVaern, SIDER, svar, VURD7, dom, NU_MS, UR_AAR, UR_STUB, flytAar, siderIAar, B2, B2C_HULLER, B2C_TEK, B2C_TRAFIK, B2C_VERDEN, KORT, LAND_UD, LOGIN_STIER, LOGIN_UD, MED_TOKEN, NU_ISO, OVERBLIK, REACT, REGEL_HOVED, ROBOT_UD, SIDEN_RK, dage, dykDage, dykSvar, kortRegel, landDage, loginDage, raekke, vaernUd } from './sider.mjs';
+import { dykFraVaern, SIDER, svar, VURD7, dom, NU_MS, UR_AAR, UR_STUB, flytAar, siderIAar, B2, B2C_HULLER, B2C_TEK, B2C_TRAFIK, B2C_VERDEN, KORT, LAND_UD, BESOEG_LAND, BESOEG_UD, LOGIN_STIER, LOGIN_UD, MED_TOKEN, NU_ISO, OVERBLIK, REACT, REGEL_HOVED, ROBOT_UD, SIDEN_RK, dage, dykDage, dykSvar, kortRegel, landDage, loginDage, raekke, vaernUd } from './sider.mjs';
 const repo = process.env.HM_REPO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 if (!process.env.HM_NOTIF_IIFE) {
   const lock = fs.readFileSync(path.join(repo, 'src-tauri', 'Cargo.lock'), 'utf8');
@@ -598,7 +598,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
 {
   const html = ui('index.html');
   const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map(m => m[0]);
-  tjek('S CSP: ingen inline-scripts (hvert <script> har src og defer) og ingen style= i index.html', scripts.length === 14 && scripts.every(t => / src="assets\/[a-z-]+\.js"/.test(t) && (/ defer/.test(t) || t.includes('tema.js'))) && !/<script\b[^>]*>[^<]+<\/script>/.test(html) && !/\sstyle=/.test(html) && !/\son[a-z]+=/.test(html), scripts.join(' '));
+  tjek('S CSP: ingen inline-scripts (hvert <script> har src og defer) og ingen style= i index.html', scripts.length === 15 && scripts.every(t => / src="assets\/[a-z-]+\.js"/.test(t) && (/ defer/.test(t) || t.includes('tema.js'))) && !/<script\b[^>]*>[^<]+<\/script>/.test(html) && !/\sstyle=/.test(html) && !/\son[a-z]+=/.test(html), scripts.join(' '));
   const nye = ['tema.js', 'ramme.js', 'vg-tegn.js', 'velkomst.js', 'visning-vaernet.js', 'visning-overblik.js', 'visning-siden.js', 'visning-indstillinger.js', 'sprog.js', 'genforsoeg.js'].map(f => [f, udenKommentarer(ui('assets/' + f))]);
   tjek('S nyt UI: ingen innerHTML og ingen style-attributter i ramme og visninger', nye.every(([, k]) => !/innerHTML|setAttribute\(\s*'style'|\.style\./.test(k)), nye.filter(([, k]) => /innerHTML|\.style\./.test(k)).map(([f]) => f).join());
   const alleUi = ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => f.endsWith('.js')).map(f => 'assets/' + f)].map(f => [f, udenKommentarer(ui(f))]);
@@ -1314,7 +1314,7 @@ const dagFor = n => new Date(urNu() - n * 864e5).toISOString().slice(0, 10);
   tjek('P4 "?" på engelsk', hje.querySelector('[data-t=edgeH]').textContent === 'Edge – first line of defence' && ['network of data centres', 'anycast', 'nearest the attacker', 'orange cloud', 'own IP address', 'only accepts traffic from Cloudflare'].every(x => edgeE.includes(x)), edgeE);
   const filer = ['ui/assets/sprog.js', 'ui/index.html', 'README.md', 'README.da.md', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /^visning-.*\.js$/.test(f)).map(f => 'ui/assets/' + f)];
   const fund = filer.filter(f => /\b(ved )?porten\b|\bkanten\b|\bthe gate\b/i.test(fs.readFileSync(path.join(repo, f), 'utf8')));
-  tjek(`P4 ingen "porten", "ved porten", "kanten" eller "the gate" (${filer.length} filer)`, fund.length === 0 && filer.length === 12, fund.join());
+  tjek(`P4 ingen "porten", "ved porten", "kanten" eller "the gate" (${filer.length} filer)`, fund.length === 0 && filer.length === 13, fund.join());
 }
 // ── P5: kortet ──
 {
@@ -2168,6 +2168,92 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('V licens: package.json og Cargo.toml', JSON.parse(fs.readFileSync(path.join(repo, 'package.json'), 'utf8')).license === 'Apache-2.0' && /^license = "Apache-2\.0"$/m.test(fs.readFileSync(path.join(repo, 'src-tauri', 'Cargo.toml'), 'utf8')));
 }
 
+// ── Besøgende (V-BESOEG.1) ──
+{
+  const BES = x => DYK({ besoegende: a => (a.land ? BESOEG_LAND : BESOEG_UD), trafik_dag: B2C_TRAFIK, ...x });
+  const DOM = 'zone=z1&navn=wi24rd.com';
+  const s = side('#besoegende?' + DOM, BES()), en = side('#besoegende?' + DOM, BES(), 'en', 'macos');
+  await sov(80);
+  const { d } = s, q = x => d.querySelector('#visning-besoegende ' + x), qa = x => [...d.querySelectorAll('#visning-besoegende ' + x)];
+  const sidst = (x, c) => x.kald.filter(k => k[0] === c).pop();
+  tjek('BES visningen står, og kaldet har zonen, 7 dage og intet land', synlige(d).join() === 'besoegende' && sidst(s, 'besoegende')[1].omfang.zone === 'z1' && sidst(s, 'besoegende')[1].periode === 'd7' && sidst(s, 'besoegende')[1].land === null, JSON.stringify(sidst(s, 'besoegende')));
+  const punkt = x => x.d.querySelector('#side a[data-visning="besoegende"]');
+  tjek('BES menupunktet efter Land lige nu med Ctrl+7 (dansk, Windows) og ⌘7 (engelsk, macOS), og det er det aktuelle', punkt(s).closest('li').previousElementSibling.querySelector('a').dataset.visning === 'land' && punkt(s).textContent === 'BesøgendeCtrl+7' && punkt(en).textContent === 'Visitors⌘7' && punkt(s).getAttribute('aria-current') === 'page' && punkt(s).querySelector('svg.ik[aria-hidden="true"]'), punkt(s).textContent + ' / ' + punkt(en).textContent);
+  tjek('BES titel og hjælp følger visningen, og Genveje i hjælpen har ⌘7/Ctrl+7', d.title.startsWith('Besøgende · wi24rd.com') && en.d.title.startsWith('Visitors · wi24rd.com') && !d.querySelector('.hjaelp-del[data-hjaelp=besoegende]').hidden && d.querySelector('[data-t=hjBesoeg]').textContent.startsWith('Her ser du') && d.getElementById('genveje').textContent.includes('Ctrl+7Besøgende') && en.d.getElementById('genveje').textContent.includes('⌘7Visitors'), d.title + ' / ' + en.d.getElementById('genveje').textContent);
+  const fl = qa('.besoeg-fliser > *'), flise = t => fl.find(x => x.textContent.includes(t));
+  tjek('BES fem fliser med tallene og "N af M dage"', fl.length === 5 && flise('i går').querySelector('b').textContent === '412' && flise('på 7 dage').textContent === '2.380Unikke besøgende på 7 dage6 af 7 dage' && flise('på 30 dage').querySelector('small') === null && flise('på et år').textContent === '131.900Unikke besøgende på et år340 af 365 dage' && flise('Besøg på 30 dage').querySelector('b').textContent === '4.210', fl.map(x => x.textContent).join(' | '));
+  const gaa = t => flise(t).dataset.gaa;
+  tjek('BES fliserne sætter perioden (i går er dagen), og 7 dage er den valgte', gaa('i går') === `besoegende?${DOM}&fra=2026-11-05&til=2026-11-05` && gaa('på 7 dage') === `besoegende?${DOM}` && flise('på 7 dage').getAttribute('aria-current') === 'true' && gaa('på 30 dage') === `besoegende?${DOM}&periode=30` && gaa('på et år') === `besoegende?${DOM}&periode=aar` && gaa('Besøg på 30 dage') === `besoegende?${DOM}&periode=30` && fl.every(x => x.tagName === 'BUTTON' && x.getAttribute('aria-label')), fl.map(x => x.dataset.gaa).join(' | '));
+  const soejler = qa('#besoeg-graf .dyk-soejle'), klik = soejler.filter(g => g.hasAttribute('data-dyk'));
+  tjek('BES grafen: 7 dage, hullet er ikke 0 og dagen med 0 er ikke klikbar', soejler.length === 7 && klik.length === 5 && soejler[3].classList.contains('dyk-uhentet') && !soejler[3].hasAttribute('data-dyk') && !soejler[2].hasAttribute('data-dyk') && q('#besoeg-graf h2').textContent === 'Unikke besøgende pr. dag', `${soejler.length} ${klik.length}`);
+  tjek('BES grafen: "6 af 7 dage" står under, når der mangler dage', q('#besoeg-graf .hul-note').textContent === 'Grafen dækker 6 af 7 dage. Dage uden tal er ikke 0: de er ikke hentet.', q('#besoeg-graf .hul-note') && q('#besoeg-graf .hul-note').textContent);
+  tjek('BES en dag i grafen åbner "Trafik den …" på Angreb', klik.at(-1).dataset.dyk === `${DOM}&dag=2026-11-05&trafik=1` && klik.at(-1).getAttribute('aria-label') === '5. november: 412. Åbn dagen.', klik.at(-1).getAttribute('aria-label'));
+  const t1 = q('#besoeg-lande .vg-tabel-rul table'), flere = q('#besoeg-lande details.dyk-flere');
+  const rk = [...t1.querySelectorAll('tbody tr')], celler1 = [...rk[0].children].map(c => c.textContent);
+  tjek('BES landetabellen: de 10 største med besøg og andel, resten bag "Vis alle 14 lande"', rk.length === 10 && celler1.join('|') === 'Danmark|2.200|53,5 %' && [...t1.querySelectorAll('thead th')].map(x => x.textContent).join() === 'Land,Besøg,Andel' && flere.querySelector('summary').textContent === 'Vis alle 14 lande' && flere.querySelectorAll('tbody tr').length === 4 && !q('#besoeg-lande .vg-note'), celler1.join('|'));
+  tjek('BES landetabellen: kun landet er klikbart, tallene er ikke', rk.every(r => r.querySelector('th button[data-gaa]') && !r.querySelector('td button, td [data-gaa], td [data-dyk]')) && rk[0].querySelector('button').dataset.gaa === `besoegende?${DOM}&land=DK` && rk[0].querySelector('button').getAttribute('aria-label') === 'Vis besøg fra Danmark pr. dag (2.200 besøg)');
+  tjek('BES noten siger unikke IP-adresser, robotter, VPN og stikprøve, og intet om Samlet for ét domæne', ['unikke IP-adresser', 'robotter tæller med', 'VPN', 'stikprøve', 'én gang pr. dag'].every(x => q('.besoeg-note').textContent.includes(x)) && !q('.besoeg-note').textContent.includes('Alle domæner'), q('.besoeg-note').textContent);
+  tjek('BES engelsk: fliser, tabel og note', en.d.querySelector('.besoeg-fliser').textContent.includes('Unique visitors yesterday') && en.d.querySelector('#besoeg-lande h2').textContent === 'Where the visits came from' && en.d.querySelector('#besoeg-lande details summary').textContent === 'Show all 14 countries' && en.d.querySelector('.besoeg-note').textContent.includes('unique IP addresses'));
+  tjek('BES periodevælgeren: 7, 30 dage og et år, plus Fra/Til med Nulstil til et år', [...d.querySelectorAll('#besoegende-periode label')].map(x => x.textContent).join() === '7 dage,30 dage,Et år' && q('.dato-vaelger') && q('.dato-vaelger [data-gaa]').dataset.gaa === `besoegende?${DOM}&periode=aar`);
+  const r30 = [...d.querySelectorAll('#besoegende-periode input')][1];
+  r30.checked = true;
+  r30.dispatchEvent(new s.w.Event('change', { bubbles: true }));
+  await sov(60);
+  tjek('BES 30 dage er ét trin, og kaldet følger med', s.w.location.hash === `#besoegende?${DOM}&periode=30` && sidst(s, 'besoegende')[1].periode === 'd30', s.w.location.hash);
+  // Et land som filter: chip med ×, grafen viser besøg fra landet, og × fjerner det igen.
+  q('#besoeg-lande tbody tr button').click();
+  await sov(60);
+  const chip = q('.besoeg-land-chip');
+  tjek('BES et klik på et land lægger filtret: kaldet har landet, chip med ×, og grafen er besøg fra landet', s.w.location.hash === `#besoegende?${DOM}&periode=30&land=DK` && sidst(s, 'besoegende')[1].land === 'DK' && chip && chip.textContent === 'Danmark ×' && chip.dataset.gaa === `besoegende?${DOM}&periode=30` && chip.getAttribute('aria-label') === 'Fjern filtret Danmark' && q('#besoeg-graf h2').textContent === 'Besøg fra Danmark pr. dag' && qa('#besoeg-graf .dyk-soejle').length === 30, s.w.location.hash);
+  chip.click();
+  await sov(60);
+  tjek('BES × fjerner landet', s.w.location.hash === `#besoegende?${DOM}&periode=30` && !q('.besoeg-land-chip') && sidst(s, 'besoegende')[1].land === null, s.w.location.hash);
+  // Et klik på en dag: Trafik den … på Angreb.
+  const t = side('#besoegende?' + DOM, BES());
+  await sov(80);
+  [...t.d.querySelectorAll('#besoeg-graf .dyk-soejle[data-dyk]')].at(-1).dispatchEvent(new t.w.MouseEvent('click', { bubbles: true }));
+  await sov(120);
+  tjek('BES klik på en dag: Angreb med "Trafik den …" for dagen', t.w.location.hash === `#vaernet?${DOM}&dag=2026-11-05&trafik=1` && synlige(t.d).join() === 'vaernet' && t.kald.some(k => k[0] === 'trafik_dag'), t.w.location.hash);
+  // En periode, der når længere tilbage end besøgene: det står over tabellen.
+  const aar = side('#besoegende?' + DOM + '&periode=aar', BES({ besoegende: { ...BESOEG_UD, periode: { ...BESOEG_UD.periode, fra: '2025-11-06', dage: 365, med: 340 } } }));
+  await sov(80);
+  tjek('BES et år: kaldet er hele året, og noten siger, hvorfra besøgene findes', sidst(aar, 'besoegende')[1].periode === 'alt' && aar.d.querySelector('#besoeg-lande .vg-note').textContent === 'Besøg pr. land findes fra 7. oktober. Cloudflare har dem i en måned, og programmet gemmer dagene derfra.', aar.d.querySelector('#besoeg-lande').textContent.slice(0, 200));
+  // Ikke tilgængelig: én linje, og resten af siden virker.
+  const IKKE = { ...BESOEG_UD, lande: [], lande_i_alt: 0, lande_med: 0, besoeg_fra: null, besoeg30: { n: 0, med: 0, dage: 30 }, ikke_tilgaengelig: ['wi24rd.com'] };
+  const ik = side('#besoegende?' + DOM, BES({ besoegende: IKKE })), iks = side('#besoegende?samlet=1', BES({ besoegende: { ...IKKE, ikke_tilgaengelig: ['a.wi24rd.com', 'wi24rd.com'] } }));
+  await sov(80);
+  const ikq = x => ik.d.querySelector('#visning-besoegende ' + x), b30 = [...ik.d.querySelectorAll('.besoeg-fliser > *')].find(x => x.textContent.includes('Besøg på 30 dage'));
+  tjek('BES "ikke tilgængelig": én linje, ingen tabel, og fliserne og grafen står', ikq('.besoeg-ikke').textContent === 'Besøg pr. land er ikke tilgængelige for dette domæne hos Cloudflare. Resten af siden virker.' && ik.d.querySelectorAll('.besoeg-ikke').length === 1 && !ikq('#besoeg-lande table') && !ikq('#besoeg-lande .dyk-tom') && ik.d.querySelectorAll('.besoeg-fliser > *').length === 5 && ik.d.querySelectorAll('#besoeg-graf .dyk-soejle').length === 7, ikq('#besoeg-lande').textContent);
+  tjek('BES "ikke tilgængelig": flisen for besøg er ikke klikbar og siger det', b30.tagName === 'DIV' && !b30.dataset.gaa && b30.textContent === '–Besøg på 30 dageIkke tilgængelig', b30.outerHTML);
+  tjek('BES Samlet: kaldet har de valgte, linjen nævner domænerne, og noten siger, at domænerne lægges sammen', sidst(iks, 'besoegende')[1].omfang.zoner.join() === 'z1,z2' && iks.d.querySelector('.besoeg-ikke').textContent === 'Besøg pr. land er ikke tilgængelige hos Cloudflare for a.wi24rd.com, wi24rd.com. Resten af siden virker.' && iks.d.querySelector('.besoeg-note').textContent.includes('Alle domæner lægges sammen') && !iks.d.getElementById('band-zone').hidden, JSON.stringify(sidst(iks, 'besoegende')));
+  // Intet klikbart uden data.
+  const TOM = { ...BESOEG_UD, i_gaar: null, d7: { n: 0, med: 0, dage: 7 }, d30: { n: 0, med: 0, dage: 30 }, aar: { n: 0, med: 0, dage: 365 }, besoeg30: { n: 0, med: 0, dage: 30 }, dage: BESOEG_UD.dage.map(x => ({ dag: x.dag, n: null })), periode: { ...BESOEG_UD.periode, med: 0, data_fra: null, data_til: null }, lande: [], lande_i_alt: 0, lande_med: 0, besoeg_fra: null };
+  const tom = side('#besoegende?' + DOM, BES({ besoegende: TOM }));
+  await sov(80);
+  const rod = tom.d.getElementById('besoegende-rod'), maalene = [...rod.querySelectorAll('[data-dyk], [data-gaa], [data-rul]')];
+  tjek('BES intet klikbart uden data: fliserne er "–", grafen har ingen mål, og kun Nulstil fører et sted hen', [...rod.querySelectorAll('.besoeg-fliser > *')].every(x => x.tagName === 'DIV' && x.querySelector('b').textContent === '–') && !rod.querySelector('#besoeg-graf [data-dyk], #besoeg-graf [role=link]') && maalene.length === 1 && maalene[0].closest('.dato-vaelger') && rod.querySelector('#besoeg-lande .dyk-tom').textContent === 'Besøg pr. land er ikke hentet endnu. De hentes i baggrunden efter de andre tal.', maalene.map(x => x.outerHTML.slice(0, 80)).join(' | '));
+  // Genvej, programmenu og resten af rammen.
+  const g = side('#overblik', BES()), { w } = g;
+  await sov(70);
+  g.tast('7', { ctrlKey: true });
+  await sov(60);
+  tjek('BES Ctrl+7 på Windows åbner Besøgende med det fælles domænevalg', w.location.hash.startsWith('#besoegende?'), w.location.hash);
+  g.emit('visning', 'overblik');
+  await sov(40);
+  g.emit('visning', 'besoegende');
+  await sov(60);
+  tjek('BES programmenuen: hændelsen visning åbner Besøgende', w.location.hash.startsWith('#besoegende') && synlige(g.d).join() === 'besoegende', w.location.hash);
+  const pm = fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'programmenu.rs'), 'utf8'), bygge = fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8');
+  tjek('BES programmenuen har Besøgende/Visitors med CmdOrCtrl+7 efter Land lige nu', pm.includes('GENVEJ_BESOEG: &str = "CmdOrCtrl+7"') && pm.includes('besoeg: "Besøgende"') && pm.includes('besoeg: "Visitors"') && pm.indexOf('&punkt(BESOEG, t.besoeg, GENVEJ_BESOEG)') > pm.indexOf('&punkt(LAND, t.land, GENVEJ_LAND)'));
+  tjek('BES sikkerhedsporten: kommandoen besoegende er tilladt og står i build.rs', cap.permissions.includes('allow-besoegende') && bygge.includes('"besoegende",'));
+  const kode = udenKommentarer(ui('assets/visning-besoegende.js'));
+  tjek('BES visning-besoegende.js: ingen innerHTML og ingen style=', !/innerHTML|\.style\b|style=/.test(kode));
+  const sprogKode = ui('assets/sprog.js'), bes = sprogKode.slice(sprogKode.indexOf('bes: {'), sprogKode.indexOf('ang: {'));
+  /* Datovælgerens fælles note ("Hele døgn i UTC") er ikke ny her og står også på Robotter og Login: den tæller ikke med. */
+  const vist = [...d.querySelectorAll('#visning-besoegende *')].filter(x => !x.closest('.dato-vaelger') && !x.children.length).map(x => x.textContent).join(' ');
+  tjek('BES de nye tekster: intet "døgn" og intet løfte om 100 %', !/døgn|100 %|100%/.test(bes) && !/døgn/.test(vist + d.querySelector('.hjaelp-del[data-hjaelp=besoegende]').textContent) && vist.includes('Unikke besøgende'), vist.match(/.{0,40}døgn.{0,40}/));
+}
+
 // ── <Land> lige nu og Verden ──
 {
   const s = side('#land?kode=DK', LANDV());
@@ -2638,7 +2724,7 @@ const DOMV = (fravalgte = [], x) => {
       if (overblik) { const h = document.querySelector('.hovedomr'); overblik.fladen = h.scrollWidth <= h.clientWidth; ov.scrollLeft = 80; overblik.fast = Math.abs(document.querySelector('#overblik-raekker th').getBoundingClientRect().left - ov.getBoundingClientRect().left) <= 2; }
       document.body.textContent = 'MAALT:' + JSON.stringify({ tabel, overblik, hv, kal, velkomst, felter, segmenter, nav, nyLinje, serverOver, n: document.querySelectorAll('section:not([hidden]) .kort *').length, login: Boolean(document.querySelector('#login-panel .login-valg')), domaener: document.querySelectorAll('#domaener-liste input').length, vandret: document.documentElement.scrollWidth > innerWidth, ud }) + ':SLUT'; }, 1500);`;
     const koer = (bredde, tekst, tema = 'light', hash = '#indstillinger?zone=z2', ekstra = {}, { sprog = 'da', hoejde = 1400 } = {}) => {
-      const stub = `<script>localStorage.setItem('hm-sprog',${JSON.stringify(sprog)});localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':c;return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
+      const stub = `<script>localStorage.setItem('hm-sprog',${JSON.stringify(sprog)});localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':c==='besoegende'&&a.land?'besoegende_land':c;return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
       const html = ui('index.html').replace('<script src="assets/tema.js"></script>', UR_STUB + stub + '<script src="assets/tema.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
       const navn = `${bredde}-${hoejde}-${tekst}-${tema}-${sprog}-${hash.length}-${JSON.stringify(ekstra).length}`, fil = path.join(mappe, 'ui', `maal-${navn}.html`);
       fs.writeFileSync(fil, html);
@@ -2979,7 +3065,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek(`KS ingen rest i UI, menu, README og tests (${filer.length} filer)`, filer.length > 15 && fund.length === 0, fund.join());
   const s = side('', B2());
   await sov(30);
-  tjek('KS sidebjælken har de seks visninger og Indstillinger, og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('#side a[data-visning]').length === 7 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('#side a[data-visning]').length);
+  tjek('KS sidebjælken har de syv visninger og Indstillinger, og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('#side a[data-visning]').length === 8 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('#side a[data-visning]').length);
 }
 
 // ── Angreb er én side: overskriften, chips og Nulstil ──
@@ -3781,7 +3867,7 @@ const DOMV = (fravalgte = [], x) => {
     })();`;
     const vaern = vaernUd(), MED = SIDER.filter(s => !s.ekstra), OPS = SIDER.find(s => s.id === 'opsaetning'), FRA = SIDER.find(s => s.id === 'alle-fra'), EST = SIDER.find(s => s.id === 'angreb-estimat');
     const koer = (navn, tema, ekstra, sider, bredde = 1400, tekst = 'normal') => {
-      const stub = `<script>localStorage.setItem('hm-sprog','da');localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';window.__HM_MAAL__=${JSON.stringify(sider)};const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':c;return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
+      const stub = `<script>localStorage.setItem('hm-sprog','da');localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';window.__HM_MAAL__=${JSON.stringify(sider)};const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':c==='besoegende'&&a.land?'besoegende_land':c;return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
       const html = ui('index.html').replace('<script src="assets/tema.js"></script>', UR_STUB + stub + '<script src="assets/tema.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
       const fil = path.join(mappe, 'ui', `kontrast-${navn}-${tema}.html`);
       fs.writeFileSync(fil, html);

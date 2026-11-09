@@ -4,6 +4,15 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-09 23:30 — Besøgende: hvor mange, og hvorfra
+#### Tilføjet
+- **Ny visning Besøgende** (IDEA-046, ⌘7, Windows Ctrl+7, også i menuen **Vis** og i hjælpens genveje): unikke besøgende i går, på 7 dage, 30 dage og et år, besøg på 30 dage, en graf pr. dag (7 dage, 30 dage, et år eller Fra/Til op til et år) og en tabel over, hvor besøgene kom fra. Ét domæne eller Samlet. Et klik på en dag åbner "Trafik den …" på Angreb, et klik på et land viser besøgene fra landet pr. dag (chip med ×), og fliserne vælger perioden. Dage uden tal er huller, ikke 0. Ingen notifikationer, ingen status.
+- **Unikke besøgende** hentes med årstallene (`httpRequests1dGroups` → `uniq { uniques }`, unikke IP-adresser pr. dag, kun et tal). Første start efter opdateringen henter året én gang til for de dage, der allerede er hentet, ét kald pr. domæne; kun det tal skrives.
+- **Besøg pr. land** (`httpRequestsAdaptiveGroups` → `sum { visits }`, `requestSource: "eyeball"`) hentes til sidst i den langsomme runde for de sidste 30 færdige dage, ét kald pr. domæne, og gemmes, så historikken vokser. Afviser Cloudflare dem, står "ikke tilgængelig" ved domænet, resten kører videre, og der spørges igen ved næste start. Ikke målt live på Free endnu.
+- Databasen får skema 17 med tabellen `hentet_besoeg`. **Nulstil historik** sletter også den. Ingen nye rettigheder på API Tokenet.
+#### Rettet
+- "Trafik den …" for en dag ældre end en måned lagde alle årstallets nøgler sammen som forespørgsler; nu kun forespørgslerne (ellers ville unikke besøgende tælle med).
+
 ### 2026-11-08 23:30 — Start ved login, der overlever en flytning, og det rigtige token-trin
 #### Ændret
 - **Start ved login skrives af programmet selv på macOS** (IDEA-044), som den daglige start. Samme fil og navn som før (`~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist`, `com.wi24rd.huginn-muninn`), nu med programmets bundle-id, så Login-emner viser jobbet under programmet, og med stien XML-escapet, så en mappe med `&` i navnet ikke giver en ugyldig fil. Første start efter opdateringen skriver den eksisterende fil om. Et fravalg står ved magt. Windows og Linux bruger stadig `tauri-plugin-autostart`, uændret.

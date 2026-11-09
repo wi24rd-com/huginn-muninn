@@ -1087,7 +1087,7 @@ pub fn trafik_regn(rows: &[Raekke], dag: &str, til: &str, en_zone: bool, ekstra:
             }
             "h_total" if r.noegle == "trusler" => trusler += r.n,
             "h_total" if r.noegle == "cachet" => cachet += r.n,
-            "h_total" if !har("alle", &r.dag) => i_alt += r.n,
+            "h_total" if r.noegle == "foresp" && !har("alle", &r.dag) => i_alt += r.n,
             "h_land" if !har("land", &r.dag) => *lande.entry(&r.noegle).or_default() += r.n,
             "h_status" if !har("status", &r.dag) => {
                 *status.entry(&r.noegle).or_default() += r.n;
@@ -2749,11 +2749,13 @@ mod tests {
             art("z", &dag, "h_total", "cachet", 300).1,
             art("z", &dag, "h_land", "DK", 400).1,
             art("z", &dag, "h_status", "522", 90).1,
+            art("z", &dag, "h_total", "unikke", 37).1,
         ];
         let u = trafik_regn(&rows, &dag, &dag, true, true);
         assert_eq!(
             (u.i_alt, u.trusler, u.cachet, u.sikkerhed, u.server_fejl),
-            (500, 12, 300, false, 90)
+            (500, 12, 300, false, 90),
+            "unikke besøgende er ikke forespørgsler"
         );
         assert_eq!(u.lande[0].v, "DK");
         let mut nyere = rows.clone();

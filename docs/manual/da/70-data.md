@@ -16,7 +16,7 @@ Størrelsen står under **Indstillinger → Data → Lokal database**.
 
 ## Hvad der gemmes
 
-- **Hver færdig dag** pr. valgt domæne som optællinger: afviste forespørgsler fordelt på regel, land, netværk, sti, datacenter, handling og robot; trafiktal; robotter; login-tal; DMARC-tal; DNS-tal.
+- **Hver færdig dag** pr. valgt domæne som optællinger: afviste forespørgsler fordelt på regel, land, netværk, sti, datacenter, handling og robot; trafiktal; robotter; login-tal; DMARC-tal; DNS-tal; unikke besøgende (ét tal pr. dag, ingen IP-adresser); besøg pr. land.
 - **Dine indstillinger**: sprog, datoformat, land, udseende, tekststørrelse, notifikationsvalg, domænevalg, login-stier, teknologi-valg.
 - **Hvad der er meldt**: hvilke domæner der har fået en notifikation for hvilket døgn, så det samme ikke meldes to gange. Den liste rydder sig selv.
 - **Radar-tal** for dit land og verden.
@@ -45,6 +45,7 @@ Derfor er **Start ved login** slået til som standard. Med den starter programme
 - Antallet af afviste er Cloudflares estimat: hver hændelse i stikprøven oplyser, hvor mange den står for, og programmet lægger det sammen. Første gang programmet starter efter opdateringen 8. november 2026, henter det de sidste 30 dage igen i det normale tempo, så tallene kan sammenlignes. Ældre dage kan Cloudflare ikke levere igen; de beholder de talte rækker.
 - Højst to kald ad gangen og mindst 1,1 sekund imellem, for alle domæner tilsammen. Beder Cloudflare det vente, holder programmet pause og siger "Prøver igen kl. …" i statuspillen.
 - Tallene til Login og "stoppet ved Edge" pr. robot hentes bagefter i langsomt tempo og kun for færdige dage.
+- Til **Besøgende** hentes unikke besøgende med årets trafiktal og besøg pr. land til sidst, ét kald pr. domæne. Besøg pr. land findes en måned tilbage hos Cloudflare; programmet gemmer dagene, så historikken vokser derfra. Første gang programmet starter efter opdateringen 9. november 2026, henter det året én gang til for de dage, det allerede har, så de får unikke besøgende. Kun det tal skrives; de andre tal for dagene ændres ikke.
 - **Kvote hos Cloudflare** under Indstillinger → Data viser, hvor mange kald Cloudflare tillader, og hvor mange programmet brugte i sidste runde.
 - **Hent nu** (⌘R, Windows Ctrl+R eller F5) starter en hentning med det samme.
 

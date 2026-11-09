@@ -56,9 +56,13 @@
 
 **Snoopers** · Requests for files that do not exist: scanners looking for known holes.
 
+**Unique visitors** · The number of different IP addresses that visited the site on a day. Robots count, and several people behind the same router count as one. A sum over several days counts the same visitor once per day.
+
 **Unknown** · The status when there are no figures yet.
 
 **UTC** · Universal time. All days in the program are whole days in UTC, so "yesterday" ends at a different local hour depending on where you are.
+
+**Visits** · Cloudflare's own definition: a page view that came from another site or a direct link. The same figure as "Visits" in Cloudflare's dashboard, and Cloudflare's estimate from a sample. Shown per country on Visitors.
 
 **Watch** · The status when the pattern is unusual, but everything was stopped.
 

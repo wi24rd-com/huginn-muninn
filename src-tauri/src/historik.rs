@@ -1,5 +1,6 @@
 //! Et års trafik: `httpRequests1dGroups` har 365 dage på Free, hvor sikkerhedshændelser kun har en måned. Daglige totaler, de største lande og svarkoder, ét kald pr. domæne for hele året og
-//! derefter ét kald, når der er nye døgn. Arterne i `vagt_dag` er `h_land`, `h_status` og `h_total` med nøglerne `foresp`, `cachet` og `trusler`. Hentes sidst i `koe::Koe::ekstra_runde`, efter alt andet. Felterne er dem, bilag A og spiken bekræfter. Ingen IP-adresser, stier eller brugeragenter findes i noden.
+//! derefter ét kald, når der er nye døgn. Arterne i `vagt_dag` er `h_land`, `h_status` og `h_total` med nøglerne `foresp`, `cachet`, `trusler` og `unikke`. Hentes sidst i `koe::Koe::ekstra_runde`, efter alt andet. Felterne er dem, bilag A og spiken bekræfter. Ingen IP-adresser, stier eller brugeragenter findes i noden.
+//! `unikke` er `uniq { uniques }`: antallet af unikke IP-adresser for døgnet, et tal, ikke adresserne (V-BESOEG.1). Døgn hentet før det fik tallet én gang (`store::UNIKKE_V1`, `unikke_spaend`): kun nøglen `unikke` skrives, intet andet tal ændres.
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -18,7 +19,7 @@ pub const TRAFIK_GRAENSE: i64 = 365;
 const TOP: usize = 10;
 
 pub const HISTORIK_QUERY: &str = r#"query Historik($zoneTag: string!, $fra: Date!, $til: Date!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
-    dage: httpRequests1dGroups(limit:400, filter:{date_geq:$fra, date_leq:$til}, orderBy:[date_ASC]) { dimensions { date } sum { requests cachedRequests threats countryMap { clientCountryName requests } responseStatusMap { edgeResponseStatus requests } } }
+    dage: httpRequests1dGroups(limit:400, filter:{date_geq:$fra, date_leq:$til}, orderBy:[date_ASC]) { dimensions { date } sum { requests cachedRequests threats countryMap { clientCountryName requests } responseStatusMap { edgeResponseStatus requests } } uniq { uniques } }
   } } }"#;
 
 /// De færdige døgn i året, der mangler: (ældste, nyeste). Ét kald dækker alt derimellem. Ren funktion.
@@ -29,6 +30,27 @@ pub fn mangler(hentet: &HashMap<String, String>, nu: i64) -> Option<(String, Str
         .collect();
     Some((dage.last()?.clone(), dage.first()?.clone()))
 }
+
+/// De færdige døgn i året, der er hentet før `unikke`: (ældste, nyeste), som ét kald til `HISTORIK_QUERY` dækker. `None`: intet at hente igen. Ren funktion.
+pub fn unikke_spaend(hentet: &HashMap<String, String>, nu: i64) -> Option<(String, String)> {
+    let dage: Vec<String> = (1..=HISTORIK_DAGE)
+        .map(|i| dag_noegle(nu - i * DOEGN_MS))
+        .filter(|d| er_faerdig(d, &iso(nu)) && hentet.contains_key(d))
+        .collect();
+    Some((dage.last()?.clone(), dage.first()?.clone()))
+}
+
+/// Kun `unikke` fra svaret: (dag, n). Til genhentningen, der ikke må ændre andre tal. Ren funktion.
+pub fn unikke_raekker(data: &Value) -> Result<Vec<(String, i64)>, Fejl> {
+    Ok(raekker(data)?
+        .into_iter()
+        .filter(|r| r.1 == "h_total" && r.2 == UNIKKE)
+        .map(|r| (r.0, r.3))
+        .collect())
+}
+
+/// Nøglen i art `h_total` for unikke besøgende.
+pub const UNIKKE: &str = "unikke";
 
 /// Tabet for én slags tal: den ældste dag, der findes nu, den ældste, der kan hentes igen, og dagene imellem.
 #[derive(Serialize, Debug, Clone, PartialEq, Eq)]
@@ -99,6 +121,12 @@ struct Sum {
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
+struct Uniq {
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    uniques: i64,
+}
+
+#[derive(Deserialize, Default, Debug, Clone)]
 struct Dim {
     #[serde(default, deserialize_with = "tom_ved_null")]
     date: String,
@@ -110,6 +138,8 @@ struct Dag {
     dimensions: Dim,
     #[serde(default, deserialize_with = "tom_ved_null")]
     sum: Sum,
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    uniq: Uniq,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -129,6 +159,7 @@ pub fn raekker(data: &Value) -> Result<Vec<(String, String, String, i64)>, Fejl>
         add("h_total", "foresp".into(), d.sum.requests);
         add("h_total", "cachet".into(), d.sum.cached);
         add("h_total", "trusler".into(), d.sum.threats);
+        add("h_total", UNIKKE.into(), d.uniq.uniques);
         let mut lande = d.sum.lande;
         lande.sort_by_key(|l| std::cmp::Reverse(l.requests));
         for l in lande.into_iter().filter(|l| !l.land.is_empty()).take(TOP) {
@@ -205,7 +236,7 @@ mod tests {
             .map(|i| json!({"clientCountryName": format!("L{i}"), "requests": i}))
             .collect();
         let data = json!({"viewer": {"zones": [{"dage": [
-            {"dimensions": {"date": "2026-01-02"}, "sum": {"requests": 90, "cachedRequests": 40, "threats": 3, "countryMap": lande, "responseStatusMap": [{"edgeResponseStatus": 200, "requests": 80}, {"edgeResponseStatus": 0, "requests": 2}]}},
+            {"dimensions": {"date": "2026-01-02"}, "sum": {"requests": 90, "cachedRequests": 40, "threats": 3, "countryMap": lande, "responseStatusMap": [{"edgeResponseStatus": 200, "requests": 80}, {"edgeResponseStatus": 0, "requests": 2}]}, "uniq": {"uniques": 17}},
             {"dimensions": {"date": "2026-01-03"}, "sum": null}
         ]}]}});
         let r = raekker(&data).unwrap();
@@ -214,13 +245,35 @@ mod tests {
             (tal("h_total", "foresp"), tal("h_total", "cachet"), tal("h_total", "trusler")),
             (Some(90), Some(40), Some(3))
         );
+        assert_eq!(tal("h_total", "unikke"), Some(17));
         assert_eq!(r.iter().filter(|x| x.1 == "h_land").count(), 10);
         assert_eq!(tal("h_land", "L0"), None, "kun de største");
         assert_eq!((tal("h_status", "200"), tal("h_status", "0")), (Some(80), None));
         assert_eq!(
             r.iter().filter(|x| x.0 == "2026-01-03" && x.1 == "h_total").count(),
-            3,
+            4,
             "et døgn uden tal er 0, ikke væk"
+        );
+        assert_eq!(
+            unikke_raekker(&data).unwrap(),
+            vec![("2026-01-02".to_string(), 17), ("2026-01-03".to_string(), 0)]
+        );
+    }
+
+    /// Genhentningen dækker de hentede døgn i året, ét kald fra den ældste til den nyeste, og kun færdige døgn.
+    #[test]
+    fn unikke_spaend_er_de_hentede_doegn() {
+        assert_eq!(unikke_spaend(&HashMap::new(), NU), None, "intet hentet: intet at hente igen");
+        let mut hentet: HashMap<String, String> = [5, 40, 300]
+            .iter()
+            .map(|i| (dag_noegle(NU - i * DOEGN_MS), "t".to_string()))
+            .collect();
+        hentet.insert(dag_noegle(NU - 400 * DOEGN_MS), "t".into());
+        hentet.insert(dag_noegle(NU), "t".into());
+        assert_eq!(
+            unikke_spaend(&hentet, NU),
+            Some((dag_noegle(NU - 300 * DOEGN_MS), dag_noegle(NU - 5 * DOEGN_MS))),
+            "ældre end året og i dag tæller ikke"
         );
     }
 
@@ -233,10 +286,11 @@ mod tests {
             "threats",
             "countryMap",
             "responseStatusMap",
+            "uniq { uniques }",
         ] {
-            assert!(HISTORIK_QUERY.contains(felt));
+            assert!(HISTORIK_QUERY.contains(felt), "{felt}");
         }
-        for felt in ["clientIP", "userAgent", "uniq"] {
+        for felt in ["clientIP", "userAgent"] {
             assert!(!HISTORIK_QUERY.contains(felt), "{felt}");
         }
     }

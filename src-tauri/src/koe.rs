@@ -4,7 +4,7 @@
 //! `TIK`) og straks, når siden eller menuen beder om det (`koe_prioritet`, "Hent nu", `online`). Hver zone hentes med den samme
 //! funktion og under den samme lås pr. zone som `vaern_oversigt`, så der aldrig hentes dobbelt. Tempoet styres af den
 //! fælles begrænser i `cf`; køen melder fremskridt som hændelsen `hentekoe` og husker den seneste (`koe_status`). Efter en
-//! færdig runde henter `ekstra_runde` de ekstra tal (`adgang`) for færdige døgn, ét kald ad gangen i langsomt tempo. Den har
+//! færdig runde henter `ekstra_runde` de ekstra tal (`adgang`, årstallene og til sidst besøgene) for færdige døgn, ét kald ad gangen i langsomt tempo. Den har
 //! lavest prioritet: enhver anmodning om en ny runde afbryder den, og en fejl i den rører hverken zonen eller køen. Kun valgte domæner hentes
 //! (`Store::zoner_til`, og igen ved turen, for et domæne kan være fravalgt undervejs), så uden valgte domæner henter køen intet. Et nyvalgt domæne
 //! får det, der mangler i hentevinduet (`dage_at_hente`), altså højst de seneste 30 dage, og står forrest (`prioriter`).
@@ -20,10 +20,11 @@ use serde::Serialize;
 use tokio::sync::Notify;
 
 use crate::adgang;
+use crate::besoeg;
 use crate::cf::{Fejl, Zone, MELLEMRUM_LANGSOM};
 use crate::dmarc;
 use crate::historik;
-use crate::store::{Store, DMARC_FEJL, DNS_FEJL};
+use crate::store::{Store, BESOEG_FEJL, DMARC_FEJL, DNS_FEJL};
 use crate::vaern::{dag_noegle, dage_at_hente, er_faerdig, iso, sidst_hentet, Doegnudfald, DOEGN_MS, HENT_DAGE};
 
 /// Ny runde så ofte (og straks ved `koe_prioritet`).
@@ -97,6 +98,14 @@ pub trait Henter: Sync {
     fn dmarc<'a>(&'a self, zone: &'a str, dag: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a;
     /// Henter og gemmer årstallene for døgnene `fra`…`til`.
     fn historik<'a>(&'a self, zone: &'a str, fra: &'a str, til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a;
+    /// Henter `unikke` igen for døgnene `fra`…`til`, som zonen allerede har årstal for, og gemmer kun det tal (`Store::gem_unikke`).
+    fn unikke<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
+        async { Ok(()) }
+    }
+    /// Henter og gemmer besøgene pr. land for døgnene `fra`…`til` (`besoeg::BESOEG_QUERY`).
+    fn besoeg<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
+        async { Ok(()) }
+    }
     /// Henter og gemmer zonens tilstand hos Cloudflare.
     fn tilstand<'a>(&'a self, zone: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a;
     /// Henter og gemmer Cloudflares egne sikkerhedsfund for kontoen, højst én gang i timen (`sikkerhed::skal_hente`). Udfaldet noteres af henteren selv.
@@ -240,6 +249,8 @@ pub struct Koe {
     pub koerer: AtomicBool,
     /// Runder, der er gjort helt færdige, ekstra tal med (`Fase::Faerdig` kommer før dem). Den daglige start lukker på den.
     pub hele_runder: AtomicUsize,
+    /// Domæner, hvor Cloudflare ikke svarede på besøgene: der spørges ikke igen, før programmet starter igen.
+    besoeg_opgivet: Mutex<HashSet<String>>,
 }
 
 impl Koe {
@@ -560,6 +571,66 @@ impl Koe {
                 return true;
             }
         }
+        // Unikke besøgende for de døgn, der blev hentet før tallet kom med (`Store::unikke_en_gang`): ét kald pr. domæne for året, én gang. Kun det tal skrives.
+        for z in &zoner {
+            if self.stoppet() {
+                return false;
+            }
+            if !lager.lock().ok().is_some_and(|s| s.unikke_mangler(&z.id).unwrap_or(false)) || !slaaet_til(lager, &z.id) {
+                continue;
+            }
+            let hentet = lager.lock().ok().and_then(|s| s.hentet_historik(&z.id).ok()).unwrap_or_default();
+            let Some((fra, til)) = historik::unikke_spaend(&hentet, nu()) else {
+                if let Ok(mut s) = lager.lock() {
+                    let _ = s.gem_unikke(&z.id, &[]);
+                }
+                continue;
+            };
+            match h.unikke(&z.id, &fra, &til).await {
+                Ok(()) => paa_gemt(&z.id),
+                Err(e) if forbigaaende(&e) => return false,
+                Err(_) => {}
+            }
+            if self.sov(tempo).await {
+                return true;
+            }
+        }
+        // Besøg pr. land, efter årstallene: ét kald pr. domæne for de færdige døgn, der mangler. Afviser Cloudflare det, står det ved domænet som
+        // "ikke tilgængelig", resten kører videre, og der spørges ikke igen før næste start. Kun en forbigående fejl gemmer resten til næste runde.
+        for z in &zoner {
+            if self.stoppet() {
+                return false;
+            }
+            let opgivet = self.besoeg_opgivet.lock().unwrap_or_else(|e| e.into_inner()).contains(&z.id);
+            let hentet = lager.lock().ok().and_then(|s| s.hentet_besoeg(&z.id).ok()).unwrap_or_default();
+            let Some((fra, til)) = besoeg::mangler(&hentet, nu()).filter(|_| !opgivet && slaaet_til(lager, &z.id)) else {
+                continue;
+            };
+            let opgiv = || {
+                self.besoeg_opgivet.lock().unwrap_or_else(|e| e.into_inner()).insert(z.id.clone());
+            };
+            let noter = |fejl: Option<&str>| {
+                if let Ok(mut s) = lager.lock() {
+                    let _ = s.gem_afsnit_fejl(BESOEG_FEJL, &z.id, fejl);
+                }
+            };
+            match h.besoeg(&z.id, &fra, &til).await {
+                Ok(()) => {
+                    noter(None);
+                    paa_gemt(&z.id);
+                }
+                Err(e) if forbigaaende(&e) => return false,
+                // Det ældste døgn var for gammelt: det er ikke domænets skyld, og næste start prøver igen.
+                Err(e) if e.uden_for_opbevaring() => opgiv(),
+                Err(e) => {
+                    noter(Some(&e.to_string()));
+                    opgiv();
+                }
+            }
+            if self.sov(tempo).await {
+                return true;
+            }
+        }
         false
     }
 
@@ -858,6 +929,10 @@ mod tests {
         dns_svar: HashMap<String, Result<(), Fejl>>,
         dmarc_svar: HashMap<String, Result<(), Fejl>>,
         historik_kald: Mutex<Vec<(String, String, String)>>,
+        /// `unikke`, `besoeg`: kaldene (zone, fra, til) og svar pr. zone (ingen = det går godt).
+        unikke_kald: Mutex<Vec<(String, String, String)>>,
+        besoeg_kald: Mutex<Vec<(String, String, String)>>,
+        besoeg_svar: HashMap<String, Result<(), Fejl>>,
         tilstand_kald: Mutex<Vec<String>>,
         tilstand_svar: Result<(), Fejl>,
         /// Rækkefølgen af kaldene: zone, ekstra, angreb, laek, historik, tilstand.
@@ -943,6 +1018,32 @@ mod tests {
             }
             Ok(())
         }
+        async fn unikke(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+            self.unikke_kald
+                .lock()
+                .unwrap()
+                .push((zone.to_string(), fra.to_string(), til.to_string()));
+            self.log.lock().unwrap().push("unikke");
+            if let Some(l) = self.ekstra_lager {
+                l.lock().unwrap().gem_unikke(zone, &[]).unwrap();
+            }
+            Ok(())
+        }
+        async fn besoeg(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+            self.besoeg_kald
+                .lock()
+                .unwrap()
+                .push((zone.to_string(), fra.to_string(), til.to_string()));
+            self.log.lock().unwrap().push("besoeg");
+            let svar = self.besoeg_svar.get(zone).cloned().unwrap_or(Ok(()));
+            if let (Ok(()), Some(l)) = (&svar, self.ekstra_lager) {
+                l.lock()
+                    .unwrap()
+                    .gem_besoeg(zone, &crate::robotter::dage_i(fra, til), &[], &iso(NU))
+                    .unwrap();
+            }
+            svar
+        }
         async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
             self.tilstand_kald.lock().unwrap().push(zone.to_string());
             self.log.lock().unwrap().push("tilstand");
@@ -999,6 +1100,9 @@ mod tests {
             dns_svar: HashMap::new(),
             dmarc_svar: HashMap::new(),
             historik_kald: Mutex::default(),
+            unikke_kald: Mutex::default(),
+            besoeg_kald: Mutex::default(),
+            besoeg_svar: HashMap::new(),
             tilstand_kald: Mutex::default(),
             tilstand_svar: Ok(()),
             log: Mutex::default(),
@@ -1733,7 +1837,11 @@ mod tests {
             ["tilstand", "tilstand", "fund"],
             "tilstanden først: den er lille, og så fundene, én gang for alle domæner"
         );
-        assert_eq!(log[log.len() - 2..], ["historik", "historik"], "årstallene sidst");
+        assert_eq!(
+            log[log.len() - 4..],
+            ["historik", "historik", "besoeg", "besoeg"],
+            "årstallene og så besøgene sidst"
+        );
         assert!(log.iter().filter(|x| **x == "historik").count() == 2 && log.contains(&"laek") && log.contains(&"angreb"));
         let kald = f.historik_kald.lock().unwrap().clone();
         assert_eq!(kald[0].1, dag_noegle(NU - historik::HISTORIK_DAGE * DOEGN_MS));
@@ -1745,6 +1853,91 @@ mod tests {
             ["tilstand", "tilstand", "fund"],
             "alt er hentet: kun tilstanden og fundene (som selv holder timen)"
         );
+    }
+
+    /// Besøgene: ét kald pr. domæne for de 30 færdige døgn, bagefter kun det nye. Afviser Cloudflare dem for et domæne, står det ved domænet,
+    /// de andre domæner og køen kører videre, og der spørges ikke igen, før programmet starter igen (en ny `Koe`). Et svar rydder tilstanden.
+    #[tokio::test(start_paused = true)]
+    async fn afvist_besoeg_giver_tilstand_og_stopper_ikke_koeen() {
+        let koe = Koe::default();
+        let lager = lager_med(&[("a", "a.wi24rd.com", None), ("b", "b.wi24rd.com", None)]);
+        let mut f = falsk(&koe);
+        f.ekstra_lager = Some(&lager);
+        f.besoeg_svar.insert(
+            "a".into(),
+            Err(Fejl::GraphQl {
+                dag: None,
+                detalje: "unknown field visits".into(),
+            }),
+        );
+        assert!(!ekstra(&koe, &lager, &f).await);
+        assert!(!koe.stoppet());
+        assert!(
+            lager.lock().unwrap().afsnit_fejl(BESOEG_FEJL, "a").unwrap().is_some(),
+            "ikke tilgængelig"
+        );
+        assert_eq!(lager.lock().unwrap().afsnit_fejl(BESOEG_FEJL, "b").unwrap(), None);
+        assert_eq!(
+            lager.lock().unwrap().hentet_besoeg("b").unwrap().len(),
+            besoeg::BESOEG_DAGE as usize
+        );
+        let b = f.besoeg_kald.lock().unwrap().iter().find(|k| k.0 == "b").cloned().unwrap();
+        assert_eq!(
+            (b.1, b.2),
+            (dag_noegle(NU - besoeg::BESOEG_DAGE * DOEGN_MS), dag_noegle(NU - DOEGN_MS)),
+            "ét kald for de 30 døgn"
+        );
+        assert!(
+            lager.lock().unwrap().hentet_historik("a").unwrap().len() > 300,
+            "årstallene for a er hentet alligevel"
+        );
+        ekstra(&koe, &lager, &f).await;
+        assert_eq!(f.besoeg_kald.lock().unwrap().len(), 2, "ikke igen før næste start, og b har alt");
+        // Næste start: der spørges igen, og et svar rydder tilstanden.
+        let ny = Koe::default();
+        f.besoeg_svar.clear();
+        ekstra(&ny, &lager, &f).await;
+        assert_eq!(f.besoeg_kald.lock().unwrap().len(), 3);
+        assert_eq!(lager.lock().unwrap().afsnit_fejl(BESOEG_FEJL, "a").unwrap(), None);
+        // En forbigående fejl er ikke domænets skyld.
+        let lager2 = lager_med(&[("c", "c.wi24rd.com", None)]);
+        f.ekstra_lager = Some(&lager2);
+        f.besoeg_svar.insert("c".into(), Err(Fejl::Forbindelse));
+        assert!(!ekstra(&ny, &lager2, &f).await);
+        assert_eq!(lager2.lock().unwrap().afsnit_fejl(BESOEG_FEJL, "c").unwrap(), None);
+        f.besoeg_svar.clear();
+        ekstra(&ny, &lager2, &f).await;
+        assert_eq!(
+            lager2.lock().unwrap().hentet_besoeg("c").unwrap().len(),
+            besoeg::BESOEG_DAGE as usize,
+            "næste runde henter dem"
+        );
+    }
+
+    /// Unikke for de døgn, der var hentet før opdateringen: ét kald pr. domæne for de hentede døgn, én gang, og et domæne uden årstal spørges ikke.
+    #[tokio::test(start_paused = true)]
+    async fn unikke_hentes_igen_en_gang() {
+        let koe = Koe::default();
+        let lager = lager_med(&[("a", "a.wi24rd.com", None), ("b", "b.wi24rd.com", None)]);
+        let gamle: Vec<String> = (3..=200).map(|i| dag_noegle(NU - i * DOEGN_MS)).collect();
+        lager.lock().unwrap().gem_historik("a", &gamle, &[], "t").unwrap();
+        assert!(lager.lock().unwrap().unikke_en_gang("2026-11-03").unwrap());
+        let mut f = falsk(&koe);
+        f.ekstra_lager = Some(&lager);
+        assert!(!ekstra(&koe, &lager, &f).await);
+        let kald = f.unikke_kald.lock().unwrap().clone();
+        assert_eq!(kald.len(), 1, "kun a, og kun én gang: {kald:?}");
+        assert_eq!(
+            (kald[0].1.as_str(), kald[0].2.as_str()),
+            (dag_noegle(NU - 364 * DOEGN_MS).as_str(), dag_noegle(NU - DOEGN_MS).as_str()),
+            "året, efter at de manglende døgn er hentet"
+        );
+        let log = f.log.lock().unwrap().clone();
+        let i = |x: &str| log.iter().position(|y| *y == x).unwrap();
+        assert!(i("historik") < i("unikke") && i("unikke") < i("besoeg"), "{log:?}");
+        ekstra(&koe, &lager, &f).await;
+        assert_eq!(f.unikke_kald.lock().unwrap().len(), 1, "én gang");
+        assert!(!lager.lock().unwrap().unikke_mangler("a").unwrap());
     }
 
     /// En fejl i kaldet stopper ikke resten, og kun valgte domæner spørges.
@@ -1799,8 +1992,8 @@ mod tests {
         assert!(!koe.ekstra_runde(&lager, &f, &|| NU, EKSTRA_TEMPO, &|_| {}).await);
         assert_eq!(
             t0.elapsed(),
-            EKSTRA_TEMPO * (29 + 30 + 30 + 31 + 31 + 1),
-            "de 29 døgn, der var tilbage, de 30 med enkelthændelser, de 30 med lækkede kodeord, de 31 med DNS, de 31 med DMARC og årstallene"
+            EKSTRA_TEMPO * (29 + 30 + 30 + 31 + 31 + 1 + 1),
+            "de 29 døgn, der var tilbage, de 30 med enkelthændelser, de 30 med lækkede kodeord, de 31 med DNS, de 31 med DMARC, årstallene og besøgene"
         );
     }
 

@@ -1,6 +1,6 @@
 //! Programmenuen på macOS: Huginn and Muninn (Om · Indstillinger… ⌘, · Tjenester · Skjul · Afslut), Rediger
 //! (Fortryd … Vælg alt; uden den virker ⌘C/⌘V ikke i tokenfeltet), Vis (Tilbage ⌘[ · Frem ⌘] · Overblik ⌘1 · Siden sidst ⌘2
-//! · Angreb ⌘3 · Robotter ⌘4 · Login ⌘5 · Land lige nu ⌘6 · Hent nu ⌘R · Større tekst ⌘+ · Mindre tekst ⌘− · Normal tekst ⌘0 · Fuld skærm) og Vindue. Teksterne følger UI'ets sprog (`sprog_saet` bygger menuen igen). Et klik
+//! · Angreb ⌘3 · Robotter ⌘4 · Login ⌘5 · Land lige nu ⌘6 · Besøgende ⌘7 · Hent nu ⌘R · Større tekst ⌘+ · Mindre tekst ⌘− · Normal tekst ⌘0 · Fuld skærm) og Vindue. Teksterne følger UI'ets sprog (`sprog_saet` bygger menuen igen). Et klik
 //! på en visning udsender hændelsen `visning` til webvisningen (rammen skifter visning; "Om" åbner Indstillinger → Om i
 //! stedet for macOS' standard-Om-boks), Tilbage/Frem udsender `historik`, tekststørrelsen `tekst` (valget ligger i webvisningen),
 //! og "Hent nu" starter køen som menulinjens punkt.
@@ -17,6 +17,7 @@ pub const OVERBLIK: &str = "pm-overblik";
 pub const ROBOTTER: &str = "pm-robotter";
 pub const LOGIN: &str = "pm-login";
 pub const LAND: &str = "pm-land";
+pub const BESOEG: &str = "pm-besoeg";
 pub const SIDEN: &str = "pm-siden";
 pub const ANGREB: &str = "pm-angreb";
 pub const HENT: &str = "pm-hent";
@@ -27,7 +28,7 @@ pub const TEKST_NORMAL: &str = "pm-tekst-normal";
 /// Hvad et klik i programmenuen gør.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Handling {
-    /// Skift til visningen (rammens navn: "overblik", "siden-sidst", "vaernet", "robotter", "login", "land", "indstillinger"; "om" = Indstillinger → Om).
+    /// Skift til visningen (rammens navn: "overblik", "siden-sidst", "vaernet", "robotter", "login", "land", "besoegende", "indstillinger"; "om" = Indstillinger → Om).
     Visning(&'static str),
     /// Et trin i webvisningens historik ("tilbage" | "frem").
     Historik(&'static str),
@@ -49,6 +50,7 @@ pub fn handling(id: &str) -> Option<Handling> {
         ROBOTTER => Some(Handling::Visning("robotter")),
         LOGIN => Some(Handling::Visning("login")),
         LAND => Some(Handling::Visning("land")),
+        BESOEG => Some(Handling::Visning("besoegende")),
         HENT => Some(Handling::HentNu),
         TEKST_STOERRE => Some(Handling::Tekst("stoerre")),
         TEKST_MINDRE => Some(Handling::Tekst("mindre")),
@@ -67,6 +69,7 @@ pub const GENVEJ_ANGREB: &str = "CmdOrCtrl+3";
 pub const GENVEJ_ROBOTTER: &str = "CmdOrCtrl+4";
 pub const GENVEJ_LOGIN: &str = "CmdOrCtrl+5";
 pub const GENVEJ_LAND: &str = "CmdOrCtrl+6";
+pub const GENVEJ_BESOEG: &str = "CmdOrCtrl+7";
 pub const GENVEJ_HENT: &str = "CmdOrCtrl+R";
 /// På macOS giver NumpadAdd tegnet + i menuen (muda 0.20), så ⌘+ virker på et dansk tastatur. Equal ville være tegnet =.
 pub const GENVEJ_TEKST_STOERRE: &str = "CmdOrCtrl+NumpadAdd";
@@ -99,6 +102,7 @@ pub struct Tekster {
     pub robotter: &'static str,
     pub login: &'static str,
     pub land: &'static str,
+    pub besoeg: &'static str,
     pub hent: &'static str,
     pub tekst_stoerre: &'static str,
     pub tekst_mindre: &'static str,
@@ -139,6 +143,7 @@ pub fn tekster(sprog: Sprog) -> Tekster {
             robotter: "Robotter",
             login: "Login",
             land: "Land lige nu",
+            besoeg: "Besøgende",
             hent: "Hent nu",
             tekst_stoerre: "Større tekst",
             tekst_mindre: "Mindre tekst",
@@ -173,6 +178,7 @@ pub fn tekster(sprog: Sprog) -> Tekster {
             robotter: "Robots",
             login: "Login",
             land: "Country now",
+            besoeg: "Visitors",
             hent: "Fetch now",
             tekst_stoerre: "Larger Text",
             tekst_mindre: "Smaller Text",
@@ -238,6 +244,7 @@ pub fn byg(app: &tauri::AppHandle, sprog: Sprog) -> tauri::Result<tauri::menu::M
             &punkt(ROBOTTER, t.robotter, GENVEJ_ROBOTTER)?,
             &punkt(LOGIN, t.login, GENVEJ_LOGIN)?,
             &punkt(LAND, t.land, GENVEJ_LAND)?,
+            &punkt(BESOEG, t.besoeg, GENVEJ_BESOEG)?,
             &P::separator(app)?,
             &punkt(HENT, t.hent, GENVEJ_HENT)?,
             &P::separator(app)?,
@@ -331,6 +338,13 @@ mod tests {
     fn land_i_menuen() {
         assert_eq!(tekster(Sprog::Da).land, "Land lige nu");
         assert_eq!(tekster(Sprog::En).land, "Country now");
+    }
+
+    #[test]
+    fn besoegende_i_menuen() {
+        assert_eq!((tekster(Sprog::Da).besoeg, tekster(Sprog::En).besoeg), ("Besøgende", "Visitors"));
+        assert_eq!(handling(BESOEG), Some(Handling::Visning("besoegende")));
+        assert_eq!(GENVEJ_BESOEG, "CmdOrCtrl+7");
     }
 
     #[test]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-besoegende"
+description = "Enables the besoegende command without any pre-configured scope."
+commands.allow = ["besoegende"]
+
+[[permission]]
+identifier = "deny-besoegende"
+description = "Denies the besoegende command without any pre-configured scope."
+commands.deny = ["besoegende"]

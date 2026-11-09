@@ -19,6 +19,7 @@
 <script src="assets/visning-robotter.js" defer></script>
 <script src="assets/visning-login.js" defer></script>
 <script src="assets/visning-land.js" defer></script>
+<script src="assets/visning-besoegende.js" defer></script>
 <script src="assets/visning-teknologi.js" defer></script>
 <script src="assets/visning-indstillinger.js" defer></script>
 </head>
@@ -56,6 +57,7 @@
     <li><a href="#robotter" data-visning="robotter"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 4v4M9 13h.01M15 13h.01"/></svg><span data-t="navRobotter">Robotter</span><kbd data-genvej="4"></kbd></a></li>
     <li><a href="#login" data-visning="login"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-t="navLogin">Login</span><kbd data-genvej="5"></kbd></a></li>
     <li><a href="#land" data-visning="land"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span id="nav-land" data-t="navLand">Land lige nu</span><kbd data-genvej="6"></kbd></a></li>
+    <li><a href="#besoegende" data-visning="besoegende"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M17.5 14c2.4.8 4 3.1 4 6"/></svg><span data-t="navBesoeg">Besøgende</span><kbd data-genvej="7"></kbd></a></li>
   </ul>
   <ul class="nav fod">
     <li><a href="#indstillinger" data-visning="indstillinger"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span data-t="navIndst">Indstillinger</span><kbd data-genvej=","></kbd></a></li>
@@ -165,6 +167,11 @@
   <section class="visning" id="visning-land" data-visning="land" aria-labelledby="land-h" hidden>
     <div class="titelrad"><h1 id="land-h" tabindex="-1"></h1><span class="under" data-t="landRadar"></span><span class="under" id="land-kig"></span><div class="hoejre" id="land-faner"></div></div>
     <div class="vg" id="land-rod"></div>
+  </section>
+
+  <section class="visning" id="visning-besoegende" data-visning="besoegende" aria-labelledby="besoegende-h" hidden>
+    <div class="titelrad"><h1 id="besoegende-h" tabindex="-1" data-t="navBesoeg">Besøgende</h1><span class="under" id="besoegende-under"></span><div class="hoejre" id="besoegende-periode"></div></div>
+    <div class="vg" id="besoegende-rod"></div>
   </section>
 
   <section class="visning" id="visning-teknologi" data-visning="teknologi" aria-labelledby="teknologi-h" hidden>
@@ -339,6 +346,10 @@
   <div class="hjaelp-del" data-hjaelp="land">
     <p data-t="hjLand"></p>
     <dl class="hm-ord" id="ord-land"></dl>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="besoegende">
+    <p data-t="hjBesoeg"></p>
+    <p data-t="hjBesoeg2"></p>
   </div>
   <div class="hjaelp-del" data-hjaelp="teknologi">
     <p data-t="tekP"></p>

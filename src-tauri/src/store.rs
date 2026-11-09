@@ -15,8 +15,8 @@ use crate::cf::{Fejl, Zone};
 /// 1: vagt_dag + hentet. 2: + zoner. 3: + valg. 4: + indstillinger. 5: + notifikation_zone, meldt. 6: + login_sti, hentet_ekstra.
 /// 7: + radar_dag. 8: valg → fravalgt. 9: fravalgt → valgt, + afvist_ny, ny_zone. 10: + teknologi, Radar-serier uden brug væk.
 /// 11: + hentet_angreb (art `angreb`). 12: + vurderet, hentet_angreb tømt, så angrebene hentes igen med netværket. 13: + hentet_historik, hentet_laek, zone_tilstand.
-/// 14: + tek_vis. 15: + hentet_dns, hentet_dmarc. 16: + sikkerhedsfund.
-const SKEMA_VERSION: i64 = 16;
+/// 14: + tek_vis. 15: + hentet_dns, hentet_dmarc. 16: + sikkerhedsfund. 17: + hentet_besoeg.
+const SKEMA_VERSION: i64 = 17;
 const SKEMA_1: &str = "
 CREATE TABLE IF NOT EXISTS vagt_dag (zone TEXT NOT NULL, dag TEXT NOT NULL, art TEXT NOT NULL, noegle TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (zone, dag, art, noegle));
 CREATE TABLE IF NOT EXISTS hentet (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
@@ -107,6 +107,10 @@ DELETE FROM hentet_laek;
 const SKEMA_16: &str = "
 CREATE TABLE IF NOT EXISTS sikkerhedsfund (zone TEXT NOT NULL, id TEXT NOT NULL, alvor TEXT NOT NULL, klasse TEXT NOT NULL, type TEXT NOT NULL, siden TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, id));
 ";
+/// `hentet_besoeg`: døgn, hvis besøg pr. land (arterne `b_land` og `b_total`, `besoeg.rs`) er hentet. Ingen eksisterende række ændres.
+const SKEMA_17: &str = "
+CREATE TABLE IF NOT EXISTS hentet_besoeg (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
+";
 /// Arterne fra hovedhentningen (`vaern::DOEGN_QUERY` og `sti200::hoved_query`): dem, `gem_doegn` erstatter. `fwn` er antal hændelser
 /// i `fw`-svaret (`vaern::FW_HAENDELSER`, kun til loftet).
 pub const DOEGN_ARTER: &[&str] = &[
@@ -115,6 +119,12 @@ pub const DOEGN_ARTER: &[&str] = &[
 /// `indstillinger`: sat, når de færdige døgn i hentevinduet én gang er sat til at blive hentet igen med Cloudflares estimat
 /// (`vaern::fw_vaegt_en_gang`). Værdien er den første dag, hvis `fw`-tal er estimater; ældre døgn er talte rækker.
 pub const FW_VAEGT: &str = "fw_vaegt_v1";
+/// `indstillinger`: sat, når domænerne med årstal én gang er sat til at få unikke besøgende hentet for de døgn, de allerede har (`unikke_en_gang`). Værdien er dagen, det skete.
+pub const UNIKKE_V1: &str = "unikke_v1";
+/// Foran zone-id'et i `indstillinger`: domænets hentede døgn i året venter på `unikke` (`unikke_en_gang`). Slettes, når de har fået det (`gem_unikke`).
+const UNIKKE_MANGLER: &str = "unikke_mangler:";
+/// Foran zone-id'et i `indstillinger`: Cloudflare svarede ikke på besøgene for domænet (værdien er den rensede fejl). Det koster kun besøgene.
+pub const BESOEG_FEJL: &str = "besoeg_fejl:";
 /// Arterne fra `adgang::ADGANG_QUERY`: dem, `gem_ekstra` erstatter.
 pub const EKSTRA_ARTER: &[&str] = &["post", "status", "land", "login", "stoppet", "asn"];
 /// Foran zone-id'et i `indstillinger`: Cloudflare svarede ikke på de ekstra tal for domænet (værdien er den rensede fejl).
@@ -227,6 +237,9 @@ impl Store {
         }
         if v < 16 {
             tx.execute_batch(SKEMA_16).map_err(lagerfejl)?;
+        }
+        if v < 17 {
+            tx.execute_batch(SKEMA_17).map_err(lagerfejl)?;
         }
         tx.pragma_update(None, "user_version", SKEMA_VERSION).map_err(lagerfejl)?;
         tx.commit().map_err(lagerfejl)?;
@@ -405,6 +418,87 @@ impl Store {
                 .map_err(lagerfejl)?;
             let mut noter = tx
                 .prepare("INSERT OR REPLACE INTO hentet_historik (zone, dag, hentet_utc) VALUES (?1, ?2, ?3)")
+                .map_err(lagerfejl)?;
+            for dag in dage {
+                slet.execute(params![zone, dag]).map_err(lagerfejl)?;
+                noter.execute(params![zone, dag, hentet_utc]).map_err(lagerfejl)?;
+            }
+            let mut ind = tx
+                .prepare("INSERT INTO vagt_dag (zone, dag, art, noegle, n) VALUES (?1, ?2, ?3, ?4, ?5)")
+                .map_err(lagerfejl)?;
+            for (dag, art, noegle, n) in raekker.iter().filter(|r| dage.contains(&r.0)) {
+                ind.execute(params![zone, dag, art, noegle, n]).map_err(lagerfejl)?;
+            }
+        }
+        tx.commit().map_err(lagerfejl)
+    }
+
+    /// Én gang (`UNIKKE_V1`): hvert domæne med hentede årstal noteres som ventende på `unikke` (`UNIKKE_MANGLER`), så køen henter året igen
+    /// for de døgn, det allerede har. Ingen tal ændres her. Et domæne, der først hentes bagefter, får tallet med det samme og noteres ikke. Én transaktion.
+    /// Returnerer, om det skete nu.
+    pub fn unikke_en_gang(&mut self, i_dag: &str) -> Result<bool, Fejl> {
+        if self.indstilling(UNIKKE_V1)?.is_some() {
+            return Ok(false);
+        }
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        tx.execute(
+            "INSERT OR REPLACE INTO indstillinger (noegle, vaerdi) SELECT DISTINCT ?1 || zone, '1' FROM hentet_historik",
+            [UNIKKE_MANGLER],
+        )
+        .map_err(lagerfejl)?;
+        tx.execute(
+            "INSERT OR REPLACE INTO indstillinger (noegle, vaerdi) VALUES (?1, ?2)",
+            [UNIKKE_V1, i_dag],
+        )
+        .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)?;
+        Ok(true)
+    }
+
+    /// Venter domænet på `unikke` for de døgn, det allerede har (`unikke_en_gang`)?
+    pub fn unikke_mangler(&self, zone: &str) -> Result<bool, Fejl> {
+        Ok(self.indstilling(&format!("{UNIKKE_MANGLER}{zone}"))?.is_some())
+    }
+
+    /// Gemmer `unikke` (art `h_total`) for de døgn, domænet allerede har årstal for, og noterer, at domænet ikke venter mere. Kun den nøgle
+    /// skrives: de andre tal for døgnet røres ikke, og et døgn uden årstal får ingen række (så det ikke ligner et døgn med trafik). Én transaktion.
+    pub fn gem_unikke(&mut self, zone: &str, raekker: &[(String, i64)]) -> Result<(), Fejl> {
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        {
+            let mut ind = tx
+                .prepare(
+                    "INSERT OR REPLACE INTO vagt_dag (zone, dag, art, noegle, n) SELECT ?1, ?2, 'h_total', ?3, ?4 \
+                     WHERE EXISTS (SELECT 1 FROM hentet_historik WHERE zone = ?1 AND dag = ?2)",
+                )
+                .map_err(lagerfejl)?;
+            for (dag, n) in raekker {
+                ind.execute(params![zone, dag, crate::historik::UNIKKE, n]).map_err(lagerfejl)?;
+            }
+        }
+        tx.execute("DELETE FROM indstillinger WHERE noegle = ?1", [format!("{UNIKKE_MANGLER}{zone}")])
+            .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)
+    }
+
+    pub fn hentet_besoeg(&self, zone: &str) -> Result<HashMap<String, String>, Fejl> {
+        self.hentet_i("hentet_besoeg", zone)
+    }
+
+    /// Besøgene for døgnene `dage`, som svaret dækker: (dag, art, nøgle, n), arterne `b_land` og `b_total`. Et døgn uden rækker er også hentet. Én transaktion.
+    pub fn gem_besoeg(
+        &mut self,
+        zone: &str,
+        dage: &[String],
+        raekker: &[(String, String, String, i64)],
+        hentet_utc: &str,
+    ) -> Result<(), Fejl> {
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        {
+            let mut slet = tx
+                .prepare("DELETE FROM vagt_dag WHERE zone = ?1 AND dag = ?2 AND art IN ('b_total', 'b_land')")
+                .map_err(lagerfejl)?;
+            let mut noter = tx
+                .prepare("INSERT OR REPLACE INTO hentet_besoeg (zone, dag, hentet_utc) VALUES (?1, ?2, ?3)")
                 .map_err(lagerfejl)?;
             for dag in dage {
                 slet.execute(params![zone, dag]).map_err(lagerfejl)?;
@@ -777,7 +871,7 @@ impl Store {
     pub fn raekker(&self, zone: &str, fra_dag: &str) -> Result<Vec<Raekke>, Fejl> {
         let mut st = self
             .db
-            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status') ORDER BY rowid")
+            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status', 'b_total', 'b_land') ORDER BY rowid")
             .map_err(lagerfejl)?;
         let rk = st
             .query_map(params![zone, fra_dag], |r| {
@@ -1097,17 +1191,25 @@ impl Store {
         tx.commit().map_err(lagerfejl)
     }
 
-    /// "Nulstil historik": alle hentede tal (vagt_dag, hentet, hentet_ekstra, radar_dag, sikkerhedsfund og fejlene og tidspunkterne for dem) slettes i én transaktion;
+    /// "Nulstil historik": alle hentede tal (vagt_dag, hentet, hentet_ekstra, hentet_besoeg, radar_dag, sikkerhedsfund og fejlene og tidspunkterne for dem) slettes i én transaktion;
     /// indstillingerne, zonelisten, valget, notifikationsvalget pr. domæne, login-stierne og det meldte bliver (J6: `meldt` er en log over beskeder, ikke hentede tal, og uden
     /// den kunne en besked for i går komme igen; den rydder sig selv efter `notify::MELDT_DOEGN`). `VACUUM` bagefter frigiver
     /// pladsen (det kan ikke stå i en transaktion). Filen selv bliver.
     pub fn nulstil_historik(&mut self) -> Result<(), Fejl> {
         let tx = self.db.transaction().map_err(lagerfejl)?;
         tx.execute_batch(
-            "DELETE FROM vagt_dag; DELETE FROM hentet; DELETE FROM hentet_ekstra; DELETE FROM hentet_angreb; DELETE FROM hentet_laek; DELETE FROM hentet_dns; DELETE FROM hentet_dmarc; DELETE FROM hentet_historik; DELETE FROM radar_dag; DELETE FROM sikkerhedsfund;",
+            "DELETE FROM vagt_dag; DELETE FROM hentet; DELETE FROM hentet_ekstra; DELETE FROM hentet_angreb; DELETE FROM hentet_laek; DELETE FROM hentet_dns; DELETE FROM hentet_dmarc; DELETE FROM hentet_historik; DELETE FROM hentet_besoeg; DELETE FROM radar_dag; DELETE FROM sikkerhedsfund;",
         )
         .map_err(lagerfejl)?;
-        for praefiks in [ADGANG_FEJL, DNS_FEJL, DMARC_FEJL, RADAR_PRAEFIKS, SIKKERHED_PRAEFIKS] {
+        for praefiks in [
+            ADGANG_FEJL,
+            DNS_FEJL,
+            DMARC_FEJL,
+            RADAR_PRAEFIKS,
+            SIKKERHED_PRAEFIKS,
+            BESOEG_FEJL,
+            UNIKKE_MANGLER,
+        ] {
             tx.execute("DELETE FROM indstillinger WHERE noegle LIKE ?1", [format!("{praefiks}%")])
                 .map_err(lagerfejl)?;
         }
@@ -1157,7 +1259,7 @@ mod tests {
         s.gem_indstilling("x", "y").unwrap();
         s.db.execute_batch("PRAGMA user_version = 15; DROP TABLE sikkerhedsfund;").unwrap();
         let mut s = Store::klar(std::mem::replace(&mut s.db, Connection::open_in_memory().unwrap())).unwrap();
-        assert_eq!(s.skema_version().unwrap(), 16);
+        assert_eq!(s.skema_version().unwrap(), SKEMA_VERSION);
         assert_eq!(s.raekker("z", "0000-00-00").unwrap().len(), 1, "rækkerne står");
         assert_eq!(s.indstilling("x").unwrap().as_deref(), Some("y"));
         assert!(s.sikkerhedsfund(None).unwrap().is_empty());

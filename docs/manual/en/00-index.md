@@ -17,7 +17,7 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 | [Installation](20-installation.md) | need the program on your computer |
 | [Setup](30-opsaetning.md) | need to connect the program to Cloudflare and choose domains |
 | [Create an API Token at Cloudflare](31-cloudflare.md) | want to see step by step, with screenshots, what to do in Cloudflare's dashboard |
-| [The views](40-visninger/overblik.md) | use the program day to day: Overview, Since last time, Attacks, Robots, Login, your country, Technology |
+| [The views](40-visninger/overblik.md) | use the program day to day: Overview, Since last time, Attacks, Robots, Login, your country, Visitors, Technology |
 | [Settings](50-indstillinger.md) | want to change language, appearance, domains, notifications or the API Token |
 | [Notifications and background](60-notifikationer.md) | want to understand when the program speaks up, and what happens when the window is closed |
 | [Data and history](70-data.md) | want to know where the figures live, for how long, and how to reset |

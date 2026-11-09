@@ -1,15 +1,15 @@
 /* Huginn and Muninn — programrammen. Én side med hash-navigation: #overblik, #siden-sidst, #vaernet?zone=<id>&navn=…
-   (eller ?samlet=1; perioden og filtrene står i samme adresse), #robotter?zone=…, #login?zone=…, #land?kode=DK (visning-land.js) og #indstillinger. Uden token står opsætningen i indholdsområdet, og visningerne er slået fra (kun
+   (eller ?samlet=1; perioden og filtrene står i samme adresse), #robotter?zone=…, #login?zone=…, #land?kode=DK (visning-land.js), #besoegende?zone=… og #indstillinger. Uden token står opsætningen i indholdsområdet, og visningerne er slået fra (kun
    Indstillinger kan åbnes). Rammen ejer den delte tilstand (token, zoner, overblikkets rækker, valget, køens status) og er
    den eneste, der lytter på Rust-hændelserne: 'hentekoe' (køen), 'siden_sidst' (menulinjen/en notifikation), 'visning'
-   (programmenuen på macOS: ⌘1–6, ⌘, og Om), 'historik' (Vis → Tilbage/Frem), 'ekstra' (de ekstra tal for et domæne er gemt) og 'radar' (nye tal fra Radar). Visningerne (visning-*.js) registrerer sig med
+   (programmenuen på macOS: ⌘1–7, ⌘, og Om), 'historik' (Vis → Tilbage/Frem), 'ekstra' (de ekstra tal for et domæne er gemt) og 'radar' (nye tal fra Radar). Visningerne (visning-*.js) registrerer sig med
    vis()/skjul() og abonnerer på rammens egne beskeder (paa → afmeld), så et skift aldrig efterlader lyttere. domaener: true
    på en visning viser domænevælgeren i båndet; visningen svarer med hvad() og skift(). Domænevalget er fælles (tilstand.domaeneValg, gemt i Rust som domaene_valg): enhver adresse med zone eller samlet=1 sætter det, og sidebjælken, ⌘ og
    programmenuen åbner visningen med det. Historikken beholder sin egen adresse. land: true viser landevælgeren, som visningen selv fylder. data-dyk, data-gaa, data-cve, data-radar og data-rul på et
    element gør det klikbart: én lytter her (klik, Enter, mellemrum), så det overlever, at visningerne tegner om. Et mål i hjælpeskuffen
    lukker skuffen. I en tegning (SVG) flytter piletasterne mellem mærkerne, så tegningen kun er ét Tab-stop; .dyk-hit er den usynlige,
    større klikflade under et mærke og tæller ikke med. Genveje: på macOS står de i programmenuen (Rust), på Windows/Linux fanger
-   rammen Ctrl+1–6, Ctrl+, og Ctrl+R/F5 (Hent nu). Tilbage/frem: ‹ › i båndet, ⌘[ ⌘] (menuen), ⌘← ⌘→ og Alt+← Alt+→ (keydown).
+   rammen Ctrl+1–7, Ctrl+, og Ctrl+R/F5 (Hent nu). Tilbage/frem: ‹ › i båndet, ⌘[ ⌘] (menuen), ⌘← ⌘→ og Alt+← Alt+→ (keydown).
    Tekststørrelse: ⌘+ ⌘− ⌘0 (Ctrl på Windows) i keydown på alle platforme, og i programmenuen (hændelsen 'tekst').
    <html data-platform> sættes af Rust (init-script).
    Vinduets titel følger visningen (document.title; Rust sætter vinduets titel ud fra den). Alt bygges med createElement/
@@ -36,7 +36,7 @@
   const antalAbonnenter = navn => (abonnenter[navn] ? abonnenter[navn].size : 0);
 
   /* ── visninger og router ── */
-  const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'robotter', 'login', 'land', 'teknologi', 'indstillinger'];
+  const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'robotter', 'login', 'land', 'besoegende', 'teknologi', 'indstillinger'];
   const visninger = {};
   const registrer = (navn, v) => { visninger[navn] = v; };
   const sektion = navn => document.querySelector(`section[data-visning="${navn}"]`);
@@ -81,7 +81,7 @@
     if (!tilstand.sat && navn !== 'indstillinger') navn = 'opsaetning';
     /* Et domæne, der ikke er valgt, er væk overalt, også fra en gammel adresse. Adressen erstattes, så tilbage-knappen ikke sidder fast. */
     if (tilstand.uvalgt.has(params.get('zone'))) {
-      const ny = { vaernet: '#vaernet?samlet=1', robotter: '#robotter?samlet=1', login: '#login?samlet=1', teknologi: '#teknologi', indstillinger: '#indstillinger' }[navn] || '#overblik';
+      const ny = { vaernet: '#vaernet?samlet=1', robotter: '#robotter?samlet=1', login: '#login?samlet=1', besoegende: '#besoegende?samlet=1', teknologi: '#teknologi', indstillinger: '#indstillinger' }[navn] || '#overblik';
       history.replaceState(history.state, '', ny);
       return route();
     }
@@ -286,7 +286,7 @@
   }
 
   /* ── genveje ── */
-  const GENVEJE = [['1', 'overblik', 'navOverblik'], ['2', 'siden-sidst', 'navSiden'], ['3', 'vaernet', 'navVaernet'], ['4', 'robotter', 'navRobotter'], ['5', 'login', 'navLogin'], ['6', 'land', 'navLand'], [',', 'indstillinger', 'navIndst']];
+  const GENVEJE = [['1', 'overblik', 'navOverblik'], ['2', 'siden-sidst', 'navSiden'], ['3', 'vaernet', 'navVaernet'], ['4', 'robotter', 'navRobotter'], ['5', 'login', 'navLogin'], ['6', 'land', 'navLand'], ['7', 'besoegende', 'navBesoeg'], [',', 'indstillinger', 'navIndst']];
   const genvejTekst = tast => (mac ? '⌘' : 'Ctrl+') + (tast === 'r' ? 'R' : tast);
   const histGenvej = [mac ? '⌘[' : 'Alt+←', mac ? '⌘]' : 'Alt+→'];
   for (const [id, tekst, genvej] of [['hist-tilbage', T.tilbage, histGenvej[0]], ['hist-frem', T.frem, histGenvej[1]]]) {

@@ -6,6 +6,8 @@
 
 **API Token** · En nøgle, du opretter i din Cloudflare-konto, og som giver et program lov til bestemte ting. Programmets API Token kan kun læse: **Zone › Read** og **Analytics › Read**.
 
+**Besøg** · Cloudflares egen definition: en sidevisning, der kom fra et andet site eller et direkte link. Det samme tal som "Visits" i Cloudflares dashboard, og Cloudflares estimat ud fra en stikprøve. Står på Besøgende pr. land.
+
 **Blokeret** · Cloudflare afviste forespørgslen uden videre.
 
 **Bot Fight Mode** · Cloudflares automatiske beskyttelse mod robotter. Rutine; giver aldrig Hold øje eller Handl.
@@ -59,6 +61,8 @@
 **Udklædt** · En robot, der kalder sig fx Googlebot uden at være det.
 
 **Ukendt** · Status, når der ingen tal er endnu.
+
+**Unikke besøgende** · Antal forskellige IP-adresser, der besøgte sitet en dag. Robotter tæller med, og flere personer bag samme router tæller som én. En sum over flere dage tæller den samme besøgende én gang pr. dag.
 
 **UTC** · Verdenstid. Alle dage i programmet er hele døgn i UTC, så "i går" slutter kl. 01 eller 02 dansk tid.
 

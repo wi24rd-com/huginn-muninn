@@ -375,6 +375,18 @@
    "billeder": []
   },
   {
+   "id": "40-visninger/besoegende",
+   "da": {
+    "fil": "da/40-visninger/besoegende.md",
+    "titel": "Besøgende"
+   },
+   "en": {
+    "fil": "en/40-visninger/besoegende.md",
+    "titel": "Visitors"
+   },
+   "billeder": []
+  },
+  {
    "id": "40-visninger/dyk",
    "da": {
     "fil": "da/40-visninger/dyk.md",

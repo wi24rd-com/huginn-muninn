@@ -10,6 +10,7 @@ The shortcuts are also listed in the help (**?** at the top right) and in the **
 | Robots | ⌘4 | Ctrl+4 |
 | Login | ⌘5 | Ctrl+5 |
 | Your country now | ⌘6 | Ctrl+6 |
+| Visitors | ⌘7 | Ctrl+7 |
 | Settings | ⌘, | Ctrl+, |
 | Fetch now | ⌘R | Ctrl+R or F5 |
 | Back | ⌘[ or ⌘← | Alt+← |
