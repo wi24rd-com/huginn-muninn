@@ -15,7 +15,10 @@ Alle valg gemmes med det samme på din computer. Der er ingen Gem-knap, bortset 
 | **Tekststørrelse** | Lille · Normal · Stor | Normal | Gælder teksten i hele programmet. Også ⌘+ ⌘− ⌘0 (Windows: Ctrl). |
 | **Start ved login** | Kontakt | Til (slås til første gang en færdigbygget udgave starter) | Programmet starter i menulinjen, når du logger ind, og henter i baggrunden. Huginn starter også selv én gang om dagen og henter, hvis det ikke kører. Kontakten slår begge dele til og fra. Slå det fra, før du sletter programmet. |
 
-Er **Start ved login** slået fra, står der en gul linje øverst: "Programmet starter ikke ved login. Så henter Huginn kun, når programmet er åbent. Åbn det mindst hver tredje uge, ellers kommer der huller i historikken." Knappen **Slå Start ved login til** slår det til igen. Styresystemet er sandheden: slår du det fra i Systemindstillinger, slår det igennem her.
+Er **Start ved login** slået fra, står der en gul linje øverst: "Programmet starter ikke ved login. Så henter Huginn kun, når programmet er åbent. Åbn det mindst hver tredje uge, ellers kommer der huller i historikken." Knappen **Slå Start ved login til** slår det til igen. Slå det til og fra her i programmet. Slår du Huginn fra under Login-emner i Systemindstillinger, kan kontakten her stadig stå på til.
+
+![Generelt og Domæner](../img/indstillinger--light-da-1200x860.webp)
+*Øverst i Indstillinger: Generelt med **Start ved login** og under det Domæner med en kontakt pr. domæne.*
 
 ![Udseende: mørkt tema](../img/overblik--dark-da-1200x860.webp)
 *Overblik i mørkt tema.*
@@ -44,7 +47,7 @@ Nederst står: "Du kan også slå notifikationerne helt fra i Systemindstillinge
 
 ## Forbindelse
 
-![Forbindelse og Data](../img/indstillinger--light-da-1200x860.webp)
+![Forbindelse og Data](../img/indstillinger-forbindelse--light-da-1200x860.webp)
 *Status, API Token med **Skift API Token…** og **Glem API Token…**, og afsnittet Data.*
 
 | Felt | Hvad det gør |

@@ -15,7 +15,10 @@ Every choice is saved at once on your computer. There is no Save button, except 
 | **Text size** | Small · Normal · Large | Normal | Applies to the text in the whole program. Also ⌘+ ⌘− ⌘0 (Windows: Ctrl). |
 | **Start at login** | Switch | On (turned on the first time a built version starts) | The program starts in the menu bar when you log in and fetches in the background. Huginn also starts by itself once a day and fetches if it is not running. The switch turns both on and off. Turn it off before you delete the program. |
 
-If **Start at login** is off, a yellow line appears at the top: "The program does not start at login. Then Huginn only fetches while the program is open. Open it at least every three weeks, or gaps will appear in the history." The button **Turn on Start at login** turns it back on. The operating system is the truth: if you turn it off in System Settings, that applies here.
+If **Start at login** is off, a yellow line appears at the top: "The program does not start at login. Then Huginn only fetches while the program is open. Open it at least every three weeks, or gaps will appear in the history." The button **Turn on Start at login** turns it back on. Turn it on and off here in the program. If you turn Huginn off under Login Items in System Settings, the switch here may still show on.
+
+![General and Domains](../img/indstillinger--light-en-1200x860.webp)
+*At the top of Settings: General with **Start at login** and below it Domains with a switch per domain.*
 
 ![Appearance: dark theme](../img/overblik--dark-en-1200x860.webp)
 *The Overview in the dark theme.*
@@ -44,7 +47,7 @@ At the bottom it says: "You can also turn notifications off completely in System
 
 ## Connection
 
-![Connection and Data](../img/indstillinger--light-en-1200x860.webp)
+![Connection and Data](../img/indstillinger-forbindelse--light-en-1200x860.webp)
 *Status, the API Token with **Change API Token…** and **Forget API Token…**, and the Data section.*
 
 | Field | What it does |

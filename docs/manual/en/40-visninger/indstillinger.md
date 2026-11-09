@@ -6,5 +6,8 @@ Settings is the only view that can be opened before you have connected to Cloudf
 
 Every field and every switch is described in [Settings](../50-indstillinger.md).
 
-![Settings, the Connection and Data sections](../../img/indstillinger--light-en-1200x860.webp)
-*The Connection and Data sections.*
+![Settings from the top](../../img/indstillinger--light-en-1200x860.webp)
+*At the top: General and Domains.*
+
+![Settings, the Connection and Data sections](../../img/indstillinger-forbindelse--light-en-1200x860.webp)
+*Further down: Connection and Data.*

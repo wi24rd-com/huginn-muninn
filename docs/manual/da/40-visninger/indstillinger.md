@@ -6,5 +6,8 @@ Indstillinger er den eneste visning, der kan åbnes, før du har forbundet med C
 
 Hvert felt og hver kontakt er beskrevet i [Indstillinger](../50-indstillinger.md).
 
-![Indstillinger, afsnittet Forbindelse og Data](../../img/indstillinger--light-da-1200x860.webp)
-*Afsnittene Forbindelse og Data.*
+![Indstillinger fra toppen](../../img/indstillinger--light-da-1200x860.webp)
+*Øverst: Generelt og Domæner.*
+
+![Indstillinger, afsnittet Forbindelse og Data](../../img/indstillinger-forbindelse--light-da-1200x860.webp)
+*Længere nede: Forbindelse og Data.*
