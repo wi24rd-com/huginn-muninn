@@ -1,8 +1,8 @@
 //! Den daglige start: launchd (macOS) eller Opgavestyring (Windows) starter programmet med `--dagligt` én gang i døgnet, så
 //! historikken ikke får huller, når brugeren har valgt Afslut, eller maskinen ikke har været logget ud i ugevis. Kører programmet
 //! allerede, henter det bare (`anden_start`). Ellers starter det uden vindue, henter og lukker igen (`skal_afslutte`). Følger
-//! kontakten Start ved login (`saet`). Linux: intet i v1. Reglerne er rene funktioner; kun `saet` og `er_til` rører maskinen,
-//! og ingen test kalder dem.
+//! kontakten Start ved login (`saet`) og retter sin sti, hvis programmet er flyttet (`ret_sti`). Linux: intet i v1. Reglerne er rene
+//! funktioner; kun `saet`, `er_til` og `ret_sti` rører maskinen, og ingen test kalder dem.
 #[cfg(target_os = "macos")]
 use std::fs;
 use std::io;
@@ -17,9 +17,9 @@ pub const DAGLIGT: &str = "--dagligt";
 /// Jobbets navn i launchd, og plistens navn. Login-agenten hedder det samme uden `.dagligt`.
 #[cfg(any(target_os = "macos", test))]
 const LABEL: &str = "com.wi24rd.huginn-muninn.dagligt";
-/// Programmets bundle-id: så står jobbet under programmet i Login-emner.
+/// Programmets bundle-id: så står jobbet under programmet i Login-emner. Login-agenten (`ved_login`) bruger det også som navn.
 #[cfg(any(target_os = "macos", test))]
-const BUNDLE_ID: &str = "com.wi24rd.huginn-muninn";
+pub(crate) const BUNDLE_ID: &str = "com.wi24rd.huginn-muninn";
 /// Opgavens navn i Opgavestyring.
 #[cfg(any(windows, test))]
 const OPGAVE: &str = "Wi24rd Huginn and Muninn dagligt";
@@ -70,8 +70,9 @@ pub fn standard(dev: bool, anvendt: Option<&str>, login_til: bool) -> Option<boo
     (!dev && anvendt.is_none()).then_some(login_til)
 }
 
+/// Escaper tekst til en plist. Bruges også af login-plisten (`ved_login`).
 #[cfg(any(target_os = "macos", test))]
-fn xml(s: &str) -> String {
+pub(crate) fn xml(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
 }
 
@@ -101,6 +102,14 @@ pub fn dagligt_plist(sti: &str, time: u8, minut: u8) -> String {
 "#,
         xml(sti)
     )
+}
+
+/// Hvad selvreparationen skriver i den daglige plist, når programmet er flyttet. `None`: lad den være (samme sti, eller en sti, der
+/// ikke er fast, se `ved_login::fast_sti`). Ren funktion.
+#[cfg(any(target_os = "macos", test))]
+fn ret_tekst(gemt: &str, ny: &str, time: u8, minut: u8) -> Option<String> {
+    use crate::ved_login::{gemt_sti, skal_skrive_igen};
+    skal_skrive_igen(gemt_sti(gemt).as_deref().unwrap_or_default(), ny).then(|| dagligt_plist(ny, time, minut))
 }
 
 /// Argumenterne til `launchctl`, der indlæser plisten nu. Ellers læses den først ved næste login. Ren funktion.
@@ -174,6 +183,30 @@ pub fn saet(til: bool) -> io::Result<()> {
         launchctl(&bootout_args(uid));
     }
     fs::remove_file(&fil)
+}
+
+/// Selvreparationen (`ved_login::ret_stier`): findes plisten og peger den et andet sted hen end `ny`, skrives den igen og indlæses
+/// igen, så launchd ikke beholder den gamle sti til næste login. En plist, der ikke findes, oprettes ikke. Svarer, om der blev skrevet.
+#[cfg(target_os = "macos")]
+pub fn ret_sti(ny: &str) -> io::Result<bool> {
+    use std::os::unix::fs::MetadataExt;
+    let fil = plist_fil()?;
+    let gemt = match fs::read_to_string(&fil) {
+        Ok(t) => t,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(e) => return Err(e),
+    };
+    let Some(tekst) = ret_tekst(&gemt, ny, TIME, MINUT) else {
+        return Ok(false);
+    };
+    fs::write(&fil, tekst)?;
+    let uid = fs::metadata(&fil)?.uid();
+    // Det gamle job fjernes først, ellers fejler `bootstrap`. Er det jobbet selv, der kører, bliver det (se `saet`).
+    if !startet_dagligt(std::env::args()) {
+        launchctl(&bootout_args(uid));
+    }
+    launchctl(&bootstrap_args(uid, &fil.to_string_lossy()));
+    Ok(true)
 }
 
 /// Er den daglige start slået til? Filen er sandheden: et job, launchd stadig har, efter at filen er væk, skal ikke gøre noget.
@@ -333,6 +366,41 @@ mod tests {
             "tjekket fanger en rå &"
         );
         assert!(!velformet("<plist><dict></plist>"), "tjekket fanger en manglende slut-tag");
+    }
+
+    #[test]
+    fn selvreparation_af_den_daglige_plist() {
+        let sti = "/Applications/Huginn and Muninn.app/Contents/MacOS/huginn-muninn";
+        let flyttet = "/Users/jan/Programmer/Huginn and Muninn.app/Contents/MacOS/huginn-muninn";
+        let gemt = dagligt_plist(sti, 12, 0);
+        assert_eq!(ret_tekst(&gemt, sti, 12, 0), None, "samme sti");
+        assert_eq!(ret_tekst(&gemt, flyttet, 12, 0), Some(dagligt_plist(flyttet, 12, 0)), "flyttet");
+        assert_eq!(
+            ret_tekst(
+                &gemt,
+                "/private/var/folders/x/T/AppTranslocation/U/d/Huginn.app/Contents/MacOS/huginn-muninn",
+                12,
+                0
+            ),
+            None,
+            "AppTranslocation"
+        );
+        assert_eq!(
+            ret_tekst(&gemt, "/Volumes/H/Huginn.app/Contents/MacOS/huginn-muninn", 12, 0),
+            None,
+            "/Volumes/"
+        );
+        assert_eq!(
+            ret_tekst(&gemt, "/Users/jan/x/target/debug/huginn-muninn", 12, 0),
+            None,
+            "debug-sti"
+        );
+        let med_tegn = "/Users/a/A&B <c>/Huginn.app/Contents/MacOS/huginn-muninn";
+        assert_eq!(
+            ret_tekst(&dagligt_plist(med_tegn, 12, 0), med_tegn, 12, 0),
+            None,
+            "escapet sti læses rigtigt tilbage"
+        );
     }
 
     #[test]

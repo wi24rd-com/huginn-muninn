@@ -4,6 +4,12 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-08 23:30 — Start ved login, der overlever en flytning, og det rigtige token-trin
+#### Ændret
+- **Start ved login skrives af programmet selv på macOS** (IDEA-044), som den daglige start. Samme fil og navn som før (`~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist`, `com.wi24rd.huginn-muninn`), nu med programmets bundle-id, så Login-emner viser jobbet under programmet, og med stien XML-escapet, så en mappe med `&` i navnet ikke giver en ugyldig fil. Første start efter opdateringen skriver den eksisterende fil om. Et fravalg står ved magt. Windows og Linux bruger stadig `tauri-plugin-autostart`, uændret.
+- **Flyttes programmet, retter det selv** login- og dagligt-plisten ved næste start, og den daglige indlæses igen. Det sker aldrig, når programmet kører fra en midlertidig mappe (App Translocation, når en usigneret app startes fra Overførsler), fra et diskbillede under `/Volumes/` eller under `npm run tauri dev`. Er Start ved login slået fra, oprettes intet.
+- **Token-trinnet til Cloudflares egne fund** (IDEA-045): programmet siger nu det samme som manualen. Rettigheden er *Account Security Center Insights › Read* i en ny politik (**Add new policy › Add new Account policy**, Include · All accounts), og opsummeringen viser *Account Security Center Insights: Read* under All accounts. *Zone Security Center Insights* virker ikke. Mangler rettigheden, siger afsnittet **Cloudflares egne fund**, at den tilføjes som kontorettighed.
+
 ### 2026-11-08 23:30 — Afviste som Cloudflares estimat, ikke som antal rækker
 #### Ændret
 - **Afviste tælles som Cloudflares estimat** (IDEA-009): hovedhentningen henter feltet `sampleInterval` på hver afvist forespørgsel og lægger det sammen i stedet for at tælle rækker. Det er det samme tal, Cloudflares `firewallEventsAdaptiveGroups` ville give, men virker på Free-planen og koster ikke et ekstra kald. Målt: på travle døgn stiger tallet 11–56 %; stille domæner er uændrede. Overblik, Angreb, kortet, listerne, status, mærkerne og notifikationerne følger med. "De seneste" og de enkelte angreb tæller stadig hændelser.

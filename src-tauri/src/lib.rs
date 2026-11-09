@@ -26,6 +26,7 @@ mod store;
 mod teknologi;
 mod token;
 mod vaern;
+mod ved_login;
 
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
@@ -35,7 +36,8 @@ use std::sync::{Arc, LazyLock, Mutex};
 use serde::Serialize;
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State, Url};
-use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
+#[cfg(not(target_os = "macos"))]
+use tauri_plugin_autostart::ManagerExt;
 
 use cf::{Fejl, Klient, Zone};
 use koe::{Henter, Koe, KoeStatus};
@@ -1190,23 +1192,46 @@ async fn nulstil_historik(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar
     svar
 }
 
+/// Er start ved login slået til? macOS: login-plisten findes (`ved_login`, som programmet selv skriver). Windows og Linux: pluginnet
+/// (Run-nøglen / autostart-filen). Fejltekster (med stier) kasseres; webvisningen får kun koden `autostart`.
+#[cfg(target_os = "macos")]
+fn login_til(_app: &AppHandle) -> Result<bool, Fejl> {
+    Ok(ved_login::er_til())
+}
+
+#[cfg(not(target_os = "macos"))]
+fn login_til(app: &AppHandle) -> Result<bool, Fejl> {
+    app.autolaunch().is_enabled().map_err(|_| Fejl::Autostart)
+}
+
+/// Slår start ved login til eller fra; et fravalg uden noget at fjerne er ikke en fejl.
+#[cfg(target_os = "macos")]
+fn login_saet(_app: &AppHandle, til: bool) -> Result<(), Fejl> {
+    ved_login::saet(til).map_err(|_| Fejl::Autostart)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn login_saet(app: &AppHandle, til: bool) -> Result<(), Fejl> {
+    let al = app.autolaunch();
+    let svar = if til { al.enable() } else { al.disable() };
+    svar.map_err(|_| Fejl::Autostart)
+}
+
 /// Start ved login: OS'et er sandheden (LaunchAgent-plist / Run-nøglen), så et fravalg i Systemindstillinger slår igennem.
-/// Pluginnets egen fejltekst (med stier) kasseres; webvisningen får kun koden `autostart`.
 #[tauri::command]
 async fn autostart_hent(app: AppHandle) -> Svar<bool> {
-    app.autolaunch().is_enabled().map_err(|_| Fejl::Autostart)
+    login_til(&app)
 }
 
 /// Slår start ved login og den daglige start til eller fra (én kontakt) og svarer med OS'ets tilstand bagefter. Begge forsøges, også hvis den ene fejler.
 #[tauri::command]
 async fn autostart_saet(til: bool, app: AppHandle) -> Svar<bool> {
-    let al = app.autolaunch();
-    let login = if til { al.enable() } else { al.disable() };
+    let login = login_saet(&app, til);
     let daglig = dagligt::saet(til);
     if login.is_err() || daglig.is_err() {
         return Err(Fejl::Autostart);
     }
-    al.is_enabled().map_err(|_| Fejl::Autostart)
+    login_til(&app)
 }
 
 /// UI'ets sprog ("da"/"en") til menuen i menulinjen, programmenuen (macOS) og notifikationerne; gemt, så de er på det
@@ -1455,7 +1480,7 @@ fn vurder(app: &AppHandle) {
 }
 
 // ── Vinduet, menuen og start ved login ─────────────────────────────────────────────────────────────────────────────
-/// Autostart giver programmet dette argument (i LaunchAgent-plist'en / Run-nøglen).
+/// Start ved login giver programmet dette argument (i login-plisten fra `ved_login` / Run-nøglen fra pluginnet).
 const VED_LOGIN: &str = "--autostart";
 const SPROG: &str = "sprog";
 /// Sat, når start ved login er slået til første gang; derefter er brugerens valg (i OS'et) sandheden.
@@ -1482,12 +1507,12 @@ fn autostart_standard(app: &AppHandle) -> Result<(), Fejl> {
     let t = app.state::<Tilstand>();
     let anvendt = laas(&t)?.indstilling(AUTOSTART_STANDARD)?;
     if skal_slaa_autostart_til(tauri::is_dev(), anvendt.as_deref()) {
-        app.autolaunch().enable().map_err(|_| Fejl::Autostart)?;
+        login_saet(app, true)?;
         laas(&t)?.gem_indstilling(AUTOSTART_STANDARD, "1")?;
     }
     // Den daglige start følger login-agenten og har sin egen markør, så installationer fra før den også får den. Én gang: et fravalg står ved magt.
     let anvendt = laas(&t)?.indstilling(DAGLIGT_STANDARD)?;
-    let login_til = app.autolaunch().is_enabled().map_err(|_| Fejl::Autostart)?;
+    let login_til = login_til(app)?;
     let Some(slaa_til) = dagligt::standard(tauri::is_dev(), anvendt.as_deref(), login_til) else {
         return Ok(());
     };
@@ -1684,7 +1709,7 @@ pub fn run() {
         return;
     }
     let setup_args = args.clone();
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         // Skal være det første plugin: en anden start overdrager til denne (som viser vinduet eller, ved en daglig start, henter)
         // og afslutter, før dens eget setup åbner SQLite (plugins sættes op i `Builder::build`, vores setup først ved `RunEvent::Ready`).
         .plugin(tauri_plugin_single_instance::init(|app, args, _| {
@@ -1698,14 +1723,16 @@ pub fn run() {
                     }
                 }
             }
-        }))
-        .plugin(
-            tauri_plugin_autostart::Builder::new()
-                .macos_launcher(MacosLauncher::LaunchAgent)
-                .app_name("com.wi24rd.huginn-muninn")
-                .args([VED_LOGIN])
-                .build(),
-        )
+        }));
+    // Windows og Linux: Run-nøglen / autostart-filen fra pluginnet, uændret. macOS: login-plisten skrives af `ved_login`.
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.plugin(
+        tauri_plugin_autostart::Builder::new()
+            .app_name("com.wi24rd.huginn-muninn")
+            .args([VED_LOGIN])
+            .build(),
+    );
+    let app = builder
         .plugin(navigationsvagt())
         .plugin(tauri_plugin_notification::init())
         .on_menu_event(|app, ev| paa_programmenu(app, ev.id().as_ref()))
@@ -1735,6 +1762,11 @@ pub fn run() {
             notifikation_klik(app.handle())?;
             // Ved start: notifikation fra cachen, hvis tallene er friske nok (beslutning 6); ellers efter første runde.
             vurder(app.handle());
+            // Er programmet flyttet, peger login- og dagligt-plisten det gamle sted hen: de skrives igen (aldrig under `tauri dev`).
+            #[cfg(target_os = "macos")]
+            if !tauri::is_dev() {
+                let _ = ved_login::ret_stier();
+            }
             // Første start af en bundlet build: start ved login slås til. Lykkes det ikke, prøves der igen ved næste start.
             let _ = autostart_standard(app.handle());
             // Køen starter, hvis der er et token (ellers melder den "intet token" og startes af token_set).
