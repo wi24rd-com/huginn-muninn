@@ -4,6 +4,21 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-09 23:30 — Besøgende efter live-testen: blå søjler, uger, robotter og sider
+#### Tilføjet
+- **Kendte robotter** på Besøgende: besøg fra robotter, Cloudflare har verificeret, i Robotter-visningens grupper, et klik på en gruppe viser dens besøg pr. dag, og flisen **Besøg på 30 dage** siger "heraf N fra kendte robotter (x %)". Hentes med et eget kald (`httpRequestsAdaptiveGroups`, `count` + `sum { visits }`, `date verifiedBotCategory`, `requestSource: "eyeball"`) for de samme dage som besøgene og gemmes som `b_robot`.
+- **IP-klasser** (`ipClassMap { ipType requests }`) hentes med årstallene og gemmes som `h_ipklasse`: "x % af trafikken det seneste år kom fra kendte robotter og scannere" (søgemaskiner, overvågning, scannere, Tor og kendte dårlige adresser). Første start efter opdateringen henter året én gang til for de dage, der allerede er hentet; kun klasserne skrives.
+- **Mest besøgte sider** på Besøgende: sti, visninger, besøg udefra og andel, de 10 største fremme og resten bag **Vis alle**, og **Sider, der ikke findes** (404) for sig. Et klik på en sti viser visningerne af siden pr. dag, og flisen Besøg følger stien. Eget kald (html-svar, `date clientRequestPath edgeResponseStatus`), top 50 pr. dag, stien renset som i Angreb (uden forespørgselsstreng, lange koder skjult, højst 90 tegn); gemmes som `b_side`/`b_side_b`.
+- Afviser Cloudflare robotterne eller siderne, står "ikke tilgængelig" kun ved det afsnit; resten virker, og der spørges igen ved næste start. Databasen får skema 18 med `hentet_robot` og `hentet_side`; **Nulstil historik** sletter dem.
+#### Ændret
+- **Besøgendes søjler er blå** som båndet øverst (ny token `--board-visitors`, lys `blue-720`, mørk `blue-400`, ≥ 3:1 mod tavlen), så de ikke læses som angreb. Angrebs søjler er uændret røde.
+- **Et år pr. uge:** perioder over 90 dage vises med én søjle pr. uge (mandag–søndag, UTC), med "N af 7 dage" i værktøjstippet, når der mangler dage. Et klik på en uge viser ugen. 7 og 30 dage er uændrede.
+- **Flisen Besøg følger filtret:** "Besøg fra Danmark på 30 dage" med et land, og på stien med en sti. Unikke besøgende kan ikke deles; de fliser siger "alle lande" eller "alle sider". Højst ét filter ad gangen.
+- **Land lige nu:** landevælgeren i båndet, Indstillinger › Land og forslaget "Skift til …" viser kun lande, Cloudflare Radar har haft tal for som mål de seneste 30 dage. Overskrifterne "Dine domæner og hele verden" og "Hvor angreb mod dine domæner kom fra (alle lande)" siger, at de afsnit ikke afhænger af landet.
+- Datovælgerens note siger "Hele dage i UTC. Tidspunktet på dagen gemmes ikke."
+#### Rettet
+- **Ingen forbindelse efter dvale:** et domæne, der ikke kunne hentes uden net, gav "1 fejlede" og "Der opstod en fejl i programmet" i op til en time, fordi et senere domænes net-pause slettede fejlen. Nu står "Ingen forbindelse til Cloudflare, så … kunne ikke hentes. Prøver igen af sig selv." (pillen: "Ingen forbindelse · prøver igen"), og køen starter selv en ny runde efter 2 minutter i stedet for en time.
+
 ### 2026-11-09 23:30 — Besøgende: hvor mange, og hvorfra
 #### Tilføjet
 - **Ny visning Besøgende** (IDEA-046, ⌘7, Windows Ctrl+7, også i menuen **Vis** og i hjælpens genveje): unikke besøgende i går, på 7 dage, 30 dage og et år, besøg på 30 dage, en graf pr. dag (7 dage, 30 dage, et år eller Fra/Til op til et år) og en tabel over, hvor besøgene kom fra. Ét domæne eller Samlet. Et klik på en dag åbner "Trafik den …" på Angreb, et klik på et land viser besøgene fra landet pr. dag (chip med ×), og fliserne vælger perioden. Dage uden tal er huller, ikke 0. Ingen notifikationer, ingen status.

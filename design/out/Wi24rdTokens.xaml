@@ -240,6 +240,8 @@
   <SolidColorBrush x:Key="Light.Board.Ok" Color="#FF166534"/>
   <SolidColorBrush x:Key="Light.Board.ZoomBg" Color="#EBFFFFFF"/>
   <SolidColorBrush x:Key="Light.Board.OnColo" Color="#FFFFFFFF"/>
+  <SolidColorBrush x:Key="Light.Board.Visitors" Color="#FF1463E6"/>
+  <SolidColorBrush x:Key="Light.Board.VisitorsHover" Color="#FF0D4FD6"/>
   <FontFamily x:Key="Light.Board.Shadow">0 1px 2px rgba(13, 40, 90, .06)</FontFamily>
   <SolidColorBrush x:Key="Dark.Color.Bg" Color="#FF0B1424"/>
   <SolidColorBrush x:Key="Dark.Color.Surface" Color="#FF111D31"/>
@@ -332,6 +334,8 @@
   <SolidColorBrush x:Key="Dark.Board.Ok" Color="#FF5FD38A"/>
   <SolidColorBrush x:Key="Dark.Board.ZoomBg" Color="#D90A0F13"/>
   <SolidColorBrush x:Key="Dark.Board.OnColo" Color="#FF04121A"/>
+  <SolidColorBrush x:Key="Dark.Board.Visitors" Color="#FF3B8DFF"/>
+  <SolidColorBrush x:Key="Dark.Board.VisitorsHover" Color="#FF6AA8FF"/>
   <FontFamily x:Key="Dark.Board.Shadow">0 30px 60px -40px rgba(0, 0, 0, .9)</FontFamily>
   <FontFamily x:Key="Font.Body">Segoe UI</FontFamily>
   <FontFamily x:Key="Font.Display">Outfit, Segoe UI</FontFamily>

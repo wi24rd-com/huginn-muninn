@@ -260,6 +260,16 @@ button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--ho
 .dyk-uhentet .dyk-flade { fill: var(--board-grid); opacity: .5; stroke: var(--color-text-muted); stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .dyk-soejle[data-dyk]:hover .dyk-flade, .dyk-soejle[data-dyk]:focus-visible .dyk-flade { fill: var(--board-grid); }
 .dyk-soejle[data-dyk]:hover .vg-soejle, .dyk-soejle[data-dyk]:focus-visible .vg-soejle { filter: brightness(1.25); }
+/* Besøgende: blå søjler som båndet øverst, så de ikke læses som angreb (V-BESOEG.2). En uge åbnes med data-gaa. */
+.vg-soejle.besoeg-soejle { fill: var(--board-visitors); }
+.dyk-soejle[data-dyk]:hover .besoeg-soejle, .dyk-soejle[data-dyk]:focus-visible .besoeg-soejle,
+.dyk-soejle[data-gaa]:hover .besoeg-soejle, .dyk-soejle[data-gaa]:focus-visible .besoeg-soejle { fill: var(--board-visitors-hover); filter: none; }
+.besoeg-linje { display: block; }
+.besoeg-sti { font-family: var(--font-mono); overflow-wrap: anywhere; text-align: left; }
+.besoeg-chips .sti-chip { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.besoeg-klasse { margin: 0 0 8px; }
+.besoeg-404 { margin-top: 14px; }
+.besoeg-404 h3 { margin: 0 0 2px; font-size: var(--font-size-md); }
 .dyk-y { position: absolute; right: 0; width: calc(var(--font-size-xs) * 3.4); text-align: right; color: var(--board-text-2); font-size: var(--font-size-xs); line-height: 1; pointer-events: none; }
 .dyk-y-top { top: 2px; }
 .dyk-y-midt { top: 88px; transform: translateY(-50%); }

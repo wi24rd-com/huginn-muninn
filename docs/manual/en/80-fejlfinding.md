@@ -7,6 +7,7 @@ The program only shows its own error texts in plain language, never raw technica
 | The text | Means | Do |
 |---|---|---|
 | **No connection to Cloudflare. Check your internet connection.** | The computer cannot reach `api.cloudflare.com`. | Check the network. The program tries again by itself and shows **Try again now**. |
+| **No connection to Cloudflare, so … could not be fetched. Trying again by itself.** (in the band: **No connection · trying again**) | One or more domains could not be fetched because there was no network, for example right after the Mac has been asleep. | Nothing. The program starts a new round by itself after 2 minutes, and at once when it notices that the machine has been asleep. **Fetch now** tries straight away. |
 | **Cloudflare is not answering right now.** | Cloudflare did not answer, or answered with a server error. | Wait. The program tries again by itself. |
 | **Cloudflare asks us to wait a little (too many requests).** | Cloudflare has a limit on how many calls may come. | Nothing. The program pauses and says "Trying again at …" in the status pill. |
 | **Cloudflare Radar is not answering right now.** | Only the country view is affected. | Your own figures still work. The program tries again. |

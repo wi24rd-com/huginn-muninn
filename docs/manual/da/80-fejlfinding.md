@@ -7,6 +7,7 @@ Programmet viser kun sine egne fejltekster i klart sprog, aldrig rå tekniske fe
 | Teksten | Betyder | Gør |
 |---|---|---|
 | **Ingen forbindelse til Cloudflare. Tjek din internetforbindelse.** | Computeren kan ikke nå `api.cloudflare.com`. | Tjek nettet. Programmet prøver selv igen og viser **Prøv igen nu**. |
+| **Ingen forbindelse til Cloudflare, så … kunne ikke hentes. Prøver igen af sig selv.** (i båndet: **Ingen forbindelse · prøver igen**) | Et eller flere domæner kunne ikke hentes, fordi der ikke var net, fx lige efter, at Mac'en har sovet. | Ingenting. Programmet prøver en ny runde af sig selv efter 2 minutter, og straks når det opdager, at maskinen har sovet. **Hent nu** prøver med det samme. |
 | **Cloudflare svarer ikke lige nu.** | Cloudflare svarede ikke, eller svarede med en serverfejl. | Vent. Programmet prøver igen af sig selv. |
 | **Cloudflare beder os vente lidt (for mange forespørgsler).** | Cloudflare har en grænse for, hvor mange kald der må komme. | Ingenting. Programmet holder pause og siger "Prøver igen kl. …" i statuspillen. |
 | **Cloudflare Radar svarer ikke lige nu.** | Kun landevisningen er ramt. | Dine egne tal virker stadig. Programmet prøver igen. |

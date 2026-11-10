@@ -432,7 +432,8 @@
   }
 
   const HIT = 24; // mindste klikflade i px
-  /* ── søjlerne: dage = [{ dag, n, hentet? }]. opt: titel, dyk(dag) → forespørgsel eller intet. Kun dage med tal kan åbnes. ── */
+  /* ── søjlerne: dage = [{ dag, n, hentet? }]. opt: titel, dyk(dag) → forespørgsel, { gaa } eller intet, klasse (ekstra klasse på søjlen, fx Besøgendes blå)
+     og tekst(d) → hvad mærket siger (ellers "dato: tal"; bruges til uger). Kun dage med tal kan åbnes. ── */
   function soejler(dage, opt) {
     const W = 1000, H = 170, top = 6, n = dage.length, bw = W / Math.max(1, n), maks = Math.max(1, ...dage.map(d => d.n || 0));
     const y = v => top + (H - top) * (1 - v / maks);
@@ -441,10 +442,10 @@
     const s = svg('svg', { class: 'dyk-soejler', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', role: klik ? 'group' : 'img', 'aria-label': opt.titel }, linje(maks, 'vg-akse'), linje(maks / 2, 'vg-akse'), linje(0, 'vg-akse vg-nul'));
     dage.forEach((d, i) => {
       const uhentet = d.hentet === false, v = uhentet ? 0 : d.n || 0, x = i * bw;
-      const tekst = uhentet ? fmt(opt.hul || T.dykIkkeHentet, { d: datoLang(d.dag) }) : `${datoLang(d.dag)}: ${tal(v)}`;
+      const tekst = opt.tekst ? opt.tekst(d) : uhentet ? fmt(opt.hul || T.dykIkkeHentet, { d: datoLang(d.dag) }) : `${datoLang(d.dag)}: ${tal(v)}`;
       const g = svg('g', { class: 'dyk-soejle' + (uhentet ? ' dyk-uhentet' : '') }, titel(tekst), svg('rect', { class: 'dyk-flade', x: x.toFixed(1), y: 0, width: bw.toFixed(1), height: H }));
-      if (v) g.append(svg('rect', { class: 'vg-soejle', x: (x + bw * 0.14).toFixed(1), y: y(v).toFixed(1), width: (bw * 0.72).toFixed(1), height: Math.max(1, y(0) - y(v)).toFixed(1) }));
-      if (v && opt.dyk) klikbar(g, opt.dyk(d.dag), fmt(T.dykDag, { d: datoLang(d.dag), n: tal(v) }), d === sidste);
+      if (v) g.append(svg('rect', { class: 'vg-soejle' + (opt.klasse ? ' ' + opt.klasse : ''), x: (x + bw * 0.14).toFixed(1), y: y(v).toFixed(1), width: (bw * 0.72).toFixed(1), height: Math.max(1, y(0) - y(v)).toFixed(1) }));
+      if (v && opt.dyk) klikbar(g, opt.dyk(d.dag), opt.tekst ? tekst : fmt(T.dykDag, { d: datoLang(d.dag), n: tal(v) }), d === sidste);
       s.append(g);
     });
     const hver = n <= 8 ? 1 : n <= 31 ? 7 : Math.ceil(n / 5);

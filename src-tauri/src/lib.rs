@@ -358,6 +358,35 @@ async fn hent_besoeg(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &st
     laas(tilstand)?.gem_besoeg(zone, &dage, &besoeg::raekker(&svar, &dage)?, &vaern::iso(nu_ms()))
 }
 
+/// IP-klasserne for døgn, der blev hentet før de kom med: ét kald med `historik::HISTORIK_QUERY`, og kun `h_ipklasse` gemmes (`Store::gem_ipklasse`).
+async fn hent_ipklasse(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, historik::HISTORIK_QUERY, historik::variabler(zone, fra, til))
+        .await?;
+    laas(tilstand)?.gem_ipklasse(zone, &historik::ipklasse_raekker(&svar)?)
+}
+
+/// Kendte robotter for døgnene `fra`…`til`: ét kald med `besoeg::ROBOT_QUERY`.
+async fn hent_robot(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, besoeg::ROBOT_QUERY, besoeg::variabler(zone, fra, til)?)
+        .await?;
+    let dage = robotter::dage_i(fra, til);
+    laas(tilstand)?.gem_robot(zone, &dage, &besoeg::robot_raekker(&svar, &dage)?, &vaern::iso(nu_ms()))
+}
+
+/// Mest besøgte sider for døgnene `fra`…`til`: ét kald med `besoeg::SIDE_QUERY`.
+async fn hent_side(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, besoeg::SIDE_QUERY, besoeg::variabler(zone, fra, til)?)
+        .await?;
+    let dage = robotter::dage_i(fra, til);
+    laas(tilstand)?.gem_side(zone, &dage, &besoeg::side_raekker(&svar, &dage)?, &vaern::iso(nu_ms()))
+}
+
 /// Zonens tilstand: GET /zones/{id}, Zone Read, som tokenet har i forvejen.
 async fn hent_tilstand(tilstand: &Tilstand, token: &Hemmelig, zone: &str) -> Result<(), Fejl> {
     let z = tilstand.klient.zone_stand(token, zone).await?;
@@ -878,18 +907,21 @@ async fn robotter(omfang: dyk::Omfang, periode: dyk::Periode, tilstand: State<'_
     Ok(robotter::regn(&spoerg.periode, &laest, nu))
 }
 
-/// Besøgende: unikke besøgende pr. dag og besøg pr. land for ét domæne eller de valgte tilsammen, kun fra cachen (intet netværk). `land`: grafen viser besøg fra det land.
+/// Besøgende: unikke besøgende pr. dag, besøg pr. land, kendte robotter og mest besøgte sider for ét domæne eller de valgte tilsammen, kun fra cachen (intet
+/// netværk). Højst ét filter: `land` (besøg fra landet), `sti` (visninger af siden) eller `robot` (besøg fra robotgruppen); grafen viser filtrets tal.
 #[tauri::command]
 async fn besoegende(
     omfang: dyk::Omfang,
     periode: dyk::Periode,
     land: Option<String>,
+    sti: Option<String>,
+    robot: Option<String>,
     tilstand: State<'_, Tilstand>,
 ) -> Svar<besoeg::BesoegUd> {
     let spoerg = dyk::tjek(omfang, Vec::new(), periode, None)?;
-    let land = besoeg::tjek_land(land)?;
+    let filter = besoeg::tjek_filter(land, sti, robot)?;
     let laest = besoeg::laes(&*laas(&tilstand)?, &spoerg.zoner)?;
-    Ok(besoeg::regn(&spoerg.periode, land.as_deref(), &laest, nu_ms()))
+    Ok(besoeg::regn(&spoerg.periode, filter.as_ref(), &laest, nu_ms()))
 }
 
 /// Login: de gemte tal for domænets login-stier, kun fra cachen (intet netværk).
@@ -930,6 +962,8 @@ struct LandValg {
     land: Option<String>,
     /// Et andet land, kun når det er tydeligt, at mindst halvdelen af de besøgende kommer derfra (`radar::forslag`).
     forslag: Option<String>,
+    /// Landene, Radar har haft tal for som mål de seneste 30 dage (`radar::lande_med_tal`). Kun dem kan vælges (V-BESOEG.2).
+    med_tal: Vec<String>,
 }
 
 #[tauri::command]
@@ -938,9 +972,11 @@ async fn land_hent(tilstand: State<'_, Tilstand>) -> Svar<LandValg> {
     let lager = laas(&tilstand)?;
     let rows = lager.raekker_art(&lager.valg()?, &["land", "alle", "bot"], &overblik::hele_fra(nu))?;
     let land = lager.indstilling(radar::LAND)?;
+    let med_tal = radar::lande_med_tal(&lager, nu)?;
     Ok(LandValg {
-        forslag: radar::forslag(&rows, land.as_deref()),
+        forslag: radar::forslag(&rows, land.as_deref()).filter(|f| med_tal.contains(f)),
         land,
+        med_tal,
     })
 }
 
@@ -1092,6 +1128,15 @@ impl Henter for KoeHenter<'_> {
     }
     async fn besoeg(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
         hent_besoeg(self.tilstand, self.token, zone, fra, til).await
+    }
+    async fn ipklasse(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+        hent_ipklasse(self.tilstand, self.token, zone, fra, til).await
+    }
+    async fn robot(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+        hent_robot(self.tilstand, self.token, zone, fra, til).await
+    }
+    async fn side(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+        hent_side(self.tilstand, self.token, zone, fra, til).await
     }
     async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
         hent_tilstand(self.tilstand, self.token, zone).await
@@ -1784,6 +1829,8 @@ pub fn run() {
             let _ = vaern::fw_vaegt_en_gang(&mut lager, nu_ms());
             // V-BESOEG.1: én gang hentes unikke besøgende for de døgn i året, der allerede er hentet. Fejler det, prøves der igen ved næste start.
             let _ = lager.unikke_en_gang(&vaern::dag_noegle(nu_ms()));
+            // V-BESOEG.2: én gang hentes IP-klasserne (`h_ipklasse`) for de døgn i året, der allerede er hentet. Kun den art skrives.
+            let _ = lager.ipklasse_en_gang(&vaern::dag_noegle(nu_ms()));
             let sprog = sprog_fra(&lager);
             app.manage(Tilstand {
                 lager: Mutex::new(lager),

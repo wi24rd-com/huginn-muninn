@@ -16,7 +16,7 @@ The size is shown under **Settings → Data → Local database**.
 
 ## What is kept
 
-- **Every finished day** per chosen domain as counts: refused requests by rule, country, network, path, data centre, action and robot; traffic figures; robots; login figures; DMARC figures; DNS figures; unique visitors (one figure per day, no IP addresses); visits per country.
+- **Every finished day** per chosen domain as counts: refused requests by rule, country, network, path, data centre, action and robot; traffic figures; robots; login figures; DMARC figures; DNS figures; unique visitors (one figure per day, no IP addresses); requests per IP class; visits per country; visits per known robot (Cloudflare's category); the 50 most viewed pages per day (the path without query string, with status code, views and visits).
 - **Your settings**: language, date format, country, appearance, text size, notification choices, domain choice, login paths, technology choices.
 - **What has been reported**: which domains got a notification for which day, so the same thing is not reported twice. That list clears itself.
 - **Radar figures** for your country and the world.
@@ -45,7 +45,7 @@ That is why **Start at login** is on by default. With it, the program also start
 - The number refused is Cloudflare's estimate: each event in the sample states how many it stands for, and the program adds that up. The first time the program starts after the update of 8 November 2026, it fetches the last 30 days again at the normal pace, so the figures can be compared. Older days cannot be delivered again by Cloudflare; they keep the counted rows.
 - At most two calls at a time and at least 1.1 seconds apart, for all domains together. If Cloudflare asks it to wait, the program pauses and says "Trying again at …" in the status pill.
 - The figures for Login and "stopped at the Edge" per robot are fetched afterwards at a slow pace and only for finished days.
-- For **Visitors**, unique visitors are fetched with the year's traffic figures, and visits per country last, one call per domain. Visits per country go back a month at Cloudflare; the program saves the days, so the history grows from there. The first time the program starts after the update of 9 November 2026, it fetches the year once more for the days it already has, so they get unique visitors. Only that figure is written; the other figures for those days do not change.
+- For **Visitors**, unique visitors are fetched with the year's traffic figures, and visits per country last, one call per domain. Visits per country go back a month at Cloudflare; the program saves the days, so the history grows from there. The first time the program starts after the update of 9 November 2026, it fetches the year once more for the days it already has, so they get unique visitors. Only that figure is written; the other figures for those days do not change. The first start after the update with Known robots does the same once for the IP classes (kind `h_ipklasse`); only they are written. Known robots (kind `b_robot`) and the most visited pages (kinds `b_side` and `b_side_b`) are each fetched with their own call for the same days as the visits, also for days whose visits were already fetched. If Cloudflare refuses one of the calls, it says "not available" at that section, and the rest works.
 - **Quota at Cloudflare** under Settings → Data shows how many calls Cloudflare allows, and how many the program used in the last round.
 - **Fetch now** (⌘R, Windows Ctrl+R or F5) starts a fetch at once.
 

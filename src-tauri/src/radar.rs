@@ -349,6 +349,12 @@ pub async fn opdater<K: Kilde>(lager: &Mutex<Store>, k: &K, nu: i64, tempo: Dura
     Ok(ulaeselige)
 }
 
+/// Landene, Radar har haft tal for som mål de seneste `HENT_DAGE` døgn (top-100 over målene mindst én dag, eller en kildeliste). Landevælgeren i båndet,
+/// Indstillinger › Land og forslaget "Skift til …" viser kun dem (V-BESOEG.2): for et land uden tal ville siden være den samme som for alle andre.
+pub fn lande_med_tal(lager: &Store, nu: i64) -> Result<Vec<String>, Fejl> {
+    lager.radar_lande_med_tal(&foer(nu, HENT_DAGE))
+}
+
 /// Første døgn i de sidste `dage` hele døgn.
 fn foer(nu: i64, dage: i64) -> String {
     dag_noegle(nu - dage * DOEGN_MS)
@@ -1027,6 +1033,43 @@ mod tests {
             normalisering: norm.into(),
             hentet_utc: hentet.into(),
         }
+    }
+
+    /// F7: kun lande, Radar har haft tal for som mål de seneste 30 dage (top-100 med en andel over 0, eller en kildeliste). Et land uden tal er ikke med.
+    #[test]
+    fn kun_lande_med_tal() {
+        let l = lager();
+        let nu = 1_793_955_600_000; // 2026-11-06T09:00:00Z
+        let d = |i: i64| dag_noegle(nu - i * DOEGN_MS);
+        {
+            let mut s = l.lock().unwrap();
+            s.gem_radar(
+                MAAL,
+                "",
+                &[d(3)],
+                &[(d(3), "DK".into(), 1.5), (d(3), "ZW".into(), 0.0)],
+                PROCENT,
+                "t",
+            )
+            .unwrap();
+            s.gem_radar(MAAL, "", &[d(40)], &[(d(40), "TO".into(), 2.0)], PROCENT, "t").unwrap();
+            s.gem_radar(
+                PAR7,
+                "SE",
+                &[d(1)],
+                &[(d(1), "US".into(), 40.0), (d(1), String::new(), 0.0)],
+                "",
+                "t",
+            )
+            .unwrap();
+            s.gem_radar(PAR28, "PM", &[d(1)], &[(d(1), String::new(), 0.0)], "", "t").unwrap();
+        }
+        let s = l.lock().unwrap();
+        assert_eq!(
+            lande_med_tal(&s, nu).unwrap(),
+            ["DK", "SE"],
+            "ZW har 0, TO er for gammel, PM har ingen kilder"
+        );
     }
 
     #[test]

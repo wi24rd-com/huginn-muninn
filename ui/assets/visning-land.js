@@ -18,7 +18,9 @@
   const pct = v => Number(v).toLocaleString(loc, { maximumFractionDigits: v < 1 ? 2 : 1 }) + (S.lang === 'da' ? ' %' : '%');
   const indeks = v => (v === null || v === undefined ? '–' : tal(Math.round(v)));
 
-  let koder = [], gemt = null, forslag = null, params = new URLSearchParams(), kode = null, tilbage = null;
+  /* koder: alle lande, kortdata kender (til navne og links). medTal: kun dem, Radar har haft tal for som mål de seneste 30 dage (Rust: land_hent.med_tal);
+     kun dem står i vælgerne og forslaget, for for et land uden tal er siden den samme som for alle andre (V-BESOEG.2). */
+  let koder = [], medTal = [], gemt = null, forslag = null, params = new URLSearchParams(), kode = null, tilbage = null;
   const kendt = k => koder.includes(k);
   const verdenFane = () => params.get('fane') === 'verden';
   const waf = () => params.get('produkt') === 'WAF';
@@ -35,8 +37,9 @@
     await V.klar();
     koder = V.landeKoder().sort((a, b) => V.land(a).localeCompare(V.land(b), loc));
     const d = await invoke('land_hent');
+    medTal = koder.filter(k => (d.med_tal || []).includes(k));
     gemt = kendt(d.land) ? d.land : null;
-    forslag = kendt(d.forslag) ? d.forslag : null;
+    forslag = medTal.includes(d.forslag) ? d.forslag : null;
     const foerste = gemt ? null : fraTidszone() || fraSprog();
     if (foerste) await gem(foerste);
     tegnValg();
@@ -48,7 +51,7 @@
   }
   /* Vælgerne og sidebjælkens navn. */
   function fyld(s, valgt) {
-    if (s.options.length !== koder.length + 1) s.replaceChildren(el('option', { value: '', textContent: T.landUkendt }), ...koder.map(k => el('option', { value: k, textContent: V.land(k) })));
+    if (s.options.length !== medTal.length + 1 || [...s.options].some((o, i) => i && o.value !== medTal[i - 1])) s.replaceChildren(el('option', { value: '', textContent: T.landUkendt }), ...medTal.map(k => el('option', { value: k, textContent: V.land(k) })));
     s.value = valgt || '';
   }
   function tegnValg() {

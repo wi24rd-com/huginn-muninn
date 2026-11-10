@@ -30,9 +30,13 @@
 
 **Huginn** · Thought. What is happening now: attacks, robots, login.
 
+**IP class** · Cloudflare's rough grouping of the IP addresses the traffic came from, for example search engine, monitoring, scanner, Tor or known bad address. The program saves only the number of requests per class and day, never the addresses.
+
 **In disguise** · A robot calling itself Googlebot, say, without being it.
 
 **Keychain** · The place your operating system keeps passwords safely: macOS Keychain or Windows Credential Manager. This is where the API Token lives.
+
+**Known robots** · Robots Cloudflare has verified, for example Googlebot. Robots that pretend to be an ordinary browser are not included.
 
 **Labyrinth** · Cloudflare shows the robot fake pages that waste its time. Does not stop the robot and does not count as a block.
 

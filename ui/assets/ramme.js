@@ -363,9 +363,12 @@
     else if (k.tilstand === 'fejl') { t = fmt(T.koeFejl, { f: S.fejl(k.fejl) }); klasse = 'roed'; k1 = T.pilleFejl; }
     else if (k.tilstand === 'faerdig') {
       const sidst = tilstand.raekker.reduce((a, r) => (r.sidst_hentet && r.sidst_hentet > a ? r.sidst_hentet : a), '');
-      t = k.zoner_fejl ? fmt(T.koeFaerdigFejl, { t: S.kl(sidst), n: T.domaener(k.zoner_fejl), f: S.fejl(k.fejl) }) : fmt(T.koeFaerdig, { t: S.kl(sidst) });
+      /* Uden forbindelse (fx lige efter dvale) prøver køen selv igen om lidt: det siges i klart sprog, med domænet, når det er ét. */
+      const net = k.zoner_fejl && S.erNet(k.fejl);
+      t = net ? fmt(T.koeNet, { d: k.zoner_fejl === 1 && k.fejl_navn ? k.fejl_navn : T.domaener(k.zoner_fejl) })
+        : k.zoner_fejl ? fmt(T.koeFaerdigFejl, { t: S.kl(sidst), n: T.domaener(k.zoner_fejl), f: S.fejl(k.fejl) }) : fmt(T.koeFaerdig, { t: S.kl(sidst) });
       klasse = k.zoner_fejl ? 'gul' : 'ok';
-      k1 = fmt(k.zoner_fejl ? T.pilleOpdateretFejl : T.pilleOpdateret, { t: S.tid(sidst || new Date().toISOString()), n: k.zoner_fejl });
+      k1 = net ? T.pilleNet : fmt(k.zoner_fejl ? T.pilleOpdateretFejl : T.pilleOpdateret, { t: S.tid(sidst || new Date().toISOString()), n: k.zoner_fejl });
       bar.value = bar.max;
     } else {
       t = fmt(T.koeHenter, { z: k.zoner_faerdige, Z: k.zoner_i_alt, d: S.tal(k.doegn_faerdige), D: S.tal(k.doegn_i_alt) });

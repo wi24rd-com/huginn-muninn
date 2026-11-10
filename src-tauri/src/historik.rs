@@ -1,5 +1,6 @@
 //! Et års trafik: `httpRequests1dGroups` har 365 dage på Free, hvor sikkerhedshændelser kun har en måned. Daglige totaler, de største lande og svarkoder, ét kald pr. domæne for hele året og
 //! derefter ét kald, når der er nye døgn. Arterne i `vagt_dag` er `h_land`, `h_status` og `h_total` med nøglerne `foresp`, `cachet`, `trusler` og `unikke`. Hentes sidst i `koe::Koe::ekstra_runde`, efter alt andet. Felterne er dem, bilag A og spiken bekræfter. Ingen IP-adresser, stier eller brugeragenter findes i noden.
+//! `h_ipklasse` er `ipClassMap { ipType requests }` (V-BESOEG.2): forespørgsler pr. IP-klasse pr. døgn; døgn hentet før det får det én gang (`store::IPKLASSE_V1`), og kun den art skrives.
 //! `unikke` er `uniq { uniques }`: antallet af unikke IP-adresser for døgnet, et tal, ikke adresserne (V-BESOEG.1). Døgn hentet før det fik tallet én gang (`store::UNIKKE_V1`, `unikke_spaend`): kun nøglen `unikke` skrives, intet andet tal ændres.
 use std::collections::HashMap;
 
@@ -19,7 +20,7 @@ pub const TRAFIK_GRAENSE: i64 = 365;
 const TOP: usize = 10;
 
 pub const HISTORIK_QUERY: &str = r#"query Historik($zoneTag: string!, $fra: Date!, $til: Date!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
-    dage: httpRequests1dGroups(limit:400, filter:{date_geq:$fra, date_leq:$til}, orderBy:[date_ASC]) { dimensions { date } sum { requests cachedRequests threats countryMap { clientCountryName requests } responseStatusMap { edgeResponseStatus requests } } uniq { uniques } }
+    dage: httpRequests1dGroups(limit:400, filter:{date_geq:$fra, date_leq:$til}, orderBy:[date_ASC]) { dimensions { date } sum { requests cachedRequests threats countryMap { clientCountryName requests } responseStatusMap { edgeResponseStatus requests } ipClassMap { ipType requests } } uniq { uniques } }
   } } }"#;
 
 /// De færdige døgn i året, der mangler: (ældste, nyeste). Ét kald dækker alt derimellem. Ren funktion.
@@ -51,6 +52,15 @@ pub fn unikke_raekker(data: &Value) -> Result<Vec<(String, i64)>, Fejl> {
 
 /// Nøglen i art `h_total` for unikke besøgende.
 pub const UNIKKE: &str = "unikke";
+/// Art for forespørgsler pr. IP-klasse (`ipClassMap`, nøglen er Cloudflares `ipType`, fx `searchEngine`, `scan`).
+pub const IPKLASSE: &str = "h_ipklasse";
+/// IP-klasserne, der tæller som kendte robotter og scannere i "x % af trafikken det seneste år" (V-BESOEG.2).
+pub const ROBOT_KLASSER: &[&str] = &["searchEngine", "monitoringService", "scan", "tor", "badHost"];
+
+/// Kun `h_ipklasse` fra svaret: (dag, art, nøgle, n). Til genhentningen, der ikke må ændre andre tal. Ren funktion.
+pub fn ipklasse_raekker(data: &Value) -> Result<Vec<(String, String, String, i64)>, Fejl> {
+    Ok(raekker(data)?.into_iter().filter(|r| r.1 == IPKLASSE).collect())
+}
 
 /// Tabet for én slags tal: den ældste dag, der findes nu, den ældste, der kan hentes igen, og dagene imellem.
 #[derive(Serialize, Debug, Clone, PartialEq, Eq)]
@@ -107,6 +117,14 @@ struct Svar {
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
+struct Klasse {
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "ipType")]
+    klasse: String,
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    requests: i64,
+}
+
+#[derive(Deserialize, Default, Debug, Clone)]
 struct Sum {
     #[serde(default, deserialize_with = "tom_ved_null")]
     requests: i64,
@@ -118,6 +136,8 @@ struct Sum {
     lande: Vec<Land>,
     #[serde(default, deserialize_with = "tom_ved_null", rename = "responseStatusMap")]
     status: Vec<Svar>,
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "ipClassMap")]
+    klasser: Vec<Klasse>,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -169,6 +189,13 @@ pub fn raekker(data: &Value) -> Result<Vec<(String, String, String, i64)>, Fejl>
         status.sort_by_key(|s| std::cmp::Reverse(s.requests));
         for s in status.into_iter().filter(|s| s.status != 0).take(TOP) {
             add("h_status", s.status.to_string(), s.requests);
+        }
+        let mut klasser: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
+        for k in d.sum.klasser.into_iter().filter(|k| !k.klasse.is_empty() && k.requests > 0) {
+            *klasser.entry(k.klasse).or_default() += k.requests;
+        }
+        for (k, n) in klasser {
+            add(IPKLASSE, k, n);
         }
     }
     Ok(ud)
@@ -287,11 +314,37 @@ mod tests {
             "countryMap",
             "responseStatusMap",
             "uniq { uniques }",
+            "ipClassMap { ipType requests }",
         ] {
             assert!(HISTORIK_QUERY.contains(felt), "{felt}");
         }
         for felt in ["clientIP", "userAgent"] {
             assert!(!HISTORIK_QUERY.contains(felt), "{felt}");
         }
+    }
+
+    /// `ipClassMap` bliver til `h_ipklasse` pr. klasse; tomme klasser og 0 gemmes ikke, og genhentningen tager kun den art.
+    #[test]
+    fn ipklasser_bliver_til_h_ipklasse() {
+        let data = json!({"viewer": {"zones": [{"dage": [
+            {"dimensions": {"date": "2026-01-02"}, "sum": {"requests": 90, "ipClassMap": [
+                {"ipType": "searchEngine", "requests": 20}, {"ipType": "scan", "requests": 5}, {"ipType": "noRecord", "requests": 60},
+                {"ipType": "", "requests": 3}, {"ipType": "tor", "requests": 0}
+            ]}, "uniq": {"uniques": 1}}
+        ]}]}});
+        let r = ipklasse_raekker(&data).unwrap();
+        assert_eq!(
+            r,
+            vec![
+                ("2026-01-02".into(), IPKLASSE.into(), "noRecord".into(), 60),
+                ("2026-01-02".into(), IPKLASSE.into(), "scan".into(), 5),
+                ("2026-01-02".into(), IPKLASSE.into(), "searchEngine".into(), 20),
+            ]
+        );
+        assert!(raekker(&data).unwrap().iter().any(|x| x.1 == "h_total"), "årstallene har det hele");
+        assert!(
+            ipklasse_raekker(&data).unwrap().iter().all(|x| x.1 == IPKLASSE),
+            "genhentningen kun h_ipklasse"
+        );
     }
 }

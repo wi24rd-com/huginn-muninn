@@ -11,9 +11,9 @@ Her står dine egne angreb ved siden af resten af dit land og verden, med tal fr
 
 Fanen **Danmark** (dit land):
 
-- **Mine domæner og verden**: to kurver, begge regnet om, så 100 er periodens gennemsnit. De viser stigninger og fald, ikke antal.
+- **Dine domæner og hele verden**: to kurver, begge regnet om, så 100 er periodens gennemsnit. De viser stigninger og fald, ikke antal. Kurven afhænger ikke af det valgte land.
 - **Danmark som mål**: hvor stor en del af alle de angreb, Cloudflare så i verden, der var rettet mod landet. Det er en målt andel, ikke et antal. **Dag for dag** folder kurven ud.
-- **Hvor angrebene kom fra**: til venstre de største kilder til angreb mod landet som andel af angrebene mod det, til højre hvor angreb mod dine domæner kom fra i samme periode (**7 dage** eller **4 uger**). Et land, der fylder meget mere hos dig end i landet som helhed, er mærket **Særligt hos dig**.
+- **Hvor angrebene kom fra**: til venstre de største kilder til angreb mod landet som andel af angrebene mod det, til højre hvor angreb mod dine domæner kom fra i samme periode (**7 dage** eller **4 uger**), uanset land (**alle lande**). Et land, der fylder meget mere hos dig end i landet som helhed, er mærket **Særligt hos dig**.
 - **Internetforstyrrelser i Danmark**: det, Radar har registreret i landet de seneste 30 dage, fx et kappet kabel eller et strømsvigt, med dato, varighed og de ramte netværk.
 
 ![Verden](../../img/land-verden--light-da-1200x860.webp)
@@ -39,7 +39,7 @@ Et kildeland alene kan ikke stoles på: angrebet kan komme gennem en VPN eller l
 
 ## Skift land
 
-Vælgeren i det blå bånd og **Indstillinger → Generelt → Land** gemmer dit valg. Landet tages første gang fra din tidszone, derefter fra systemets sprog. Kommer mindst halvdelen af dine besøgende tydeligt fra et andet land, tilbyder Indstillinger **Skift til** det land; robotter og trafikspring tæller ikke med. Peger en anden visning på et land, viser overskriften **Tilbage til …**, og dit gemte land ændres ikke.
+Vælgeren i det blå bånd og **Indstillinger → Generelt → Land** gemmer dit valg. Begge viser kun lande, Cloudflare Radar har haft tal for som mål de seneste 30 dage (blandt de 100 mest ramte mindst én dag, eller med en liste over kilder): for et land uden tal ville siden se ud som for alle andre. Forslaget **Skift til** gælder også kun lande med tal. Listen følger de Radar-tal, programmet allerede henter. Landet tages første gang fra din tidszone, derefter fra systemets sprog. Kommer mindst halvdelen af dine besøgende tydeligt fra et andet land, tilbyder Indstillinger **Skift til** det land; robotter og trafikspring tæller ikke med. Peger en anden visning på et land, viser overskriften **Tilbage til …**, og dit gemte land ændres ikke.
 
 ## Klik videre
 

@@ -11,9 +11,9 @@ Here your own attacks stand next to the rest of your country and the world, with
 
 The **Denmark** tab (your country):
 
-- **My domains and the world**: two curves, both converted so that 100 is the average of the period. They show rises and falls, not numbers.
+- **Your domains and the whole world**: two curves, both converted so that 100 is the average of the period. They show rises and falls, not numbers. The curve does not depend on the chosen country.
 - **Denmark as a target**: how large a share of all the attacks Cloudflare saw in the world were aimed at the country. It is a measured share, not a number. **Day by day** unfolds the curve.
-- **Where the attacks came from**: on the left the largest sources of attacks on the country as a share of the attacks on it, on the right where attacks on your domains came from in the same period (**7 days** or **4 weeks**). A country that weighs much more for you than for the country as a whole is marked **Especially you**.
+- **Where the attacks came from**: on the left the largest sources of attacks on the country as a share of the attacks on it, on the right where attacks on your domains came from in the same period (**7 days** or **4 weeks**), whatever the country (**all countries**). A country that weighs much more for you than for the country as a whole is marked **Especially you**.
 - **Internet disruptions in Denmark**: what Radar has recorded in the country in the last 30 days, such as a cut cable or a power outage, with date, duration and the networks affected.
 
 ![World](../../img/land-verden--light-en-1200x860.webp)
@@ -39,7 +39,7 @@ A source country alone cannot be trusted: the attack may come through a VPN or r
 
 ## Changing country
 
-The selector in the blue band and **Settings → General → Country** save your choice. The country is taken from your time zone the first time, then from the system language. If at least half of your visitors clearly come from another country, Settings offers **Switch to** that country; robots and traffic spikes do not count. If another view points at a country, the heading shows **Back to …**, and your saved country is not changed.
+The selector in the blue band and **Settings → General → Country** save your choice. Both show only countries Cloudflare Radar has had figures for as a target in the last 30 days (among the 100 most targeted on at least one day, or with a list of sources): for a country without figures, the page would look the same as for every other. The **Switch to** suggestion also only covers countries with figures. The list follows the Radar figures the program already fetches. The country is taken from your time zone the first time, then from the system language. If at least half of your visitors clearly come from another country, Settings offers **Switch to** that country; robots and traffic spikes do not count. If another view points at a country, the heading shows **Back to …**, and your saved country is not changed.
 
 ## Click on
 

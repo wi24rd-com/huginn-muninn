@@ -333,6 +333,8 @@
   --board-ok: var(--raw-color-board-light-ok);
   --board-zoom-bg: var(--raw-color-board-light-zoom-bg);
   --board-on-colo: var(--raw-color-board-light-on-colo);
+  --board-visitors: var(--raw-color-blue-720);
+  --board-visitors-hover: var(--raw-color-blue-800);
   --board-shadow: var(--shadow-card);
 }
 @media (prefers-color-scheme: dark) {
@@ -422,6 +424,8 @@
     --board-ok: var(--raw-color-board-dark-ok);
     --board-zoom-bg: var(--raw-color-board-dark-zoom-bg);
     --board-on-colo: var(--raw-color-board-dark-on-colo);
+    --board-visitors: var(--raw-color-blue-400);
+    --board-visitors-hover: var(--raw-color-blue-300);
     --board-shadow: var(--shadow-card);
   }
 }
@@ -511,5 +515,7 @@
   --board-ok: var(--raw-color-board-dark-ok);
   --board-zoom-bg: var(--raw-color-board-dark-zoom-bg);
   --board-on-colo: var(--raw-color-board-dark-on-colo);
+  --board-visitors: var(--raw-color-blue-400);
+  --board-visitors-hover: var(--raw-color-blue-300);
   --board-shadow: var(--shadow-card);
 }

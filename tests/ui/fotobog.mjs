@@ -15,7 +15,7 @@ process.env.HM_REPO = repo;
 let data = await import('./sider.mjs');
 const kopi = data.UR_AAR !== 2026 ? data.siderIAar() : null; /* fast år */
 if (kopi) data = await import(kopi);
-const { SIDER, svar, UR_STUB } = data;
+const { SIDER, svar, UR_STUB, BES_NOEGLE } = data;
 
 const CHROME = [process.env.HM_CHROME, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(f => f && fs.existsSync(f));
 if (!CHROME) { console.log('Chrome findes ikke (sæt HM_CHROME)'); process.exit(1); }
@@ -38,7 +38,7 @@ addEventListener('securitypolicyviolation',e=>f('csp',[e.effectiveDirective,e.bl
 for(const m of['error','warn']){const o=console[m];console[m]=(...a)=>{f('console.'+m,a);o.apply(console,a)}}})();`;
 
 /* Samme stub som margen-testen, men som fil: siden får appens CSP som header, og den stopper inline-script. siden_sidst.vis er falsk som dér: ellers springer rammen til Siden sidst ved start, og alle billeder bliver det samme. */
-const stub = (post, tema, sprog, tjek) => `${UR_STUB.replace(/<\/?script>/g, '')}${FANG}localStorage.setItem('hm-sprog',${JSON.stringify(sprog)});localStorage.setItem('hm-tekst','normal');localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';window.__HM_POST__=${JSON.stringify(post)};window.__HM_TJEK__=${tjek};const SVAR=${JSON.stringify({ ...svar, siden_sidst: { ...svar.siden_sidst, vis: false }, ...post.ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':c==='besoegende'&&a.land?'besoegende_land':c;return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};`;
+const stub = (post, tema, sprog, tjek) => `${UR_STUB.replace(/<\/?script>/g, '')}${FANG}localStorage.setItem('hm-sprog',${JSON.stringify(sprog)});localStorage.setItem('hm-tekst','normal');localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';window.__HM_POST__=${JSON.stringify(post)};window.__HM_TJEK__=${tjek};const SVAR=${JSON.stringify({ ...svar, siden_sidst: { ...svar.siden_sidst, vis: false }, ...post.ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':${BES_NOEGLE};return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};`;
 
 /* aabn klikkes før billedet, som i CSP-blokken. luk klikkes kun i anden kørsel: ellers viser billedet af hjælpen ikke hjælpen.
    Anden kørsel venter næsten lige så længe som billedet og tjekker så, at det er den rigtige visning, og at vælgerne stadig rammer: ellers viser billedet noget andet end sit navn, uden at noget fejler. */

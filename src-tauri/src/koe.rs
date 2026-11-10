@@ -24,7 +24,7 @@ use crate::besoeg;
 use crate::cf::{Fejl, Zone, MELLEMRUM_LANGSOM};
 use crate::dmarc;
 use crate::historik;
-use crate::store::{Store, BESOEG_FEJL, DMARC_FEJL, DNS_FEJL};
+use crate::store::{Store, BESOEG_FEJL, DMARC_FEJL, DNS_FEJL, ROBOT_FEJL, SIDE_FEJL};
 use crate::vaern::{dag_noegle, dage_at_hente, er_faerdig, iso, sidst_hentet, Doegnudfald, DOEGN_MS, HENT_DAGE};
 
 /// Ny runde så ofte (og straks ved `koe_prioritet`).
@@ -41,6 +41,9 @@ pub const SPRING_MS: i64 = 300_000;
 pub const FRISK_MS: i64 = 600_000;
 /// Ingen forbindelse: nyt forsøg efter 15/30/60 s, derefter hvert 2. minut (som genforsoeg.js).
 pub const NET_TRIN: [u64; 4] = [15, 30, 60, 120];
+/// Kunne et domæne ikke hentes, fordi der ikke var forbindelse (fx lige efter dvale), prøver køen selv en ny runde efter så lang tid i stedet for en time (V-BESOEG.2).
+pub const NET_IGEN: Duration = Duration::from_secs(120);
+const NET_IGEN_MS: i64 = NET_IGEN.as_millis() as i64;
 /// Så mange forsøg pr. zone pr. runde ved forbigående fejl (kvote, 5xx, ingen forbindelse).
 pub const MAKS_FORSOEG: usize = 4;
 /// Mellem to kald i `ekstra_runde`: 30 døgn for 10 domæner tager knap 40 minutter.
@@ -72,9 +75,12 @@ pub struct KoeStatus {
     pub tilstand: Fase,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fejl: Option<Fejl>,
-    /// Hvornår køen fortsætter (ISO, UTC) ved `pause` og `venter_kvote`.
+    /// Hvornår køen fortsætter (ISO, UTC) ved `pause` og `venter_kvote`, og efter en færdig runde med netfejl, hvornår den prøver igen af sig selv.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fortsaetter_kl: Option<String>,
+    /// Navnet på det første domæne, der ikke kunne hentes i runden (hører til `fejl`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fejl_navn: Option<String>,
 }
 
 /// Det, køen skal bruge udefra: hent én zone (fælles med `vaern_oversigt`) og begrænserens pause.
@@ -104,6 +110,18 @@ pub trait Henter: Sync {
     }
     /// Henter og gemmer besøgene pr. land for døgnene `fra`…`til` (`besoeg::BESOEG_QUERY`).
     fn besoeg<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
+        async { Ok(()) }
+    }
+    /// Henter `h_ipklasse` igen for døgnene `fra`…`til`, som zonen allerede har årstal for (`Store::gem_ipklasse`).
+    fn ipklasse<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
+        async { Ok(()) }
+    }
+    /// Henter og gemmer besøg pr. kendt robot for døgnene `fra`…`til` (`besoeg::ROBOT_QUERY`).
+    fn robot<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
+        async { Ok(()) }
+    }
+    /// Henter og gemmer de mest besøgte sider for døgnene `fra`…`til` (`besoeg::SIDE_QUERY`).
+    fn side<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
         async { Ok(()) }
     }
     /// Henter og gemmer zonens tilstand hos Cloudflare.
@@ -141,6 +159,31 @@ impl Afsnit {
         match self {
             Afsnit::Dns => DNS_FEJL,
             Afsnit::Dmarc => DMARC_FEJL,
+        }
+    }
+}
+
+/// De tre slags besøgstal, der hentes ens efter årstallene (`besoeg.rs`).
+#[derive(Clone, Copy)]
+enum Besoegsslags {
+    Besoeg,
+    Robot,
+    Side,
+}
+
+impl Besoegsslags {
+    fn hentet(self, s: &Store, zone: &str) -> Result<HashMap<String, String>, Fejl> {
+        match self {
+            Besoegsslags::Besoeg => s.hentet_besoeg(zone),
+            Besoegsslags::Robot => s.hentet_robot(zone),
+            Besoegsslags::Side => s.hentet_side(zone),
+        }
+    }
+    fn fejl_praefiks(self) -> &'static str {
+        match self {
+            Besoegsslags::Besoeg => BESOEG_FEJL,
+            Besoegsslags::Robot => ROBOT_FEJL,
+            Besoegsslags::Side => SIDE_FEJL,
         }
     }
 }
@@ -215,8 +258,14 @@ pub fn hent_udfald(status: Option<&KoeStatus>, koerer: bool, alt_friskt: bool) -
 
 /// Ny runde? En time på vægur, siden den sidste runde sluttede, eller tikket kom mere end `SPRING_MS` for sent (uret
 /// sprang: maskinen har sovet). Stilles uret tilbage (NTP), bliver forskellene negative: ingen runde. Ren funktion.
+#[cfg(test)]
 pub fn skal_hente(nu: i64, sidste_runde_slut: i64, forrige_tik: i64) -> bool {
-    nu.saturating_sub(sidste_runde_slut) >= RUNDE_MS || nu.saturating_sub(forrige_tik) > TIK_MS + SPRING_MS
+    skal_hente_efter(nu, sidste_runde_slut, forrige_tik, RUNDE_MS)
+}
+
+/// Som `skal_hente`, med en anden ventetid end en time (`NET_IGEN` efter en runde med netfejl). Ren funktion.
+pub fn skal_hente_efter(nu: i64, sidste_runde_slut: i64, forrige_tik: i64, vent_ms: i64) -> bool {
+    nu.saturating_sub(sidste_runde_slut) >= vent_ms || nu.saturating_sub(forrige_tik) > TIK_MS + SPRING_MS
 }
 
 /// Er domænet stadig valgt? Kan listen ikke læses, gælder det, der stod ved rundens start.
@@ -249,7 +298,9 @@ pub struct Koe {
     pub koerer: AtomicBool,
     /// Runder, der er gjort helt færdige, ekstra tal med (`Fase::Faerdig` kommer før dem). Den daglige start lukker på den.
     pub hele_runder: AtomicUsize,
-    /// Domæner, hvor Cloudflare ikke svarede på besøgene: der spørges ikke igen, før programmet starter igen.
+    /// Sat af `runde`, når et domæne ikke kunne hentes, fordi der ikke var forbindelse: så kommer næste runde efter `NET_IGEN`, ikke efter en time.
+    net_igen: AtomicBool,
+    /// Domæner og slags (fejlpræfiks + zone), hvor Cloudflare ikke svarede på besøgstallene: der spørges ikke igen, før programmet starter igen.
     besoeg_opgivet: Mutex<HashSet<String>>,
 }
 
@@ -356,7 +407,12 @@ impl Koe {
             match runde().await {
                 Ok(Slut::Faerdig) => {
                     self.hele_runder.fetch_add(1, Ordering::SeqCst);
-                    self.vent_paa_runde(nu, paa_tik).await
+                    let vent = if self.net_igen.swap(false, Ordering::SeqCst) {
+                        NET_IGEN_MS
+                    } else {
+                        RUNDE_MS
+                    };
+                    self.vent_paa_runde(nu, paa_tik, vent).await
                 }
                 Ok(Slut::Stoppet | Slut::Vaekket) => {}
                 Err(e) => {
@@ -372,8 +428,8 @@ impl Koe {
         }
     }
 
-    /// Sover et `TIK` ad gangen, til `skal_hente` siger ja, eller køen bliver vækket.
-    async fn vent_paa_runde(&self, nu: &(dyn Fn() -> i64 + Sync), paa_tik: &(dyn Fn() + Sync)) {
+    /// Sover et `TIK` ad gangen, til `skal_hente_efter` siger ja (efter `vent_ms`, eller straks efter dvale), eller køen bliver vækket.
+    async fn vent_paa_runde(&self, nu: &(dyn Fn() -> i64 + Sync), paa_tik: &(dyn Fn() + Sync), vent_ms: i64) {
         let mut sidste = nu();
         let mut forrige = sidste;
         loop {
@@ -384,7 +440,7 @@ impl Koe {
             paa_tik();
             // Er uret stillet tilbage, regnes timen fra nu: ingen runde for hvert tik, og ingen, der venter i timevis.
             sidste = sidste.min(n);
-            if skal_hente(n, sidste, forrige) {
+            if skal_hente_efter(n, sidste, forrige, vent_ms) {
                 return;
             }
             forrige = n;
@@ -595,40 +651,73 @@ impl Koe {
                 return true;
             }
         }
-        // Besøg pr. land, efter årstallene: ét kald pr. domæne for de færdige døgn, der mangler. Afviser Cloudflare det, står det ved domænet som
-        // "ikke tilgængelig", resten kører videre, og der spørges ikke igen før næste start. Kun en forbigående fejl gemmer resten til næste runde.
+        // IP-klasserne for de døgn, der blev hentet før de kom med (`Store::ipklasse_en_gang`): som unikke, ét kald pr. domæne, én gang. Kun `h_ipklasse` skrives.
         for z in &zoner {
             if self.stoppet() {
                 return false;
             }
-            let opgivet = self.besoeg_opgivet.lock().unwrap_or_else(|e| e.into_inner()).contains(&z.id);
-            let hentet = lager.lock().ok().and_then(|s| s.hentet_besoeg(&z.id).ok()).unwrap_or_default();
-            let Some((fra, til)) = besoeg::mangler(&hentet, nu()).filter(|_| !opgivet && slaaet_til(lager, &z.id)) else {
+            if !lager.lock().ok().is_some_and(|s| s.ipklasse_mangler(&z.id).unwrap_or(false)) || !slaaet_til(lager, &z.id) {
+                continue;
+            }
+            let hentet = lager.lock().ok().and_then(|s| s.hentet_historik(&z.id).ok()).unwrap_or_default();
+            let Some((fra, til)) = historik::unikke_spaend(&hentet, nu()) else {
+                if let Ok(mut s) = lager.lock() {
+                    let _ = s.gem_ipklasse(&z.id, &[]);
+                }
                 continue;
             };
-            let opgiv = || {
-                self.besoeg_opgivet.lock().unwrap_or_else(|e| e.into_inner()).insert(z.id.clone());
-            };
-            let noter = |fejl: Option<&str>| {
-                if let Ok(mut s) = lager.lock() {
-                    let _ = s.gem_afsnit_fejl(BESOEG_FEJL, &z.id, fejl);
-                }
-            };
-            match h.besoeg(&z.id, &fra, &til).await {
-                Ok(()) => {
-                    noter(None);
-                    paa_gemt(&z.id);
-                }
+            match h.ipklasse(&z.id, &fra, &til).await {
+                Ok(()) => paa_gemt(&z.id),
                 Err(e) if forbigaaende(&e) => return false,
-                // Det ældste døgn var for gammelt: det er ikke domænets skyld, og næste start prøver igen.
-                Err(e) if e.uden_for_opbevaring() => opgiv(),
-                Err(e) => {
-                    noter(Some(&e.to_string()));
-                    opgiv();
-                }
+                Err(_) => {}
             }
             if self.sov(tempo).await {
                 return true;
+            }
+        }
+        // Besøg pr. land, kendte robotter og mest besøgte sider, efter årstallene: ét kald pr. domæne og slags for de færdige døgn, der mangler (hver slags har sin
+        // egen `hentet_*`). Afviser Cloudflare det, står det ved domænet som "ikke tilgængelig" for den slags, resten kører videre, og der spørges ikke igen før næste
+        // start. Kun en forbigående fejl gemmer resten til næste runde.
+        for slags in [Besoegsslags::Besoeg, Besoegsslags::Robot, Besoegsslags::Side] {
+            for z in &zoner {
+                if self.stoppet() {
+                    return false;
+                }
+                let noegle = format!("{}{}", slags.fejl_praefiks(), z.id);
+                let opgivet = self.besoeg_opgivet.lock().unwrap_or_else(|e| e.into_inner()).contains(&noegle);
+                let hentet = lager.lock().ok().and_then(|s| slags.hentet(&s, &z.id).ok()).unwrap_or_default();
+                let Some((fra, til)) = besoeg::mangler(&hentet, nu()).filter(|_| !opgivet && slaaet_til(lager, &z.id)) else {
+                    continue;
+                };
+                let opgiv = || {
+                    self.besoeg_opgivet.lock().unwrap_or_else(|e| e.into_inner()).insert(noegle.clone());
+                };
+                let noter = |fejl: Option<&str>| {
+                    if let Ok(mut s) = lager.lock() {
+                        let _ = s.gem_afsnit_fejl(slags.fejl_praefiks(), &z.id, fejl);
+                    }
+                };
+                let svar = match slags {
+                    Besoegsslags::Besoeg => h.besoeg(&z.id, &fra, &til).await,
+                    Besoegsslags::Robot => h.robot(&z.id, &fra, &til).await,
+                    Besoegsslags::Side => h.side(&z.id, &fra, &til).await,
+                };
+                match svar {
+                    Ok(()) => {
+                        noter(None);
+                        paa_gemt(&z.id);
+                    }
+                    Err(e) if forbigaaende(&e) => return false,
+                    // Det ældste døgn var for gammelt: det er ikke domænets skyld, og næste start prøver igen.
+                    Err(e) if e.uden_for_opbevaring() => opgiv(),
+                    Err(e) => {
+                        noter(Some(&e.to_string()));
+                        opgiv();
+                    }
+                }
+                if self.sov(tempo).await {
+                    return true;
+                }
             }
         }
         false
@@ -650,6 +739,7 @@ impl Koe {
                 tilstand: Fase::Henter,
                 fejl: None,
                 fortsaetter_kl: None,
+                fejl_navn: None,
             });
             f(s);
             s.clone()
@@ -692,9 +782,13 @@ impl Koe {
                 tilstand: Fase::Henter,
                 fejl: None,
                 fortsaetter_kl: None,
+                fejl_navn: None,
             }
         });
         let mut net_trin = 0;
+        // Fejlen fra det første domæne, der ikke kunne hentes: den står i status, til runden er slut, også når et senere domæne venter på nettet.
+        let mut foerste_fejl: Option<(Fejl, String)> = None;
+        self.net_igen.store(false, Ordering::SeqCst);
         while let Some(i) = naeste(&rest, self.prioritet().as_deref()) {
             if self.stoppet() {
                 return Slut::Stoppet;
@@ -770,26 +864,34 @@ impl Koe {
                             s.fortsaetter_kl = Some(iso(nu() + sek as i64 * 1000));
                         });
                         self.sov(Duration::from_secs(sek)).await;
-                        self.meld(meld, |s| s.fejl = None);
+                        let tilbage = foerste_fejl.as_ref().map(|f| f.0.clone());
+                        self.meld(meld, |s| s.fejl = tilbage);
                     }
                     // Kvote og 5xx: begrænseren holder selv pausen; zonen prøves igen ved næste tur.
                     rest.push(p);
                 }
                 Err(e) => {
+                    if e == Fejl::Forbindelse {
+                        self.net_igen.store(true, Ordering::SeqCst);
+                    }
+                    let f = foerste_fejl.get_or_insert_with(|| (e, p.zone.navn.clone())).clone();
                     self.meld(meld, |s| {
                         s.zoner_faerdige += 1;
                         s.zoner_fejl += 1;
                         s.doegn_i_alt -= p.rest.min(s.doegn_i_alt);
-                        s.fejl.get_or_insert(e);
+                        s.fejl = Some(f.0);
+                        s.fejl_navn = Some(f.1);
                     });
                 }
             }
         }
+        // Uden forbindelse prøver køen selv igen efter `NET_IGEN` (`koer`); hvornår, står i status.
+        let igen = self.net_igen.load(Ordering::SeqCst).then(|| iso(nu() + NET_IGEN_MS));
         self.meld(meld, |s| {
             s.zone = None;
             s.navn = None;
             s.tilstand = Fase::Faerdig;
-            s.fortsaetter_kl = None;
+            s.fortsaetter_kl = igen;
         });
         Slut::Faerdig
     }
@@ -833,6 +935,7 @@ mod tests {
             tilstand,
             fejl: None,
             fortsaetter_kl: None,
+            fejl_navn: None,
         }
     }
 
@@ -933,6 +1036,12 @@ mod tests {
         unikke_kald: Mutex<Vec<(String, String, String)>>,
         besoeg_kald: Mutex<Vec<(String, String, String)>>,
         besoeg_svar: HashMap<String, Result<(), Fejl>>,
+        /// `ipklasse`, `robot`, `side`: kaldene (zone, fra, til) og svar pr. zone (ingen = det går godt).
+        ipklasse_kald: Mutex<Vec<(String, String, String)>>,
+        robot_kald: Mutex<Vec<(String, String, String)>>,
+        side_kald: Mutex<Vec<(String, String, String)>>,
+        robot_svar: HashMap<String, Result<(), Fejl>>,
+        side_svar: HashMap<String, Result<(), Fejl>>,
         tilstand_kald: Mutex<Vec<String>>,
         tilstand_svar: Result<(), Fejl>,
         /// Rækkefølgen af kaldene: zone, ekstra, angreb, laek, historik, tilstand.
@@ -1044,6 +1153,47 @@ mod tests {
             }
             svar
         }
+        async fn ipklasse(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+            self.ipklasse_kald
+                .lock()
+                .unwrap()
+                .push((zone.to_string(), fra.to_string(), til.to_string()));
+            self.log.lock().unwrap().push("ipklasse");
+            if let Some(l) = self.ekstra_lager {
+                l.lock().unwrap().gem_ipklasse(zone, &[]).unwrap();
+            }
+            Ok(())
+        }
+        async fn robot(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+            self.robot_kald
+                .lock()
+                .unwrap()
+                .push((zone.to_string(), fra.to_string(), til.to_string()));
+            self.log.lock().unwrap().push("robot");
+            let svar = self.robot_svar.get(zone).cloned().unwrap_or(Ok(()));
+            if let (Ok(()), Some(l)) = (&svar, self.ekstra_lager) {
+                l.lock()
+                    .unwrap()
+                    .gem_robot(zone, &crate::robotter::dage_i(fra, til), &[], &iso(NU))
+                    .unwrap();
+            }
+            svar
+        }
+        async fn side(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+            self.side_kald
+                .lock()
+                .unwrap()
+                .push((zone.to_string(), fra.to_string(), til.to_string()));
+            self.log.lock().unwrap().push("side");
+            let svar = self.side_svar.get(zone).cloned().unwrap_or(Ok(()));
+            if let (Ok(()), Some(l)) = (&svar, self.ekstra_lager) {
+                l.lock()
+                    .unwrap()
+                    .gem_side(zone, &crate::robotter::dage_i(fra, til), &[], &iso(NU))
+                    .unwrap();
+            }
+            svar
+        }
         async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
             self.tilstand_kald.lock().unwrap().push(zone.to_string());
             self.log.lock().unwrap().push("tilstand");
@@ -1103,6 +1253,11 @@ mod tests {
             unikke_kald: Mutex::default(),
             besoeg_kald: Mutex::default(),
             besoeg_svar: HashMap::new(),
+            ipklasse_kald: Mutex::default(),
+            robot_kald: Mutex::default(),
+            side_kald: Mutex::default(),
+            robot_svar: HashMap::new(),
+            side_svar: HashMap::new(),
             tilstand_kald: Mutex::default(),
             tilstand_svar: Ok(()),
             log: Mutex::default(),
@@ -1285,6 +1440,81 @@ mod tests {
         assert_eq!((sidst.zoner_faerdige, sidst.zoner_fejl), (2, 1));
         assert_eq!(sidst.fejl, Some(Fejl::Svar));
         assert_eq!(sidst.tilstand, Fase::Faerdig);
+    }
+
+    /// F5′ (V-BESOEG.2): efter dvale uden net. a har ingen forbindelse i alle forsøg; b venter på nettet én gang og kommer så igennem. Fejlen for a står
+    /// stadig, når runden er færdig (før: b's pause ryddede den, og båndet sagde "fejl i programmet"), med domænets navn og hvornår køen selv prøver igen.
+    #[tokio::test(start_paused = true)]
+    async fn netfejl_beholder_fejlen_og_domaenet() {
+        let lager = lager_med(&[("a", "a.wi24rd.com", None), ("b", "b.wi24rd.com", None)]);
+        let koe = Koe::default();
+        let mut f = falsk(&koe);
+        f.svar.insert("a".into(), vec![Err(Fejl::Forbindelse)]);
+        f.svar.insert("b".into(), vec![Err(Fejl::Forbindelse), Ok(())]);
+        let (slut, h) = koer(&koe, &lager, &f).await;
+        assert_eq!(slut, Slut::Faerdig);
+        assert_eq!(*f.lager.lock().unwrap(), ["a", "a", "a", "a", "b", "b"]);
+        let sidst = h.last().unwrap();
+        assert_eq!((sidst.tilstand, sidst.zoner_fejl), (Fase::Faerdig, 1));
+        assert_eq!(
+            sidst.fejl,
+            Some(Fejl::Forbindelse),
+            "forbigående: ingen forbindelse, ikke en fejl i programmet"
+        );
+        assert_eq!(sidst.fejl_navn.as_deref(), Some("a.wi24rd.com"));
+        assert_eq!(
+            sidst.fortsaetter_kl.as_deref(),
+            Some(iso(NU + NET_IGEN_MS).as_str()),
+            "prøver igen af sig selv"
+        );
+        let j = serde_json::to_value(sidst).unwrap();
+        assert_eq!(
+            (j["fejl"]["kode"].as_str(), j["fejl_navn"].as_str()),
+            (Some("forbindelse"), Some("a.wi24rd.com"))
+        );
+        // En anden fejl end net: ingen ny runde før om en time.
+        let koe2 = Koe::default();
+        let mut f2 = falsk(&koe2);
+        f2.svar.insert("a".into(), vec![Err(Fejl::Svar)]);
+        let (_, h2) = koer(&koe2, &lager, &f2).await;
+        assert_eq!(h2.last().unwrap().fortsaetter_kl, None);
+        assert!(!koe2.net_igen.load(Ordering::SeqCst));
+    }
+
+    /// F5′: en runde, hvor et domæne ikke kunne hentes uden forbindelse, giver en ny runde efter `NET_IGEN` af sig selv (ikke en time, og uden Hent nu);
+    /// kommer nettet tilbage, er næste runde igen en time efter.
+    #[tokio::test(start_paused = true)]
+    async fn netfejl_giver_ny_runde_af_sig_selv() {
+        use std::sync::atomic::AtomicUsize;
+        let koe = Koe::default();
+        koe.koerer.store(true, Ordering::SeqCst);
+        let runder = AtomicUsize::new(0);
+        let t0 = tokio::time::Instant::now();
+        let nu = || NU + t0.elapsed().as_millis() as i64;
+        let (r, k) = (&runder, &koe);
+        let runde = move || async move {
+            // Første runde: intet net (runden selv sætter `net_igen`, som `runde` gør det). Anden: nettet er tilbage.
+            if r.fetch_add(1, Ordering::SeqCst) == 0 {
+                k.net_igen.store(true, Ordering::SeqCst);
+            }
+            Ok(Slut::Faerdig)
+        };
+        let antal = || runder.load(Ordering::SeqCst);
+        let til = |s: u64| tokio::time::sleep_until(t0 + Duration::from_secs(s));
+        futures_util::future::join(koe.koer(runde, &|_| {}, &nu, &|| {}), async {
+            til(1).await;
+            assert_eq!(antal(), 1);
+            til(110).await;
+            assert_eq!(antal(), 1, "ikke før 2 minutter");
+            til(130).await;
+            assert_eq!(antal(), 2, "ny runde efter 2 minutter af sig selv");
+            til(130 + 600).await;
+            assert_eq!(antal(), 2, "nettet er tilbage: næste runde om en time");
+            til(130 + 3660).await;
+            assert_eq!(antal(), 3);
+            koe.stop();
+        })
+        .await;
     }
 
     /// Q5 a–d: en time på uret, dvale (tikket kom for sent) og uret stillet tilbage.
@@ -1838,9 +2068,9 @@ mod tests {
             "tilstanden først: den er lille, og så fundene, én gang for alle domæner"
         );
         assert_eq!(
-            log[log.len() - 4..],
-            ["historik", "historik", "besoeg", "besoeg"],
-            "årstallene og så besøgene sidst"
+            log[log.len() - 8..],
+            ["historik", "historik", "besoeg", "besoeg", "robot", "robot", "side", "side"],
+            "årstallene og så besøgene, robotterne og siderne sidst"
         );
         assert!(log.iter().filter(|x| **x == "historik").count() == 2 && log.contains(&"laek") && log.contains(&"angreb"));
         let kald = f.historik_kald.lock().unwrap().clone();
@@ -1912,6 +2142,78 @@ mod tests {
             besoeg::BESOEG_DAGE as usize,
             "næste runde henter dem"
         );
+    }
+
+    /// Robotter og sider (V-BESOEG.2): hver sit kald pr. domæne for de samme 30 døgn som besøgene, og også for døgn, hvis besøg allerede var hentet. Afviser
+    /// Cloudflare et felt, står det kun ved den slags ("ikke tilgængelig"), resten virker, og der spørges ikke igen før næste start.
+    #[tokio::test(start_paused = true)]
+    async fn robotter_og_sider_hver_for_sig() {
+        let koe = Koe::default();
+        let lager = lager_med(&[("a", "a.wi24rd.com", None)]);
+        let dage: Vec<String> = (1..=besoeg::BESOEG_DAGE).map(|i| dag_noegle(NU - i * DOEGN_MS)).collect();
+        lager.lock().unwrap().gem_besoeg("a", &dage, &[], "t").unwrap(); // besøgene er hentet før opdateringen
+        let mut f = falsk(&koe);
+        f.ekstra_lager = Some(&lager);
+        f.side_svar.insert(
+            "a".into(),
+            Err(Fejl::GraphQl {
+                dag: None,
+                detalje: "unknown field edgeResponseContentTypeName".into(),
+            }),
+        );
+        assert!(!ekstra(&koe, &lager, &f).await);
+        assert!(f.besoeg_kald.lock().unwrap().is_empty(), "besøgene er hentet");
+        let r = f.robot_kald.lock().unwrap().clone();
+        assert_eq!(
+            r,
+            vec![(
+                "a".to_string(),
+                dag_noegle(NU - besoeg::BESOEG_DAGE * DOEGN_MS),
+                dag_noegle(NU - DOEGN_MS)
+            )],
+            "de samme døgn som besøgene, ét kald"
+        );
+        {
+            let s = lager.lock().unwrap();
+            assert_eq!(s.hentet_robot("a").unwrap().len(), besoeg::BESOEG_DAGE as usize);
+            assert!(s.afsnit_fejl(SIDE_FEJL, "a").unwrap().is_some(), "siderne er ikke tilgængelige");
+            assert_eq!(
+                (s.afsnit_fejl(ROBOT_FEJL, "a").unwrap(), s.afsnit_fejl(BESOEG_FEJL, "a").unwrap()),
+                (None, None)
+            );
+        }
+        ekstra(&koe, &lager, &f).await;
+        assert_eq!(
+            (f.robot_kald.lock().unwrap().len(), f.side_kald.lock().unwrap().len()),
+            (1, 1),
+            "robotterne har alt, og siderne spørges ikke igen før næste start"
+        );
+        f.side_svar.clear();
+        ekstra(&Koe::default(), &lager, &f).await;
+        assert_eq!(f.side_kald.lock().unwrap().len(), 2, "næste start");
+        assert_eq!(lager.lock().unwrap().afsnit_fejl(SIDE_FEJL, "a").unwrap(), None);
+    }
+
+    /// IP-klasserne for de døgn, der var hentet før opdateringen: ét kald pr. domæne, én gang, efter unikke.
+    #[tokio::test(start_paused = true)]
+    async fn ipklasser_hentes_igen_en_gang() {
+        let koe = Koe::default();
+        let lager = lager_med(&[("a", "a.wi24rd.com", None), ("b", "b.wi24rd.com", None)]);
+        let gamle: Vec<String> = (3..=200).map(|i| dag_noegle(NU - i * DOEGN_MS)).collect();
+        lager.lock().unwrap().gem_historik("a", &gamle, &[], "t").unwrap();
+        assert!(lager.lock().unwrap().ipklasse_en_gang("2026-11-03").unwrap());
+        assert!(!lager.lock().unwrap().ipklasse_en_gang("2026-11-04").unwrap(), "kun én gang");
+        let mut f = falsk(&koe);
+        f.ekstra_lager = Some(&lager);
+        assert!(!ekstra(&koe, &lager, &f).await);
+        let kald = f.ipklasse_kald.lock().unwrap().clone();
+        assert_eq!(kald.len(), 1, "kun a: {kald:?}");
+        let log = f.log.lock().unwrap().clone();
+        let i = |x: &str| log.iter().position(|y| *y == x).unwrap();
+        assert!(i("historik") < i("ipklasse") && i("ipklasse") < i("besoeg"), "{log:?}");
+        ekstra(&koe, &lager, &f).await;
+        assert_eq!(f.ipklasse_kald.lock().unwrap().len(), 1, "én gang");
+        assert!(!lager.lock().unwrap().ipklasse_mangler("a").unwrap());
     }
 
     /// Unikke for de døgn, der var hentet før opdateringen: ét kald pr. domæne for de hentede døgn, én gang, og et domæne uden årstal spørges ikke.
@@ -1992,8 +2294,8 @@ mod tests {
         assert!(!koe.ekstra_runde(&lager, &f, &|| NU, EKSTRA_TEMPO, &|_| {}).await);
         assert_eq!(
             t0.elapsed(),
-            EKSTRA_TEMPO * (29 + 30 + 30 + 31 + 31 + 1 + 1),
-            "de 29 døgn, der var tilbage, de 30 med enkelthændelser, de 30 med lækkede kodeord, de 31 med DNS, de 31 med DMARC, årstallene og besøgene"
+            EKSTRA_TEMPO * (29 + 30 + 30 + 31 + 31 + 1 + 1 + 1 + 1),
+            "de 29 døgn, der var tilbage, de 30 med enkelthændelser, de 30 med lækkede kodeord, de 31 med DNS, de 31 med DMARC, årstallene, besøgene, robotterne og siderne"
         );
     }
 

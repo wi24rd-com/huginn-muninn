@@ -319,6 +319,7 @@ mod tests {
             tilstand,
             fejl: None,
             fortsaetter_kl: None,
+            fejl_navn: None,
         }
     }
 

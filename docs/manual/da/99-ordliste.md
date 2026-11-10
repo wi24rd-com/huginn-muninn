@@ -34,6 +34,10 @@
 
 **Huginn** · Tanke. Det, der sker nu: angreb, robotter, login.
 
+**IP-klasse** · Cloudflares grov inddeling af de IP-adresser, trafikken kom fra, fx søgemaskine, overvågning, scanner, Tor eller kendt dårlig adresse. Programmet gemmer kun antallet af forespørgsler pr. klasse og dag, aldrig adresserne.
+
+**Kendte robotter** · Robotter, Cloudflare har verificeret, fx Googlebot. Robotter, der udgiver sig for at være en almindelig browser, er ikke med.
+
 **Labyrinten** · Cloudflare viser robotten falske sider, der spilder dens tid. Stopper ikke robotten og regnes ikke som en blokering.
 
 **Ligner målrettet** · Mærke, når angrebene steg hos dig, men ikke på dine andre domæner, og en stor del kom fra ét netværk. Kræver mindst 3 valgte domæner og afgøres først, når døgnet efter er hentet.

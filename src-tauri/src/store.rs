@@ -15,8 +15,8 @@ use crate::cf::{Fejl, Zone};
 /// 1: vagt_dag + hentet. 2: + zoner. 3: + valg. 4: + indstillinger. 5: + notifikation_zone, meldt. 6: + login_sti, hentet_ekstra.
 /// 7: + radar_dag. 8: valg → fravalgt. 9: fravalgt → valgt, + afvist_ny, ny_zone. 10: + teknologi, Radar-serier uden brug væk.
 /// 11: + hentet_angreb (art `angreb`). 12: + vurderet, hentet_angreb tømt, så angrebene hentes igen med netværket. 13: + hentet_historik, hentet_laek, zone_tilstand.
-/// 14: + tek_vis. 15: + hentet_dns, hentet_dmarc. 16: + sikkerhedsfund. 17: + hentet_besoeg.
-const SKEMA_VERSION: i64 = 17;
+/// 14: + tek_vis. 15: + hentet_dns, hentet_dmarc. 16: + sikkerhedsfund. 17: + hentet_besoeg. 18: + hentet_robot, hentet_side.
+const SKEMA_VERSION: i64 = 18;
 const SKEMA_1: &str = "
 CREATE TABLE IF NOT EXISTS vagt_dag (zone TEXT NOT NULL, dag TEXT NOT NULL, art TEXT NOT NULL, noegle TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (zone, dag, art, noegle));
 CREATE TABLE IF NOT EXISTS hentet (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
@@ -111,6 +111,12 @@ CREATE TABLE IF NOT EXISTS sikkerhedsfund (zone TEXT NOT NULL, id TEXT NOT NULL,
 const SKEMA_17: &str = "
 CREATE TABLE IF NOT EXISTS hentet_besoeg (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
 ";
+/// `hentet_robot` og `hentet_side`: døgn, hvis besøg pr. kendt robot (art `b_robot`) og mest besøgte sider (arterne `b_side` og `b_side_b`) er hentet
+/// (V-BESOEG.2). Hver sin tabel, så de allerede hentede besøgsdøgn også får dem. Ingen eksisterende række ændres.
+const SKEMA_18: &str = "
+CREATE TABLE IF NOT EXISTS hentet_robot (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
+CREATE TABLE IF NOT EXISTS hentet_side (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
+";
 /// Arterne fra hovedhentningen (`vaern::DOEGN_QUERY` og `sti200::hoved_query`): dem, `gem_doegn` erstatter. `fwn` er antal hændelser
 /// i `fw`-svaret (`vaern::FW_HAENDELSER`, kun til loftet).
 pub const DOEGN_ARTER: &[&str] = &[
@@ -125,6 +131,15 @@ pub const UNIKKE_V1: &str = "unikke_v1";
 const UNIKKE_MANGLER: &str = "unikke_mangler:";
 /// Foran zone-id'et i `indstillinger`: Cloudflare svarede ikke på besøgene for domænet (værdien er den rensede fejl). Det koster kun besøgene.
 pub const BESOEG_FEJL: &str = "besoeg_fejl:";
+/// Som `BESOEG_FEJL` for de kendte robotter og de mest besøgte sider (V-BESOEG.2). Hver koster kun sit eget afsnit.
+pub const ROBOT_FEJL: &str = "robot_fejl:";
+pub const SIDE_FEJL: &str = "side_fejl:";
+/// `indstillinger`: sat, når domænerne med årstal én gang er sat til at få IP-klasserne (`h_ipklasse`) hentet for de døgn, de allerede har (`ipklasse_en_gang`).
+pub const IPKLASSE_V1: &str = "ipklasse_v1";
+/// Foran zone-id'et i `indstillinger`: domænets hentede døgn i året venter på `h_ipklasse`. Slettes af `gem_ipklasse`.
+const IPKLASSE_MANGLER: &str = "ipklasse_mangler:";
+/// Besøgsarterne, der hentes for sig (`besoeg.rs`): de står uden for `raekker`, så de ikke blander sig i Angreb og Overblik.
+pub const BESOEG_ARTER: &[&str] = &["b_total", "b_land", "b_robot", "b_side", "b_side_b"];
 /// Arterne fra `adgang::ADGANG_QUERY`: dem, `gem_ekstra` erstatter.
 pub const EKSTRA_ARTER: &[&str] = &["post", "status", "land", "login", "stoppet", "asn"];
 /// Foran zone-id'et i `indstillinger`: Cloudflare svarede ikke på de ekstra tal for domænet (værdien er den rensede fejl).
@@ -240,6 +255,9 @@ impl Store {
         }
         if v < 17 {
             tx.execute_batch(SKEMA_17).map_err(lagerfejl)?;
+        }
+        if v < 18 {
+            tx.execute_batch(SKEMA_18).map_err(lagerfejl)?;
         }
         tx.pragma_update(None, "user_version", SKEMA_VERSION).map_err(lagerfejl)?;
         tx.commit().map_err(lagerfejl)?;
@@ -414,7 +432,7 @@ impl Store {
         let tx = self.db.transaction().map_err(lagerfejl)?;
         {
             let mut slet = tx
-                .prepare("DELETE FROM vagt_dag WHERE zone = ?1 AND dag = ?2 AND art IN ('h_total', 'h_land', 'h_status')")
+                .prepare("DELETE FROM vagt_dag WHERE zone = ?1 AND dag = ?2 AND art IN ('h_total', 'h_land', 'h_status', 'h_ipklasse')")
                 .map_err(lagerfejl)?;
             let mut noter = tx
                 .prepare("INSERT OR REPLACE INTO hentet_historik (zone, dag, hentet_utc) VALUES (?1, ?2, ?3)")
@@ -477,6 +495,122 @@ impl Store {
         }
         tx.execute("DELETE FROM indstillinger WHERE noegle = ?1", [format!("{UNIKKE_MANGLER}{zone}")])
             .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)
+    }
+
+    /// Som `unikke_en_gang` for IP-klasserne (`IPKLASSE_V1`): hvert domæne med hentede årstal noteres som ventende på `h_ipklasse`. Ingen tal ændres. Én transaktion.
+    pub fn ipklasse_en_gang(&mut self, i_dag: &str) -> Result<bool, Fejl> {
+        if self.indstilling(IPKLASSE_V1)?.is_some() {
+            return Ok(false);
+        }
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        tx.execute(
+            "INSERT OR REPLACE INTO indstillinger (noegle, vaerdi) SELECT DISTINCT ?1 || zone, '1' FROM hentet_historik",
+            [IPKLASSE_MANGLER],
+        )
+        .map_err(lagerfejl)?;
+        tx.execute(
+            "INSERT OR REPLACE INTO indstillinger (noegle, vaerdi) VALUES (?1, ?2)",
+            [IPKLASSE_V1, i_dag],
+        )
+        .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)?;
+        Ok(true)
+    }
+
+    /// Venter domænet på `h_ipklasse` for de døgn, det allerede har (`ipklasse_en_gang`)?
+    pub fn ipklasse_mangler(&self, zone: &str) -> Result<bool, Fejl> {
+        Ok(self.indstilling(&format!("{IPKLASSE_MANGLER}{zone}"))?.is_some())
+    }
+
+    /// Gemmer `h_ipklasse` for de døgn, domænet allerede har årstal for, og noterer, at domænet ikke venter mere. Kun den art skrives (den erstattes for
+    /// døgnet); de andre tal og `hentet_utc` røres ikke. Én transaktion.
+    pub fn gem_ipklasse(&mut self, zone: &str, raekker: &[(String, String, String, i64)]) -> Result<(), Fejl> {
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        {
+            let mut slet = tx
+                .prepare("DELETE FROM vagt_dag WHERE zone = ?1 AND dag = ?2 AND art = 'h_ipklasse'")
+                .map_err(lagerfejl)?;
+            let dage: HashSet<&str> = raekker.iter().map(|r| r.0.as_str()).collect();
+            for dag in dage {
+                slet.execute(params![zone, dag]).map_err(lagerfejl)?;
+            }
+            let mut ind = tx
+                .prepare(
+                    "INSERT INTO vagt_dag (zone, dag, art, noegle, n) SELECT ?1, ?2, 'h_ipklasse', ?3, ?4 \
+                     WHERE EXISTS (SELECT 1 FROM hentet_historik WHERE zone = ?1 AND dag = ?2)",
+                )
+                .map_err(lagerfejl)?;
+            for (dag, _, noegle, n) in raekker.iter().filter(|r| r.1 == crate::historik::IPKLASSE) {
+                ind.execute(params![zone, dag, noegle, n]).map_err(lagerfejl)?;
+            }
+        }
+        tx.execute("DELETE FROM indstillinger WHERE noegle = ?1", [format!("{IPKLASSE_MANGLER}{zone}")])
+            .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)
+    }
+
+    pub fn hentet_robot(&self, zone: &str) -> Result<HashMap<String, String>, Fejl> {
+        self.hentet_i("hentet_robot", zone)
+    }
+
+    pub fn hentet_side(&self, zone: &str) -> Result<HashMap<String, String>, Fejl> {
+        self.hentet_i("hentet_side", zone)
+    }
+
+    /// Kendte robotter for døgnene `dage` (art `b_robot`). Et døgn uden rækker er også hentet. Én transaktion.
+    pub fn gem_robot(
+        &mut self,
+        zone: &str,
+        dage: &[String],
+        raekker: &[(String, String, String, i64)],
+        hentet_utc: &str,
+    ) -> Result<(), Fejl> {
+        self.gem_besoeg_i("hentet_robot", &["b_robot"], zone, dage, raekker, hentet_utc)
+    }
+
+    /// Mest besøgte sider for døgnene `dage` (arterne `b_side` og `b_side_b`). Et døgn uden rækker er også hentet. Én transaktion.
+    pub fn gem_side(
+        &mut self,
+        zone: &str,
+        dage: &[String],
+        raekker: &[(String, String, String, i64)],
+        hentet_utc: &str,
+    ) -> Result<(), Fejl> {
+        self.gem_besoeg_i("hentet_side", &["b_side", "b_side_b"], zone, dage, raekker, hentet_utc)
+    }
+
+    fn gem_besoeg_i(
+        &mut self,
+        tabel: &str,
+        arter: &[&str],
+        zone: &str,
+        dage: &[String],
+        raekker: &[(String, String, String, i64)],
+        hentet_utc: &str,
+    ) -> Result<(), Fejl> {
+        let liste = arter.iter().map(|a| format!("'{a}'")).collect::<Vec<_>>().join(", ");
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        {
+            let mut slet = tx
+                .prepare(&format!("DELETE FROM vagt_dag WHERE zone = ?1 AND dag = ?2 AND art IN ({liste})"))
+                .map_err(lagerfejl)?;
+            let mut noter = tx
+                .prepare(&format!(
+                    "INSERT OR REPLACE INTO {tabel} (zone, dag, hentet_utc) VALUES (?1, ?2, ?3)"
+                ))
+                .map_err(lagerfejl)?;
+            for dag in dage {
+                slet.execute(params![zone, dag]).map_err(lagerfejl)?;
+                noter.execute(params![zone, dag, hentet_utc]).map_err(lagerfejl)?;
+            }
+            let mut ind = tx
+                .prepare("INSERT INTO vagt_dag (zone, dag, art, noegle, n) VALUES (?1, ?2, ?3, ?4, ?5)")
+                .map_err(lagerfejl)?;
+            for (dag, art, noegle, n) in raekker.iter().filter(|r| dage.contains(&r.0) && arter.contains(&r.1.as_str())) {
+                ind.execute(params![zone, dag, art, noegle, n]).map_err(lagerfejl)?;
+            }
+        }
         tx.commit().map_err(lagerfejl)
     }
 
@@ -713,6 +847,24 @@ impl Store {
     }
 
     /// dag → hentet_utc for én Radar-serie.
+    /// Lande, Radar har tal for som mål fra og med `fra_dag`: blandt de største mål (`maal`, verden) med en andel over 0, eller med en kildeliste
+    /// (`par7`/`par28` for landet med mindst én kilde). Sorteret. Kun det, programmet allerede har hentet.
+    pub fn radar_lande_med_tal(&self, fra_dag: &str) -> Result<Vec<String>, Fejl> {
+        let mut st = self
+            .db
+            .prepare(
+                "SELECT noegle FROM radar_dag WHERE serie = ?1 AND land = '' AND noegle != '' AND vaerdi > 0 AND dag >= ?2 \
+                 UNION SELECT land FROM radar_dag WHERE serie IN (?3, ?4) AND land != '' AND noegle != '' AND dag >= ?2 ORDER BY 1",
+            )
+            .map_err(lagerfejl)?;
+        let rk = st
+            .query_map(params![crate::radar::MAAL, fra_dag, crate::radar::PAR7, crate::radar::PAR28], |r| {
+                r.get(0)
+            })
+            .map_err(lagerfejl)?;
+        rk.collect::<Result<_, _>>().map_err(lagerfejl)
+    }
+
     pub fn radar_hentet(&self, serie: &str, land: &str) -> Result<HashMap<String, String>, Fejl> {
         let mut st = self
             .db
@@ -871,7 +1023,7 @@ impl Store {
     pub fn raekker(&self, zone: &str, fra_dag: &str) -> Result<Vec<Raekke>, Fejl> {
         let mut st = self
             .db
-            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status', 'b_total', 'b_land') ORDER BY rowid")
+            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status', 'h_ipklasse', 'b_total', 'b_land', 'b_robot', 'b_side', 'b_side_b') ORDER BY rowid")
             .map_err(lagerfejl)?;
         let rk = st
             .query_map(params![zone, fra_dag], |r| {
@@ -1198,7 +1350,7 @@ impl Store {
     pub fn nulstil_historik(&mut self) -> Result<(), Fejl> {
         let tx = self.db.transaction().map_err(lagerfejl)?;
         tx.execute_batch(
-            "DELETE FROM vagt_dag; DELETE FROM hentet; DELETE FROM hentet_ekstra; DELETE FROM hentet_angreb; DELETE FROM hentet_laek; DELETE FROM hentet_dns; DELETE FROM hentet_dmarc; DELETE FROM hentet_historik; DELETE FROM hentet_besoeg; DELETE FROM radar_dag; DELETE FROM sikkerhedsfund;",
+            "DELETE FROM vagt_dag; DELETE FROM hentet; DELETE FROM hentet_ekstra; DELETE FROM hentet_angreb; DELETE FROM hentet_laek; DELETE FROM hentet_dns; DELETE FROM hentet_dmarc; DELETE FROM hentet_historik; DELETE FROM hentet_besoeg; DELETE FROM hentet_robot; DELETE FROM hentet_side; DELETE FROM radar_dag; DELETE FROM sikkerhedsfund;",
         )
         .map_err(lagerfejl)?;
         for praefiks in [
@@ -1208,7 +1360,10 @@ impl Store {
             RADAR_PRAEFIKS,
             SIKKERHED_PRAEFIKS,
             BESOEG_FEJL,
+            ROBOT_FEJL,
+            SIDE_FEJL,
             UNIKKE_MANGLER,
+            IPKLASSE_MANGLER,
         ] {
             tx.execute("DELETE FROM indstillinger WHERE noegle LIKE ?1", [format!("{praefiks}%")])
                 .map_err(lagerfejl)?;

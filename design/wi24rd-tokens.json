@@ -186,6 +186,7 @@
         "text": "{raw.color.board-light.text}", "text-2": "{raw.color.board-light.text-2}", "attack": "{raw.color.board-light.attack}", "attack-arc": "{raw.color.board-light.attack-arc}",
         "attack-fill": "{raw.color.board-light.attack-fill}", "label": "{raw.color.board-light.label}", "colo": "{raw.color.board-light.colo}", "ok": "{raw.color.board-light.ok}",
         "zoom-bg": "{raw.color.board-light.zoom-bg}", "on-colo": "{raw.color.board-light.on-colo}",
+        "visitors": "{raw.color.blue.720}", "visitors-hover": "{raw.color.blue.800}",
         "shadow": "{semantic.light.shadow.card}"
       }
     },
@@ -198,6 +199,7 @@
         "text": "{raw.color.board-dark.text}", "text-2": "{raw.color.board-dark.text-2}", "attack": "{raw.color.board-dark.attack}", "attack-arc": "{raw.color.board-dark.attack-arc}",
         "attack-fill": "{raw.color.board-dark.attack-fill}", "label": "{raw.color.board-dark.label}", "colo": "{raw.color.board-dark.colo}", "ok": "{raw.color.board-dark.ok}",
         "zoom-bg": "{raw.color.board-dark.zoom-bg}", "on-colo": "{raw.color.board-dark.on-colo}",
+        "visitors": "{raw.color.blue.400}", "visitors-hover": "{raw.color.blue.300}",
         "shadow": "{semantic.dark.shadow.card}"
       }
     },
