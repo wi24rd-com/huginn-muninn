@@ -270,6 +270,13 @@ button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--ho
 .besoeg-klasse { margin: 0 0 8px; }
 .besoeg-404 { margin-top: 14px; }
 .besoeg-404 h3 { margin: 0 0 2px; font-size: var(--font-size-md); }
+/* V-BESOEG.2 FIX 1: de faste fliser øverst med en lille overskrift, så vælgeren, og "Valgt periode: …" over alt, der følger perioden. */
+.besoeg-faste-h { margin: 0 0 6px; font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-muted); }
+.besoeg-valg { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 16px; margin: 0 0 6px; }
+.besoeg-valg .dato-vaelger { flex: 1 1 18rem; }
+.besoeg-valgt-h { margin: 4px 0 12px; font-size: var(--font-size-xl); }
+.besoeg-forside { margin-top: 14px; }
+.besoeg-forside h3 { margin: 0 0 2px; font-size: var(--font-size-md); }
 .dyk-y { position: absolute; right: 0; width: calc(var(--font-size-xs) * 3.4); text-align: right; color: var(--board-text-2); font-size: var(--font-size-xs); line-height: 1; pointer-events: none; }
 .dyk-y-top { top: 2px; }
 .dyk-y-midt { top: 88px; transform: translateY(-50%); }

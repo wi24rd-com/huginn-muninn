@@ -39,7 +39,7 @@ Further down the page:
 - **Cloudflare's own findings** (one domain only): what Cloudflare's own scan of the domain's setup has found (Security Insights), with severity, title and date. A click opens Security Insights at Cloudflare in your browser. Requires one more optional permission on the API Token, see [Create an API Token at Cloudflare](../31-cloudflare.md). Without it the section says it can be added, and the rest works. Cloudflare scans every 7 days on Free and every 3 days on Pro and Business. A critical finding gives **Watch**.
 - **What they were looking for**: the paths the scanners asked for, sorted into categories.
 - **On your other domains**: the same on your other chosen domains.
-- **The latest**: the latest refused requests, cleaned of IP addresses and query strings.
+- **The latest**: the latest refused requests, cleaned of IP addresses and query strings. If there are several pages, **Previous** and **Next** change only the table: the page stays where you are, and a page change is not a step in back and forward.
 
 ![Sensitive files and Cloudflare's own findings](../../img/angreb-fund--light-en-1200x860.webp)
 *Only `/.env` looks like the file; the two other paths answer with the site's ordinary page. Under **Cloudflare's own findings** the critical finding is that Always Use HTTPS is not turned on.*

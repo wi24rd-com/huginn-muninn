@@ -67,6 +67,12 @@
     hist.genbesoeg = false;
     if (location.hash === ny) route(); else location.hash = ny;
   }
+  /* Adressen for det, der står, uden at tegne noget og uden et nyt trin i tilbage/frem (fx sideskift i "De seneste", V-BESOEG.2 FIX 1). Trinets nummer bevares. */
+  function erstatAdresse(navn, query) {
+    const q = query ? String(query) : '';
+    history.replaceState(history.state, '', '#' + navn + (q ? '?' + q : ''));
+    tilstand.params = new URLSearchParams(q);
+  }
   function route() {
     let { navn, params } = laesHash();
     /* Adressen erstattes: det er stadig ét trin i historikken. */
@@ -571,7 +577,7 @@
 
   window.hmRamme = {
     aabnCve, erCve: id => CVE.test(String(id)), visVaelger, aabnVejledning,
-    tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
+    tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, erstatAdresse, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
     platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
   };
 

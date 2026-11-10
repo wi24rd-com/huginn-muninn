@@ -39,7 +39,7 @@ Længere nede på siden:
 - **Cloudflares egne fund** (kun for ét domæne): det, Cloudflares egen skanning af domænets opsætning har fundet (Security Insights), med alvor, titel og dato. Et klik åbner Security Insights hos Cloudflare i din browser. Kræver én valgfri rettighed mere på API Tokenet, se [Opret API Token hos Cloudflare](../31-cloudflare.md). Uden den står der, at den kan tilføjes, og resten virker. Cloudflare skanner hver 7. dag på Free og hver 3. dag på Pro og Business. Et kritisk fund giver **Hold øje**.
 - **Hvad de ledte efter**: de stier, scannerne spurgte efter, sorteret i kategorier.
 - **På dine andre domæner**: det samme på dine andre valgte domæner.
-- **De seneste**: de seneste afviste forespørgsler, renset for IP-adresser og forespørgselsdel.
+- **De seneste**: de seneste afviste forespørgsler, renset for IP-adresser og forespørgselsdel. Er der flere sider, skifter **Forrige** og **Næste** kun tabellen: siden bliver stående, hvor du er, og et sideskift er ikke et trin i tilbage og frem.
 
 ![Følsomme filer og Cloudflares egne fund](../../img/angreb-fund--light-da-1200x860.webp)
 *Kun `/.env` ligner filen; de to andre stier svarer med sitets almindelige side. Under **Cloudflares egne fund** er det kritiske fund, at Always Use HTTPS ikke er slået til.*

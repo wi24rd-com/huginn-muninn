@@ -356,8 +356,17 @@
     const tabel = V.senesteTabel(d.enkelte, { til, domaene: domaeneCelle, cve: true, uden: har('regel') ? ['regel'] : [], art: v => kilde.get(v) }), e = d.enkelte_info;
     if (!e) return [afsnit('vg-seneste', T.dykSenesteH, T.dykSenesteP, tabel)];
     const tekst = [fmt(T.dykVisNafM, { n: tal(e.vist), m: tal(e.i_alt) }), ...(e.loft ? [T.dykLoft200] : [])].join(' ');
-    const side = n => kopi(p => { if (n > 1) p.set('side', n); });
-    const nav = el('nav', { className: 'dyk-sider' }, ...(e.side > 1 ? [knap(T.dykForrige, side(e.side - 1), 'knap')] : []), el('span', { textContent: fmt(T.dykSideN, { a: tal(e.side), b: tal(e.sider) }) }), ...(e.side < e.sider ? [knap(T.dykNaeste, side(e.side + 1), 'knap')] : []));
+    /* Forrige/Næste henter kun den nye side og bytter afsnittet ud på stedet (skiftSide): ingen ny tegning, rullepositionen bliver, og adressen
+       erstattes, så tilbage/frem ikke får et trin pr. side (V-BESOEG.2 FIX 1). */
+    const sideKnap = (tekst, n, hvilken) => {
+      const b = el('button', { type: 'button', className: 'knap dyk-side-knap', textContent: tekst });
+      b.dataset.side = hvilken;
+      b.setAttribute('aria-label', fmt(T.dykSideAabn, { a: tal(n), b: tal(e.sider) }));
+      b.addEventListener('click', () => skiftSide(n, hvilken));
+      return b;
+    };
+    const nr = el('span', { className: 'dyk-side-nr', textContent: fmt(T.dykSideN, { a: tal(e.side), b: tal(e.sider) }), tabIndex: -1 });
+    const nav = el('nav', { className: 'dyk-sider' }, ...(e.side > 1 ? [sideKnap(T.dykForrige, e.side - 1, 'forrige')] : []), nr, ...(e.side < e.sider ? [sideKnap(T.dykNaeste, e.side + 1, 'naeste')] : []));
     nav.setAttribute('aria-label', T.dykSiderH);
     return [afsnit('vg-seneste', T.dykSenesteH, tekst, tabel, ...(e.sider > 1 ? [nav] : []))];
   }
@@ -637,6 +646,21 @@
       ]);
     } catch (e) { if (g === gen) besked(S.fejl(e)); return; }
     if (g === gen) tegn(d, t);
+  }
+  /* Én side i "De seneste": samme kald som hentTal med den nye side, men kun afsnittet byttes ud. Fokus bliver på knappen, der blev trykket, eller på
+     "Side N af M", når den knap ikke er der mere (første/sidste side). */
+  async function skiftSide(n, hvilken) {
+    const g = gen;
+    let d;
+    try { d = await invoke('dyk', { omfang, filtre: filtre(), periode: periodeArg(), slags: params.get('slags'), side: n }); } catch (e) { if (g === gen) besked(S.fejl(e)); return; }
+    if (g !== gen) return;
+    if (n > 1) params.set('side', String(n)); else params.delete('side');
+    aktiv = params.toString();
+    R.erstatAdresse('vaernet', aktiv);
+    const gammel = $('vg-seneste'), [ny] = d.sum ? enkelte(d) : [];
+    if (!gammel || !ny) return hentTal(g);
+    gammel.replaceWith(ny);
+    (ny.querySelector(`.dyk-side-knap[data-side="${hvilken}"]`) || ny.querySelector('.dyk-side-nr')).focus({ preventScroll: true });
   }
   /* Tegn igen, når køen melder nyt, højst hvert 3. sekund. */
   function lytPaaKoe(gaelder, igen) {

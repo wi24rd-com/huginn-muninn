@@ -141,12 +141,18 @@ fn summer<'a>(rows: &'a [Raekke], fra: &str, til: &str) -> BTreeMap<&'a str, (i6
     m
 }
 
+/// Ligner et snit på `snit` bytes forsidens snit `forside` (inden for `SOM_FORSIDEN`)? En forside på 0 bytes ligner intet. Ren funktion; bruges også af
+/// Besøgende › Mest besøgte sider (`besoeg::forside_deling`).
+pub fn som_forsiden(snit: i64, forside: i64) -> bool {
+    forside > 0 && (snit - forside).abs() as f64 <= SOM_FORSIDEN * forside as f64
+}
+
 /// Er et snit på `snit` bytes troværdigt mod forsidens snit, når `stier` forskellige stier svarede 200? Ren funktion.
 pub fn troevaerdig(snit: i64, forside: Option<i64>, stier: usize) -> bool {
     let Some(f) = forside.filter(|f| *f > 0) else {
         return false; // uden forsiden kan en fælles side ikke udelukkes
     };
-    snit <= MAKS_BYTES && (snit - f).abs() as f64 > SOM_FORSIDEN * f as f64 && stier <= MAKS_STIER
+    snit <= MAKS_BYTES && !som_forsiden(snit, f) && stier <= MAKS_STIER
 }
 
 /// Stierne i perioden med deres vurdering, flest først. `forside`: forsidens snit i perioden. Ren funktion.

@@ -962,7 +962,7 @@ struct LandValg {
     land: Option<String>,
     /// Et andet land, kun når det er tydeligt, at mindst halvdelen af de besøgende kommer derfra (`radar::forslag`).
     forslag: Option<String>,
-    /// Landene, Radar har haft tal for som mål de seneste 30 dage (`radar::lande_med_tal`). Kun dem kan vælges (V-BESOEG.2).
+    /// Landene, Radar har haft tal for som mål på mindst 15 af de seneste 30 dage (`radar::lande_med_tal`). Kun dem kan vælges (V-BESOEG.2 FIX 1).
     med_tal: Vec<String>,
 }
 
@@ -1831,6 +1831,11 @@ pub fn run() {
             let _ = lager.unikke_en_gang(&vaern::dag_noegle(nu_ms()));
             // V-BESOEG.2: én gang hentes IP-klasserne (`h_ipklasse`) for de døgn i året, der allerede er hentet. Kun den art skrives.
             let _ = lager.ipklasse_en_gang(&vaern::dag_noegle(nu_ms()));
+            // V-BESOEG.2 FIX 1: én gang hentes sidernes døgn i hentevinduet igen, nu med `b_side_bytes`. Ét kald pr. domæne.
+            let _ = lager.side_bytes_en_gang(
+                &vaern::dag_noegle(nu_ms()),
+                &vaern::dag_noegle(nu_ms() - besoeg::BESOEG_DAGE * vaern::DOEGN_MS),
+            );
             let sprog = sprog_fra(&lager);
             app.manage(Tilstand {
                 lager: Mutex::new(lager),

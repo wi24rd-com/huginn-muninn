@@ -39,10 +39,13 @@ pub const ROBOT_QUERY: &str = r#"query Robot($zoneTag: string!, $since: Time!, $
   } } }"#;
 
 /// Mest besøgte sider: html-svar pr. dag, sti og svarkode, flest først. Kun stien (aldrig forespørgselsstrengen, som `clientRequestPath` ikke har).
+/// `edgeResponseBytes` (V-BESOEG.2 FIX 1, som `sti200::hoved_query`) giver svarenes størrelse, så stier, der svarer med forsiden, kan skilles fra.
 pub const SIDE_QUERY: &str = r#"query Side($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
-    side: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", edgeResponseContentTypeName:"html"}, orderBy:[count_DESC]) { count sum { visits } dimensions { date clientRequestPath edgeResponseStatus } }
+    side: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", edgeResponseContentTypeName:"html"}, orderBy:[count_DESC]) { count sum { visits edgeResponseBytes } dimensions { date clientRequestPath edgeResponseStatus } }
   } } }"#;
 
+/// Art: bytes i alt pr. døgn, svarkode og sti (`SIDE_QUERY`).
+pub const SIDE_BYTES: &str = "b_side_bytes";
 /// Så mange sider (sti og svarkode) gemmes pr. døgn, flest visninger først.
 pub const TOP_SIDER: usize = 50;
 /// Perioder med flere dage end dette vises med én søjle pr. uge.
@@ -68,6 +71,9 @@ pub fn variabler(zone: &str, fra: &str, til: &str) -> Result<Value, Fejl> {
 struct Sum {
     #[serde(default, deserialize_with = "tom_ved_null")]
     visits: i64,
+    /// Kun i `SIDE_QUERY`.
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "edgeResponseBytes")]
+    bytes: i64,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -193,23 +199,26 @@ pub fn side_noegle(status: i64, sti: &str) -> String {
     format!("{status} {sti}")
 }
 
-/// Sidesvaret som (dag, art, "<svarkode> <sti>", n) for døgnene `dage`: `b_side` = visninger og `b_side_b` = besøg. Stien renses som i Angreb
+/// Sidesvaret som (dag, art, "<svarkode> <sti>", n) for døgnene `dage`: `b_side` = visninger, `b_side_b` = besøg og `b_side_bytes` = bytes i alt (altid,
+/// også 0, så et døgn med bytes kan kendes fra et døgn hentet før de kom med). Stien renses som i Angreb
 /// (`vaern::ren_sti`: uden forespørgselsstreng, token-agtige stykker skjult, højst 90 tegn), stier, der bliver ens, lægges sammen, og kun de `TOP_SIDER`
 /// med flest visninger pr. døgn gemmes. Ren funktion.
 pub fn side_raekker(data: &Value, dage: &[String]) -> Result<Vec<(String, String, String, i64)>, Fejl> {
-    let mut tal: BTreeMap<String, HashMap<String, (i64, i64)>> = BTreeMap::new();
+    let mut tal: BTreeMap<String, HashMap<String, (i64, i64, i64)>> = BTreeMap::new();
     for g in svar2(data)?.side.into_iter().filter(|g| dage.contains(&g.dimensions.date)) {
         let noegle = side_noegle(g.dimensions.status, &ren_sti(&g.dimensions.sti));
         let x = tal.entry(g.dimensions.date).or_default().entry(noegle).or_default();
         x.0 += g.count;
         x.1 += g.sum.visits;
+        x.2 += g.sum.bytes;
     }
     let mut ud = Vec::new();
     for (dag, sider) in tal {
-        let mut sider: Vec<(String, (i64, i64))> = sider.into_iter().filter(|x| x.1 .0 > 0).collect();
+        let mut sider: Vec<(String, (i64, i64, i64))> = sider.into_iter().filter(|x| x.1 .0 > 0).collect();
         sider.sort_by(|a, b| b.1 .0.cmp(&a.1 .0).then_with(|| a.0.cmp(&b.0)));
-        for (noegle, (visninger, besoeg)) in sider.into_iter().take(TOP_SIDER) {
+        for (noegle, (visninger, besoeg, bytes)) in sider.into_iter().take(TOP_SIDER) {
             ud.push((dag.clone(), "b_side".to_string(), noegle.clone(), visninger));
+            ud.push((dag.clone(), SIDE_BYTES.to_string(), noegle.clone(), bytes.max(0)));
             if besoeg > 0 {
                 ud.push((dag.clone(), "b_side_b".to_string(), noegle, besoeg));
             }
@@ -234,6 +243,8 @@ pub struct Laest {
     /// Dage med kendte robotter og med sider hentet.
     pub robot_hentet: HashSet<String>,
     pub side_hentet: HashSet<String>,
+    /// Arterne `b_side`, `b_side_b` og `b_side_bytes` med domænet: forsiden er hvert domænes egen (`forside_deling`).
+    pub sider_z: Vec<(String, Raekke)>,
     /// Domæner i omfanget, hvor Cloudflare ikke svarede på besøgene, robotterne og siderne.
     pub ikke_tilgaengelig: Vec<String>,
     pub robot_ikke: Vec<String>,
@@ -266,6 +277,7 @@ pub fn laes(lager: &Store, zoner: &[String]) -> Result<Laest, Fejl> {
     };
     l.unikke = raekker(&["h_total"])?.into_iter().filter(|r| r.noegle == UNIKKE).collect();
     l.besoeg = raekker(BESOEG_ARTER)?;
+    l.sider_z = lager.raekker_art(zoner, &["b_side", "b_side_b", SIDE_BYTES], "0000-00-00")?;
     l.ipklasse = raekker(&[IPKLASSE])?;
     Ok(l)
 }
@@ -382,6 +394,10 @@ pub struct BesoegUd {
     pub sider: Vec<SideUd>,
     pub sider_i_alt: i64,
     pub sider_404: Vec<SideUd>,
+    /// Stier, der svarede med sidens almindelige side (`forside_deling`): taget ud af `sider`. Et skøn ud fra svarenes størrelse.
+    pub sider_forside: Vec<SideUd>,
+    /// Et domæne har sider med størrelse i perioden, men ikke forsiden: dets stier er ikke delt.
+    pub sider_uden_forside: bool,
     pub side_med: i64,
     pub side_fra: Option<String>,
     pub side_ikke: Vec<String>,
@@ -469,6 +485,65 @@ pub fn uger(dage: &[DagUd]) -> Vec<UgeUd> {
 
 /// Sti → (visninger, besøg).
 type Sider = HashMap<String, (i64, i64)>;
+
+/// "Svarede med sidens almindelige side" (V-BESOEG.2 FIX 1): mange sites svarer 200 med forsiden på adresser, de ikke kender (catch-all), så de kommer
+/// aldrig i 404-listen. Et skøn ud fra svarenes størrelse.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct ForsideDeling {
+    /// Stier, der i hvert domæne, hvor de står, svarede 200 i snit på forsidens størrelse (`sti200::som_forsiden`), ikke er forsiden og har 0 besøg udefra.
+    pub som_forsiden: HashSet<String>,
+    /// Et domæne har sider med størrelse i perioden, men forsiden (`200 /`) mangler: dets stier deles ikke.
+    pub uden_forside: bool,
+}
+
+/// Delingen for perioden `fra`…`til` ud fra (domæne, række) med arterne `b_side`, `b_side_b` og `b_side_bytes`. Pr. domæne: snittet pr. visning af
+/// 200-svarene (kun døgn, hvor sidens bytes er hentet) sammenlignes med samme domænes forside, som Følsomme filer gør. 404 og andre svarkoder end 200
+/// tæller ikke med i snittet; besøg udefra tæller alle svarkoder undtagen 404. Uden forsiden deles intet. Ren funktion.
+pub fn forside_deling(rk: &[(String, Raekke)], fra: &str, til: &str) -> ForsideDeling {
+    let i_perioden: Vec<&(String, Raekke)> = rk
+        .iter()
+        .filter(|(_, r)| r.dag.as_str() >= fra && r.dag.as_str() <= til && !r.noegle.starts_with("404 "))
+        .collect();
+    let bytes: HashMap<(&str, &str, &str), i64> = i_perioden
+        .iter()
+        .filter(|(_, r)| r.art == SIDE_BYTES)
+        .map(|(z, r)| ((z.as_str(), r.dag.as_str(), r.noegle.as_str()), r.n))
+        .collect();
+    // (domæne, sti) → (visninger med 200 og bytes, bytes, besøg udefra).
+    let mut m: HashMap<(&str, &str), (i64, i64, i64)> = HashMap::new();
+    for (z, r) in &i_perioden {
+        let Some((kode, sti)) = r.noegle.split_once(' ') else {
+            continue;
+        };
+        let x = m.entry((z.as_str(), sti)).or_default();
+        match r.art.as_str() {
+            "b_side" if kode == "200" => {
+                if let Some(b) = bytes.get(&(z.as_str(), r.dag.as_str(), r.noegle.as_str())) {
+                    x.0 += r.n;
+                    x.1 += b;
+                }
+            }
+            "b_side_b" => x.2 += r.n,
+            _ => {}
+        }
+    }
+    let snit = |x: &(i64, i64, i64)| (x.0 > 0).then(|| x.1 / x.0);
+    let forside = |z: &str| m.get(&(z, crate::sti200::FORSIDE)).and_then(snit).filter(|f| *f > 0);
+    let med_bytes: HashSet<&str> = bytes.keys().map(|k| k.0).collect();
+    let uden_forside = med_bytes.iter().any(|z| forside(z).is_none());
+    // En sti står kun i den nye liste, når den gør det i alle domæner, hvor den står.
+    let mut alle: HashMap<&str, bool> = HashMap::new();
+    for ((z, sti), x) in &m {
+        let ja = *sti != crate::sti200::FORSIDE
+            && x.2 == 0
+            && matches!((snit(x), forside(z)), (Some(s), Some(f)) if crate::sti200::som_forsiden(s, f));
+        *alle.entry(sti).or_insert(true) &= ja;
+    }
+    ForsideDeling {
+        som_forsiden: alle.into_iter().filter(|x| x.1).map(|x| x.0.to_string()).collect(),
+        uden_forside,
+    }
+}
 
 /// Svaret ud fra det læste. Ren funktion.
 pub fn regn(periode: &Periode, filter: Option<&Filter>, l: &Laest, nu: i64) -> BesoegUd {
@@ -588,7 +663,9 @@ pub fn regn(periode: &Periode, filter: Option<&Filter>, l: &Laest, nu: i64) -> B
         v.sort_by(|a, b| b.n.cmp(&a.n).then_with(|| a.sti.cmp(&b.sti)));
         v
     };
-    let (sider, sider_404) = (liste(sider), liste(sider_404));
+    let deling = forside_deling(&l.sider_z, &fra, &til);
+    let (sider_forside, sider): (Vec<SideUd>, Vec<SideUd>) = liste(sider).into_iter().partition(|x| deling.som_forsiden.contains(&x.sti));
+    let sider_404 = liste(sider_404);
     let sider_i_alt = sider.iter().map(|x| x.n).sum();
     // Besøg fra kendte robotter de seneste 30 dage, på dage med både besøg og robotter. Kun uden filter.
     let robot30 = filter.is_none().then(|| {
@@ -654,6 +731,8 @@ pub fn regn(periode: &Periode, filter: Option<&Filter>, l: &Laest, nu: i64) -> B
         sider,
         sider_i_alt,
         sider_404,
+        sider_forside,
+        sider_uden_forside: deling.uden_forside,
         side_med: dage.iter().filter(|x| har_side(x)).count() as i64,
         side_fra: l.side_hentet.iter().min().cloned(),
         side_ikke: l.side_ikke.clone(),
@@ -943,9 +1022,10 @@ mod tests {
         ] {
             assert!(ROBOT_QUERY.contains(felt), "{felt}");
         }
+        assert!(!ROBOT_QUERY.contains("edgeResponseBytes"));
         for felt in [
             "httpRequestsAdaptiveGroups",
-            "count sum { visits }",
+            "count sum { visits edgeResponseBytes }",
             "dimensions { date clientRequestPath edgeResponseStatus }",
             r#"requestSource:"eyeball""#,
             r#"edgeResponseContentTypeName:"html""#,
@@ -1017,6 +1097,169 @@ mod tests {
         );
         let lang = ren_sti(&format!("/{}", "a/".repeat(80)));
         assert!(lang.chars().count() <= 90);
+    }
+
+    /// Bytes (V-BESOEG.2 FIX 1): summen pr. døgn og nøgle som `b_side_bytes`, altid (også 0), og kun for de sider, der gemmes.
+    #[test]
+    fn sidesvaret_har_bytes_pr_side() {
+        let mut grupper = vec![
+            json!({"count": 10, "sum": {"visits": 6, "edgeResponseBytes": 200_000}, "dimensions": {"date": "2026-11-01", "clientRequestPath": "/", "edgeResponseStatus": 200}}),
+            json!({"count": 2, "sum": {"visits": 0, "edgeResponseBytes": 41_000}, "dimensions": {"date": "2026-11-01", "clientRequestPath": "//crm/.env", "edgeResponseStatus": 200}}),
+            json!({"count": 1, "sum": {"visits": 0, "edgeResponseBytes": 20_000}, "dimensions": {"date": "2026-11-01", "clientRequestPath": "//crm/.env?x=1", "edgeResponseStatus": 200}}),
+            json!({"count": 3, "sum": {"visits": 3}, "dimensions": {"date": "2026-11-01", "clientRequestPath": "/om", "edgeResponseStatus": 304}}),
+        ];
+        for i in 0..55 {
+            grupper.push(json!({"count": 1, "sum": {"visits": 1, "edgeResponseBytes": 5}, "dimensions": {"date": "2026-11-02", "clientRequestPath": format!("/s{i:02}"), "edgeResponseStatus": 200}}));
+        }
+        let data = json!({"viewer": {"zones": [{"side": grupper}]}});
+        let r = side_raekker(&data, &["2026-11-01".to_string(), "2026-11-02".to_string()]).unwrap();
+        let tal = |art: &str, n: &str| r.iter().find(|x| x.0 == "2026-11-01" && x.1 == art && x.2 == n).map(|x| x.3);
+        assert_eq!(tal(SIDE_BYTES, "200 /"), Some(200_000));
+        assert_eq!(tal(SIDE_BYTES, "200 //crm/.env"), Some(61_000), "stierne lagt sammen, også bytes");
+        assert_eq!(tal(SIDE_BYTES, "304 /om"), Some(0), "uden bytes i svaret: 0, men rækken står");
+        assert_eq!(
+            r.iter().filter(|x| x.0 == "2026-11-02" && x.1 == SIDE_BYTES).count(),
+            50,
+            "kun de 50 gemte"
+        );
+    }
+
+    fn zr(zone: &str, dag: &str, art: &str, noegle: &str, n: i64) -> (String, Raekke) {
+        (zone.into(), rk(dag, art, noegle, n))
+    }
+
+    /// Siderne til delingen: forsiden 20 KB; en catch-all-sti på forsidens størrelse uden besøg; en rigtig side på samme størrelse med besøg; en lille fil.
+    fn sider_z(zone: &str, dag: &str) -> Vec<(String, Raekke)> {
+        vec![
+            zr(zone, dag, "b_side", "200 /", 100),
+            zr(zone, dag, SIDE_BYTES, "200 /", 2_000_000),
+            zr(zone, dag, "b_side_b", "200 /", 40),
+            zr(zone, dag, "b_side", "200 //crm/.env", 3),
+            zr(zone, dag, SIDE_BYTES, "200 //crm/.env", 3 * 23_000), // +15 %
+            zr(zone, dag, "b_side", "200 /platform/", 10),
+            zr(zone, dag, SIDE_BYTES, "200 /platform/", 10 * 20_500),
+            zr(zone, dag, "b_side_b", "200 /platform/", 4),
+            zr(zone, dag, "b_side", "200 /robots.txt", 5),
+            zr(zone, dag, SIDE_BYTES, "200 /robots.txt", 5 * 400),
+            zr(zone, dag, "b_side", "404 /.env", 7),
+            zr(zone, dag, SIDE_BYTES, "404 /.env", 7 * 20_000),
+        ]
+    }
+
+    /// Delingen: ligner forsiden + ikke forsiden + 0 besøg udefra → ny liste; forsiden selv aldrig; uden forside ingen deling; alle domæner skal være enige.
+    #[test]
+    fn forside_deling_ligner_forsiden_og_0_besoeg() {
+        let (fra, til) = ("2026-11-01", "2026-11-05");
+        let mut rk = sider_z("a", "2026-11-02");
+        rk.push(zr("a", "2026-11-02", "b_side", "200 /gammel", 4)); // døgn uden bytes: kan ikke vurderes
+        rk.push(zr("a", "2026-11-02", "b_side", "301 /flyttet", 4));
+        rk.push(zr("a", "2026-11-02", SIDE_BYTES, "301 /flyttet", 4 * 20_000)); // kun 200 tæller
+        rk.push(zr("a", "2026-10-01", "b_side", "200 /udenfor", 1));
+        rk.push(zr("a", "2026-10-01", SIDE_BYTES, "200 /udenfor", 20_000));
+        let d = forside_deling(&rk, fra, til);
+        assert_eq!(d.som_forsiden, HashSet::from(["//crm/.env".to_string()]));
+        assert!(!d.uden_forside);
+        // Grænsen: +25 % er med, +26 % er ikke.
+        for (bytes, med) in [(25_000, true), (25_200, false), (15_000, true), (14_800, false)] {
+            let mut rk = sider_z("a", "2026-11-02");
+            rk.retain(|x| !(x.1.art == SIDE_BYTES && x.1.noegle == "200 //crm/.env"));
+            rk.push(zr("a", "2026-11-02", SIDE_BYTES, "200 //crm/.env", 3 * bytes));
+            assert_eq!(forside_deling(&rk, fra, til).som_forsiden.contains("//crm/.env"), med, "{bytes}");
+        }
+        // Forsiden selv står aldrig i listen, heller ikke uden besøg.
+        let mut uden_besoeg = sider_z("a", "2026-11-02");
+        uden_besoeg.retain(|x| x.1.art != "b_side_b");
+        assert!(!forside_deling(&uden_besoeg, fra, til).som_forsiden.contains("/"));
+        // Ingen forside i perioden: ingen deling, og det siges.
+        let mut uden = sider_z("a", "2026-11-02");
+        uden.retain(|x| !x.1.noegle.ends_with(" /"));
+        let d = forside_deling(&uden, fra, til);
+        assert!(d.som_forsiden.is_empty() && d.uden_forside);
+        // Ingen bytes hentet endnu: ingen deling og ingen linje.
+        let mut ingen: Vec<_> = sider_z("a", "2026-11-02");
+        ingen.retain(|x| x.1.art != SIDE_BYTES);
+        assert_eq!(forside_deling(&ingen, fra, til), ForsideDeling::default());
+        // To domæner: på b er stien en rigtig side (besøg), så den bliver stående.
+        let mut to = sider_z("a", "2026-11-02");
+        to.extend(sider_z("b", "2026-11-03"));
+        to.push(zr("b", "2026-11-03", "b_side_b", "200 //crm/.env", 1));
+        assert!(forside_deling(&to, fra, til).som_forsiden.is_empty());
+        // Hvert domæne har sin egen forside: b's sider er 2 KB, a's forside 20 KB.
+        let mut egen = sider_z("a", "2026-11-02");
+        egen.push(zr("b", "2026-11-02", "b_side", "200 /", 10));
+        egen.push(zr("b", "2026-11-02", SIDE_BYTES, "200 /", 10 * 2_000));
+        egen.push(zr("b", "2026-11-02", "b_side", "200 /ukendt", 2));
+        egen.push(zr("b", "2026-11-02", SIDE_BYTES, "200 /ukendt", 2 * 2_100));
+        egen.push(zr("b", "2026-11-02", "b_side", "200 /stor", 2));
+        egen.push(zr("b", "2026-11-02", SIDE_BYTES, "200 /stor", 2 * 20_000));
+        let d = forside_deling(&egen, fra, til);
+        assert!(d.som_forsiden.contains("/ukendt") && !d.som_forsiden.contains("/stor"), "{d:?}");
+    }
+
+    /// Visningen: stien, der ligner forsiden, står i `sider_forside` og ikke i `sider`, og andelen regnes af de rigtige sider.
+    #[test]
+    fn mest_besoegte_sider_uden_catch_all() {
+        let mut l = Laest::default();
+        let dag = dag_noegle(NU - DOEGN_MS);
+        l.side_hentet.insert(dag.clone());
+        l.sider_z = sider_z("z", &dag);
+        l.besoeg = l.sider_z.iter().map(|x| x.1.clone()).collect();
+        let u = regn(&Periode::D7, None, &l, NU);
+        assert_eq!(
+            u.sider.iter().map(|x| x.sti.as_str()).collect::<Vec<_>>(),
+            ["/", "/platform/", "/robots.txt"]
+        );
+        assert_eq!(
+            u.sider_forside,
+            vec![SideUd {
+                sti: "//crm/.env".into(),
+                n: 3,
+                besoeg: 0
+            }]
+        );
+        assert_eq!((u.sider_i_alt, u.sider_404.len(), u.sider_uden_forside), (115, 1, false));
+        l.sider_z.retain(|x| !x.1.noegle.ends_with(" /"));
+        let u = regn(&Periode::D7, None, &l, NU);
+        assert!(
+            u.sider_forside.is_empty() && u.sider_uden_forside && u.sider.len() == 4,
+            "uden forside: alt står som før"
+        );
+    }
+
+    /// Sidernes døgn i hentevinduet hentes én gang igen med bytes: kun `hentet_side` fra og med vinduet røres, og tallene står.
+    #[test]
+    fn side_bytes_en_gang_glemmer_kun_vinduets_hentet_side() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let dage = vec!["2026-09-01".to_string(), "2026-11-01".to_string()];
+        let rk = vec![("2026-11-01".to_string(), "b_side".to_string(), "200 /".to_string(), 9)];
+        s.gem_side("z", &dage, &rk, "t").unwrap();
+        s.gem_robot("z", &dage, &[], "t").unwrap();
+        assert!(s.side_bytes_en_gang("2026-11-10", "2026-10-11").unwrap());
+        assert!(!s.side_bytes_en_gang("2026-11-11", "2026-10-12").unwrap(), "kun én gang");
+        assert_eq!(s.hentet_side("z").unwrap().into_keys().collect::<Vec<_>>(), ["2026-09-01"]);
+        assert_eq!(s.hentet_robot("z").unwrap().len(), 2, "robotterne røres ikke");
+        assert_eq!(
+            laes(&s, &["z".to_string()]).unwrap().besoeg.len(),
+            1,
+            "tallene står, til de nye erstatter dem"
+        );
+        s.gem_side(
+            "z",
+            &dage[1..],
+            &[("2026-11-01".into(), SIDE_BYTES.into(), "200 /".into(), 0)],
+            "t2",
+        )
+        .unwrap();
+        let l = laes(&s, &["z".to_string()]).unwrap();
+        assert_eq!(
+            (l.besoeg.len(), l.sider_z.len()),
+            (1, 1),
+            "erstattet for døgnet, b_side_bytes også med domænet"
+        );
+        assert!(
+            s.raekker("z", "0000-00-00").unwrap().is_empty(),
+            "blander sig ikke i Angreb og Overblik"
+        );
     }
 
     /// Uger: mandag–søndag i UTC, skåret af perioden, summen af dagene med tal, og "N af M dage".

@@ -162,6 +162,11 @@ pub fn menulinje_tekst(status: Option<&KoeStatus>, faerdig_kl: Option<i64>, nu: 
             (false, true) => format!("Cloudflare svarer ikke – prøver igen {}", om(kl, nu, da)),
             (false, false) => format!("Cloudflare is not answering – trying again {}", om(kl, nu, da)),
         },
+        // Som båndet (V-BESOEG.2 FIX 1): uden forbindelse siges det i klart sprog, og køen prøver selv igen.
+        Fase::Faerdig if s.zoner_fejl > 0 && s.fejl == Some(Fejl::Forbindelse) => match da {
+            true => format!("Ingen forbindelse til Cloudflare · prøver igen {}", om(kl, nu, da)),
+            false => format!("No connection to Cloudflare · trying again {}", om(kl, nu, da)),
+        },
         Fase::Faerdig => {
             let mut t = match (faerdig_kl, da) {
                 (Some(f), true) => format!("Hentet {}", siden(nu - f, da)),
@@ -415,10 +420,36 @@ mod tests {
                 "Fetched 3 min ago · 2 domains failed"
             )
         );
-        let en = KoeStatus { zoner_fejl: 1, ..faerdig };
+        let en = KoeStatus {
+            zoner_fejl: 1,
+            ..faerdig.clone()
+        };
         assert_eq!(
             begge(Some(&en), Some(NU - 3 * MIN)),
             t("Hentet for 3 min. siden · 1 domæne fejlede", "Fetched 3 min ago · 1 domain failed")
+        );
+        // Netfejl: som båndet, ikke "1 domæne fejlede".
+        let uden_net = KoeStatus {
+            zoner_fejl: 1,
+            fejl: Some(Fejl::Forbindelse),
+            fortsaetter_kl: Some(iso(NU + 2 * MIN)),
+            ..faerdig.clone()
+        };
+        assert_eq!(
+            begge(Some(&uden_net), Some(NU - 3 * MIN)),
+            t(
+                "Ingen forbindelse til Cloudflare · prøver igen om 2 min.",
+                "No connection to Cloudflare · trying again in 2 min"
+            )
+        );
+        let anden = KoeStatus {
+            fejl: Some(Fejl::Svar),
+            ..uden_net
+        };
+        assert_eq!(
+            begge(Some(&anden), Some(NU - 3 * MIN)),
+            t("Hentet for 3 min. siden · 1 domæne fejlede", "Fetched 3 min ago · 1 domain failed"),
+            "andre fejl er uændrede"
         );
 
         let kvote = KoeStatus {

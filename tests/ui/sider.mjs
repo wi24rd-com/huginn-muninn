@@ -126,11 +126,13 @@ export const BES_LANDE = [['DK', 2200], ['US', 900], ['DE', 300], ['SE', 210], [
 /* V-BESOEG.2: kendte robotter pr. gruppe, IP-klasserne for året og 14 sider (så "Vis alle" står) plus 404'erne. */
 export const BES_SIDER = [['/', 1840, 1210], ['/produkter', 620, 410], ['/om', 300, 120], ['/kontakt', 210, 90], ['/blog', 160, 70], ['/blog/vinter', 90, 60], ['/priser', 80, 40], ['/sitemap', 40, 0], ['/job', 30, 12], ['/presse', 22, 10], ['/faq', 15, 9], ['/cookies', 9, 2], ['/en', 6, 4], ['/gammel', 2, 0]].map(([sti, n, besoeg]) => ({ sti, n, besoeg }));
 export const BES_404 = [['/admin', 310], ['/wp-login.php', 120], ['/.env', 44]].map(([sti, n]) => ({ sti, n, besoeg: 0 }));
+/* V-BESOEG.2 FIX 1: stier, der svarede med sidens almindelige side (catch-all): regnet i Rust (besoeg::forside_deling). */
+export const BES_FORSIDE = [['//crm/.env', 6], ['/blog/wp-config.php/', 4], ['/.hg/store/requires', 2]].map(([sti, n]) => ({ sti, n, besoeg: 0 }));
 const besEkstra = {
   robot30: { n: 980, i_alt: 4210, med: 30 }, uger: null, sti: null, robot: null,
   robotter: [{ id: 'soegemaskiner', n: 610 }, { id: 'ai-traening', n: 240 }, { id: 'overvaagning', n: 90 }, { id: 'sociale', n: 40 }], robot_med: 7, robot_fra: '2026-10-07', robot_ikke: [],
   ipklasse: { n: 41200, i_alt: 158000, med: 340 },
-  sider: BES_SIDER, sider_i_alt: BES_SIDER.reduce((a, x) => a + x.n, 0), sider_404: BES_404, side_med: 7, side_fra: '2026-10-07', side_ikke: [],
+  sider: BES_SIDER, sider_i_alt: BES_SIDER.reduce((a, x) => a + x.n, 0), sider_404: BES_404, sider_forside: BES_FORSIDE, sider_uden_forside: false, side_med: 7, side_fra: '2026-10-07', side_ikke: [],
 };
 export const BESOEG_UD = {
   periode: { fra: '2026-10-30', til: '2026-11-05', dage: 7, med: 6, data_fra: '2025-11-06', data_til: '2026-11-05', i_dag: '2026-11-06', sikkerhed_fra: null, trafik_fra: null },

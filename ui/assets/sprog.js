@@ -53,7 +53,7 @@
       domTekAabn: 'Teknologi pr. domæne →', domTekUden: '{n} uden valg', domTekValg: '{navn}: {n} {n|valg|valg}',
       hvMere: 'mere', hvMindre: 'mindre', hvIkkeBrugtOrd: 'som du ikke bruger', hvIkkeBrugtAabn: 'Se og fortryd teknologi-valgene for {navn}',
       sidenUtc: 'Døgn i UTC, vist i din tid.', sidenVistNat: 'Status for i forgårs. Du kiggede her sidst {t}.', sidenFoersteNat: 'Status for i forgårs på alle dine domæner.',
-      dykVisNafM: 'Viser {n} af {m} angreb.', dykLoft200: 'Huginn gemmer de 200 seneste angreb pr. dag.', dykForrige: '‹ Forrige', dykNaeste: 'Næste ›', dykSideN: 'Side {a} af {b}', dykSiderH: 'Sider',
+      dykVisNafM: 'Viser {n} af {m} angreb.', dykLoft200: 'Huginn gemmer de 200 seneste angreb pr. dag.', dykForrige: '‹ Forrige', dykNaeste: 'Næste ›', dykSideN: 'Side {a} af {b}', dykSiderH: 'Sider', dykSideAabn: 'Vis side {a} af {b} af de seneste',
       
       domTekH: 'Teknologi pr. domæne', domTekAlle: 'Nulstil for alle domæner', 
       bekraeftTekH: 'Nulstil teknologi-valg?', bekraeftTekP: 'Alle valg for {d} sættes til »Ved ikke«. Status regnes igen, som før du valgte.', bekraeftTekAlleP: 'Alle valg på alle domæner sættes til »Ved ikke«. Status regnes igen, som før du valgte.', bekraeftJa: 'Nulstil', tekNulstillet: 'Teknologi-valgene er nulstillet.',
@@ -167,7 +167,11 @@
         robotNote: 'Kendte robotter er dem, Cloudflare har verificeret, fx Googlebot. Robotter, der udgiver sig for at være en almindelig browser, kan ikke ses her og tæller som besøgende. Andelen af trafikken bygger på Cloudflares IP-klasser: søgemaskiner, overvågning, scannere, Tor og kendte dårlige adresser.',
         sideH: 'Mest besøgte sider', sideP: 'Sider (html) i perioden: visninger, besøg udefra og andel af visningerne. Et klik på en sti viser visningerne af siden pr. dag.',
         thSti: 'Side', thVisninger: 'Visninger', thBesoegUde: 'Besøg udefra', stiAabn: 'Vis visninger af {sti} pr. dag ({n} {n|visning|visninger})',
-        visAlleSider: 'Vis alle {n} {n|side|sider}', side404H: 'Sider, der ikke findes', side404P: 'Stier, der svarede 404. Det er ofte robotter, der prøver kendte adresser.',
+        visAlleSider: 'Vis alle {n} {n|side|sider}', side404H: 'Sider, der ikke findes', side404P: 'Stier, der svarede 404 (ikke fundet), ofte robotter, der prøver kendte adresser. Ikke alle forsøg står her: svarer sitet med sin almindelige side, kommer stien ikke på denne liste.',
+        sideForsideH: 'Svarede med sidens almindelige side', sideForsideP: 'Siden findes sandsynligvis ikke: sitet svarer med forsiden på adresser, det ikke kender.',
+        sideForsideNote: 'Et skøn ud fra størrelsen: svaret var lige så stort som forsiden (højst 25 % fra), og ingen kom udefra.',
+        sideUdenForside: 'Forsiden er ikke blandt siderne i perioden, så stier, der svarer med forsiden, kan ikke skilles fra.',
+        fasteH: 'De seneste dage', valgtPeriode: 'Valgt periode: {p}',
         sideIngen: 'Ingen sidevisninger i perioden.', sideIkkeHentet: 'De mest besøgte sider er ikke hentet endnu. De hentes i baggrunden efter besøgene.',
         sideIkkeTilg: 'De mest besøgte sider er ikke tilgængelige hos Cloudflare for {d}. Resten af siden virker.', sideFra: 'Siderne findes fra {d}.',
         sideNote: 'Robotter tæller med. En side som /admin besøges næsten altid af scannere, ikke af mennesker. Stierne vises uden forespørgselsstreng, og lange koder er skjult. De 50 mest viste sider gemmes pr. dag.',
@@ -382,7 +386,7 @@
       domTekAabn: 'Technology by domain →', domTekUden: '{n} without choices', domTekValg: '{navn}: {n} {n|choice|choices}',
       hvMere: 'more', hvMindre: 'less', hvIkkeBrugtOrd: 'which you do not use', hvIkkeBrugtAabn: 'See and undo the technology choices for {navn}',
       sidenUtc: 'Days in UTC, shown in your time.', sidenVistNat: 'Status for the day before yesterday. You last looked here {t}.', sidenFoersteNat: 'Status for the day before yesterday for all your domains.',
-      dykVisNafM: 'Showing {n} of {m} {m|attack|attacks}.', dykLoft200: 'Huginn keeps the 200 latest attacks per day.', dykForrige: '‹ Previous', dykNaeste: 'Next ›', dykSideN: 'Page {a} of {b}', dykSiderH: 'Pages',
+      dykVisNafM: 'Showing {n} of {m} {m|attack|attacks}.', dykLoft200: 'Huginn keeps the 200 latest attacks per day.', dykForrige: '‹ Previous', dykNaeste: 'Next ›', dykSideN: 'Page {a} of {b}', dykSiderH: 'Pages', dykSideAabn: 'Show page {a} of {b} of the latest',
       
       domTekH: 'Technology by domain', domTekAlle: 'Reset for all domains', 
       bekraeftTekH: 'Reset technology choices?', bekraeftTekP: 'All choices for {d} are set to “Don’t know”. The status is worked out again, as before you chose.', bekraeftTekAlleP: 'All choices on all domains are set to “Don’t know”. The status is worked out again, as before you chose.', bekraeftJa: 'Reset', tekNulstillet: 'The technology choices have been reset.',
@@ -496,7 +500,11 @@
         robotNote: 'Known robots are the ones Cloudflare has verified, for example Googlebot. Robots that pretend to be an ordinary browser cannot be seen here and count as visitors. The share of the traffic is based on Cloudflare’s IP classes: search engines, monitoring, scanners, Tor and known bad addresses.',
         sideH: 'Most visited pages', sideP: 'Pages (html) in the period: views, visits from outside and share of the views. A click on a path shows the views of the page per day.',
         thSti: 'Page', thVisninger: 'Views', thBesoegUde: 'Visits from outside', stiAabn: 'Show views of {sti} per day ({n} {n|view|views})',
-        visAlleSider: 'Show all {n} {n|page|pages}', side404H: 'Pages that do not exist', side404P: 'Paths that answered 404. Often robots trying well-known addresses.',
+        visAlleSider: 'Show all {n} {n|page|pages}', side404H: 'Pages that do not exist', side404P: 'Paths that answered 404 (not found), often robots trying well-known addresses. Not every attempt is here: when the site answers with its ordinary page, the path does not end up on this list.',
+        sideForsideH: 'Answered with the site’s ordinary page', sideForsideP: 'The page probably does not exist: the site answers with its front page at addresses it does not know.',
+        sideForsideNote: 'An estimate from the size: the answer was as large as the front page (within 25 %), and nobody came from outside.',
+        sideUdenForside: 'The front page is not among the pages in the period, so paths that answer with the front page cannot be told apart.',
+        fasteH: 'The last days', valgtPeriode: 'Selected period: {p}',
         sideIngen: 'No page views in the period.', sideIkkeHentet: 'The most visited pages have not been fetched yet. They are fetched in the background after the visits.',
         sideIkkeTilg: 'The most visited pages are not available at Cloudflare for {d}. The rest of the page works.', sideFra: 'The pages exist from {d}.',
         sideNote: 'Robots count. A page like /admin is almost always visited by scanners, not people. Paths are shown without a query string, and long codes are hidden. The 50 most viewed pages are saved per day.',
@@ -937,6 +945,13 @@
     const [, m, dd] = dele(d);
     return lang === 'da' ? `${dd}/${m}` : `${dd} ${MND.en[m - 1]}`;
   };
+  /* Månedens korte navn til en akse (uger på Besøgende): "nov." / "Nov", i ISO "2026-11". */
+  const maaned = d => {
+    if (!erDag(d)) return String(d);
+    if (datoValg === 'iso') return String(d).slice(0, 7);
+    if (datoValg === 'system') return iSystem(d, { month: 'short' });
+    return MND[lang === 'da' ? 'da' : 'en'][dele(d)[1] - 1];
+  };
   const datoTid = t => { const s = String(t), d = s.slice(0, 10); return erDag(d) ? `${dato(d)} ${s.slice(11, 16)}`.trim() : s; };
   const to = n => String(n).padStart(2, '0');
   const kl = iso => {
@@ -984,5 +999,5 @@
   /* Det, Cloudflare stoppede, er angreb; det øvrige er ikke (notify::trafik_tekst). Stoppede den mindst halvdelen, siger sætningen det. */
   const trafikStop = (n, s) => fmt(2 * s >= n ? T.trafikStopMest : T.trafikStop, { s: tal(s), o: tal(n - s) });
   const tekNavn = t => (t === 'andet' ? T.tekAndet : TEK[t] || String(t).split(' ').map(o => o.charAt(0).toUpperCase() + o.slice(1)).join(' '));
-  window.hmSprog = { lang, T, flertal, fmt, trafikStop, tekNavn, datoPar, get domaene() { return domaene; }, fejl, erNet, dato, datoLang, datoKort, datoTid, moensterTekst, maerkeNavn, get datoValg() { return datoValg; }, kl, tid, tal, stoerrelse, periode, saetDomaene, saetLand, titel, klar, rutineNavn, kortEgen, bog, ordliste, bogIds: Object.keys(BOG) };
+  window.hmSprog = { lang, T, flertal, fmt, trafikStop, tekNavn, datoPar, get domaene() { return domaene; }, fejl, erNet, dato, datoLang, datoKort, maaned, datoTid, moensterTekst, maerkeNavn, get datoValg() { return datoValg; }, kl, tid, tal, stoerrelse, periode, saetDomaene, saetLand, titel, klar, rutineNavn, kortEgen, bog, ordliste, bogIds: Object.keys(BOG) };
 })();

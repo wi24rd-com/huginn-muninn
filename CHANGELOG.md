@@ -4,6 +4,19 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-10 23:30 — Besøgende og Angreb efter Jans live-test: fliser øverst, et år på én bredde, sider, der svarer med forsiden
+#### Tilføjet
+- **Svarede med sidens almindelige side** på Besøgende › Mest besøgte sider (under 404-listen): stier, hvis svar var lige så store som forsiden (højst 25 % fra, samme regel som Følsomme filer), som ikke er forsiden, og som ingen kom til udefra. Sitet svarer med forsiden på adresser, det ikke kender (catch-all), så de kom aldrig i 404-listen. Et skøn ud fra størrelsen; hvert domæne sammenlignes med sin egen forside, og uden forsiden i perioden deles intet (en linje siger det). Sidekaldet henter nu også `sum { edgeResponseBytes }`, gemt som `b_side_bytes`; første start efter opdateringen henter siderne for den seneste måned én gang til, ét kald pr. domæne.
+#### Ændret
+- **Besøgende:** de faste fliser står øverst under overskriften "De seneste dage", så vælgeren (7/30/Et år og Fra/Til), og under den "Valgt periode: 11. okt. – 9. nov. 2026" over alt, der følger perioden. Ingen flise er markeret som valgt længere; et klik sætter stadig perioden.
+- **Et år pr. uge ses på én gang:** uge-søjlerne er mindst 14 px brede (dag-søjler stadig 24 px), så 53 uger fylder bredden uden vandret rulning ved et vindue på 1200 px, og aksen viser månederne.
+- **Angreb › De seneste:** Forrige og Næste bytter kun tabellen ud. Siden springer ikke til toppen, fokus bliver på knappen (eller "Side N af M"), og `side=N` i adressen erstattes, så tilbage og frem ikke får et trin pr. side.
+- **Landevælgeren** (båndet, Indstillinger › Land og "Skift til …") viser kun lande, der har været blandt Radars 100 mest ramte mål på mindst 15 af de seneste 30 dage. Ingen undtagelser.
+- 404-listens tekst lover ikke længere, at alle forsøg står der.
+#### Rettet
+- Menulinjen siger ved netfejl "Ingen forbindelse til Cloudflare · prøver igen om 2 min." som båndet, i stedet for "1 domæne fejlede".
+- Manualen (Siden sidst): "Hele dage i UTC".
+
 ### 2026-11-09 23:30 — Besøgende efter live-testen: blå søjler, uger, robotter og sider
 #### Tilføjet
 - **Kendte robotter** på Besøgende: besøg fra robotter, Cloudflare har verificeret, i Robotter-visningens grupper, et klik på en gruppe viser dens besøg pr. dag, og flisen **Besøg på 30 dage** siger "heraf N fra kendte robotter (x %)". Hentes med et eget kald (`httpRequestsAdaptiveGroups`, `count` + `sum { visits }`, `date verifiedBotCategory`, `requestSource: "eyeball"`) for de samme dage som besøgene og gemmes som `b_robot`.

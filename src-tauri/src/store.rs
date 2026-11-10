@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS sikkerhedsfund (zone TEXT NOT NULL, id TEXT NOT NULL,
 const SKEMA_17: &str = "
 CREATE TABLE IF NOT EXISTS hentet_besoeg (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
 ";
-/// `hentet_robot` og `hentet_side`: døgn, hvis besøg pr. kendt robot (art `b_robot`) og mest besøgte sider (arterne `b_side` og `b_side_b`) er hentet
+/// `hentet_robot` og `hentet_side`: døgn, hvis besøg pr. kendt robot (art `b_robot`) og mest besøgte sider (arterne `b_side`, `b_side_b` og fra V-BESOEG.2 FIX 1 `b_side_bytes`) er hentet
 /// (V-BESOEG.2). Hver sin tabel, så de allerede hentede besøgsdøgn også får dem. Ingen eksisterende række ændres.
 const SKEMA_18: &str = "
 CREATE TABLE IF NOT EXISTS hentet_robot (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
@@ -139,7 +139,9 @@ pub const IPKLASSE_V1: &str = "ipklasse_v1";
 /// Foran zone-id'et i `indstillinger`: domænets hentede døgn i året venter på `h_ipklasse`. Slettes af `gem_ipklasse`.
 const IPKLASSE_MANGLER: &str = "ipklasse_mangler:";
 /// Besøgsarterne, der hentes for sig (`besoeg.rs`): de står uden for `raekker`, så de ikke blander sig i Angreb og Overblik.
-pub const BESOEG_ARTER: &[&str] = &["b_total", "b_land", "b_robot", "b_side", "b_side_b"];
+pub const BESOEG_ARTER: &[&str] = &["b_total", "b_land", "b_robot", "b_side", "b_side_b", "b_side_bytes"];
+/// `indstillinger`: sat, når sidernes døgn i hentevinduet én gang er sat til at blive hentet igen med `b_side_bytes` (`side_bytes_en_gang`, V-BESOEG.2 FIX 1).
+pub const SIDE_BYTES_V1: &str = "side_bytes_v1";
 /// Arterne fra `adgang::ADGANG_QUERY`: dem, `gem_ekstra` erstatter.
 pub const EKSTRA_ARTER: &[&str] = &["post", "status", "land", "login", "stoppet", "asn"];
 /// Foran zone-id'et i `indstillinger`: Cloudflare svarede ikke på de ekstra tal for domænet (værdien er den rensede fejl).
@@ -569,7 +571,25 @@ impl Store {
         self.gem_besoeg_i("hentet_robot", &["b_robot"], zone, dage, raekker, hentet_utc)
     }
 
-    /// Mest besøgte sider for døgnene `dage` (arterne `b_side` og `b_side_b`). Et døgn uden rækker er også hentet. Én transaktion.
+    /// Én gang (`SIDE_BYTES_V1`): sidernes døgn fra og med `fra_dag` (hentevinduet) glemmes som hentet, så køen henter dem igen med `b_side_bytes`.
+    /// Kun `hentet_side` røres; tallene står, til de nye erstatter dem for døgnet (`gem_side`). Ældre døgn beholder deres tal uden bytes. `true`: det skete nu.
+    pub fn side_bytes_en_gang(&mut self, i_dag: &str, fra_dag: &str) -> Result<bool, Fejl> {
+        if self.indstilling(SIDE_BYTES_V1)?.is_some() {
+            return Ok(false);
+        }
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        tx.execute("DELETE FROM hentet_side WHERE dag >= ?1", [fra_dag])
+            .map_err(lagerfejl)?;
+        tx.execute(
+            "INSERT OR REPLACE INTO indstillinger (noegle, vaerdi) VALUES (?1, ?2)",
+            [SIDE_BYTES_V1, i_dag],
+        )
+        .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)?;
+        Ok(true)
+    }
+
+    /// Mest besøgte sider for døgnene `dage` (arterne `b_side`, `b_side_b` og `b_side_bytes`). Et døgn uden rækker er også hentet. Én transaktion.
     pub fn gem_side(
         &mut self,
         zone: &str,
@@ -577,7 +597,14 @@ impl Store {
         raekker: &[(String, String, String, i64)],
         hentet_utc: &str,
     ) -> Result<(), Fejl> {
-        self.gem_besoeg_i("hentet_side", &["b_side", "b_side_b"], zone, dage, raekker, hentet_utc)
+        self.gem_besoeg_i(
+            "hentet_side",
+            &["b_side", "b_side_b", "b_side_bytes"],
+            zone,
+            dage,
+            raekker,
+            hentet_utc,
+        )
     }
 
     fn gem_besoeg_i(
@@ -847,20 +874,18 @@ impl Store {
     }
 
     /// dag → hentet_utc for én Radar-serie.
-    /// Lande, Radar har tal for som mål fra og med `fra_dag`: blandt de største mål (`maal`, verden) med en andel over 0, eller med en kildeliste
-    /// (`par7`/`par28` for landet med mindst én kilde). Sorteret. Kun det, programmet allerede har hentet.
-    pub fn radar_lande_med_tal(&self, fra_dag: &str) -> Result<Vec<String>, Fejl> {
+    /// Lande, der har været blandt de største mål (`maal`, verden, andel over 0) på mindst `min_dage` forskellige døgn fra og med `fra_dag` (V-BESOEG.2 FIX 1).
+    /// Sorteret. Kun det, programmet allerede har hentet.
+    pub fn radar_lande_med_tal(&self, fra_dag: &str, min_dage: usize) -> Result<Vec<String>, Fejl> {
         let mut st = self
             .db
             .prepare(
                 "SELECT noegle FROM radar_dag WHERE serie = ?1 AND land = '' AND noegle != '' AND vaerdi > 0 AND dag >= ?2 \
-                 UNION SELECT land FROM radar_dag WHERE serie IN (?3, ?4) AND land != '' AND noegle != '' AND dag >= ?2 ORDER BY 1",
+                 GROUP BY noegle HAVING COUNT(DISTINCT dag) >= ?3 ORDER BY 1",
             )
             .map_err(lagerfejl)?;
         let rk = st
-            .query_map(params![crate::radar::MAAL, fra_dag, crate::radar::PAR7, crate::radar::PAR28], |r| {
-                r.get(0)
-            })
+            .query_map(params![crate::radar::MAAL, fra_dag, min_dage as i64], |r| r.get(0))
             .map_err(lagerfejl)?;
         rk.collect::<Result<_, _>>().map_err(lagerfejl)
     }
@@ -1023,7 +1048,7 @@ impl Store {
     pub fn raekker(&self, zone: &str, fra_dag: &str) -> Result<Vec<Raekke>, Fejl> {
         let mut st = self
             .db
-            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status', 'h_ipklasse', 'b_total', 'b_land', 'b_robot', 'b_side', 'b_side_b') ORDER BY rowid")
+            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status', 'h_ipklasse', 'b_total', 'b_land', 'b_robot', 'b_side', 'b_side_b', 'b_side_bytes') ORDER BY rowid")
             .map_err(lagerfejl)?;
         let rk = st
             .query_map(params![zone, fra_dag], |r| {

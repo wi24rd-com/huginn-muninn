@@ -3,7 +3,8 @@
    siden pr. dag) eller robot=<gruppe> (besøg fra robotgruppen pr. dag). Tallene regnes i Rust (besoegende, kun fra cachen): unikke besøgende er årstallene
    (unikke IP-adresser pr. dag), besøg, kendte robotter og sider er Cloudflares estimat ud fra en stikprøve og findes en måned tilbage plus det, programmet har
    gemt. Perioder over 90 dage vises pr. uge (mandag–søndag, UTC); et klik på en uge viser ugen. Et klik på en dag åbner "Trafik den …" på Angreb, et klik på et
-   land, en robotgruppe eller en sti lægger det som filter her (chip med ×), og fliserne sætter perioden. Dage uden tal er huller, ikke 0. Intet uden data bag er
+   land, en robotgruppe eller en sti lægger det som filter her (chip med ×), og fliserne sætter perioden. Fliserne er faste og står øverst, over vælgeren;
+   under vælgeren står "Valgt periode: …" over alt, der følger perioden. Stier, der svarede med sidens almindelige side, står i en egen liste. Dage uden tal er huller, ikke 0. Intet uden data bag er
    klikbart. Søjlerne er blå (--board-visitors), så de ikke læses som angreb. Tegnes igen, når køen eller de ekstra tal melder nyt, højst hvert 3. sekund; svar,
    der kommer for sent, kasseres (gen). Bygges med createElement. */
 (function () {
@@ -36,28 +37,31 @@
   const dagQ = dag => new URLSearchParams({ ...omfangQ(), dag, trafik: '1' }).toString();
   const procent = (n, i) => (i ? (100 * n / i).toLocaleString(S.lang === 'da' ? 'da-DK' : 'en-GB', { maximumFractionDigits: 1 }) + ' %' : '–');
 
-  /* En flise uden tal er ikke 0 og fører ingen steder hen. */
-  function flise(sum, tekst, maal, aktiv, nul) {
+  /* En flise uden tal er ikke 0 og fører ingen steder hen. Fliserne er faste (de seneste dage) og står over vælgeren; ingen er markeret som valgt, for de
+     følger ikke perioden (V-BESOEG.2 FIX 1). Et klik sætter stadig perioden. */
+  function flise(sum, tekst, maal, nul) {
     if (sum === null || (sum.med === 0)) return el('div', { className: 'vg-flise' }, el('b', { textContent: '–' }), el('span', { textContent: tekst }), el('small', { textContent: nul || B.ingenTal }));
     const sub = sum.med < sum.dage ? fmt(T.dagMed, { m: tal(sum.med), n: tal(sum.dage) }) : '';
-    return V.flise(sum.n, tekst, sub, gaa(maal), { aktiv, label: fmt(B.periodeAabn, { navn: tekst, n: tal(sum.n) }) });
+    return V.flise(sum.n, tekst, sub, gaa(maal), { label: fmt(B.periodeAabn, { navn: tekst, n: tal(sum.n) }) });
   }
   /* En lille linje under flisen (ren tekst: ingen data bag). */
   const linje = (f, tekst, klasse) => { f.append(el('small', { className: 'besoeg-linje ' + klasse, textContent: tekst })); return f; };
   function fliser(d) {
-    const p = periodeArg(), fast = !interval(), boks = el('div', { className: 'vg-fliser besoeg-fliser' });
+    const boks = el('div', { className: 'vg-fliser besoeg-fliser' });
     /* Unikke besøgende kan ikke deles på lande eller sider: med et filter siger flisen, at den gælder alt. */
     const alle = land() ? B.alleLande : sti() ? B.alleSider : null;
     const unik = f => (alle ? linje(f, alle, 'besoeg-alle') : f);
     const iGaar = d.i_gaar === null ? null : { n: d.i_gaar, med: 1, dage: 1 };
-    boks.append(unik(flise(iGaar, B.fIGaar, medInterval(d.i_gaar_dag, d.i_gaar_dag), interval() && params.get('fra') === d.i_gaar_dag && params.get('til') === d.i_gaar_dag)));
-    boks.append(unik(flise(d.d7, B.f7, medPeriode(), fast && p === 'd7')), unik(flise(d.d30, B.f30, medPeriode('30'), fast && p === 'd30')), unik(flise(d.aar, B.fAar, medPeriode('aar'), fast && p === 'alt')));
+    boks.append(unik(flise(iGaar, B.fIGaar, medInterval(d.i_gaar_dag, d.i_gaar_dag))));
+    boks.append(unik(flise(d.d7, B.f7, medPeriode())), unik(flise(d.d30, B.f30, medPeriode('30'))), unik(flise(d.aar, B.fAar, medPeriode('aar'))));
     const tekst = land() ? fmt(B.fBesoegLand, { land: V.land(land()) }) : sti() ? fmt(B.fBesoegSti, { sti: sti() }) : B.fBesoeg30;
     const ikke = sti() ? d.side_ikke : d.ikke_tilgaengelig;
-    const b30 = flise(d.besoeg30, tekst, medPeriode('30'), false, ikke.length ? B.ikkeTilgKort : B.ingenTal);
+    const b30 = flise(d.besoeg30, tekst, medPeriode('30'), ikke.length ? B.ikkeTilgKort : B.ingenTal);
     if (d.robot30 && d.robot30.i_alt) linje(b30, fmt(B.robotLinje, { n: tal(d.robot30.n), p: procent(d.robot30.n, d.robot30.i_alt) }), 'besoeg-robot-linje');
     boks.append(b30);
-    return boks;
+    const s = el('section', { className: 'besoeg-faste' }, el('h2', { className: 'besoeg-faste-h', textContent: B.fasteH }), boks);
+    s.setAttribute('aria-label', B.fasteH);
+    return s;
   }
   function filterH() {
     if (land()) return [fmt(B.grafLandH, { land: V.land(land()) }), fmt(B.grafLandUgeH, { land: V.land(land()) })];
@@ -77,7 +81,8 @@
         return u.n === null ? fmt(B.ugeHul, v) : fmt(u.med < 7 ? B.ugeDele : B.uge, v);
       };
       const dyk = dag => { const u = uger.get(dag); return gaa(medInterval(u.fra, u.til)); };
-      soejler = V.soejler(d.uger.map(u => ({ dag: u.dag, n: u.n || 0, hentet: u.n !== null })), { titel: h, dyk, tekst, klasse: 'besoeg-soejle' });
+      /* Et år skal kunne ses på én gang: smallere søjler end dagenes (klikfladen er højere end bred), og aksen viser måneder. */
+      soejler = V.soejler(d.uger.map(u => ({ dag: u.dag, n: u.n || 0, hentet: u.n !== null })), { titel: h, dyk, tekst, klasse: 'besoeg-soejle', hit: V.HIT_UGE, maaneder: true });
     } else {
       h = hDag;
       soejler = V.soejler(d.dage.map(x => ({ dag: x.dag, n: x.n || 0, hentet: x.n !== null })), { titel: h, dyk: dagQ, klasse: 'besoeg-soejle' });
@@ -142,14 +147,21 @@
   function sider(d) {
     const dele = [...ikkeLinje(d.side_ikke, fmt(B.sideIkkeTilg, { d: domaene }), B.sideIkkeTilg, 'besoeg-side-ikke')];
     const raekke = x => ({ navn: x.sti, kode: true, maal: gaa(medFilter('sti', x.sti)), label: fmt(B.stiAabn, { sti: x.sti, n: tal(x.n) }), tal: [tal(x.n), tal(x.besoeg), procent(x.n, d.sider_i_alt)] });
-    if (d.sider.length || d.sider_404.length) {
+    const stiRk = x => ({ navn: x.sti, kode: true, maal: gaa(medFilter('sti', x.sti)), label: fmt(B.stiAabn, { sti: x.sti, n: tal(x.n) }), tal: [tal(x.n)] });
+    const forside = d.sider_forside || [];
+    if (d.sider.length || d.sider_404.length || forside.length) {
       if (d.side_fra && d.side_fra > d.periode.fra) dele.push(el('p', { className: 'vg-note', textContent: fmt(B.sideFra, { d: V.datoLang(d.side_fra) }) }));
       if (d.sider.length) dele.push(...tiFremme('besoeg-sider', [B.thSti, B.thVisninger, B.thBesoegUde, B.thAndel], d.sider.map(raekke), 'besoeg-sider', fmt(B.visAlleSider, { n: tal(d.sider.length) })));
       if (d.sider_404.length) {
-        const ikke = d.sider_404.map(x => ({ navn: x.sti, kode: true, maal: gaa(medFilter('sti', x.sti)), label: fmt(B.stiAabn, { sti: x.sti, n: tal(x.n) }), tal: [tal(x.n)] }));
-        const blok = el('div', { className: 'besoeg-404' }, el('h3', { textContent: B.side404H }), el('p', { className: 'vg-note', textContent: B.side404P }), ...tiFremme('besoeg-sider-404', [B.thSti, B.thVisninger], ikke, 'besoeg-404', fmt(B.visAlleSider, { n: tal(d.sider_404.length) })));
+        const blok = el('div', { className: 'besoeg-404' }, el('h3', { textContent: B.side404H }), el('p', { className: 'vg-note', textContent: B.side404P }), ...tiFremme('besoeg-sider-404', [B.thSti, B.thVisninger], d.sider_404.map(stiRk), 'besoeg-404', fmt(B.visAlleSider, { n: tal(d.sider_404.length) })));
         dele.push(blok);
       }
+      /* Stier, der svarede med sidens almindelige side (catch-all): et skøn ud fra svarenes størrelse, regnet i Rust (besoeg::forside_deling). */
+      if (forside.length) {
+        const blok = el('div', { className: 'besoeg-forside' }, el('h3', { textContent: B.sideForsideH }), el('p', { className: 'vg-note', textContent: B.sideForsideP }), ...tiFremme('besoeg-sider-forside', [B.thSti, B.thVisninger], forside.map(stiRk), 'besoeg-forside', fmt(B.visAlleSider, { n: tal(forside.length) })), el('p', { className: 'vg-note besoeg-forside-note', textContent: B.sideForsideNote }));
+        dele.push(blok);
+      }
+      if (d.sider_uden_forside) dele.push(el('p', { className: 'vg-note besoeg-uden-forside', textContent: B.sideUdenForside }));
     } else if (!d.side_ikke.length || d.side_fra) dele.push(el('p', { className: 'vg-status dyk-tom', textContent: d.side_fra ? B.sideIngen : B.sideIkkeHentet }));
     dele.push(el('p', { className: 'vg-note besoeg-side-note', textContent: B.sideNote }));
     const s = V.blok(B.sideH, B.sideP, ...dele);
@@ -159,15 +171,18 @@
   function tegn(d) {
     $('besoegende-under').textContent = domaene;
     const p = periodeArg();
-    $('besoegende-periode').replaceChildren(V.segment('besoegende-periode', T.dykPeriode, [[T.dykP7, medPeriode(), !interval() && p === 'd7'], [T.dykP30, medPeriode('30'), !interval() && p === 'd30'], [B.aar, medPeriode('aar'), !interval() && p === 'alt']], 'besoegende'));
-    const genaabn = V.husk(rod), dele = [V.datoVaelger({ visning: 'besoegende', periode: d.periode, nulstil: medPeriode('aar'), gaa: (a, b) => R.gaaTil('besoegende', medInterval(a, b)) })];
+    /* Øverst de faste fliser, så vælgeren (7/30/Et år og Fra/Til), og under den en overskrift for alt, der følger perioden (V-BESOEG.2 FIX 1). */
+    const segment = V.segment('besoegende-periode', T.dykPeriode, [[T.dykP7, medPeriode(), !interval() && p === 'd7'], [T.dykP30, medPeriode('30'), !interval() && p === 'd30'], [B.aar, medPeriode('aar'), !interval() && p === 'alt']], 'besoegende');
+    const vaelger = el('div', { className: 'besoeg-valg' }, segment, V.datoVaelger({ visning: 'besoegende', periode: d.periode, nulstil: medPeriode('aar'), gaa: (a, b) => R.gaaTil('besoegende', medInterval(a, b)) }));
+    const valgt = el('h2', { className: 'besoeg-valgt-h', textContent: fmt(B.valgtPeriode, { p: V.interval(d.periode.fra, d.periode.til) }) });
+    const genaabn = V.husk(rod), dele = [fliser(d), vaelger, valgt];
     const chips = [], chip = (n, klasse) => chips.push(V.knap(`${n} ×`, gaa(medFilter()), 'sti-chip ' + klasse, fmt(T.dykFjern, { navn: n })));
     if (interval()) { const n = periodeNavn(); chips.push(V.knap(`${n} ×`, gaa(medPeriode()), 'sti-chip', fmt(T.dykFjern, { navn: n }))); }
     if (land()) chip(V.land(land()), 'besoeg-land-chip');
     if (sti()) chip(sti(), 'besoeg-sti-chip');
     if (robot()) chip(gruppeNavn(robot()), 'besoeg-robot-chip');
     if (chips.length) dele.push(el('div', { className: 'login-stier besoeg-chips' }, ...chips));
-    dele.push(fliser(d), graf(d), lande(d), robotter(d), sider(d));
+    dele.push(graf(d), lande(d), robotter(d), sider(d));
     dele.push(el('p', { className: 'vg-note besoeg-note', textContent: B.note + (samlet() ? ' ' + B.noteSamlet : '') }));
     rod.removeAttribute('aria-busy');
     rod.replaceChildren(...dele);
@@ -176,7 +191,6 @@
   function besked(tekst, farve = 'roed') {
     rod.removeAttribute('aria-busy');
     rod.replaceChildren(el('p', { className: `vg-advarsel vg-${farve}`, textContent: tekst }));
-    $('besoegende-periode').replaceChildren();
   }
 
   let gen = 0, aktiv = null, afmeld = [];

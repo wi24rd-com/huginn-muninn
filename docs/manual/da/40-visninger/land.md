@@ -39,7 +39,7 @@ Et kildeland alene kan ikke stoles på: angrebet kan komme gennem en VPN eller l
 
 ## Skift land
 
-Vælgeren i det blå bånd og **Indstillinger → Generelt → Land** gemmer dit valg. Begge viser kun lande, Cloudflare Radar har haft tal for som mål de seneste 30 dage (blandt de 100 mest ramte mindst én dag, eller med en liste over kilder): for et land uden tal ville siden se ud som for alle andre. Forslaget **Skift til** gælder også kun lande med tal. Listen følger de Radar-tal, programmet allerede henter. Landet tages første gang fra din tidszone, derefter fra systemets sprog. Kommer mindst halvdelen af dine besøgende tydeligt fra et andet land, tilbyder Indstillinger **Skift til** det land; robotter og trafikspring tæller ikke med. Peger en anden visning på et land, viser overskriften **Tilbage til …**, og dit gemte land ændres ikke.
+Vælgeren i det blå bånd og **Indstillinger → Generelt → Land** gemmer dit valg. Begge viser kun lande, Cloudflare Radar har haft tal for som mål de seneste 30 dage, og kun lande, der har været blandt de 100 mest ramte på mindst 15 af de 30 dage: for et land med kun et par spredte dage ville siden næsten intet vise. Der er ingen undtagelser, heller ikke for et land, du har valgt før. Forslaget **Skift til** gælder også kun lande med tal. Listen følger de Radar-tal, programmet allerede henter. Landet tages første gang fra din tidszone, derefter fra systemets sprog. Kommer mindst halvdelen af dine besøgende tydeligt fra et andet land, tilbyder Indstillinger **Skift til** det land; robotter og trafikspring tæller ikke med. Peger en anden visning på et land, viser overskriften **Tilbage til …**, og dit gemte land ændres ikke.
 
 ## Klik videre
 

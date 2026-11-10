@@ -432,8 +432,11 @@
   }
 
   const HIT = 24; // mindste klikflade i px
-  /* ── søjlerne: dage = [{ dag, n, hentet? }]. opt: titel, dyk(dag) → forespørgsel, { gaa } eller intet, klasse (ekstra klasse på søjlen, fx Besøgendes blå)
-     og tekst(d) → hvad mærket siger (ellers "dato: tal"; bruges til uger). Kun dage med tal kan åbnes. ── */
+  /* Uger (Besøgende, et år): 53 uger skal kunne ses på én gang ved et vindue på 1200 px. Klikfladen er højere end bred (V-BESOEG.2 FIX 1). */
+  const HIT_UGE = 14;
+  /* ── søjlerne: dage = [{ dag, n, hentet? }]. opt: titel, dyk(dag) → forespørgsel, { gaa } eller intet, klasse (ekstra klasse på søjlen, fx Besøgendes blå),
+     tekst(d) → hvad mærket siger (ellers "dato: tal"; bruges til uger), hit (mindste bredde pr. søjle i px, ellers HIT) og maaneder (aksen viser
+     måneden ved første søjle i en ny måned i stedet for datoer). Kun dage med tal kan åbnes. ── */
   function soejler(dage, opt) {
     const W = 1000, H = 170, top = 6, n = dage.length, bw = W / Math.max(1, n), maks = Math.max(1, ...dage.map(d => d.n || 0));
     const y = v => top + (H - top) * (1 - v / maks);
@@ -449,9 +452,10 @@
       s.append(g);
     });
     const hver = n <= 8 ? 1 : n <= 31 ? 7 : Math.ceil(n / 5);
-    const x = el('div', { className: 'dyk-x' }, ...dage.map((d, i) => el('span', {}, ...((n - 1 - i) % hver === 0 ? [el('b', { textContent: datoKort(d.dag) })] : []))));
+    const maerke = opt.maaneder ? (d, i) => (i > 0 && d.dag.slice(0, 7) !== dage[i - 1].dag.slice(0, 7) ? S.maaned(d.dag) : '') : (d, i) => ((n - 1 - i) % hver === 0 ? datoKort(d.dag) : '');
+    const x = el('div', { className: 'dyk-x' }, ...dage.map((d, i) => { const t = maerke(d, i); return el('span', {}, ...(t ? [el('b', { textContent: t })] : [])); }));
     x.setAttribute('aria-hidden', 'true');
-    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${HIT}px + var(--font-size-xs) * 3.6);`) }, el('span', { className: 'dyk-y dyk-y-top', textContent: tal(maks) }), el('span', { className: 'dyk-y dyk-y-midt', textContent: tal(Math.round(maks / 2)) }), s, x);
+    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${opt.hit || HIT}px + var(--font-size-xs) * 3.6);`) }, el('span', { className: 'dyk-y dyk-y-top', textContent: tal(maks) }), el('span', { className: 'dyk-y dyk-y-midt', textContent: tal(Math.round(maks / 2)) }), s, x);
   }
 
   /* ── tre søjler pr. dag, side om side: serier = [{ felt, klasse }]. De står aldrig oven på hinanden, for tallene må ikke lægges
@@ -621,5 +625,5 @@
   const paaKortet = p => Boolean(p) && iBilledet(p, VIEW.verden);
   const udenPlads = v => [...v.lande.filter(l => !paaKortet((verden.lande || {})[l.kode])).map(l => land(l.kode)), ...v.colos.filter(c => !paaKortet(xyColo(c.kode))).map(c => colo(c.kode))];
 
-  window.hmTegn = { angrebsTrin, kortSkala, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, flise, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, kort, udenPlads, ark };
+  window.hmTegn = { angrebsTrin, kortSkala, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, flise, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
 })();

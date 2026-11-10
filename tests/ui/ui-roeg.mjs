@@ -2202,7 +2202,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   const fl = qa('.besoeg-fliser > *'), flise = t => fl.find(x => x.textContent.includes(t));
   tjek('BES fem fliser med tallene og "N af M dage"', fl.length === 5 && flise('i går').querySelector('b').textContent === '412' && flise('på 7 dage').textContent === '2.380Unikke besøgende på 7 dage6 af 7 dage' && flise('på 30 dage').querySelector('small') === null && flise('på et år').textContent === '131.900Unikke besøgende på et år340 af 365 dage' && flise('Besøg på 30 dage').querySelector('b').textContent === '4.210', fl.map(x => x.textContent).join(' | '));
   const gaa = t => flise(t).dataset.gaa;
-  tjek('BES fliserne sætter perioden (i går er dagen), og 7 dage er den valgte', gaa('i går') === `besoegende?${DOM}&fra=2026-11-05&til=2026-11-05` && gaa('på 7 dage') === `besoegende?${DOM}` && flise('på 7 dage').getAttribute('aria-current') === 'true' && gaa('på 30 dage') === `besoegende?${DOM}&periode=30` && gaa('på et år') === `besoegende?${DOM}&periode=aar` && gaa('Besøg på 30 dage') === `besoegende?${DOM}&periode=30` && fl.every(x => x.tagName === 'BUTTON' && x.getAttribute('aria-label')), fl.map(x => x.dataset.gaa).join(' | '));
+  tjek('BES fliserne sætter perioden (i går er dagen), og ingen flise er markeret som valgt (F10: de følger ikke perioden)', gaa('i går') === `besoegende?${DOM}&fra=2026-11-05&til=2026-11-05` && gaa('på 7 dage') === `besoegende?${DOM}` && !fl.some(x => x.hasAttribute('aria-current') || x.classList.contains('vg-hoved')) && gaa('på 30 dage') === `besoegende?${DOM}&periode=30` && gaa('på et år') === `besoegende?${DOM}&periode=aar` && gaa('Besøg på 30 dage') === `besoegende?${DOM}&periode=30` && fl.every(x => x.tagName === 'BUTTON' && x.getAttribute('aria-label')), fl.map(x => x.dataset.gaa).join(' | '));
   const soejler = qa('#besoeg-graf .dyk-soejle'), klik = soejler.filter(g => g.hasAttribute('data-dyk'));
   tjek('BES grafen: 7 dage, hullet er ikke 0 og dagen med 0 er ikke klikbar', soejler.length === 7 && klik.length === 5 && soejler[3].classList.contains('dyk-uhentet') && !soejler[3].hasAttribute('data-dyk') && !soejler[2].hasAttribute('data-dyk') && q('#besoeg-graf h2').textContent === 'Unikke besøgende pr. dag', `${soejler.length} ${klik.length}`);
   tjek('BES grafen: "6 af 7 dage" står under, når der mangler dage', q('#besoeg-graf .hul-note').textContent === 'Grafen dækker 6 af 7 dage. Dage uden tal er ikke 0: de er ikke hentet.', q('#besoeg-graf .hul-note') && q('#besoeg-graf .hul-note').textContent);
@@ -2213,8 +2213,12 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('BES landetabellen: kun landet er klikbart, tallene er ikke', rk.every(r => r.querySelector('th button[data-gaa]') && !r.querySelector('td button, td [data-gaa], td [data-dyk]')) && rk[0].querySelector('button').dataset.gaa === `besoegende?${DOM}&land=DK` && rk[0].querySelector('button').getAttribute('aria-label') === 'Vis besøg fra Danmark pr. dag (2.200 besøg)');
   tjek('BES noten siger unikke IP-adresser, robotter, VPN og stikprøve, og intet om Samlet for ét domæne', ['unikke IP-adresser', 'robotter tæller med', 'VPN', 'stikprøve', 'én gang pr. dag'].every(x => q('.besoeg-note').textContent.includes(x)) && !q('.besoeg-note').textContent.includes('Alle domæner'), q('.besoeg-note').textContent);
   tjek('BES engelsk: fliser, tabel og note', en.d.querySelector('.besoeg-fliser').textContent.includes('Unique visitors yesterday') && en.d.querySelector('#besoeg-lande h2').textContent === 'Where the visits came from' && en.d.querySelector('#besoeg-lande details summary').textContent === 'Show all 14 countries' && en.d.querySelector('.besoeg-note').textContent.includes('unique IP addresses'));
-  tjek('BES periodevælgeren: 7, 30 dage og et år, plus Fra/Til med Nulstil til et år', [...d.querySelectorAll('#besoegende-periode label')].map(x => x.textContent).join() === '7 dage,30 dage,Et år' && q('.dato-vaelger') && q('.dato-vaelger [data-gaa]').dataset.gaa === `besoegende?${DOM}&periode=aar`);
-  const r30 = [...d.querySelectorAll('#besoegende-periode input')][1];
+  tjek('BES periodevælgeren: 7, 30 dage og et år, plus Fra/Til med Nulstil til et år', qa('.besoeg-valg .segment label').map(x => x.textContent).join() === '7 dage,30 dage,Et år' && q('.besoeg-valg .dato-vaelger') && q('.dato-vaelger [data-gaa]').dataset.gaa === `besoegende?${DOM}&periode=aar`);
+  /* F10 (V-BESOEG.2 FIX 1): de faste fliser øverst med en lille overskrift, så vælgeren, så "Valgt periode: …" og alt, der følger perioden. */
+  const efter = (x, y) => Boolean(x && y && x.compareDocumentPosition(y) & 4);
+  tjek('F10 fliserne står før vælgeren med overskriften "De seneste dage", og vælgeren står ikke i titelrækken', q('.besoeg-faste h2')?.textContent === 'De seneste dage' && q('.besoeg-faste .besoeg-fliser') && efter(q('.besoeg-faste'), q('.besoeg-valg')) && efter(q('.besoeg-valg'), q('.besoeg-valgt-h')) && efter(q('.besoeg-valgt-h'), q('#besoeg-graf')) && q('#besoegende-rod')?.firstElementChild === q('.besoeg-faste') && !q('.titelrad .segment'), qa('#besoegende-rod > *').map(x => x.className || x.id).join());
+  tjek('F10 overskriften "Valgt periode" med datoerne (da/en)', q('.besoeg-valgt-h')?.tagName === 'H2' && q('.besoeg-valgt-h')?.textContent === 'Valgt periode: 30. okt. – 5. nov. 2026' && en.d.querySelector('#visning-besoegende .besoeg-valgt-h')?.textContent === 'Selected period: 30 Oct – 5 Nov 2026' && en.d.querySelector('#visning-besoegende .besoeg-faste h2')?.textContent === 'The last days', q('.besoeg-valgt-h')?.textContent + ' / ' + en.d.querySelector('#visning-besoegende .besoeg-valgt-h')?.textContent);
+  const r30 = qa('.besoeg-valg .segment input')[1];
   r30.checked = true;
   r30.dispatchEvent(new s.w.Event('change', { bubbles: true }));
   await sov(60);
@@ -2238,7 +2242,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   await sov(80);
   tjek('BES et år: kaldet er hele året, og noten siger, hvorfra besøgene findes', sidst(aar, 'besoegende')[1].periode === 'alt' && aar.d.querySelector('#besoeg-lande .vg-note').textContent === 'Besøg pr. land findes fra 7. oktober. Cloudflare har dem i en måned, og programmet gemmer dagene derfra.', aar.d.querySelector('#besoeg-lande').textContent.slice(0, 200));
   // Ikke tilgængelig: én linje, og resten af siden virker.
-  const UDEN_ROBOT_SIDE = { robot30: null, robotter: [], robot_fra: null, ipklasse: null, sider: [], sider_i_alt: 0, sider_404: [], side_fra: null };
+  const UDEN_ROBOT_SIDE = { robot30: null, robotter: [], robot_fra: null, ipklasse: null, sider: [], sider_i_alt: 0, sider_404: [], sider_forside: [], side_fra: null };
   const IKKE = { ...BESOEG_UD, ...UDEN_ROBOT_SIDE, lande: [], lande_i_alt: 0, lande_med: 0, besoeg_fra: null, besoeg30: { n: 0, med: 0, dage: 30 }, ikke_tilgaengelig: ['wi24rd.com'] };
   const ik = side('#besoegende?' + DOM, BES({ besoegende: IKKE })), iks = side('#besoegende?samlet=1', BES({ besoegende: { ...IKKE, ikke_tilgaengelig: ['a.wi24rd.com', 'wi24rd.com'] } }));
   await sov(80);
@@ -2308,6 +2312,22 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('B2 F8 Mest besøgte sider: sti, visninger, besøg udefra og andel; de 10 største fremme, resten bag "Vis alle 14 sider"', sid.querySelector('h2')?.textContent === 'Mest besøgte sider' && sidRk.length === 10 && [...(sidRk[1]?.children || [])].map(c => c.textContent).join('|') === '/produkter|620|410|18,1 %' && [...sid.querySelectorAll('.besoeg-sider thead th')].slice(0, 4).map(x => x.textContent).join() === 'Side,Visninger,Besøg udefra,Andel' && flereS && flereS.querySelector('summary')?.textContent === 'Vis alle 14 sider' && flereS.querySelectorAll('tbody tr').length === 4, sid.textContent.slice(0, 300));
   const s404 = sid.querySelector('.besoeg-404'), rk404 = [...(s404?.querySelectorAll('tbody tr') || [])];
   tjek('B2 F8 Sider, der ikke findes: 404-stierne for sig under listen', s404?.querySelector('h3')?.textContent === 'Sider, der ikke findes' && rk404.map(r => r.firstChild.textContent).join() === '/admin,/wp-login.php,/.env' && !sidRk.some(r => r.textContent.includes('/admin')) && s404?.compareDocumentPosition(sid.querySelector('.besoeg-sider')) & d.defaultView.Node.DOCUMENT_POSITION_PRECEDING);
+  /* F12 (V-BESOEG.2 FIX 1): stier, der svarede med sidens almindelige side, i en egen liste under 404-listen. */
+  const sF = sid.querySelector('.besoeg-forside'), rkF = [...(sF?.querySelectorAll('tbody tr') || [])];
+  tjek('F12 "Svarede med sidens almindelige side": egen liste under 404-listen med undertekst og note om skønnet', sF?.querySelector('h3')?.textContent === 'Svarede med sidens almindelige side' && sF?.querySelector('h3 + .vg-note')?.textContent === 'Siden findes sandsynligvis ikke: sitet svarer med forsiden på adresser, det ikke kender.' && sF?.querySelector('.besoeg-forside-note')?.textContent.startsWith('Et skøn ud fra størrelsen') && rkF.map(r => r.firstChild.textContent).join() === '//crm/.env,/blog/wp-config.php/,/.hg/store/requires' && Boolean(s404?.compareDocumentPosition(sF) & 4), sF?.textContent.slice(0, 200));
+  tjek('F12 stierne står ikke i Mest besøgte sider, og de er klikbare som de andre (filter); tallene er ikke', !sidRk.some(r => r.textContent.includes('.env') || r.textContent.includes('wp-config')) && rkF.every(r => r.querySelector('th button[data-gaa]') && !r.querySelector('td button, td [data-gaa]')) && rkF[0]?.querySelector('button')?.dataset.gaa === `besoegende?${DOM}&sti=%2F%2Fcrm%2F.env` && [...sF.querySelectorAll('thead th')].map(x => x.textContent).join() === 'Side,Visninger', rkF[0]?.querySelector('button')?.dataset.gaa);
+  tjek('F12 404-teksten lover ikke, at alle forsøg står der', s404?.querySelector('.vg-note')?.textContent === 'Stier, der svarede 404 (ikke fundet), ofte robotter, der prøver kendte adresser. Ikke alle forsøg står her: svarer sitet med sin almindelige side, kommer stien ikke på denne liste.' && !sid.querySelector('.besoeg-uden-forside'), s404?.querySelector('.vg-note')?.textContent);
+  {
+    const enF = side('#besoegende?' + DOM, BES(), 'en', 'macos');
+    await sov(80);
+    tjek('F12 engelsk: listen, underteksten og 404-teksten', enF.d.querySelector('#besoeg-sider .besoeg-forside h3')?.textContent === 'Answered with the site’s ordinary page' && enF.d.querySelector('#besoeg-sider .besoeg-forside h3 + .vg-note')?.textContent === 'The page probably does not exist: the site answers with its front page at addresses it does not know.' && enF.d.querySelector('#besoeg-sider .besoeg-404 .vg-note')?.textContent.includes('Not every attempt is here'), enF.d.querySelector('#besoeg-sider .besoeg-forside')?.textContent.slice(0, 160));
+    const uf = side('#besoegende?' + DOM, BES({ besoegende: { ...BESOEG_UD, sider_forside: [], sider_uden_forside: true } }));
+    await sov(80);
+    tjek('F12 uden forsiden i perioden: ingen opdeling, og en linje siger det', !uf.d.querySelector('.besoeg-forside') && uf.d.querySelector('#besoeg-sider .besoeg-uden-forside')?.textContent === 'Forsiden er ikke blandt siderne i perioden, så stier, der svarer med forsiden, kan ikke skilles fra.' && uf.d.querySelectorAll('#besoeg-sider .besoeg-sider tbody tr').length >= 10, uf.d.querySelector('#besoeg-sider')?.textContent.slice(0, 120));
+    const kunF = side('#besoegende?' + DOM, BES({ besoegende: { ...BESOEG_UD, sider: [], sider_i_alt: 0, sider_404: [] } }));
+    await sov(80);
+    tjek('F12 listen står også, når de andre lister er tomme', kunF.d.querySelectorAll('#besoeg-sider .besoeg-forside tbody tr').length === 3 && !kunF.d.querySelector('#besoeg-sider .dyk-tom'));
+  }
   tjek('B2 F8 noten: robotter tæller med, og /admin besøges af scannere', sid.querySelector('.besoeg-side-note')?.textContent.includes('Robotter tæller med') && sid.querySelector('.besoeg-side-note')?.textContent.includes('/admin'));
   tjek('B2 F8 kun stien er klikbar; tallene er ikke', [...sidRk, ...rk404].every(r => r.querySelector('th button[data-gaa]') && !r.querySelector('td button, td [data-gaa]')) && sidRk[1]?.querySelector('button')?.getAttribute('aria-label') === 'Vis visninger af /produkter pr. dag (620 visninger)');
   sidRk[1]?.querySelector('button')?.click?.(); await sov(80);
@@ -2329,6 +2349,11 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   const uger = [...a.d.querySelectorAll('#besoeg-graf .dyk-soejle')], ugeKlik = uger.filter(g => g.hasAttribute('data-gaa'));
   const delvis = BESOEG_AAR.uger.find(u => u.n !== null && u.med < 7 && u.dage === 7), delvisG = uger[BESOEG_AAR.uger.indexOf(delvis)];
   tjek('B2 F2 et år: én søjle pr. uge (mandag–søndag), overskriften siger pr. uge, og ingen dag-links', uger.length === BESOEG_AAR.uger.length && uger.length >= 52 && uger.length <= 54 && a.d.querySelector('#besoeg-graf h2')?.textContent === 'Unikke besøgende pr. uge' && !a.d.querySelector('#besoeg-graf [data-dyk]') && BESOEG_AAR.uger.every(u => new Date(u.dag + 'T00:00:00Z').getUTCDay() === 1), `${uger.length} ${a.d.querySelector('#besoeg-graf h2')?.textContent}`);
+  /* F9 (V-BESOEG.2 FIX 1): uger har en smallere mindstebredde (14 px), så et år kan ses på én gang; aksen viser måneder. */
+  const minBredde = (x, sel) => { const e = x.d.querySelector(sel), k = e && [...e.classList].find(c => /^vg-t\d+$/.test(c)); return k ? ([...x.w.hmTegn.ark.cssRules].find(r => r.selectorText === '.' + k)?.cssText || '') : ''; };
+  const mndForventet = BESOEG_AAR.uger.filter((u, i, x) => i > 0 && u.dag.slice(0, 7) !== x[i - 1].dag.slice(0, 7)).map(u => a.w.hmSprog.maaned(u.dag));
+  tjek('F9 et år: mindstebredden er 14 px pr. uge (ikke 24)', minBredde(a, '#besoeg-graf .dyk-diagram').includes(`${BESOEG_AAR.uger.length} * 14px`), minBredde(a, '#besoeg-graf .dyk-diagram'));
+  tjek('F9 et år: aksen viser måneder (ved første uge i en ny måned)', [...a.d.querySelectorAll('#besoeg-graf .dyk-x b')].map(b => b.textContent).join() === mndForventet.join() && mndForventet.length >= 11 && mndForventet.includes('jan.'), [...a.d.querySelectorAll('#besoeg-graf .dyk-x b')].map(b => b.textContent).join());
   tjek('B2 F2 værktøjstippet siger "N af 7 dage", når der mangler dage, og ugen uden tal er et hul uden link', delvisG?.querySelector('title')?.textContent === `Ugen fra ${a.w.hmTegn.datoLang(delvis.fra)} til ${a.w.hmTegn.datoLang(delvis.til)}: ${a.w.hmSprog.tal(delvis.n)} (3 af 7 dage)` && uger[0]?.classList.contains('dyk-uhentet') && !uger[0]?.hasAttribute('data-gaa'), delvisG && delvisG?.querySelector('title')?.textContent);
   const ugen = ugeKlik.at(-1), sidsteUge = BESOEG_AAR.uger.at(-1);
   tjek('B2 F2 et klik på en uge sætter perioden til ugen (ikke "Trafik den …")', ugen?.dataset.gaa === `besoegende?${DOM}&fra=${sidsteUge.fra}&til=${sidsteUge.til}` && ugen?.getAttribute('aria-label').startsWith('Ugen fra'), ugen?.dataset.gaa);
@@ -2336,10 +2361,11 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('B2 F2 ugen åbnes: kaldet har ugens Fra/Til', sidst(a, 'besoegende')[1].periode.spaend && sidst(a, 'besoegende')[1].periode.spaend.fra === sidsteUge.fra && sidst(a, 'besoegende')[1].periode.spaend.til === sidsteUge.til, JSON.stringify(sidst(a, 'besoegende')[1].periode));
   const tre = side('#besoegende?' + DOM + '&periode=30&land=DK', BES());
   await sov(80);
+  tjek('F9 dag-grafen (30 dage) er uændret: 24 px pr. dag og datoer på aksen', minBredde(tre, '#besoeg-graf .dyk-diagram').includes('30 * 24px') && [...tre.d.querySelectorAll('#besoeg-graf .dyk-x b')].every(b => /^\d+\/\d+$/.test(b.textContent)), minBredde(tre, '#besoeg-graf .dyk-diagram'));
   tjek('B2 F2 30 dage er stadig én søjle pr. dag, og en dag åbner "Trafik den …"', tre.d.querySelectorAll('#besoeg-graf .dyk-soejle').length === 30 && !tre.d.querySelector('#besoeg-graf [data-gaa]') && tre.d.querySelectorAll('#besoeg-graf [data-dyk]').length === 30 && tre.d.querySelector('#besoeg-graf h2')?.textContent.endsWith('pr. dag'));
 
   /* Intet klikbart uden data, og "ikke tilgængelig" / "ikke hentet" for robotter og sider. */
-  const TOM2 = { ...BESOEG_UD, robot30: null, robotter: [], robot_fra: null, ipklasse: null, sider: [], sider_i_alt: 0, sider_404: [], side_fra: null, robot_ikke: ['wi24rd.com'], side_ikke: [] };
+  const TOM2 = { ...BESOEG_UD, robot30: null, robotter: [], robot_fra: null, ipklasse: null, sider: [], sider_i_alt: 0, sider_404: [], sider_forside: [], side_fra: null, robot_ikke: ['wi24rd.com'], side_ikke: [] };
   const t = side('#besoegende?' + DOM, BES({ besoegende: TOM2 })), te = side('#besoegende?samlet=1', BES({ besoegende: { ...TOM2, robot_ikke: ['a.wi24rd.com', 'wi24rd.com'], side_ikke: ['wi24rd.com'] } }));
   await sov(80);
   tjek('B2 robotter ikke tilgængelige og sider ikke hentet: linjerne siger det, og der er intet at klikke på i de to afsnit', t.d.querySelector('.besoeg-robot-ikke')?.textContent === 'Kendte robotter er ikke tilgængelige hos Cloudflare for wi24rd.com. Resten af siden virker.' && t.d.querySelector('#besoeg-sider .dyk-tom')?.textContent.startsWith('De mest besøgte sider er ikke hentet endnu') && !t.d.querySelector('#besoeg-robotter [data-gaa], #besoeg-robotter [data-dyk], #besoeg-sider [data-gaa], #besoeg-sider [data-dyk]') && !t.d.querySelector('.besoeg-klasse'), t.d.querySelector('#besoeg-robotter')?.textContent);
@@ -2372,6 +2398,14 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
     s.emit('hentekoe', { ...st, zoner_fejl: 1, fejl: { kode: 'svar' }, fejl_navn: 'xyz.wi24rd.com' }); await sov(20);
     tjek(`F5′ ${sprog}: en anden fejl bruger stadig den almindelige tekst`, s.d.getElementById('koe-tekst')?.textContent.includes(sprog === 'da' ? 'kunne ikke hentes: Uventet svar fra Cloudflare.' : 'could not be fetched: Unexpected answer from Cloudflare.'), s.d.getElementById('koe-tekst')?.textContent);
   }
+}
+
+// ── Menulinjen ved netfejl (V-BESOEG.2 FIX 1, sideeffekt 1): samme ord som båndet, kort form. Teksten laves i Rust (agent::menulinje_tekst, testet dér). ──
+{
+  const agent = fs.readFileSync(path.join(repo, 'src-tauri/src/agent.rs'), 'utf8'), S = side('#overblik', DYK({})).w.hmSprog, E = side('#overblik', DYK({}), 'en').w.hmSprog;
+  await sov(40);
+  const da = 'Ingen forbindelse til Cloudflare', en = 'No connection to Cloudflare';
+  tjek('Menulinjen ved netfejl: "Ingen forbindelse til Cloudflare · prøver igen …" som båndet (da/en), og ikke "1 domæne fejlede"', agent.includes(`"${da} · prøver igen {}"`) && agent.includes(`"${en} · trying again {}"`) && /Fase::Faerdig if s\.zoner_fejl > 0 && s\.fejl == Some\(Fejl::Forbindelse\)/.test(agent) && S.T.koeNet.startsWith(da) && E.T.koeNet.startsWith(en));
 }
 
 // ── F7: kun lande med Radar-tal (V-BESOEG.2) ──
@@ -2865,7 +2899,8 @@ const DOMV = (fravalgte = [], x) => {
       if (tr && tabel) { tr.scrollLeft = 80; tabel.rul = tr.scrollLeft; tabel.fast = Math.abs(rTh.getBoundingClientRect().left - tr.getBoundingClientRect().left) <= 2; }
       const ov = document.getElementById('overblik-rul'), overblik = ov && !ov.hidden && document.querySelector('#overblik-raekker th') ? { boks: ov.clientWidth, indhold: ov.scrollWidth, foerste: getComputedStyle(document.querySelector('#overblik-raekker th')).position } : null;
       if (overblik) { const h = document.querySelector('.hovedomr'); overblik.fladen = h.scrollWidth <= h.clientWidth; ov.scrollLeft = 80; overblik.fast = Math.abs(document.querySelector('#overblik-raekker th').getBoundingClientRect().left - ov.getBoundingClientRect().left) <= 2; }
-      document.body.textContent = 'MAALT:' + JSON.stringify({ tabel, overblik, hv, kal, velkomst, felter, segmenter, nav, nyLinje, serverOver, n: document.querySelectorAll('section:not([hidden]) .kort *').length, login: Boolean(document.querySelector('#login-panel .login-valg')), domaener: document.querySelectorAll('#domaener-liste input').length, vandret: document.documentElement.scrollWidth > innerWidth, ud }) + ':SLUT'; }, 1500);`;
+      const bGraf = document.getElementById('besoeg-graf'), hv2 = document.getElementById('indhold'), besoeg = bGraf ? { soejler: bGraf.querySelectorAll('.dyk-soejle').length, indhold: bGraf.scrollWidth, boks: bGraf.clientWidth, diagram: Math.round(bGraf.querySelector('.dyk-diagram').getBoundingClientRect().width), hovedIndhold: hv2.scrollWidth, hovedBoks: hv2.clientWidth, maaneder: bGraf.querySelectorAll('.dyk-x b').length } : null;
+      document.body.textContent = 'MAALT:' + JSON.stringify({ tabel, overblik, besoeg, hv, kal, velkomst, felter, segmenter, nav, nyLinje, serverOver, n: document.querySelectorAll('section:not([hidden]) .kort *').length, login: Boolean(document.querySelector('#login-panel .login-valg')), domaener: document.querySelectorAll('#domaener-liste input').length, vandret: document.documentElement.scrollWidth > innerWidth, ud }) + ':SLUT'; }, 1500);`;
     const koer = (bredde, tekst, tema = 'light', hash = '#indstillinger?zone=z2', ekstra = {}, { sprog = 'da', hoejde = 1400 } = {}) => {
       const stub = `<script>localStorage.setItem('hm-sprog',${JSON.stringify(sprog)});localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':${BES_NOEGLE};return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
       const html = ui('index.html').replace('<script src="assets/tema.js"></script>', UR_STUB + stub + '<script src="assets/tema.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
@@ -2949,6 +2984,13 @@ const DOMV = (fravalgte = [], x) => {
         const r = koer(bredde, tekst, 'light', hash, ekstra);
         if (navn === 'Overblik med server') tjek(`Land og site, linjen "Din server svarer ikke" ved ${bredde} px, ${tekst}: stikker ikke ud`, r && r.serverOver === false, JSON.stringify(r).slice(0, 160));
         tjek(`Land og site, ${navn} ved ${bredde} px, ${tekst}: ingen vandret rullebjælke`, r && !r.vandret, JSON.stringify(r).slice(0, 160));
+      }
+    }
+    /* F9 (V-BESOEG.2 FIX 1): Et år pr. uge fylder bredden uden vandret rulning ved 1200 px; 30 dage er stadig dag-søjler uden rulning. */
+    for (const [periode, n] of [['aar', BESOEG_AAR.uger.length], ['30', 30]]) {
+      for (const [tema, sprog] of [['light', 'da'], ['dark', 'en']]) {
+        const r = koer(1200, 'normal', tema, `#besoegende?zone=z1&navn=eksempel.wi24rd.com&periode=${periode}`, { besoegende_aar: BESOEG_AAR, besoegende: { ...BESOEG_LAND, land: null }, valg_hent: ['z1'] }, { sprog, hoejde: 860 }), b = r && r.besoeg;
+        tjek(`F9 Besøgende ${periode === 'aar' ? 'Et år (uger)' : '30 dage'} ved 1200 px, ${tema}, ${sprog}: hele grafen ses uden vandret rulning (scrollWidth ≤ clientWidth)`, b && b.soejler === n && b.indhold <= b.boks && b.hovedIndhold <= b.hovedBoks && b.diagram <= b.boks && !r.vandret, JSON.stringify(b));
       }
     }
     /* Overblik ved 900 px og Stor tekst: tabellen ruller i sin boks, og domænet bliver stående. */
@@ -3444,7 +3486,33 @@ const DOMV = (fravalgte = [], x) => {
   const blokS = [...pg.d.querySelectorAll('#vagt .vg-blok')].at(-1), nav = blokS.querySelector('.dyk-sider');
   tjek('Foreløbigt mærke: "Viser N af M", og det er Huginn, der gemmer 200', blokS.querySelector('.vg-intro')?.textContent === 'Viser 120 af 300 angreb. Huginn gemmer de 200 seneste angreb pr. dag.', blokS.querySelector('.vg-intro')?.textContent);
   tjek('Tidszone: siden sendes til Rust', pg.kald.filter(k => k[0] === 'dyk').at(-1)[1].side === 2);
-  tjek('Tidszone: forrige og næste', nav?.textContent.includes('Side 2 af 3') && [...(nav?.querySelectorAll('[data-dyk]') || [])].map(b => new URLSearchParams(b.dataset.dyk).get('side')).join() === ',3', nav?.textContent);
+  tjek('Tidszone: forrige og næste (knapper til side 1 og 3, uden data-dyk: de bytter kun tabellen, F11)', nav?.textContent.includes('Side 2 af 3') && [...(nav?.querySelectorAll('.dyk-side-knap') || [])].map(b => b.dataset.side + ':' + b.getAttribute('aria-label')).join() === 'forrige:Vis side 1 af 3 af de seneste,naeste:Vis side 3 af 3 af de seneste' && !nav?.querySelector('[data-dyk], [data-gaa]'), nav?.textContent);
+  /* F11 (V-BESOEG.2 FIX 1): Forrige/Næste henter kun den nye side og bytter afsnittet ud på stedet. */
+  {
+    const svS = a => { const n = a.side || 1; return sv({ enkelte: [{ t: `2026-11-03T2${n}:00:00Z`, regel: REACT, cve: null, land: 'PL', sti: `/side${n}`, colo: 'WAW', metode: 'GET', n: 1 }], enkelte_info: { vist: 120, i_alt: 300, side: n, sider: 3, loft: false } }); };
+    const ps = side('#dyk?' + dykQ({ dag: '2026-11-03', side: '2' }), DYK({ dyk: svS }));
+    await sov(120);
+    const vagt = ps.d.getElementById('vagt'), hoved = ps.d.getElementById('indhold'), foerste = vagt.firstElementChild, graf = ps.d.getElementById('vg-seneste')?.previousElementSibling;
+    const trin = ps.w.history.state, tilbage = ps.d.getElementById('hist-tilbage').disabled, dykFoer = ps.kald.filter(k => k[0] === 'dyk').length, laengde = ps.w.history.length;
+    hoved.scrollTop = 640;
+    ps.d.querySelector('#vg-seneste .dyk-side-knap[data-side="naeste"]').click();
+    await sov(80);
+    const sen = () => ps.d.getElementById('vg-seneste'), aktiv = () => ps.d.activeElement;
+    tjek('F11 Næste: kun rækkerne skifter (resten af siden er de samme elementer), og kaldet har side 3', vagt.firstElementChild === foerste && sen()?.previousElementSibling === graf && sen()?.querySelector('tbody')?.textContent.includes('/side3') && !sen()?.textContent.includes('/side2') && ps.kald.filter(k => k[0] === 'dyk').length === dykFoer + 1 && ps.kald.filter(k => k[0] === 'dyk').at(-1)[1].side === 3, sen()?.textContent.slice(0, 160));
+    tjek('F11 Næste: rullepositionen er uændret', hoved.scrollTop === 640, String(hoved.scrollTop));
+    tjek('F11 Næste: side=3 i adressen med replaceState: intet nyt trin i tilbage/frem', new URLSearchParams(ps.w.location.hash.split('?')[1]).get('side') === '3' && ps.w.history.length === laengde && JSON.stringify(ps.w.history.state) === JSON.stringify(trin) && ps.d.getElementById('hist-tilbage').disabled === tilbage, ps.w.location.hash);
+    tjek('F11 Næste på sidste side: knappen forsvinder, og fokus står på "Side 3 af 3"', !sen()?.querySelector('[data-side="naeste"]') && aktiv()?.classList.contains('dyk-side-nr') && aktiv()?.textContent === 'Side 3 af 3', aktiv()?.outerHTML);
+    sen().querySelector('.dyk-side-knap[data-side="forrige"]').click();
+    await sov(80);
+    tjek('F11 Forrige: side 2, fokus bliver på Forrige, og stadig ingen ny tegning', aktiv()?.dataset.side === 'forrige' && sen()?.textContent.includes('/side2') && vagt.firstElementChild === foerste && hoved.scrollTop === 640 && new URLSearchParams(ps.w.location.hash.split('?')[1]).get('side') === '2', aktiv()?.outerHTML);
+    sen().querySelector('.dyk-side-knap[data-side="forrige"]').click();
+    await sov(80);
+    tjek('F11 Forrige til første side: side= fjernes fra adressen, og fokus på "Side 1 af 3"', !new URLSearchParams(ps.w.location.hash.split('?')[1]).has('side') && aktiv()?.classList.contains('dyk-side-nr') && ps.w.history.length === laengde, ps.w.location.hash);
+    const kaldFoer = ps.kald.filter(k => k[0] === 'dyk').length;
+    ps.w.hmRamme.route();
+    await sov(120);
+    tjek('F11 adressen og visningen er enige: samme adresse igen tegner ikke om og henter ikke', vagt.firstElementChild === foerste && ps.kald.filter(k => k[0] === 'dyk').length === kaldFoer && ps.d.getElementById('vg-seneste')?.textContent.includes('/side1'), String(ps.kald.filter(k => k[0] === 'dyk').length - kaldFoer));
+  }
   tjek('Tidszone: hændelser med samme nøgle står med ×', blokS.querySelector('tbody td').textContent === '3. nov. 2026 21:00 ×3', blokS.querySelector('tbody td').textContent);
   const nyt = [...pg.d.querySelectorAll('.vg-fordeling [data-dyk]')][0];
   tjek('Tidszone: et nyt filter starter på første side', nyt && !new URLSearchParams(nyt.dataset.dyk).has('side'));

@@ -349,10 +349,14 @@ pub async fn opdater<K: Kilde>(lager: &Mutex<Store>, k: &K, nu: i64, tempo: Dura
     Ok(ulaeselige)
 }
 
-/// Landene, Radar har haft tal for som mål de seneste `HENT_DAGE` døgn (top-100 over målene mindst én dag, eller en kildeliste). Landevælgeren i båndet,
-/// Indstillinger › Land og forslaget "Skift til …" viser kun dem (V-BESOEG.2): for et land uden tal ville siden være den samme som for alle andre.
+/// Så mange af de seneste `HENT_DAGE` døgn skal et land have været blandt de `TOP_MAAL` største mål for at stå i landevælgeren (V-BESOEG.2 FIX 1).
+pub const MIN_MAAL_DAGE: usize = 15;
+
+/// Landene, siden har noget at vise for: blandt de `TOP_MAAL` største mål på mindst `MIN_MAAL_DAGE` af de seneste `HENT_DAGE` døgn. Landevælgeren i båndet,
+/// Indstillinger › Land og forslaget "Skift til …" viser kun dem. Angrebsparrene kan ikke bruges til listen: svaret er de 200 største par i verden, og kun
+/// det valgte lands kilder gemmes (`mod_landet`). Ingen undtagelser, heller ikke for et land med en gemt kildeliste (V-BESOEG.2 FIX 1).
 pub fn lande_med_tal(lager: &Store, nu: i64) -> Result<Vec<String>, Fejl> {
-    lager.radar_lande_med_tal(&foer(nu, HENT_DAGE))
+    lager.radar_lande_med_tal(&foer(nu, HENT_DAGE), MIN_MAAL_DAGE)
 }
 
 /// Første døgn i de sidste `dage` hele døgn.
@@ -1043,16 +1047,23 @@ mod tests {
         let d = |i: i64| dag_noegle(nu - i * DOEGN_MS);
         {
             let mut s = l.lock().unwrap();
-            s.gem_radar(
-                MAAL,
-                "",
-                &[d(3)],
-                &[(d(3), "DK".into(), 1.5), (d(3), "ZW".into(), 0.0)],
-                PROCENT,
-                "t",
-            )
-            .unwrap();
-            s.gem_radar(MAAL, "", &[d(40)], &[(d(40), "TO".into(), 2.0)], PROCENT, "t").unwrap();
+            for i in 1..=30 {
+                let mut rk = vec![(d(i), "TO".into(), 0.0)];
+                if i <= 15 {
+                    rk.push((d(i), "DK".into(), 1.5)); // præcis 15 af 30
+                }
+                if i <= 14 {
+                    rk.push((d(i), "SE".into(), 2.0)); // 14 af 30
+                }
+                if i == 3 || i == 4 {
+                    rk.push((d(i), "MG".into(), 0.01)); // Madagaskar: 2 dage à 0,01 %
+                }
+                s.gem_radar(MAAL, "", &[d(i)], &rk, PROCENT, "t").unwrap();
+            }
+            for i in 31..=50 {
+                s.gem_radar(MAAL, "", &[d(i)], &[(d(i), "ZW".into(), 3.0)], PROCENT, "t").unwrap();
+            }
+            // En gemt kildeliste giver ingen undtagelse.
             s.gem_radar(
                 PAR7,
                 "SE",
@@ -1062,13 +1073,12 @@ mod tests {
                 "t",
             )
             .unwrap();
-            s.gem_radar(PAR28, "PM", &[d(1)], &[(d(1), String::new(), 0.0)], "", "t").unwrap();
         }
         let s = l.lock().unwrap();
         assert_eq!(
             lande_med_tal(&s, nu).unwrap(),
-            ["DK", "SE"],
-            "ZW har 0, TO er for gammel, PM har ingen kilder"
+            ["DK"],
+            "DK 15 af 30; SE 14 (også med kildeliste); MG 2 dage; TO kun 0; ZW for gammel"
         );
     }
 

@@ -32,5 +32,5 @@ Om natten (til kl. 03 UTC), før i går er hentet færdigt, viser den status for
 
 ## Tal og begreber
 
-- Status sammenligner angreb i går med snittet for ugen før. Hele døgn i UTC.
+- Status sammenligner angreb i går med snittet for ugen før. Hele dage i UTC.
 - Hvert domæne meldes højst én gang om dagen i notifikationerne, men Siden sidst viser altid den aktuelle status, uanset om du fik besked.
