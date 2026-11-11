@@ -1,0 +1,85 @@
+/* Huginn and Muninn — broen til Wi24rd UI Kit 2 (V-KIT2.1 B1). Programmets farvevariabler (Kit 1.0-navne, brugt i app.css og
+   vagt.css) peger her på kittets tokens (assets/kit2/tokens.css). Kittets tokens skifter selv med <html data-tema>, så broen
+   har ingen temablokke og ingen farvekoder. Indlæses efter tokens.css og kit2/tokens.css; :root[data-tema] vejer som
+   temablokkene i tokens.css og vinder på rækkefølgen. Broen udgår, når app.css og vagt.css bruger kittets navne direkte.
+   Ikke med: --band-* (båndet udgår med skallen), mål, skrift og tekststørrelse. --font-mono og --shadow-card har samme navn
+   i begge sæt; kittets gælder, fordi kit2/tokens.css indlæses efter tokens.css. */
+:root[data-tema] {
+  /* Flader, streger og tekst */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sidebar: var(--surface);
+  --color-field: var(--surface-raised);
+  --color-hover: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  /* Accent: handlingen (primær knap, valg, kontakt slået til) */
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent);
+  --color-accent-fill: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-control-on: var(--accent);
+  --primary-fill: var(--accent);
+  --nav-selected-bg: var(--accent-soft);
+  --nav-selected-text: var(--accent);
+  --color-focus-ring: var(--info);
+  --color-danger-fill: var(--danger);
+  --color-danger-strong: var(--danger);
+  --color-switch-off: var(--border-strong);
+  --shadow-window: var(--shadow-pop);
+  /* Status: flade, tekst og mærke (prik, søjle). Ok er sin egen betydning, ikke accenten. */
+  --status-ok-bg: var(--ok-soft);
+  --status-ok-fg: var(--ok);
+  --status-ok-dot: var(--ok-mark);
+  --status-warn-bg: var(--warn-soft);
+  --status-warn-fg: var(--warn);
+  --status-warn-dot: var(--warn-mark);
+  --status-danger-bg: var(--danger-soft);
+  --status-danger-fg: var(--danger);
+  --status-danger-dot: var(--danger-mark);
+  --status-none-bg: var(--surface-raised);
+  --status-none-fg: var(--text-muted);
+  --status-none-dot: var(--none-mark);
+  /* Svarkoder: faste betydninger */
+  --chart-http-2xx: var(--ok-mark);
+  --chart-http-3xx: var(--info-mark);
+  --chart-http-4xx: var(--warn-mark);
+  --chart-http-5xx: var(--danger-mark);
+  /* Tavlen: angreb er danger-mark, besøg info-mark */
+  --board-bg: var(--surface);
+  --board-bg-2: var(--surface-raised);
+  --board-border: var(--border);
+  --board-land: var(--border);
+  --board-land-edge: var(--border-strong);
+  --board-grid: var(--data-grid);
+  --board-axis: var(--data-axis);
+  --board-text: var(--text);
+  --board-text-2: var(--data-label);
+  --board-label: var(--danger);
+  --board-attack: var(--danger-mark);
+  --board-visitors: var(--info-mark);
+  --board-visitors-hover: color-mix(in srgb, var(--info-mark) 78%, var(--text));
+  --board-colo: var(--info);
+  --board-on-colo: var(--surface);
+  --board-zoom-bg: color-mix(in srgb, var(--surface) 92%, transparent);
+  --board-shadow: var(--shadow-card);
+  /* Kortet */
+  --kort-hav: var(--map-sea);
+  --kort-land: var(--map-land);
+  --kort-graense: var(--map-border);
+  --kort-gitter: var(--data-grid);
+  --kort-ring: var(--map-ring);
+  --kort-ring-fyld: color-mix(in srgb, var(--map-ring) 18%, transparent);
+  --kort-bue: var(--danger-mark); /* buerne er angreb; kittets --map-arc er blå (oplysning) */
+  --kort-dc: var(--none-mark);
+  --kort-halo: var(--surface);
+  --kort-hover: var(--surface);
+  --kort-angreb-1: var(--seq-1);
+  --kort-angreb-2: var(--seq-2);
+  --kort-angreb-3: var(--seq-3);
+  --kort-angreb-4: var(--seq-4);
+  --kort-angreb-5: var(--seq-5);
+}

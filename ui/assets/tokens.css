@@ -1,6 +1,6 @@
 /* GENERERET af design/build-tokens.mjs fra design/wi24rd-tokens.json (Wi24rd UI kit 1.0.0). Ret ikke i hånden:
    ret JSON-filen og kør node design/build-tokens.mjs. Lys er standard; mørk følger macOS/Windows (prefers-color-scheme),
-   medmindre <html data-theme="light|dark"> vælger selv. Tæthed: normal er standard, [data-density] skifter. */
+   når <html data-tema="system">; <html data-tema="moerk"> vælger mørk selv (Wi24rd UI Kit 2's tema.js sætter data-tema). Tæthed: normal er standard, [data-density] skifter. */
 :root {
   --raw-color-white: #FFFFFF;
   --raw-color-black: #000000;
@@ -338,7 +338,7 @@
   --board-shadow: var(--shadow-card);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root[data-tema="system"] {
     color-scheme: dark;
     --color-bg: var(--raw-color-navy-900);
     --color-surface: var(--raw-color-navy-800);
@@ -429,7 +429,7 @@
     --board-shadow: var(--shadow-card);
   }
 }
-:root[data-theme="dark"] {
+:root[data-tema="moerk"] {
   color-scheme: dark;
   --color-bg: var(--raw-color-navy-900);
   --color-surface: var(--raw-color-navy-800);

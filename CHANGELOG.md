@@ -4,6 +4,14 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-11 23:30 — Wi24rd UI Kit 2: farverne og temaet
+#### Ændret
+- **Farverne kommer fra Wi24rd UI Kit 2** (pakke 2.1.0, kopieret uændret til `ui/assets/kit2/`). En bro (`ui/assets/kit2-bro.css`) sætter programmets farvevariabler til kittets: nordlysgrøn accent, "ok" som sin egen farve, angreb i `--danger-mark`, besøg i `--info-mark`, og kortets fem trin fra kittets skala. Rammen (båndet, sidebjælken) og skriften er som før; de følger i de næste trin.
+- **Udseende (Lys, Mørk, System)** styres af kittets `tema.js`: `<html data-tema="lys | moerk | system">`. Et valg gemt før skiftet oversættes én gang ved start. Tekststørrelsen er uændret og ligger nu i `tekst.js`.
+- Kontrasten måles efter kittets krav (WCAG AA): tekst mindst 4,5:1, stor tekst, mærker, serier og UI mindst 3:1. Før var kravet til tekst 7:1.
+#### Tilføjet
+- `npm run kit:tjek`: fejler, hvis en kopi af kittet ikke er byte for byte som pakken.
+
 ### 2026-11-10 23:30 — Besøgende og Angreb efter Jans live-test: fliser øverst, et år på én bredde, sider, der svarer med forsiden
 #### Tilføjet
 - **Svarede med sidens almindelige side** på Besøgende › Mest besøgte sider (under 404-listen): stier, hvis svar var lige så store som forsiden (højst 25 % fra, samme regel som Følsomme filer), som ikke er forsiden, og som ingen kom til udefra. Sitet svarer med forsiden på adresser, det ikke kender (catch-all), så de kom aldrig i 404-listen. Et skøn ud fra størrelsen; hvert domæne sammenlignes med sin egen forside, og uden forsiden i perioden deles intet (en linje siger det). Sidekaldet henter nu også `sum { edgeResponseBytes }`, gemt som `b_side_bytes`; første start efter opdateringen henter siderne for den seneste måned én gang til, ét kald pr. domæne.

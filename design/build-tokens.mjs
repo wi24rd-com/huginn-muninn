@@ -102,13 +102,13 @@ export function bygCss(tokens) {
   const ud = [
     `/* GENERERET af design/build-tokens.mjs fra design/wi24rd-tokens.json (${tokens.meta.name} ${tokens.meta.version}). Ret ikke i hånden:`,
     '   ret JSON-filen og kør node design/build-tokens.mjs. Lys er standard; mørk følger macOS/Windows (prefers-color-scheme),',
-    `   medmindre <html data-theme="light|dark"> vælger selv. Tæthed: ${standard} er standard, [data-density] skifter. */`,
+    `   når <html data-tema="system">; <html data-tema="moerk"> vælger mørk selv (Wi24rd UI Kit 2's tema.js sætter data-tema). Tæthed: ${standard} er standard, [data-density] skifter. */`,
     blok(tokens, ':root', [...raw, ...faelles], ''),
     blok(tokens, `:root, [data-density="${standard}"]`, taethed(standard), ''),
     ...andre.map(d => blok(tokens, `[data-density="${d}"]`, taethed(d), '')),
     blok(tokens, ':root', [[['semantic', 'light', 'color-scheme'], 'light'], ...tema('light')], '').replace('--color-scheme: light;', 'color-scheme: light;'),
-    `@media (prefers-color-scheme: dark) {\n${blok(tokens, ':root:not([data-theme="light"])', [[['semantic', 'dark', 'color-scheme'], 'dark'], ...tema('dark')]).replace('--color-scheme: dark;', 'color-scheme: dark;')}\n}`,
-    blok(tokens, ':root[data-theme="dark"]', [[['semantic', 'dark', 'color-scheme'], 'dark'], ...tema('dark')], '').replace('--color-scheme: dark;', 'color-scheme: dark;'),
+    `@media (prefers-color-scheme: dark) {\n${blok(tokens, ':root[data-tema="system"]', [[['semantic', 'dark', 'color-scheme'], 'dark'], ...tema('dark')]).replace('--color-scheme: dark;', 'color-scheme: dark;')}\n}`,
+    blok(tokens, ':root[data-tema="moerk"]', [[['semantic', 'dark', 'color-scheme'], 'dark'], ...tema('dark')], '').replace('--color-scheme: dark;', 'color-scheme: dark;'),
   ];
   return ud.join('\n') + '\n';
 }

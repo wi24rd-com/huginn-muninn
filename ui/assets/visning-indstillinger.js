@@ -1,4 +1,4 @@
-/* Huginn and Muninn — Indstillinger (mockup 3, skærm 2): Generelt (sprog i sprog.js, udseende og tekststørrelse i tema.js, "Start ved login", hvor
+/* Huginn and Muninn — Indstillinger (mockup 3, skærm 2): Generelt (sprog i sprog.js, udseende i kit2/tema.js, tekststørrelse i tekst.js, "Start ved login", hvor
    OS'et er sandheden: autostart_hent/autostart_saet), Notifikationer, Forbindelse, Data og Om. Notifikationerne:
    forudindstillingen vælges i opsætningen og her (to grupper, samme værdi); "Giv besked, når et domæne kræver handling" og
    valget pr. domæne gemmes i Rust (notifikation_hent/_saet/_zone_saet). "Pr. domæne" tegnes kun igen, når zonelisten ændrer
@@ -25,10 +25,10 @@
 
   /* ── Generelt ── */
   const temaValg = () => document.querySelectorAll('input[name="tema"]');
-  temaValg().forEach(i => {
-    i.checked = i.value === window.hmTema.valg;
-    i.addEventListener('change', () => { if (i.checked) window.hmTema.saet(i.value); });
-  });
+  const visTema = () => temaValg().forEach(i => { i.checked = i.value === window.Tema.valg; });
+  visTema();
+  temaValg().forEach(i => i.addEventListener('change', () => { if (i.checked) window.Tema.saet(i.value); }));
+  document.addEventListener('hm-tema', visTema);
 
   const tekstValg = () => document.querySelectorAll('input[name="tekst"]');
   const visTekst = () => tekstValg().forEach(i => { i.checked = i.value === window.hmTekst.valg; });

@@ -11,6 +11,16 @@ Programmets egen kode er under Apache-2.0-licensen (se `LICENSE` og `NOTICE`). D
 
 Filerne er byte-identiske (SHA-256) med filerne i npm-pakkerne `@fontsource-variable/outfit@5.3.0` og `@fontsource-variable/jetbrains-mono@5.3.0` (Fontsource, kilde: Google Fonts). Licensteksterne er kopieret uændret fra de samme pakker.
 
+## Wi24rd UI Kit 2 (`ui/assets/kit2/`)
+
+Kopieret uændret fra pakken Wi24rd UI Kit 2 (versionen står i `ui/assets/kit2/VERSION`; filernes SHA-256 i `PAKKE.json`, tjekket af `npm run kit:tjek`).
+
+| Del | Filer | Licens | Ophav |
+|---|---|---|---|
+| Tokens og komponenter | `tokens.css`, `kit.css`, `kit.js`, `tema.js`, `sprogmotor.js` | Apache License 2.0 — fuld tekst i `ui/assets/kit2/LICENSE` | Wi24rd (samme ophav som dette program; udskilt fra Wi24rd Grimnir) |
+| Inter (variabel) | `fonts/inter-latin-wght-normal.woff2`, `fonts/inter-latin-ext-wght-normal.woff2` | SIL Open Font License 1.1 — fuld tekst i `ui/assets/kit2/fonts/OFL-Inter.txt` | Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter) |
+| JetBrains Mono (variabel) | `fonts/jetbrains-mono-latin-wght-normal.woff2`, `fonts/jetbrains-mono-latin-ext-wght-normal.woff2` | SIL Open Font License 1.1 — fuld tekst i `ui/assets/kit2/fonts/OFL-JetBrainsMono.txt` | Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono) |
+
 ## Kortdata (`ui/assets/verden.json`, `ui/assets/colo.json`)
 
 Kildeangivelsen står også i programmet (Værnet, under "Sådan tælles der").
