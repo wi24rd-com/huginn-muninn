@@ -24,11 +24,11 @@
   const periodeNavn = () => (interval() ? V.interval(params.get('fra'), params.get('til')) : { d7: T.dykP7, d30: T.dykP30, alt: T.dykPAlt }[periodeArg()]);
 
   function fliser(d) {
-    const i = d.crawlere.iAlt, boks = el('div', { className: 'vg-fliser' }), p = periodeNavn();
+    const i = d.crawlere.iAlt, boks = el('div', { className: 'sfliser vg-fliser' }), p = periodeNavn();
     boks.append(V.flise(i.bots7, T.robotBesoeg, p, dyk({ robot: 'alle' }), { klasse: 'vg-hoved' }));
     /* En andel har ingen rækker bag sig: den er ikke klikbar. */
     const andel = i.alle7 ? (100 * i.bots7 / i.alle7).toLocaleString(S.lang === 'da' ? 'da-DK' : 'en-GB', { maximumFractionDigits: 1 }) + ' %' : '–';
-    boks.append(el('div', { className: 'vg-flise' }, el('b', { textContent: andel }), el('span', { textContent: T.robotAndel }), el('small', { textContent: p })));
+    boks.append(V.fliseTekst(andel, T.robotAndel, p));
     boks.append(V.flise(i.falske7, T.robotSlags.udklaedt, T.robotUdklaedtSub, dyk({ robot: 'udklaedt' })));
     boks.append(V.flise(d.stoppet.sum, T.robotSlags.stoppet, T.robotStoppetSub, dyk({ robot: 'stoppet' })));
     boks.append(V.flise(d.stoppet.labyrint, T.robotSlags.labyrint, T.robotLabyrintSub, dyk({ robot: 'labyrint' })));

@@ -40,14 +40,14 @@
   /* En flise uden tal er ikke 0 og fører ingen steder hen. Fliserne er faste (de seneste dage) og står over vælgeren; ingen er markeret som valgt, for de
      følger ikke perioden (V-BESOEG.2 FIX 1). Et klik sætter stadig perioden. */
   function flise(sum, tekst, maal, nul) {
-    if (sum === null || (sum.med === 0)) return el('div', { className: 'vg-flise' }, el('b', { textContent: '–' }), el('span', { textContent: tekst }), el('small', { textContent: nul || B.ingenTal }));
+    if (sum === null || (sum.med === 0)) return V.fliseTekst('–', tekst, nul || B.ingenTal);
     const sub = sum.med < sum.dage ? fmt(T.dagMed, { m: tal(sum.med), n: tal(sum.dage) }) : '';
     return V.flise(sum.n, tekst, sub, gaa(maal), { label: fmt(B.periodeAabn, { navn: tekst, n: tal(sum.n) }) });
   }
   /* En lille linje under flisen (ren tekst: ingen data bag). */
-  const linje = (f, tekst, klasse) => { f.append(el('small', { className: 'besoeg-linje ' + klasse, textContent: tekst })); return f; };
+  const linje = (f, tekst, klasse) => { f.append(el('span', { className: 'sflise-under besoeg-linje ' + klasse, textContent: tekst })); return f; };
   function fliser(d) {
-    const boks = el('div', { className: 'vg-fliser besoeg-fliser' });
+    const boks = el('div', { className: 'sfliser vg-fliser besoeg-fliser' });
     /* Unikke besøgende kan ikke deles på lande eller sider: med et filter siger flisen, at den gælder alt. */
     const alle = land() ? B.alleLande : sti() ? B.alleSider : null;
     const unik = f => (alle ? linje(f, alle, 'besoeg-alle') : f);

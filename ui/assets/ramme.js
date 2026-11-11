@@ -170,17 +170,25 @@
     }
     return ud;
   }
-  /* Spørger i dialogen og svarer true eller false. */
+  /* Kittets dialog (Kit.dialog) med programmets kendte id'er: <id>-dialog, <id>-h, <id>-p og <id>-<knappens id>. Dialogen
+     lægges i sted (en visning eller <main>), så den hører til siden og følger sproget. */
+  function dialog(id, sted, o) {
+    const d = window.Kit.dialog(o), p = d.rod.querySelector('.modal-tekst');
+    d.rod.id = id + '-dialog';
+    d.overskrift.id = id + '-h';
+    d.rod.setAttribute('aria-labelledby', d.overskrift.id);
+    if (p) { p.id = id + '-p'; d.rod.setAttribute('aria-describedby', p.id); }
+    for (const k of o.knapper) d.knap(k.id).id = `${id}-${k.id}`;
+    sted.append(d.rod);
+    S.anvend(d.rod);
+    return d;
+  }
+  /* Spørger i en dialog og svarer true eller false (nej, Esc og luk er false). */
+  let spoerg = null, spoergSvar = null;
   function bekraeft(tekst) {
-    const d = $('bekraeft-dialog');
+    if (!spoerg) spoerg = dialog('bekraeft', $('indhold'), { t: 'bekraeftTekH', p: '', knapper: [{ id: 'nej', t: 'annuller' }, { id: 'ja', t: 'bekraeftJa', variant: 'danger' }], vedLuk: s => { const svar = spoergSvar; spoergSvar = null; if (svar) svar(s === 'ja'); } });
     $('bekraeft-p').textContent = tekst;
-    d.showModal();
-    return new Promise(svar => {
-      const luk = v => { $('bekraeft-ja').removeEventListener('click', ja); $('bekraeft-nej').removeEventListener('click', nej); d.close(); svar(v); };
-      const ja = () => luk(true), nej = () => luk(false);
-      $('bekraeft-ja').addEventListener('click', ja);
-      $('bekraeft-nej').addEventListener('click', nej);
-    });
+    return new Promise(svar => { spoergSvar = svar; spoerg.aabn(); });
   }
 
   /* ── det fælles domænevalg ── */
@@ -625,7 +633,7 @@
   window.hmRamme = {
     aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, erstatAdresse, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
-    platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
+    platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, dialog, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
   };
 
   function start() {

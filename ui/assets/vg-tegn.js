@@ -227,30 +227,38 @@
     return c;
   }
   /* En knap med data bag: query til dyk, ellers mål { gaa } eller { rul }. Altid med aria-label: hvor den fører hen. */
-  function knap(indhold, maal, klasse, label) {
-    const b = el('button', { type: 'button', className: klasse || 'link dyk-celle' }, indhold);
+  /* Målet på et element, rammens lytter følger: et dyk (tekst), { gaa } eller { rul }. */
+  function maalPaa(b, maal) {
     if (typeof maal === 'string') b.dataset.dyk = maal;
     else if (maal.gaa) b.dataset.gaa = maal.gaa;
     else b.dataset.rul = maal.rul;
+    return b;
+  }
+  function knap(indhold, maal, klasse, label) {
+    const b = maalPaa(el('button', { type: 'button', className: klasse || 'link dyk-celle' }, indhold), maal);
     b.setAttribute('aria-label', label || fmt(T.dykAabnTekst, { navn: b.textContent }));
     return b;
   }
-  /* En flise: et tal med data bag åbner sit mål; 0 fører ingen steder hen. opt: aktiv, klasse, label og ekstra = { n, dyk } for
-     en undertekst med sit eget mål ("i dag hidtil"): så er flisen ikke selv en knap, men har en strakt knap, og underteksten ligger ovenpå. */
+  /* En flise er kittets StatusTile (Kit.statusflise): navn, tal og undertekst. Et tal med data bag åbner sit mål; 0 fører
+     ingen steder hen. opt: aktiv, klasse, label og ekstra = { n, dyk } for en undertekst med sit eget mål ("i dag hidtil").
+     KIT-ØNSKE K33: kittets flise har hverken en valgt tilstand (aktiv: .vg-hoved og aria-current) eller to mål i én flise
+     (ekstra: flisen er ikke selv en knap, men har en strakt knap, og underteksten ligger ovenpå). */
+  function fliseTekst(n, tekst, sub) { return window.Kit.statusflise({ tal: n, tekst, under: sub || undefined }); }
   function flise(n, tekst, sub, maal, opt = {}) {
-    const top = [el('b', { textContent: tal(n) }), el('span', { textContent: tekst })], sm = () => (sub ? [el('small', { textContent: sub })] : []);
-    const klasser = ['vg-flise', opt.klasse].filter(Boolean), label = opt.label || fmt(T.dykAabn, { navn: tekst, n: tal(n) });
+    const klik = Boolean(n && maal), label = opt.label || fmt(T.dykAabn, { navn: tekst, n: tal(n) });
+    const f = window.Kit.statusflise({ tal: tal(n), tekst, under: !opt.ekstra && sub ? sub : undefined, ved: klik && !opt.ekstra ? () => { } : undefined });
+    if (opt.klasse) f.classList.add(...opt.klasse.split(' '));
     if (opt.ekstra) {
-      const boks = el('div', { className: [...klasser, 'dyk-flise-to'].join(' ') });
-      if (n && maal) { const b = knap('', maal, 'dyk-flise-aabn', label); b.append(...top); boks.append(b); } else boks.append(...top);
-      boks.append(opt.ekstra.n ? el('small', {}, knap(sub, opt.ekstra.dyk)) : el('small', { textContent: sub }));
-      return boks;
+      f.classList.add('dyk-flise-to');
+      if (klik) { const b = knap('', maal, 'dyk-flise-aabn', label); b.append(...f.childNodes); f.append(b); }
+      const under = el('span', { className: 'sflise-under' });
+      under.append(opt.ekstra.n ? knap(sub, opt.ekstra.dyk) : sub);
+      f.append(under);
+      return f;
     }
-    if (opt.aktiv) klasser.push('vg-hoved');
-    const b = n && maal ? knap('', maal, [...klasser, 'dyk-flise'].join(' '), label) : el('div', { className: klasser.join(' ') });
-    b.append(...top, ...sm());
-    if (opt.aktiv) b.setAttribute('aria-current', 'true');
-    return b;
+    if (klik) { maalPaa(f, maal).classList.add('dyk-flise'); f.setAttribute('aria-label', label); }
+    if (opt.aktiv) { f.classList.add('vg-hoved'); f.setAttribute('aria-current', 'true'); }
+    return f;
   }
   function cveKnap(id, tekst) {
     if (!R.erCve(id)) return document.createTextNode(id);
@@ -636,5 +644,5 @@
   const paaKortet = p => Boolean(p) && iBilledet(p, VIEW.verden);
   const udenPlads = v => [...v.lande.filter(l => !paaKortet((verden.lande || {})[l.kode])).map(l => land(l.kode)), ...v.colos.filter(c => !paaKortet(xyColo(c.kode))).map(c => colo(c.kode))];
 
-  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, flise, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
+  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
 })();

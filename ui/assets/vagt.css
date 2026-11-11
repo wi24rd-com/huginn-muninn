@@ -90,13 +90,11 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .moenster-linje .moenster-maerke { background: var(--color-surface); color: var(--color-text); }
 .vg-advarsel.vg-roed { border-left-color: var(--status-danger-dot); background: var(--status-danger-bg); }
 
-.vg-fliser { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); gap: 10px; margin: 0 0 14px; }
-.vg-flise { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); }
-.vg-flise b { font: 700 var(--font-size-display)/1.05 var(--font-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.vg-flise small { color: var(--color-text-muted); font-size: var(--font-size-sm); }
-.vg-hoved { border-color: var(--color-accent); background: var(--color-accent-soft); }
-.vg-hoved b { color: var(--color-accent-text); }
-.vg-graa b { color: var(--color-text); }
+/* Fliserne er kittets StatusTile (.sflise i en række .sfliser). KIT-ØNSKE K33: den valgte flise (.vg-hoved, aria-current). */
+.vg-fliser { margin: 0 0 14px; }
+.sflise.vg-hoved { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.sflise.vg-hoved .sflise-tal { color: var(--color-accent-text); }
+button.sflise.vg-hoved:hover { background: var(--color-accent-soft); }
 .vg-fordeling { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 2px; color: var(--color-text-muted); }
 .vg-fordeling b { color: var(--color-text); font-weight: 600; }
 .vg-fordeling + .vg-note { margin-bottom: 22px; }
@@ -207,7 +205,7 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 [data-dyk], [data-gaa], [data-rul] { cursor: pointer; }
 /* Understregning kun på små links. Store mål (rækker, fliser, regelkort, kort og hele-rækken-lister) er ét stort knap-look: tone, kant og skygge på hele fladen. */
 .link[data-dyk]:hover, .link[data-gaa]:hover, .link[data-rul]:hover { text-decoration: underline; text-underline-offset: 2px; }
-.dyk-flise:hover, .gruppe-kort:hover, .dyk-l:hover { border-color: var(--color-accent); background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
+.gruppe-kort:hover, .dyk-l:hover { border-color: var(--color-accent); background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
 #dyk-under:not(:empty)::before { content: "· "; }
 #dyk-h { min-width: 0; overflow-wrap: anywhere; }
 .dyk-raekke { align-items: flex-start; }
@@ -228,9 +226,6 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .dyk-guide ol { margin: 0 0 8px; padding-left: 20px; }
 .dyk-guide p { margin: 0 0 6px; }
 .dyk-slags { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 12px; }
-button.dyk-flise { align-items: flex-start; font: inherit; color: inherit; text-align: left; }
-button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); border-color: var(--color-accent); }
-.vg-hoved.dyk-flise:hover { background-color: var(--color-accent-soft); }
 /* En flise med to mål: tallet åbner sin periode (knappen strækkes over flisen), og underteksten har sit eget mål ovenpå. */
 .dyk-flise-to { position: relative; }
 .dyk-flise-aabn { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
@@ -238,7 +233,7 @@ button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--ho
 .dyk-flise-aabn:focus-visible { outline: none; }
 .dyk-flise-aabn:focus-visible::after { outline: var(--focus-ring-width) solid var(--color-focus-ring); outline-offset: var(--focus-ring-offset); }
 .dyk-flise-to:has(.dyk-flise-aabn:hover) { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); border-color: var(--color-accent); }
-.dyk-flise-to small .dyk-celle { position: relative; z-index: 1; color: inherit; }
+.dyk-flise-to .sflise-under .dyk-celle { position: relative; z-index: 1; color: inherit; }
 /* Først og sidst set: datoen ombrydes aldrig midt i; er der ikke plads ved siden af overskriften, står den under den. */
 .dyk-datoer { justify-content: center; gap: 4px; }
 .dyk-dato { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; }

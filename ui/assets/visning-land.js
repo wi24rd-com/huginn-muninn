@@ -208,10 +208,10 @@
     const produkter = d.produkt.map(x => ({ navn: produktNavn(x.navn), vaerdi: x.vaerdi, gaa: x.navn === 'WAF' ? gaaLand(adresse(d.kode, { produkt: 'WAF' })) : null }));
     const tre = el('div', { className: 'vg-tre' });
     for (const [h, rk] of [[T.landMaalH, lande(d.maal, 'maal')], [T.landKildeH, lande(d.kilde, 'kilde')], [T.landProduktH, produkter]]) if (rk.length) tre.append(el('div', {}, el('h3', { textContent: h }), procentListe(rk)));
-    const fliser = el('div', { className: 'vg-fliser' });
-    if (d.bot !== null) fliser.append(el('div', { className: 'vg-flise' }, el('b', { textContent: pct(d.bot) }), el('span', { textContent: T.landBotH }), el('small', { textContent: T.landBotSub })));
-    if (d.http_indeks !== null) fliser.append(el('div', { className: 'vg-flise' }, el('b', { textContent: indeks(d.http_indeks) }), el('span', { textContent: T.landHttpH }), el('small', { textContent: T.landHttpSub })));
-    if (d.kvante !== null) fliser.append(el('div', { className: 'vg-flise' }, el('b', { textContent: pct(d.kvante) }), el('span', { textContent: T.landKvanteH }), el('small', { textContent: T.landKvanteSub })));
+    const fliser = el('div', { className: 'sfliser vg-fliser' });
+    if (d.bot !== null) fliser.append(V.fliseTekst(pct(d.bot), T.landBotH, T.landBotSub));
+    if (d.http_indeks !== null) fliser.append(V.fliseTekst(indeks(d.http_indeks), T.landHttpH, T.landHttpSub));
+    if (d.kvante !== null) fliser.append(V.fliseTekst(pct(d.kvante), T.landKvanteH, T.landKvanteSub));
     const robot = [fliser], ai = el('div', { className: 'vg-tre' });
     if (d.ai.length) ai.append(el('div', {}, el('h3', { textContent: T.landAiH }), procentListe(d.ai.map(x => ({ navn: T.landFormaal[x.navn] || x.navn, vaerdi: x.vaerdi })))));
     if (d.ai_navne.length) ai.append(el('div', {}, el('h3', { textContent: T.landAiNavnH }), procentListe(d.ai_navne.map(x => ({ navn: V.robotNavn(x.navn), vaerdi: x.vaerdi })))));

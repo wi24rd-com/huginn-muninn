@@ -95,7 +95,6 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .link { padding: 0; border: 0; background: none; color: var(--color-accent-text); font-weight: 600; cursor: pointer; min-height: 24px; }
 .luk { min-width: 24px; min-height: 24px; padding: 0 4px; border: 0; border-radius: var(--control-radius); background: none; color: var(--color-text-muted); font-size: var(--font-size-xl); line-height: 1; cursor: pointer; }
 .luk:hover { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
-.kort { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); }
 .raekke { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 48px; padding: 8px 16px; border-bottom: 1px solid var(--color-border); }
 .raekke:last-child { border-bottom: 0; }
 /* Etiketten fylder mindst 40 %; er der ikke plads til kontrollerne ved siden af, ombrydes de under den. */
@@ -194,8 +193,9 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 /* ── Indstillinger (mockup 3, skærm 2) og opsætningen ── */
 .indst { max-width: 700px; }
 #indst-status { position: sticky; top: 0; z-index: 2; max-width: 700px; } /* synlig, også når man har rullet ned til Data */
-.indst h2 { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px 2px; font-size: var(--font-size-xl); }
-.indst h2:first-child { margin-top: 0; }
+/* Hver gruppe er kittets kasse (.kasse); rækkerne går helt ud til kanten (.kasse-indhold.fyld). KIT-ØNSKE K32: et ikon i kassens overskrift. */
+.indst .kasse { margin-bottom: 16px; }
+.indst .kasse-top h2 { display: flex; align-items: center; gap: 8px; }
 .indst h2 .ik { color: var(--color-accent); }
 .mini { width: 100%; border-collapse: collapse; }
 .mini th, .mini td { padding: 6px 16px; border-top: 1px solid var(--color-border); font-size: var(--font-size-md); font-weight: 400; text-align: left; overflow-wrap: anywhere; }
@@ -220,14 +220,6 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .om-kilde { -webkit-user-select: text; user-select: text; font-family: var(--font-mono); }
 .vejledning-plads { margin-top: 12px; }
 .sp-indhold > div > .vejledning-plads { margin: 0 0 12px; }
-.dialog { width: min(420px, 90vw); padding: 18px 20px; border: 1px solid var(--color-border); border-radius: var(--card-radius); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-window); }
-/* Tekststørrelsen er kittets zoom på roden (<html data-tekst>), og zoom skalerer også vw og vh: mål, der skal følge vinduet, deles med trinnet (som i kit.css). */
-:root[data-tekst="lille"] .dialog { width: min(420px, calc(90vw / .9)); }
-:root[data-tekst="stor"] .dialog { width: min(420px, calc(90vw / 1.125)); }
-.dialog::backdrop { background: var(--color-overlay-pressed); }
-.dialog h2 { margin-bottom: 6px; font-size: var(--font-size-xl); }
-.dialog p { color: var(--color-text); }
-.dialog-knapper { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .hm-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; max-width: 46rem; margin: 6px 0 4px; }
 .hm-form label { flex: 1 1 22rem; display: grid; gap: 4px; font-weight: 600; }
 .hm-form input { height: var(--control-height); padding: 0 10px; border: 1px solid var(--color-border-strong); border-radius: var(--control-radius); background: var(--color-field); font-family: var(--font-mono); }
@@ -308,7 +300,7 @@ button.chip-knap:hover:not(:disabled) { box-shadow: inset 0 0 0 100vmax var(--co
 /* Velkomsten (velkomst.js): centreret kort med luft. "for Cloudflare®" er altid mindre end navnet (Cloudflares varemærkeregler). Målbilledets cyan findes
    ikke som token; --color-accent-text er programmets accent til tekst og er målt til mindst 4,5:1 i lys og mørk. */
 .velkomst { max-width: 38rem; margin: 0 auto 20px; padding: 28px 24px 24px; border: 1px solid var(--color-border); border-radius: var(--card-radius); background: var(--color-surface); text-align: center; }
-.kort .velkomst { margin-bottom: 0; border: 0; background: none; }
+.kasse .velkomst { margin-bottom: 0; border: 0; background: none; }
 .velkomst-navn { margin: 0 0 8px; max-width: none; }
 .velkomst-navn span { display: block; }
 .velkomst-wi { font: 600 var(--font-size-lg)/1.3 var(--font-display); }

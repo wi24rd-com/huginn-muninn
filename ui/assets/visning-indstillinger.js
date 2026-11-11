@@ -223,11 +223,11 @@
     $('skift-form').hidden = true;
     $('skift-noegle').setAttribute('aria-expanded', 'false');
   });
-  const dialog = $('glem-dialog');
-  $('glem').addEventListener('click', () => dialog.showModal());
-  $('glem-nej').addEventListener('click', () => dialog.close());
+  /* Kittets dialog lukker selv ved Annullér, Glem og Esc; her står kun det, Glem gør. */
+  const NEJ_JA = ja => [{ id: 'nej', t: 'annuller' }, { id: 'ja', t: ja, variant: 'danger' }];
+  const glemDialog = R.dialog('glem', $('visning-indstillinger'), { t: 'glemH', p: { t: 'glemP' }, knapper: NEJ_JA('glemJa') }), dialog = glemDialog.rod;
+  $('glem').addEventListener('click', () => glemDialog.aabn());
   $('glem-ja').addEventListener('click', async () => {
-    dialog.close();
     try { await invoke('token_delete'); await R.vis(); status($('indst-status'), T.glemt, 'ok'); R.glemt(); }
     catch (e) { status($('indst-status'), S.fejl(e), 'fejl'); }
   });
@@ -275,17 +275,14 @@
     const { sikkerhed: s, trafik: f } = d.nulstil, ud = [...(s && s.dage ? [linje(s, T.nulstilSikkerhed)] : []), ...(f && f.dage ? [linje(f, T.nulstilTrafik)] : [])];
     return ud.length ? ud : [T.nulstilIntetTab];
   }
-  const nulstilDialog = $('nulstil-dialog');
+  const nulstilKit = R.dialog('nulstil', $('visning-indstillinger'), { t: 'nulstilH', p: '', knapper: NEJ_JA('nulstilJa') }), nulstilDialog = nulstilKit.rod;
   $('nulstil').addEventListener('click', async () => {
     let d = null;
     try { d = await invoke('data_status'); } catch (e) { /* ukendt */ }
     $('nulstil-p').textContent = nulstilLinjer(d).join(' ');
-    nulstilDialog.showModal();
-    $('nulstil-nej').focus();
+    nulstilKit.aabn();
   });
-  $('nulstil-nej').addEventListener('click', () => nulstilDialog.close());
   $('nulstil-ja').addEventListener('click', async () => {
-    nulstilDialog.close();
     try { await invoke('nulstil_historik'); status($('indst-status'), T.nulstilt, 'ok'); await R.hentOverblik(); }
     catch (e) { status($('indst-status'), S.fejl(e), 'fejl'); }
   });

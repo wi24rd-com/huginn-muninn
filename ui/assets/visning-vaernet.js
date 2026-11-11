@@ -128,7 +128,7 @@
   /* ── fliser ── */
   function fliser(d) {
     const k = d.noegletal, o = ord(), p = params.get('periode'), iDag = fmt(T.dykFIDag, { n: tal(k.i_dag_hidtil) }), liste = filtre();
-    const boks = el('div', { className: 'vg-fliser' }), med = (m, n, ellers) => (m < n ? fmt(T.dagMed, { m: tal(m), n: tal(n) }) : ellers);
+    const boks = el('div', { className: 'sfliser vg-fliser' }), med = (m, n, ellers) => (m < n ? fmt(T.dagMed, { m: tal(m), n: tal(n) }) : ellers);
     if (har('dag')) boks.append(flise(d.sum, fmt(T.dykFDag, { o, d: V.datoLang(params.get('dag')) }), '', '', true));
     if (har('fra')) { const [a, b] = S.datoPar(params.get('fra'), params.get('til')); boks.append(flise(d.sum, fmt(T.dykFPeriode, { o, a, b }), med(d.periode.med, d.periode.dage, ''), '', true)); }
     /* Tal kun i dag: flisen siger begge dele, så den ikke modsiger "Først set". */
@@ -138,7 +138,7 @@
     boks.append(V.flise(k.i_gaar, fmt(T.dykFIGaar, { o }), iDag, medPeriode('dag', d.i_gaar), { ekstra: { n: k.i_dag_hidtil, dyk: medPeriode('dag', d.i_dag) } }));
     boks.append(flise(k.hele7, fmt(T.dykF7, { o }), [andel, med(k.med7, 7, '')].filter(Boolean).join(' · '), medPeriode('periode', '7'), fast && p !== '30'), flise(k.hele30, fmt(T.dykF30, { o }), med(k.med30, 30, T.dykF30Sub), medPeriode('periode', '30'), fast && p === '30'));
     const dato = (h, dag) => el('div', { className: 'dyk-dato' }, el('span', { textContent: h }), knap(V.datoLang(dag), medPeriode('dag', dag), 'link', fmt(T.dykAabn, { navn: h, n: V.datoLang(dag) })));
-    if (d.foerst) boks.append(el('div', { className: 'vg-flise dyk-datoer' }, dato(T.dykFoerst, d.foerst), dato(T.dykSidst, d.sidst)));
+    if (d.foerst) boks.append(el('div', { className: 'sflise dyk-datoer' }, dato(T.dykFoerst, d.foerst), dato(T.dykSidst, d.sidst)));
     boks.append(...forespoergsler(d));
     if (visForsoeg(d)) { const navn = fmt(L.forsoeg, { p: periodeTekst() }); boks.append(V.flise(d.forsoeg.n, navn, L.forsoegSub, { rul: 'vg-forsoeg' }, { klasse: 'vg-graa', label: fmt(T.dykRul, { navn, n: tal(d.forsoeg.n) }) })); }
     return boks;
@@ -517,7 +517,7 @@
   function trafikAfsnit(t) {
     const uden = fn => kopi(p => { p.delete('trafik'); fn(p); });
     const normalt = t.median === null ? '' : fmt(T.trafikNormalt, { m: tal(Math.round(t.median)) });
-    const dele = [el('div', { className: 'vg-fliser' }, flise(t.i_alt, T.trafikIAlt, normalt, '', true), ...(t.sikkerhed ? [flise(t.stoppet, T.trafikStoppet, '', uden(() => { }), false)] : [flise(t.trusler, T.trafikTrusler, '', '', true), flise(t.cachet, T.trafikCachet, '', '', true)]))];
+    const dele = [el('div', { className: 'sfliser vg-fliser' }, flise(t.i_alt, T.trafikIAlt, normalt, '', true), ...(t.sikkerhed ? [flise(t.stoppet, T.trafikStoppet, '', uden(() => { }), false)] : [flise(t.trusler, T.trafikTrusler, '', '', true), flise(t.cachet, T.trafikCachet, '', '', true)]))];
     if (!t.sikkerhed) dele.push(el('p', { className: 'vg-note', textContent: T.trafikKunAar }));
     const tekst = trafikOrd(t);
     if (tekst.length) dele.push(el('ul', { className: 'vg-fordeling' }, ...tekst.map(x => el('li', { textContent: x }))));

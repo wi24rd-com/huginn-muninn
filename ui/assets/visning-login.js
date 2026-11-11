@@ -91,8 +91,11 @@
   function stierBar(d) {
     const bar = el('div', { className: 'login-stier' }, el('span', { className: 'note', textContent: T.loginDineStier }));
     for (const sti of d.stier) {
-      const valgt = params.get('sti') === sti, b = V.knap(sti, valgt ? uden('sti') : med('sti', sti), 'sti-chip' + (valgt ? ' valgt' : ''));
-      if (valgt) b.setAttribute('aria-pressed', 'true');
+      /* Kittets filterchip: en sti slås til og fra som filter; et klik er ét trin i adressen. */
+      const valgt = params.get('sti') === sti, b = window.Kit.filterchip({ tekst: sti, valgt });
+      V.maal(b, valgt ? uden('sti') : med('sti', sti));
+      b.classList.add('login-sti');
+      b.setAttribute('aria-label', fmt(T.dykAabnTekst, { navn: sti }));
       bar.append(b);
     }
     return bar;
@@ -108,7 +111,7 @@
     return [bar];
   }
   function fliser(d) {
-    const t = d.tal, boks = el('div', { className: 'vg-fliser' }), u = params.get('udfald');
+    const t = d.tal, boks = el('div', { className: 'sfliser vg-fliser' }), u = params.get('udfald');
     const flise = (n, id, sub) => boks.append(V.flise(n, T.loginUdfald[id], sub, udfald(id), { aktiv: u === id }));
     flise(t.edge, 'edge', T.loginEdgeSub);
     if (!har('land') && !har('netvaerk') && !har('metode')) flise(t.ikke_fundet, 'ikke_fundet', T.loginIkkeFundetSub);

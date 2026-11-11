@@ -4,6 +4,13 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-11 23:30 — Wi24rd UI Kit 2: dialoger, kasser og fliser
+#### Ændret
+- **Bekræftelserne** (Glem API Token, Nulstil historik, Nulstil teknologi-valg) er kittets dialog. Esc svarer nej.
+- **Grupperne i Indstillinger** er kittets kasser med overskriften i kassens hoved.
+- **Fliserne** er kittets: navnet står øverst, så tallet, så underteksten.
+- **Dine login-stier** på Login er kittets filterchips med flueben ved den valgte.
+
 ### 2026-11-11 23:30 — Wi24rd UI Kit 2: knapper, chips og valg
 #### Ændret
 - **Knapper, statuschips, kontakter, afkrydsninger, radiogrupper, valglister og segmentknapper er kittets** (pakke 2.3.0). Programmets egne udgaver er væk fra `app.css`.
