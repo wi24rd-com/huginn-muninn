@@ -358,16 +358,9 @@
     const tekst = [fmt(T.dykVisNafM, { n: tal(e.vist), m: tal(e.i_alt) }), ...(e.loft ? [T.dykLoft200] : [])].join(' ');
     /* Forrige/Næste henter kun den nye side og bytter afsnittet ud på stedet (skiftSide): ingen ny tegning, rullepositionen bliver, og adressen
        erstattes, så tilbage/frem ikke får et trin pr. side (V-BESOEG.2 FIX 1). */
-    const sideKnap = (tekst, n, hvilken) => {
-      const b = el('button', { type: 'button', className: 'btn dyk-side-knap', textContent: tekst });
-      b.dataset.side = hvilken;
-      b.setAttribute('aria-label', fmt(T.dykSideAabn, { a: tal(n), b: tal(e.sider) }));
-      b.addEventListener('click', () => skiftSide(n, hvilken));
-      return b;
-    };
-    const nr = el('span', { className: 'dyk-side-nr', textContent: fmt(T.dykSideN, { a: tal(e.side), b: tal(e.sider) }), tabIndex: -1 });
-    const nav = el('nav', { className: 'dyk-sider' }, ...(e.side > 1 ? [sideKnap(T.dykForrige, e.side - 1, 'forrige')] : []), nr, ...(e.side < e.sider ? [sideKnap(T.dykNaeste, e.side + 1, 'naeste')] : []));
-    nav.setAttribute('aria-label', T.dykSiderH);
+    /* Kittets sideskift (Kit.sideskift): Forrige og Næste står der altid og er slået fra (aria-disabled) i enderne. */
+    const skift = window.Kit.sideskift({ aria: T.dykSiderH, side: e.side, sider: e.sider, forrige: T.dykForrige, naeste: T.dykNaeste, sideAf: fmt(T.dykSideN, { a: '{v}', b: '{w}' }), vedSide: n => skiftSide(n, n > e.side ? 'naeste' : 'forrige') }), nav = skift.rod;
+    for (const [hvilken, n] of [['forrige', e.side - 1], ['naeste', e.side + 1]]) if (n >= 1 && n <= e.sider) nav.querySelector(`[data-side="${hvilken}"]`).setAttribute('aria-label', fmt(T.dykSideAabn, { a: tal(n), b: tal(e.sider) }));
     return [afsnit('vg-seneste', T.dykSenesteH, tekst, tabel, ...(e.sider > 1 ? [nav] : []))];
   }
   /* "Hvad de ledte efter": kun uden filtre, for et 404-svar har hverken land, regel eller slags. En kategori og en sti lægger forsøget på som filter. */
@@ -420,7 +413,7 @@
     const guide = () => { const b = S.bog('dmarc_til'); return el('details', { className: 'dyk-guide' }, el('summary', { textContent: T.emailGuide }), el('p', { textContent: b.alle }), el('ol', {}, ...b.ja.map(t => el('li', { textContent: t })))); };
     if (!m.mails) {
       const linje = m.fejl ? fmt(T.emailFejl, { f: m.fejl }) : m.hentede_dage ? T.emailTom : T.emailVenter;
-      return V.blok(T.emailH, '', el('p', { className: 'email-tom', textContent: linje }), ...(m.hentede_dage && !m.fejl ? [guide()] : []));
+      return V.blok(T.emailH, '', V.tomt(linje, 'email-tom'), ...(m.hentede_dage && !m.fejl ? [guide()] : []));
     }
     const top = el('p', { className: 'email-linje', textContent: m.fejlet ? fmt(T.emailLinje, { n: tal(m.mails), m: tal(m.fejlet), k: m.afsendere }) : fmt(T.emailLinjeOk, { n: tal(m.mails) }) });
     if (!m.liste.length) return V.blok(T.emailH, intro, top);
@@ -474,7 +467,7 @@
   function cfIndhold(f) {
     const linjer = [];
     if (f.tilstand === 'mangler_ret') linjer.push(el('p', { className: 'cf-ret', textContent: T.cfManglerRet }));
-    else if (f.tilstand === 'venter') linjer.push(el('p', { className: 'cf-tom', textContent: T.cfVenter }));
+    else if (f.tilstand === 'venter') linjer.push(V.tomt(T.cfVenter, 'cf-tom'));
     else if (f.tilstand === 'fejl') linjer.push(el('p', { className: 'vg-advarsel vg-gul', textContent: fmt(T.cfFejl, { f: f.fejl || '' }) }));
     if (f.tilstand !== 'mangler_ret' && f.fund.length) {
       linjer.push(el('ul', { className: 'cf-liste' }, ...f.fund.map(x => {
@@ -485,7 +478,7 @@
         b.addEventListener('click', () => { if (invoke) invoke('aabn_sikkerhedsfund').catch(() => { }); });
         return el('li', {}, V.chip(ALVOR_CHIP[alvor] || 'graa', T.cfAlvor[alvor] || x.alvor), ' ', b, x.siden ? el('small', { className: 'cf-siden', textContent: ' · ' + fmt(T.cfSiden, { d: V.datoLang(x.siden) }) }) : '');
       })));
-    } else if (f.tilstand === 'ok') linjer.push(el('p', { className: 'cf-tom', textContent: T.cfIngen }));
+    } else if (f.tilstand === 'ok') linjer.push(V.tomt(T.cfIngen, 'cf-tom'));
     if (f.hentet && f.tilstand !== 'venter') linjer.push(el('p', { className: 'vg-note', textContent: fmt(T.cfHentet, { t: V.datoLang(f.hentet.slice(0, 10)) }) }));
     return V.blok(T.cfH, T.cfP, ...linjer);
   }
@@ -660,7 +653,7 @@
     const gammel = $('vg-seneste'), [ny] = d.sum ? enkelte(d) : [];
     if (!gammel || !ny) return hentTal(g);
     gammel.replaceWith(ny);
-    (ny.querySelector(`.dyk-side-knap[data-side="${hvilken}"]`) || ny.querySelector('.dyk-side-nr')).focus({ preventScroll: true });
+    (ny.querySelector(`.sideskift [data-side="${hvilken}"]`) || ny.querySelector('.sideskift-nr')).focus({ preventScroll: true });
   }
   /* Tegn igen, når køen melder nyt, højst hvert 3. sekund. */
   function lytPaaKoe(gaelder, igen) {

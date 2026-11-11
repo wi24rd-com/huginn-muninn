@@ -24,9 +24,7 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .hm-siden .moenster-maerke { position: relative; z-index: 1; }
 .moenster-linje { max-width: 56rem; margin: 0 0 12px; padding: 10px 14px; border-left: 4px solid var(--status-warn-dot); border-radius: var(--card-radius); background: var(--status-warn-bg); }
 .email-linje { margin: 0 0 8px; font-weight: 600; }
-.email-tom { margin: 0 0 8px; color: var(--color-text-muted); }
 .moenster-linje-maalrettet { border-left-color: var(--status-danger-dot); background: var(--status-danger-bg); }
-.dyk-sider { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
 /* Linjen om teknologi-valgene under domænelisten. */
 .tek-blok { margin-top: 12px; padding: 12px 16px 4px; border-top: 1px solid var(--color-border); }
 .tek-blok .etik { margin: 0 0 8px; font-weight: 600; }
@@ -75,7 +73,6 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 /* "Dit sites teknologi" og "Hvad angrebene var rettet mod" i Angreb og dyk. */
 .tek-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; padding: 0; list-style: none; }
 .tek-chip { padding: 2px 10px; border: 1px solid var(--color-border-strong); border-radius: var(--chip-radius); background: var(--color-surface); font-size: var(--font-size-sm); }
-.tek-tomt { margin: 0 0 8px; }
 .tek-ret-linje { margin: 0 0 4px; }
 .rettet-liste { display: grid; gap: 2px; max-width: 40rem; margin: 0; padding: 0; list-style: none; }
 .rettet-linje { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 3px 0; border-bottom: 1px solid var(--color-border); }

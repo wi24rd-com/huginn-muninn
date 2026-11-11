@@ -1310,6 +1310,8 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   tjek('B2b index.html: knapper er .btn (20; dialogernes bygger kittet), kontakter .tilfra (3), radioer .afk-boks i .valgsaet (12), og hver <select> står i .vliste (4)', (ix.match(/<button class="btn( primary| danger)?"/g) || []).length === 20 && (ix.match(/<input class="tilfra" type="checkbox" role="switch"/g) || []).length === 3 && (ix.match(/<label class="afk"><input class="afk-boks" type="radio"/g) || []).length === 12 && (ix.match(/class="valgsaet/g) || []).length === 4 && (ix.match(/<select/g) || []).length === 4 && (ix.match(/<span class="vliste"><select/g) || []).length === 4);
   const kitKode = ui('assets/kit2/kit.css');
   tjek('B2b kittets klasser findes i kit.css, og app.css tegner dem ikke om', ['.btn {', '.btn.primary', '.btn.danger', '.chip.ok', '.chip.warn', '.chip.danger', '.chip.none', '.tilfra {', '.afk-boks {', '.valgsaet {', '.vliste select {', '.seg {', '.seg-v {'].every(s => kitKode.includes(s)) && !/(^|\n)\.(chip|tilfra|afk|afk-boks|valgsaet|vliste|seg|seg-v)\b[^{\n]*\{/.test(appCss) && /\n\.btn \{ white-space: nowrap; \}/.test(appCss));
+  /* V-KIT2.1 B2d: sideskiftet og de små tomme tilstande er kittets. Tabellerne venter på kittet (K36). */
+  tjek('B2d intet i ui/ bygger sit eget sideskift, og de tomme tilstande i afsnit er kittets', uiKode.every(([, k]) => !/dyk-side-knap|dyk-side-nr|dyk-sider|className: '(email-tom|cf-tom|tek-tomt)'/.test(k)) && /window\.Kit\.sideskift\(/.test(ui('assets/visning-vaernet.js')) && /window\.Kit\.tomTilstand\(\{ tekst, lille: true \}\)/.test(ui('assets/vg-tegn.js')));
   /* V-KIT2.1 B2c: dialoger, kasser, fliser og filterchips er kittets. */
   const gamleC = /<dialog|class="kort"|'vg-flise\b|\.vg-flise\b(?!r)|class="dialog|\.dialog\b(?!\()|dialog-knapper|showModal/;
   tjek('B2c intet i ui/ bruger programmets gamle dialoger, kort eller fliser', uiKode.every(([, k]) => !gamleC.test(k)), uiKode.filter(([, k]) => gamleC.test(k)).map(([f, k]) => f + ': ' + gamleC.exec(k)[0]).join(' | '));
@@ -3636,10 +3638,10 @@ const DOMV = (fravalgte = [], x) => {
   const sv = x => dykSvar({ enkelte: [{ t: '2026-11-03T21:00:00Z', regel: REACT, cve: null, land: 'PL', sti: '/x', colo: 'WAW', metode: 'GET', n: 3 }], enkelte_info: { vist: 120, i_alt: 300, side: 2, sider: 3, loft: true }, ...x });
   const pg = side('#dyk?' + dykQ({ dag: '2026-11-03', side: '2' }), DYK({ dyk: () => sv() }));
   await sov(120);
-  const blokS = [...pg.d.querySelectorAll('#vagt .vg-blok')].at(-1), nav = blokS.querySelector('.dyk-sider');
+  const blokS = [...pg.d.querySelectorAll('#vagt .vg-blok')].at(-1), nav = blokS.querySelector('.sideskift');
   tjek('Foreløbigt mærke: "Viser N af M", og det er Huginn, der gemmer 200', blokS.querySelector('.vg-intro')?.textContent === 'Viser 120 af 300 angreb. Huginn gemmer de 200 seneste angreb pr. dag.', blokS.querySelector('.vg-intro')?.textContent);
   tjek('Tidszone: siden sendes til Rust', pg.kald.filter(k => k[0] === 'dyk').at(-1)[1].side === 2);
-  tjek('Tidszone: forrige og næste (knapper til side 1 og 3, uden data-dyk: de bytter kun tabellen, F11)', nav?.textContent.includes('Side 2 af 3') && [...(nav?.querySelectorAll('.dyk-side-knap') || [])].map(b => b.dataset.side + ':' + b.getAttribute('aria-label')).join() === 'forrige:Vis side 1 af 3 af de seneste,naeste:Vis side 3 af 3 af de seneste' && !nav?.querySelector('[data-dyk], [data-gaa]'), nav?.textContent);
+  tjek('Tidszone: forrige og næste (knapper til side 1 og 3, uden data-dyk: de bytter kun tabellen, F11)', nav?.textContent.includes('Side 2 af 3') && nav?.tagName === 'NAV' && nav.getAttribute('aria-label') === 'Sider' && nav.querySelector('.sideskift-nr').getAttribute('role') === 'status' && [...(nav?.querySelectorAll('.btn[data-side]') || [])].map(b => b.dataset.side + ':' + b.getAttribute('aria-label')).join() === 'forrige:Vis side 1 af 3 af de seneste,naeste:Vis side 3 af 3 af de seneste' && !nav?.querySelector('[data-dyk], [data-gaa]'), nav?.textContent);
   /* F11 (V-BESOEG.2 FIX 1): Forrige/Næste henter kun den nye side og bytter afsnittet ud på stedet. */
   {
     const svS = a => { const n = a.side || 1; return sv({ enkelte: [{ t: `2026-11-03T2${n}:00:00Z`, regel: REACT, cve: null, land: 'PL', sti: `/side${n}`, colo: 'WAW', metode: 'GET', n: 1 }], enkelte_info: { vist: 120, i_alt: 300, side: n, sider: 3, loft: false } }); };
@@ -3648,19 +3650,19 @@ const DOMV = (fravalgte = [], x) => {
     const vagt = ps.d.getElementById('vagt'), hoved = ps.d.getElementById('indhold'), foerste = vagt.firstElementChild, graf = ps.d.getElementById('vg-seneste')?.previousElementSibling;
     const trin = ps.w.history.state, tilbage = ps.d.getElementById('hist-tilbage').disabled, dykFoer = ps.kald.filter(k => k[0] === 'dyk').length, laengde = ps.w.history.length;
     hoved.scrollTop = 640;
-    ps.d.querySelector('#vg-seneste .dyk-side-knap[data-side="naeste"]').click();
+    ps.d.querySelector('#vg-seneste .sideskift [data-side="naeste"]').click();
     await sov(80);
     const sen = () => ps.d.getElementById('vg-seneste'), aktiv = () => ps.d.activeElement;
     tjek('F11 Næste: kun rækkerne skifter (resten af siden er de samme elementer), og kaldet har side 3', vagt.firstElementChild === foerste && sen()?.previousElementSibling === graf && sen()?.querySelector('tbody')?.textContent.includes('/side3') && !sen()?.textContent.includes('/side2') && ps.kald.filter(k => k[0] === 'dyk').length === dykFoer + 1 && ps.kald.filter(k => k[0] === 'dyk').at(-1)[1].side === 3, sen()?.textContent.slice(0, 160));
     tjek('F11 Næste: rullepositionen er uændret', hoved.scrollTop === 640, String(hoved.scrollTop));
     tjek('F11 Næste: side=3 i adressen med replaceState: intet nyt trin i tilbage/frem', new URLSearchParams(ps.w.location.hash.split('?')[1]).get('side') === '3' && ps.w.history.length === laengde && JSON.stringify(ps.w.history.state) === JSON.stringify(trin) && ps.d.getElementById('hist-tilbage').disabled === tilbage, ps.w.location.hash);
-    tjek('F11 Næste på sidste side: knappen forsvinder, og fokus står på "Side 3 af 3"', !sen()?.querySelector('[data-side="naeste"]') && aktiv()?.classList.contains('dyk-side-nr') && aktiv()?.textContent === 'Side 3 af 3', aktiv()?.outerHTML);
-    sen().querySelector('.dyk-side-knap[data-side="forrige"]').click();
+    tjek('F11 Næste på sidste side: knappen er slået fra (aria-disabled), fokus bliver på den, og der står "Side 3 af 3"', sen()?.querySelector('[data-side="naeste"]')?.getAttribute('aria-disabled') === 'true' && aktiv()?.dataset.side === 'naeste' && aktiv()?.closest('#vg-seneste') && sen()?.querySelector('.sideskift-nr')?.textContent === 'Side 3 af 3', aktiv()?.outerHTML);
+    sen().querySelector('.sideskift [data-side="forrige"]').click();
     await sov(80);
     tjek('F11 Forrige: side 2, fokus bliver på Forrige, og stadig ingen ny tegning', aktiv()?.dataset.side === 'forrige' && sen()?.textContent.includes('/side2') && vagt.firstElementChild === foerste && hoved.scrollTop === 640 && new URLSearchParams(ps.w.location.hash.split('?')[1]).get('side') === '2', aktiv()?.outerHTML);
-    sen().querySelector('.dyk-side-knap[data-side="forrige"]').click();
+    sen().querySelector('.sideskift [data-side="forrige"]').click();
     await sov(80);
-    tjek('F11 Forrige til første side: side= fjernes fra adressen, og fokus på "Side 1 af 3"', !new URLSearchParams(ps.w.location.hash.split('?')[1]).has('side') && aktiv()?.classList.contains('dyk-side-nr') && ps.w.history.length === laengde, ps.w.location.hash);
+    tjek('F11 Forrige til første side: side= fjernes fra adressen, Forrige er slået fra, og der står "Side 1 af 3"', !new URLSearchParams(ps.w.location.hash.split('?')[1]).has('side') && aktiv()?.dataset.side === 'forrige' && aktiv()?.getAttribute('aria-disabled') === 'true' && sen()?.querySelector('.sideskift-nr')?.textContent === 'Side 1 af 3' && ps.w.history.length === laengde, ps.w.location.hash);
     const kaldFoer = ps.kald.filter(k => k[0] === 'dyk').length;
     ps.w.hmRamme.route();
     await sov(120);
@@ -3671,7 +3673,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Tidszone: et nyt filter starter på første side', nyt && !new URLSearchParams(nyt.dataset.dyk).has('side'));
   const en = side('#dyk?' + dykQ({ dag: '2026-11-03' }), DYK({ dyk: () => sv({ enkelte_info: { vist: 1, i_alt: 1, side: 1, sider: 1, loft: false } }) }), 'en');
   await sov(120);
-  tjek('Tidszone: engelsk og ental, og ingen sidevælger ved én side', [...en.d.querySelectorAll('#vagt .vg-blok')].at(-1).querySelector('.vg-intro').textContent === 'Showing 1 of 1 attack.' && !en.d.querySelector('.dyk-sider'));
+  tjek('Tidszone: engelsk og ental, og ingen sidevælger ved én side', [...en.d.querySelectorAll('#vagt .vg-blok')].at(-1).querySelector('.vg-intro').textContent === 'Showing 1 of 1 attack.' && !en.d.querySelector('.sideskift'));
   const gl = side('#dyk?' + dykQ({ dag: '2026-11-03' }), DYK({ dyk: () => dykSvar({ enkelte_info: null }) }));
   await sov(120);
   tjek('Tidszone: uden gemte angreb er teksten den gamle', [...gl.d.querySelectorAll('#vagt .vg-blok')].at(-1).querySelector('.vg-intro').textContent === gl.w.hmSprog.T.dykSenesteP);

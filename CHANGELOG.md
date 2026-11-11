@@ -4,6 +4,11 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-11 23:30 — Wi24rd UI Kit 2: sideskift og tom tilstand
+#### Ændret
+- **Sideskiftet i "De seneste"** på Angreb er kittets: Forrige og Næste står der altid og er slået fra på første og sidste side.
+- **Tomme afsnit** (ingen DMARC-rapporter, ingen fund, ingen teknologi valgt) bruger kittets tomme tilstand.
+
 ### 2026-11-11 23:30 — Wi24rd UI Kit 2: dialoger, kasser og fliser
 #### Ændret
 - **Bekræftelserne** (Glem API Token, Nulstil historik, Nulstil teknologi-valg) er kittets dialog. Esc svarer nej.

@@ -227,6 +227,12 @@
     return c;
   }
   /* En knap med data bag: query til dyk, ellers mål { gaa } eller { rul }. Altid med aria-label: hvor den fører hen. */
+  /* En tom tilstand i et afsnit er kittets lave udgave (Kit.tomTilstand med lille): én sætning, som læses op, når den skifter. */
+  function tomt(tekst, klasse) {
+    const t = window.Kit.tomTilstand({ tekst, lille: true });
+    if (klasse) t.classList.add(klasse);
+    return t;
+  }
   /* Målet på et element, rammens lytter følger: et dyk (tekst), { gaa } eller { rul }. */
   function maalPaa(b, maal) {
     if (typeof maal === 'string') b.dataset.dyk = maal;
@@ -410,7 +416,7 @@
     const navne = v => o.linjer.filter(l => l.valg === v).map(l => S.tekNavn(l.tek)).join(', '), bruger = navne('bruger'), ikke = navne('bruger_ikke');
     const chips = [...(bruger ? [fmt(T.tekChipBruger, { l: bruger })] : []), ...(ikke ? [fmt(T.tekChipIkke, { l: ikke })] : [])];
     const ret = knap(`${T.tekRet} →`, { gaa: 'teknologi?' + new URLSearchParams({ zone: o.zone, navn: o.navn }) }, 'btn tek-ret', fmt(T.tekRetAabn, { navn: o.navn }));
-    const ud = [chips.length ? el('ul', { className: 'tek-chips' }, ...chips.map(t => el('li', { className: 'tek-chip', textContent: t }))) : el('p', { className: 'tek-tomt', textContent: T.tekIngenValg })];
+    const ud = [chips.length ? el('ul', { className: 'tek-chips' }, ...chips.map(t => el('li', { className: 'tek-chip', textContent: t }))) : tomt(T.tekIngenValg, 'tek-tomt')];
     const f = o.linjer.find(l => l.forslag);
     if (f) {
       const ja = el('button', { type: 'button', className: 'link', textContent: T.tekForslagJa });
@@ -644,5 +650,5 @@
   const paaKortet = p => Boolean(p) && iBilledet(p, VIEW.verden);
   const udenPlads = v => [...v.lande.filter(l => !paaKortet((verden.lande || {})[l.kode])).map(l => land(l.kode)), ...v.colos.filter(c => !paaKortet(xyColo(c.kode))).map(c => colo(c.kode))];
 
-  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
+  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, tomt, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
 })();
