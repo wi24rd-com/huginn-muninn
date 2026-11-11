@@ -366,9 +366,9 @@
       if (!iTekstfelt()) { ev.preventDefault(); gaaHist(pil); }
       return;
     }
-    // Tekststørrelse. '=' er + uden Skift på et amerikansk tastatur, og programmenuens ⌘+ fanger kun tegnet +.
-    const tekstTrin = { '+': 1, '=': 1, '-': -1, 0: 0 }[ev.key];
-    if (tekstTrin !== undefined && !ev.altKey && (mac ? ev.metaKey && !ev.ctrlKey : ev.ctrlKey && !ev.metaKey)) { ev.preventDefault(); window.hmTekst.trin(tekstTrin); return; }
+    // Tekststørrelse (kittets Tekst: større, mindre, nulstil). '=' er + uden Skift på et amerikansk tastatur, og programmenuens ⌘+ fanger kun tegnet +.
+    const tekstTrin = { '+': 'større', '=': 'større', '-': 'mindre', 0: 'nulstil' }[ev.key];
+    if (tekstTrin !== undefined && !ev.altKey && (mac ? ev.metaKey && !ev.ctrlKey : ev.ctrlKey && !ev.metaKey)) { ev.preventDefault(); window.Tekst[tekstTrin](); return; }
     if (mac) return; // macOS: programmenuen (Rust) har genvejene
     if (ev.key === 'F5' || (ev.ctrlKey && !ev.altKey && (ev.key === 'r' || ev.key === 'R'))) { ev.preventDefault(); hentNu(); return; }
     if (!ev.ctrlKey || ev.altKey || ev.metaKey) return;
@@ -639,7 +639,7 @@
       listen('radar', () => { udsend('radar'); snartOverblik(true); });
       listen('visning', e => { if (e.payload === 'om' || (VISNINGER.includes(e.payload) && (tilstand.sat || e.payload === 'indstillinger'))) aabnGenvej(e.payload); });
       listen('historik', e => { if (!iTekstfelt()) gaaHist(e.payload === 'frem' ? 1 : -1); });
-      listen('tekst', e => { window.hmTekst.trin({ stoerre: 1, mindre: -1 }[e.payload] || 0); });
+      listen('tekst', e => { window.Tekst[{ stoerre: 'større', mindre: 'mindre' }[e.payload] || 'nulstil'](); });
     }
     window.addEventListener('online', () => { invoke('koe_prioritet', { zone: null }).catch(() => { }); });
     invoke('tidszone_saet', { skift: tidsskift() }).catch(() => { });

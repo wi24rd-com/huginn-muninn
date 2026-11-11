@@ -4,6 +4,11 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-11 23:30 — Wi24rd UI Kit 2: tekststørrelsen
+#### Ændret
+- **Tekststørrelsen (Lille, Normal, Stor) er kittets** (pakke 2.3.0, kopieret uændret til `ui/assets/kit2/`): `<html data-tekst="lille | stor">`, og hele fladen skaleres samlet (tekst, knapper, ikoner og luft), ikke kun skriften. ⌘+ ⌘− ⌘0, programmenuen og Indstillinger virker som før. Et valg gemt før skiftet oversættes én gang ved start.
+- `tekst.js` er afløst af `gamle-valg.js`, som kun oversætter gamle valg (udseende og tekststørrelse). Skalaen `data-density` er ude af `design/wi24rd-tokens.json`; målene i `tokens.css` er faste.
+
 ### 2026-11-11 23:30 — Wi24rd UI Kit 2: skallen
 #### Ændret
 - **Programmet har fået Wi24rd UI Kit 2's opbygning** (pakke 2.2.0): mørk titellinje med tilbage, frem, Hjælp og Indstillinger; et bånd med Hent nu, landevælgeren (på Land lige nu) og Åbn vejledningen; en navigationsrude med domænerne øverst og de syv visninger nederst; en fodlinje med antal domæner, hentningens status, "Kun på denne maskine" og versionen. Det blå bånd, bølgerne og sidebjælken er væk.

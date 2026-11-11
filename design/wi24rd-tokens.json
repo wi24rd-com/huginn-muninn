@@ -5,7 +5,7 @@
     "description": "Single source for Wi24rd desktop programs (Huginn and Muninn: Tauri/CSS; FTP: WPF/XAML). Three layers: raw scale -> semantic (light/dark) -> component. References use {layer.path}. Numbers are px unless the key is listed in unitless. Generated files: design/build-tokens.mjs.",
     "unitless": ["weight", "line-height"],
     "targets": {
-      "css": { "file": "ui/assets/tokens.css", "density": "normal", "densities": ["compact", "normal", "large"] },
+      "css": { "file": "ui/assets/tokens.css", "density": "normal" },
       "xaml": { "file": "design/out/Wi24rdTokens.xaml", "density": "comfortable" }
     }
   },
@@ -205,9 +205,7 @@
     },
     "density": {
       "comfortable": { "control": { "height": 38 }, "row": { "height": 38 }, "font": { "size": 14, "line-height": 1.45 }, "title": { "size": "{raw.font.size.20}" } },
-      "compact": { "control": { "height": 32 }, "row": { "height": 32 }, "font": { "size": { "xs": 12, "sm": 12, "md": 13, "lg": 13, "xl": 14, "title": 20, "display": 24 }, "line-height": 1.45 } },
-      "normal": { "control": { "height": 36 }, "row": { "height": 36 }, "font": { "size": { "xs": 12, "sm": 13, "md": 14, "lg": 15, "xl": 16, "title": 22, "display": 28 }, "line-height": 1.5 } },
-      "large": { "control": { "height": 40 }, "row": { "height": 40 }, "font": { "size": { "xs": 14, "sm": 15, "md": 16, "lg": 17, "xl": 18, "title": 25, "display": 32 }, "line-height": 1.5 } }
+      "normal": { "control": { "height": 36 }, "row": { "height": 36 }, "font": { "size": { "xs": 12, "sm": 13, "md": 14, "lg": 15, "xl": 16, "title": 22, "display": 28 }, "line-height": 1.5 } }
     }
   }
 }

@@ -148,48 +148,127 @@
   }
 
   /* ── DataTable ── kolonner: [{t|tekst, tal}]; raekker: [{gruppe: t|tekst, note} | {celler: [...], mono: [i…], data}].
-     Hele rækken vælges med klik og piletaster (op/ned, Home/End); vedValg(række, data). */
+     Hele rækken vælges med klik og piletaster (op/ned, Home/End); vedValg(række, data).
+     Fra 2.3.0, kun med de nye indstillinger (uden dem er tabellen præcis som i 2.0.0):
+     - Sortering: sort: true på en kolonne gør dens hoved til en knap. sortering: { kolonne, retning: 'stigende' |
+       'faldende' } er den aktuelle; et klik vender retningen eller sorterer efter en ny kolonne (sortStart: 'faldende'
+       på kolonnen begynder dér), sætter aria-sort og pilen og kalder vedSortering(kolonne, retning). Programmet sorterer
+       selv og giver de nye rækker med saetRaekker: kun programmet har alle rækkerne (sider, grupper) og kender typerne.
+     - To hovedrækker: kolonnegrupper: [{ id, t|tekst }] og gruppe: id på kolonnerne. Hver gruppe får en overskrift over
+       sine kolonner (scope="colgroup", colspan, og en <colgroup>); en kolonne uden gruppe står i begge rækker (rowspan).
+     - t.saetRaekker(raekker) bygger rækkerne om uden at røre hovedet (fokus på en sorteringsknap bliver), og
+       t.saetSortering(kolonne, retning) sætter sorteringen udefra uden at kalde vedSortering. */
   function tabel(o) {
     const t = el('table', 'tabel');
     const thead = document.createElement('thead');
-    const hr = document.createElement('tr');
-    for (const k of o.kolonner) {
-      const th = el('th', k.tal ? 'r' : null, tekstAf(k));
+    const sortHoveder = [];
+    const retningAf = r => (r === 'faldende' ? 'faldende' : 'stigende');
+    let sortering = o.sortering && o.sortering.kolonne != null ? { kolonne: o.sortering.kolonne, retning: retningAf(o.sortering.retning) } : null;
+    function hoved(k, i) {
+      if (!k.sort) {
+        const th = el('th', k.tal ? 'r' : null, tekstAf(k));
+        th.scope = 'col';
+        return th;
+      }
+      const th = el('th', k.tal ? 'r' : null);
       th.scope = 'col';
-      hr.appendChild(th);
+      const b = el('button', 'sorter');
+      b.type = 'button';
+      b.dataset.kolonne = String(i);
+      const pil = el('span', 'sorter-pil');
+      pil.setAttribute('aria-hidden', 'true');
+      b.append(el('span', null, tekstAf(k)), pil);
+      th.appendChild(b);
+      sortHoveder.push({ th, pil, i });
+      return th;
     }
-    thead.appendChild(hr);
+    function tegnSortering() {
+      for (const s of sortHoveder) {
+        const on = Boolean(sortering) && sortering.kolonne === s.i;
+        if (on) s.th.setAttribute('aria-sort', sortering.retning === 'faldende' ? 'descending' : 'ascending');
+        else s.th.removeAttribute('aria-sort');
+        s.pil.textContent = on ? (sortering.retning === 'faldende' ? '▼' : '▲') : '↕';
+      }
+    }
+    if (o.kolonnegrupper && o.kolonner.some(k => k.gruppe != null)) {
+      const navne = new Map(o.kolonnegrupper.map(g => [g.id, g]));
+      const loeb = [];
+      o.kolonner.forEach((k, i) => {
+        const sidste = loeb[loeb.length - 1];
+        if (k.gruppe != null && sidste && sidste.gruppe === k.gruppe) sidste.kol.push(i);
+        else loeb.push({ gruppe: k.gruppe, kol: [i] });
+      });
+      const r1 = document.createElement('tr'), r2 = document.createElement('tr');
+      for (const l of loeb) {
+        const cg = document.createElement('colgroup');
+        if (l.kol.length > 1) cg.span = l.kol.length;
+        t.appendChild(cg);
+        if (l.gruppe == null) {
+          const th = hoved(o.kolonner[l.kol[0]], l.kol[0]);
+          th.rowSpan = 2;
+          r1.appendChild(th);
+        } else {
+          const th = el('th', 'kolgruppe', tekstAf(navne.get(l.gruppe) || { tekst: String(l.gruppe) }));
+          th.scope = 'colgroup';
+          th.colSpan = l.kol.length;
+          r1.appendChild(th);
+          for (const i of l.kol) r2.appendChild(hoved(o.kolonner[i], i));
+        }
+      }
+      thead.append(r1, r2);
+    } else {
+      const hr = document.createElement('tr');
+      o.kolonner.forEach((k, i) => hr.appendChild(hoved(k, i)));
+      thead.appendChild(hr);
+    }
     const tbody = document.createElement('tbody');
     const valgbare = [];
-    for (const r of o.raekker || []) {
-      const tr = document.createElement('tr');
-      if (r.gruppe) {
-        tr.className = 'gruppe';
-        const td = document.createElement('td');
-        td.colSpan = o.kolonner.length;
-        td.appendChild(el('b', null, typeof r.gruppe === 'object' ? r.gruppe : String(r.gruppe)));
-        if (r.note) {
-          td.append(' ');
-          td.appendChild(el('span', 'muted', r.note));
-        }
-        tr.appendChild(td);
-      } else {
-        r.celler.forEach((c, i) => {
+    function bygRaekker(raekker) {
+      tbody.textContent = '';
+      valgbare.length = 0;
+      for (const r of raekker || []) {
+        const tr = document.createElement('tr');
+        if (r.gruppe) {
+          tr.className = 'gruppe';
           const td = document.createElement('td');
-          const kl = [o.kolonner[i] && o.kolonner[i].tal ? 'r' : '', (r.mono || []).includes(i) ? 'mono' : ''].filter(Boolean).join(' ');
-          if (kl) td.className = kl;
-          if (c instanceof Node) td.appendChild(c);
-          else td.textContent = c == null ? '' : String(c);
+          td.colSpan = o.kolonner.length;
+          td.appendChild(el('b', null, typeof r.gruppe === 'object' ? r.gruppe : String(r.gruppe)));
+          if (r.note) {
+            td.append(' ');
+            td.appendChild(el('span', 'muted', r.note));
+          }
           tr.appendChild(td);
-        });
-        tr.tabIndex = valgbare.length ? -1 : 0;
-        tr.setAttribute('aria-selected', 'false');
-        tr.__data = r.data;
-        valgbare.push(tr);
+        } else {
+          r.celler.forEach((c, i) => {
+            const td = document.createElement('td');
+            const kl = [o.kolonner[i] && o.kolonner[i].tal ? 'r' : '', (r.mono || []).includes(i) ? 'mono' : ''].filter(Boolean).join(' ');
+            if (kl) td.className = kl;
+            if (c instanceof Node) td.appendChild(c);
+            else td.textContent = c == null ? '' : String(c);
+            tr.appendChild(td);
+          });
+          tr.tabIndex = valgbare.length ? -1 : 0;
+          tr.setAttribute('aria-selected', 'false');
+          tr.__data = r.data;
+          valgbare.push(tr);
+        }
+        tbody.appendChild(tr);
       }
-      tbody.appendChild(tr);
     }
+    bygRaekker(o.raekker);
     t.append(thead, tbody);
+    if (sortHoveder.length) {
+      tegnSortering();
+      thead.addEventListener('click', e => {
+        const b = e.target.closest('.sorter');
+        if (!b) return;
+        const i = Number(b.dataset.kolonne);
+        const retning = sortering && sortering.kolonne === i ? (sortering.retning === 'stigende' ? 'faldende' : 'stigende') : retningAf(o.kolonner[i].sortStart);
+        sortering = { kolonne: i, retning };
+        tegnSortering();
+        if (o.vedSortering) o.vedSortering(i, retning);
+      });
+    }
     function vaelg(tr, fokus) {
       for (const x of valgbare) {
         const on = x === tr;
@@ -215,7 +294,81 @@
     t.setAttribute('role', 'grid');
     if (o.ariaT) t.setAttribute('data-t-aria', o.ariaT);
     t.vaelg = i => vaelg(valgbare[i], false);
+    t.saetRaekker = raekker => bygRaekker(raekker);
+    t.saetSortering = (kolonne, retning) => {
+      sortering = kolonne == null ? null : { kolonne, retning: retningAf(retning) };
+      tegnSortering();
+    };
     return t;
+  }
+
+  /* ── Sideskift (fra 2.3.0, hører til DataTable) ── Under en tabel, når programmet deler rækkerne i sider: forrige og
+     næste, "side X af Y" og antal pr. side. Programmet leverer siderne: et klik flytter tallet og kalder vedSide(n), og
+     programmet giver de nye rækker (t.saetRaekker) og kalder saet(side, sider), hvis antallet af sider ændres. En <nav>
+     med navn. Forrige og næste har aria-disabled ved første og sidste side (de kan stadig nås, så fokus ikke forsvinder).
+     o: { ariaT|aria, side, sider, forrige, naeste, sideAf ({v} og {w}), prSide, valg: [25, 50, 100], prSideEtiket,
+     vedSide(n), vedPrSide(n) }. Returnerer { rod, saet(side, sider), side, sider, prSide }. */
+  function sideskift(o) {
+    const rod = el('nav', 'sideskift');
+    aria(rod, o);
+    const sideKnap = (tekst, hvilken) => {
+      const b = el('button', 'btn');
+      b.type = 'button';
+      b.dataset.side = hvilken;
+      b.appendChild(el('span', null, tk(tekst)));
+      return b;
+    };
+    const forrige = sideKnap(o.forrige, 'forrige'), naeste = sideKnap(o.naeste, 'naeste');
+    const nr = el('span', 'sideskift-nr');
+    nr.setAttribute('role', 'status');
+    rod.append(forrige, nr, naeste);
+    let prSel = null;
+    if (o.valg && o.valg.length) {
+      const lab = el('label', 'sideskift-pr');
+      lab.appendChild(el('span', null, tk(o.prSideEtiket)));
+      const ramme = el('span', 'vliste');
+      prSel = document.createElement('select');
+      for (const n of o.valg) {
+        const op = document.createElement('option');
+        op.value = String(n);
+        op.textContent = String(n);
+        prSel.appendChild(op);
+      }
+      prSel.value = String(o.prSide != null ? o.prSide : o.valg[0]);
+      ramme.append(prSel, ikon('ned'));
+      lab.appendChild(ramme);
+      rod.appendChild(lab);
+      prSel.addEventListener('change', () => { if (o.vedPrSide) o.vedPrSide(Number(prSel.value)); });
+    }
+    let side = 1, sider = 1;
+    function saet(s, n) {
+      if (n != null) sider = Math.max(1, Number(n));
+      if (s != null) side = Math.max(1, Math.min(sider, Number(s)));
+      forrige.setAttribute('aria-disabled', String(side <= 1));
+      naeste.setAttribute('aria-disabled', String(side >= sider));
+      const t = tk(o.sideAf);
+      for (const a of ['data-t', 'data-v', 'data-w']) nr.removeAttribute(a);
+      if (t && typeof t === 'object') {
+        nr.setAttribute('data-t', t.t);
+        nr.setAttribute('data-v', String(side));
+        nr.setAttribute('data-w', String(sider));
+        nr.textContent = '';
+      } else nr.textContent = String(t == null ? '{v} / {w}' : t).replace(/\{v\}/g, String(side)).replace(/\{w\}/g, String(sider));
+    }
+    function gaa(n) {
+      if (n < 1 || n > sider || n === side) return;
+      saet(n);
+      if (o.vedSide) o.vedSide(side);
+    }
+    forrige.addEventListener('click', () => gaa(side - 1));
+    naeste.addEventListener('click', () => gaa(side + 1));
+    saet(o.side || 1, o.sider || 1);
+    return {
+      rod, saet,
+      get side() { return side; },
+      get sider() { return sider; },
+      get prSide() { return prSel ? Number(prSel.value) : null; },
+    };
   }
 
   /* ── CommandBar ── faner: [{id, t, grupper: [{t, knapper: [{id, t, ikon, pri, deaktiveret, hvorfor, ved, trykket}]}]}].
@@ -935,5 +1088,521 @@
     return { rod, knapper, vaelg: id => saet(id, false), get valgt() { return valgt; } };
   }
 
-  window.Kit = Object.freeze({ IKONER, ikon, registrerIkoner, chip, knap, felt, banner, tabel, commandBar, navTrae, visningsskift, guide, fletbaand, SYMBOL, vaelger, sidepanel, segment });
+  /* ── Filterchip (fra 2.3.0) ── En chip, der kan klikkes: en knap med aria-pressed, der slår et filter til og fra. Den
+     almindelige chip (Kit.chip, .chip) er uændret og kan ikke klikkes. Valgt ses på flade, kant, fed skrift og et
+     flueben, ikke kun på farven. o: { id, t|tekst, antal, valgt, deaktiveret, vedSkift(til, id) }. vedSkift kaldes, når
+     brugeren slår chippen til eller fra. */
+  function filterchip(o) {
+    const b = el('button', 'fchip');
+    b.type = 'button';
+    if (o.id != null) b.dataset.chip = o.id;
+    const m = el('span', 'fchip-mark', '✓');
+    m.setAttribute('aria-hidden', 'true');
+    b.append(m, el('span', null, tekstAf(o)));
+    if (o.antal != null) b.appendChild(el('span', 'ant', String(o.antal)));
+    b.setAttribute('aria-pressed', String(Boolean(o.valgt)));
+    if (o.deaktiveret) b.disabled = true;
+    b.addEventListener('click', () => {
+      const til = b.getAttribute('aria-pressed') !== 'true';
+      b.setAttribute('aria-pressed', String(til));
+      if (o.vedSkift) o.vedSkift(til, o.id);
+    });
+    return b;
+  }
+
+  /* En gruppe af filterchips med et navn (role="group"). Hver chip slås til og fra for sig; nul, en eller flere kan være
+     valgt. o: { ariaT|aria, chips: [{id, t|tekst, antal, deaktiveret}], valgt: [id, …], vedValg([id, …]) }. Returnerer
+     { rod, chips, valgt, saetValgt }. saetValgt sætter valget udefra uden at kalde vedValg. */
+  function filterchips(o) {
+    const rod = el('div', 'fchips');
+    rod.setAttribute('role', 'group');
+    aria(rod, o);
+    const foer = new Set(o.valgt || []);
+    const valgte = () => chips.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.chip);
+    const chips = o.chips.map(c => {
+      const b = filterchip({ id: c.id, t: c.t, tekst: c.tekst, antal: c.antal, deaktiveret: c.deaktiveret, valgt: foer.has(c.id), vedSkift: () => { if (o.vedValg) o.vedValg(valgte()); } });
+      rod.appendChild(b);
+      return b;
+    });
+    function saetValgt(ids) {
+      const s = new Set(ids || []);
+      for (const b of chips) b.setAttribute('aria-pressed', String(s.has(b.dataset.chip)));
+    }
+    return { rod, chips, saetValgt, get valgt() { return valgte(); } };
+  }
+
+  /* ── Kasse (fra 2.3.0) ── Kittets kort (card): en flade med overskrift, indhold og valgfri handling i hovedet og valgfri
+     fodlinje. Klassen hedder .kasse, fordi .kort betyder noget andet i et af programmerne. En <section> med navn fra
+     overskriften (aria-labelledby). o: { id, t|tekst, niveau (2–4; standard 2), handling: Node, indhold: Node, fod: Node,
+     fyld }. fyld: true giver indholdet uden luft (fx en tabel helt ud til kanten). Returnerer { rod, overskrift, indhold,
+     fod }; fod er null uden en fodlinje. */
+  let kasseNr = 0;
+  function kasse(o) {
+    const nr = ++kasseNr;
+    const rod = el('section', 'kasse');
+    if (o.id) rod.id = o.id;
+    const top = el('div', 'kasse-top');
+    const niveau = [2, 3, 4].includes(o.niveau) ? o.niveau : 2;
+    const h = el('h' + niveau, null, tekstAf(o));
+    h.id = (o.id || 'kit-kasse' + nr) + '-h';
+    rod.setAttribute('aria-labelledby', h.id);
+    top.appendChild(h);
+    if (o.handling) {
+      const plads = el('div', 'kasse-handling');
+      plads.appendChild(o.handling);
+      top.appendChild(plads);
+    }
+    const indhold = el('div', 'kasse-indhold' + (o.fyld ? ' fyld' : ''));
+    if (o.indhold) indhold.appendChild(o.indhold);
+    rod.append(top, indhold);
+    let fod = null;
+    if (o.fod) {
+      fod = el('div', 'kasse-fod');
+      fod.appendChild(o.fod);
+      rod.appendChild(fod);
+    }
+    return { rod, overskrift: h, indhold, fod };
+  }
+
+  /* ── StatusTile (fra 2.3.0) ── En flise svarer på "skal jeg gøre noget?" med ét tal, én etiket og én status
+     (design/ui-kit-2/components/StatusTile). Hele flisen er en knap (ved) eller et link (href), der åbner det, tallet
+     tæller; uden ved og href er den tekst og kan ikke klikkes. Status som StatusChip (symbol og ord) og en streg i
+     statussens mærkefarve i venstre side, så status aldrig hviler på farven alene. o: { tal, t|tekst (etiketten),
+     status: { variant, t|tekst }, under: t|tekst, udvikling: { retning: 'op' | 'ned' | 'flad', t|tekst }, ved, href,
+     ariaT|aria }. Udviklingen er en pil og en tekst; pilen alene siger ikke noget. */
+  const UDVIKLING = { op: '↑', ned: '↓', flad: '→' };
+  function statusflise(o) {
+    if (o.status && !(o.status.variant in SYMBOL)) throw new Error('ukendt status: ' + o.status.variant);
+    if (o.udvikling && !(o.udvikling.retning in UDVIKLING)) throw new Error('ukendt udvikling: ' + o.udvikling.retning);
+    const tag = o.href ? 'a' : o.ved ? 'button' : 'div';
+    const f = el(tag, 'sflise' + (o.status ? ' ' + o.status.variant : ''));
+    if (tag === 'button') {
+      f.type = 'button';
+      f.addEventListener('click', o.ved);
+    } else if (tag === 'a') f.href = o.href;
+    f.append(el('span', 'sflise-navn', tekstAf(o)), el('span', 'sflise-tal', o.tal == null ? '–' : String(o.tal)));
+    if (o.status) f.appendChild(chip(o.status.variant, tekstAf(o.status)));
+    if (o.udvikling) {
+      const u = el('span', 'sflise-under');
+      const pil = el('span', 'sflise-pil', UDVIKLING[o.udvikling.retning]);
+      pil.setAttribute('aria-hidden', 'true');
+      u.append(pil, el('span', null, tekstAf(o.udvikling)));
+      f.appendChild(u);
+    } else if (o.under) f.appendChild(el('span', 'sflise-under', tk(o.under)));
+    aria(f, o);
+    return f;
+  }
+
+  /* En tekst som nøgle (med data-v og data-w) eller færdig tekst sættes ind i et element, der havde en anden. */
+  function saetTekst(e, v) {
+    for (const a of ['data-t', 'data-v', 'data-w']) e.removeAttribute(a);
+    e.textContent = '';
+    const t = tk(v);
+    if (t && typeof t === 'object') {
+      e.setAttribute('data-t', t.t);
+      if (v.v != null) e.setAttribute('data-v', String(v.v));
+      if (v.w != null) e.setAttribute('data-w', String(v.w));
+    } else if (t != null) e.textContent = String(t);
+  }
+
+  /* ── Tom tilstand (fra 2.3.0) ── Det, der står, når der intet er at vise: et ikon, en overskrift, én sætning og højst én
+     handling. Til en tom visning, en tom tabel og "ingen træffere". o: { ikon, t|tekst (overskriften), p (sætningen),
+     handling: { t|tekst, ved, variant, ikon }, lille, niveau (2–4; standard 2) }. lille: true er den lave udgave under en
+     tabel eller en søgning; dens overskrift er et afsnit (ingen overskrift i sidens opbygning), og den har role="status",
+     så "ingen træffere" læses op, når teksten skifter. */
+  function tomTilstand(o) {
+    const lille = Boolean(o.lille);
+    const rod = el('div', 'tomt' + (lille ? ' lille' : ''));
+    if (lille) rod.setAttribute('role', 'status');
+    if (o.ikon) rod.appendChild(ikon(o.ikon, 'tomt-ikon'));
+    const niveau = [2, 3, 4].includes(o.niveau) ? o.niveau : 2;
+    rod.appendChild(el(lille ? 'p' : 'h' + niveau, 'tomt-h', tekstAf(o)));
+    if (o.p != null) rod.appendChild(el('p', 'tomt-p', tk(o.p)));
+    if (o.handling) rod.appendChild(knap(o.handling));
+    return rod;
+  }
+
+  /* ── Fremdrift (fra 2.3.0) ── Viser, at programmet arbejder, med en tekst, der siger hvad. Med maks: en bestemt bjælke
+     (<progress>, navngivet af teksten). Uden maks: en ubestemt ring, der snurrer, ved siden af teksten; ringen er aldrig
+     den eneste besked. Teksten har role="status", så den læses op, når den skifter. omraade (det område, der arbejder)
+     får aria-busy="true", indtil faerdig() kaldes. Ringen står stille ved prefers-reduced-motion. o: { t|tekst, maks,
+     vaerdi, omraade }. Returnerer { rod, bjaelke, saet(vaerdi, tekst), faerdig() }; tekst er en nøgle ({ t, v, w }) eller
+     færdig tekst. */
+  let fremNr = 0;
+  function fremdrift(o) {
+    const nr = ++fremNr, bestemt = o.maks != null;
+    const rod = el('div', 'frem' + (bestemt ? '' : ' ubestemt'));
+    const tekst = el('span', 'frem-tekst');
+    saetTekst(tekst, o.t ? o : o.tekst);
+    tekst.id = 'kit-frem' + nr;
+    tekst.setAttribute('role', 'status');
+    let bjaelke = null;
+    if (bestemt) {
+      bjaelke = document.createElement('progress');
+      bjaelke.className = 'frem-bjaelke';
+      bjaelke.max = o.maks;
+      bjaelke.value = o.vaerdi || 0;
+      bjaelke.setAttribute('aria-labelledby', tekst.id);
+      rod.append(tekst, bjaelke);
+    } else {
+      const ring = el('span', 'snurr');
+      ring.setAttribute('aria-hidden', 'true');
+      rod.append(ring, tekst);
+    }
+    if (o.omraade) o.omraade.setAttribute('aria-busy', 'true');
+    return {
+      rod, bjaelke,
+      saet(v, ny) {
+        if (bjaelke && v != null) bjaelke.value = v;
+        if (ny !== undefined) saetTekst(tekst, ny);
+      },
+      faerdig() { if (o.omraade) o.omraade.removeAttribute('aria-busy'); },
+    };
+  }
+
+  /* ── Værktøjstip (fra 2.3.0) ── En kort forklaring, der vises ved hover og ved tastaturfokus på maal, kan holdes åben
+     med musen (man kan flytte musen op på tippet), og forsvinder ved Esc, når musen går væk, og når fokus går (WCAG
+     1.4.13). role="tooltip"; maal får aria-describedby. Tippet står midt over maal, under det, hvis der ikke er plads
+     over, og ved venstre eller højre kant, hvis det ellers går ud over vinduet: kun klasser (under, venstre-kant,
+     hoejre-kant), ingen inline-stil. Kittet lægger maal i en <span class="tip-plads">, som tippet placeres ud fra (står
+     maal allerede i en, bruges den). o: { t|tekst }. Returnerer { tip, plads, vis(), skjul(), synlig }. */
+  let tipNr = 0;
+  const TIP_VENT = 300, TIP_SLIP = 150, TIP_AFSTAND = 6, TIP_KANT = 8;
+  function vaerktoejstip(maal, o) {
+    const nr = ++tipNr;
+    let plads = maal.parentElement;
+    if (!plads || !plads.classList.contains('tip-plads')) {
+      plads = el('span', 'tip-plads');
+      if (maal.parentNode) maal.parentNode.insertBefore(plads, maal);
+      plads.appendChild(maal);
+    }
+    const tip = el('span', 'tip', tekstAf(o));
+    tip.id = 'kit-tip' + nr;
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+    plads.appendChild(tip);
+    const ids = (maal.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+    maal.setAttribute('aria-describedby', [...ids, tip.id].join(' '));
+    let visUr = null, slipUr = null, mus = false, fokus = false;
+    function placer() {
+      tip.classList.remove('under', 'venstre-kant', 'hoejre-kant');
+      const m = maal.getBoundingClientRect(), t = tip.getBoundingClientRect();
+      const vb = window.innerWidth || document.documentElement.clientWidth;
+      if (m.top - TIP_AFSTAND - t.height < TIP_KANT) tip.classList.add('under');
+      const midt = (m.left + m.right) / 2;
+      if (midt - t.width / 2 < TIP_KANT) tip.classList.add('venstre-kant');
+      else if (midt + t.width / 2 > vb - TIP_KANT) tip.classList.add('hoejre-kant');
+    }
+    function esc(e) {
+      if (e.key !== 'Escape' || tip.hidden) return;
+      e.preventDefault();
+      e.stopPropagation();
+      skjul();
+    }
+    function vis() {
+      clearTimeout(visUr);
+      clearTimeout(slipUr);
+      if (!tip.hidden) return;
+      tip.hidden = false;
+      placer();
+      document.addEventListener('keydown', esc, true);
+    }
+    function skjul() {
+      clearTimeout(visUr);
+      clearTimeout(slipUr);
+      if (tip.hidden) return;
+      tip.hidden = true;
+      document.removeEventListener('keydown', esc, true);
+    }
+    const tastatur = () => { try { return maal.matches(':focus-visible'); } catch (e) { return true; } };
+    plads.addEventListener('mouseenter', () => {
+      mus = true;
+      clearTimeout(slipUr);
+      if (tip.hidden) visUr = setTimeout(vis, TIP_VENT);
+    });
+    plads.addEventListener('mouseleave', () => {
+      mus = false;
+      clearTimeout(visUr);
+      if (!fokus) slipUr = setTimeout(skjul, TIP_SLIP);
+    });
+    maal.addEventListener('focus', () => {
+      fokus = true;
+      if (tastatur()) vis();
+    });
+    maal.addEventListener('blur', () => {
+      fokus = false;
+      if (!mus) skjul();
+    });
+    return { tip, plads, vis, skjul, get synlig() { return !tip.hidden; } };
+  }
+
+  /* ── Afkrydsning, kontakt, radiogruppe og valgliste (fra 2.3.0) ── Formularens valg på browserens egne <input> og
+     <select> med kittets udseende (appearance: none og kittets tegning): ingen hjemmebyggede roller, så tastatur,
+     etiket, formular og skærmlæser virker som i browseren. Hjælp eller fejl står under valget med aria-describedby; en
+     fejl giver aria-invalid. */
+  let valgNr = 0;
+  function hjaelpUnder(rod, inp, id, o, klasse) {
+    if (o.fejl == null && o.hjaelp == null) return null;
+    const hj = el('span', klasse + (o.fejl != null ? ' fejltekst' : ''), tk(o.fejl != null ? o.fejl : o.hjaelp));
+    hj.id = id + '-hj';
+    inp.setAttribute('aria-describedby', hj.id);
+    if (o.fejl != null) inp.setAttribute('aria-invalid', 'true');
+    rod.appendChild(hj);
+    return hj;
+  }
+  /* En række med en boks og en tekst: <label class="afk"><input class="afk-boks">…</label> i en .afk-felt. */
+  function boksRaekke(type, o, id) {
+    const rod = el('div', 'afk-felt');
+    const lab = el('label', 'afk');
+    const inp = document.createElement('input');
+    inp.type = type;
+    inp.id = id;
+    inp.className = 'afk-boks';
+    if (o.navn) inp.name = o.navn;
+    if (o.vaerdi != null) inp.value = String(o.vaerdi);
+    if (o.deaktiveret) inp.disabled = true;
+    lab.append(inp, el('span', 'afk-tekst', tekstAf(o)));
+    rod.appendChild(lab);
+    hjaelpUnder(rod, inp, id, o, 'afk-hj');
+    return { rod, inp };
+  }
+
+  /* Afkrydsning: <input type="checkbox">. o: { id, t|tekst, valgt, delvis, deaktiveret, navn, vaerdi, hjaelp, fejl,
+     vedSkift(valgt) }. delvis: true er "delvis valgt" (indeterminate), fx en "Vælg alle" over en liste, hvor nogle er
+     valgt; et klik gør den hel. Returnerer { rod, input, valgt, saetValgt(v), saetDelvis() }. */
+  function afkrydsning(o) {
+    const { rod, inp } = boksRaekke('checkbox', o, o.id || 'kit-afk-' + ++valgNr);
+    inp.checked = Boolean(o.valgt);
+    if (o.delvis) inp.indeterminate = true;
+    if (o.vedSkift) inp.addEventListener('change', () => o.vedSkift(inp.checked));
+    return {
+      rod, input: inp,
+      get valgt() { return inp.checked; },
+      saetValgt(v) { inp.checked = Boolean(v); inp.indeterminate = false; },
+      saetDelvis() { inp.indeterminate = true; },
+    };
+  }
+
+  /* Kontakt (til/fra): <input type="checkbox" role="switch">. Valgt frem for <button role="switch" aria-checked>, fordi
+     input'en har tilstanden (checked), mellemrum, etiketten, formularen og change fra browseren, og skærmlæsere siger
+     "kontakt, til/fra". Til og fra ses på knoppens plads (venstre/højre) og fladen, og med ord: { til, fra } også på et
+     ord ved siden af (aria-hidden; kontakten siger selv sin tilstand). Begge ord står i markup, og kit.css viser det, der
+     passer (:checked), så et sprogskift aldrig skal bygge kontakten om. En kontakt virker straks; noget, der først gælder
+     efter Gem, er en afkrydsning. o: { id, t|tekst, til, deaktiveret, navn, hjaelp, fejl, ord: { til, fra },
+     vedSkift(til) }. Returnerer { rod, input, til, saet(v) }. */
+  function kontakt(o) {
+    const id = o.id || 'kit-tf-' + ++valgNr;
+    const rod = el('div', 'afk-felt');
+    const lab = el('label', 'afk');
+    const inp = document.createElement('input');
+    inp.type = 'checkbox';
+    inp.id = id;
+    inp.className = 'tilfra';
+    inp.setAttribute('role', 'switch');
+    if (o.navn) inp.name = o.navn;
+    if (o.deaktiveret) inp.disabled = true;
+    inp.checked = Boolean(o.til);
+    lab.append(inp, el('span', 'afk-tekst', tekstAf(o)));
+    if (o.ord) {
+      const ord = el('span', 'tilfra-ord');
+      ord.setAttribute('aria-hidden', 'true');
+      ord.append(el('span', 'tilfra-til', tk(o.ord.til)), el('span', 'tilfra-fra', tk(o.ord.fra)));
+      lab.appendChild(ord);
+    }
+    rod.appendChild(lab);
+    hjaelpUnder(rod, inp, id, o, 'afk-hj');
+    if (o.vedSkift) inp.addEventListener('change', () => o.vedSkift(inp.checked));
+    return {
+      rod, input: inp,
+      get til() { return inp.checked; },
+      saet(v) { inp.checked = Boolean(v); },
+    };
+  }
+
+  /* Radiogruppe: <fieldset> med <legend> og én <input type="radio"> pr. valg (samme name). Pilene flytter og vælger, og
+     Tab går ind og ud som ét stop: browserens egen opførsel. o: { etiket, navn, valg: [{ id, t|tekst, hjaelp,
+     deaktiveret }], valgt, vandret, hjaelp, fejl, vedValg(id) }. Returnerer { rod, inputs, valgt, vaelg(id) }; vaelg kalder
+     ikke vedValg. */
+  function radiogruppe(o) {
+    const nr = ++valgNr, navn = o.navn || 'kit-radio-' + nr;
+    const rod = el('fieldset', 'valgsaet' + (o.vandret ? ' vandret' : ''));
+    rod.appendChild(el('legend', 'label', tk(o.etiket)));
+    const inputs = o.valg.map((v, i) => {
+      const { rod: r, inp } = boksRaekke('radio', { ...v, navn, vaerdi: v.id }, `kit-radio-${nr}-${i + 1}`);
+      inp.checked = v.id === o.valgt;
+      rod.appendChild(r);
+      return inp;
+    });
+    /* Hjælp eller fejl under gruppen, med aria-describedby på <fieldset>. aria-invalid hører ikke til en gruppe eller en
+       radioknap; en fejl ses på teksten og (kit.css) på boksenes kant. */
+    hjaelpUnder(rod, rod, 'kit-radio-' + nr, o, 'afk-hj');
+    rod.removeAttribute('aria-invalid');
+    rod.addEventListener('change', e => { if (inputs.includes(e.target) && o.vedValg) o.vedValg(e.target.value); });
+    return {
+      rod, inputs,
+      get valgt() { const v = inputs.find(x => x.checked); return v ? v.value : null; },
+      vaelg(id) { for (const x of inputs) x.checked = x.value === id; },
+    };
+  }
+
+  /* Valgliste: browserens egen <select> i en .felt med etiket over og hjælp eller fejl under, med kittets kant, flade og
+     pil. Til ét valg blandt mange i en formular; listen åbner som styresystemets. o: { id, etiket, valg: [{ id, t|tekst,
+     deaktiveret }], valgt, deaktiveret, hjaelp, fejl, vedValg(id) }. Returnerer { rod, select, valgt, vaelg(id) }; vaelg
+     kalder ikke vedValg. */
+  function valgliste(o) {
+    const id = o.id || 'kit-vl-' + ++valgNr;
+    const rod = el('div', 'felt');
+    const lab = el('label', 'label', tk(o.etiket));
+    lab.htmlFor = id;
+    const ramme = el('span', 'vliste');
+    const sel = document.createElement('select');
+    sel.id = id;
+    for (const v of o.valg) {
+      const op = document.createElement('option');
+      op.value = v.id;
+      if (v.t) op.setAttribute('data-t', v.t);
+      else op.textContent = String(v.tekst);
+      if (v.deaktiveret) op.disabled = true;
+      sel.appendChild(op);
+    }
+    if (o.valgt != null) sel.value = o.valgt;
+    if (o.deaktiveret) sel.disabled = true;
+    ramme.append(sel, ikon('ned'));
+    rod.append(lab, ramme);
+    hjaelpUnder(rod, sel, id, o, 'hj');
+    if (o.vedValg) sel.addEventListener('change', () => o.vedValg(sel.value));
+    return { rod, select: sel, get valgt() { return sel.value; }, vaelg(v) { sel.value = v; } };
+  }
+
+  /* ── Dialog (fra 2.3.0) ── En modal dialog på browserens <dialog> og showModal(): fokusfælden (resten af siden er inert),
+     Esc og den mørke baggrund er browserens. Overskrift (h2), en sætning og/eller frit indhold, fodlinje med knapper (den
+     primære står til højre; en farlig handling er variant 'danger') og en valgfri lukkeknap. aria-labelledby fra
+     overskriften og aria-describedby fra sætningen. Ved åbning får det element fokus, programmet peger på (fokus), ellers
+     det første felt i indholdet, ellers knappen, der ikke er farlig, når der er en farlig, ellers den primære. Ved lukning
+     går fokus tilbage til det, der havde det. o: { t|tekst, p, indhold: Node, knapper: [{ id, t|tekst, variant, ikon, svar,
+     ved(dlg) }], luk: { ariaT|aria }, fokus: id | Node, bred, vedLuk(svar) }. Lukkeknappen skal have et navn (kittet har
+     ingen tekster); luk uden navn giver en fejl. Et klik på en knap kalder ved; giver
+     den false, bliver dialogen åben (fx ved en fejl i en formular), ellers lukker den med knappens svar (standard: id).
+     Esc giver svaret 'esc', lukkeknappen 'luk' og luk() fra koden 'kode'. Returnerer { rod, aabn(fokus), luk(svar),
+     aaben, indhold, overskrift, knap(id) }. */
+  let dlgNr = 0;
+  function dialog(o) {
+    const nr = ++dlgNr;
+    const rod = el('dialog', 'modal' + (o.bred ? ' bred' : ''));
+    const top = el('div', 'modal-top');
+    const h = el('h2', null, tekstAf(o));
+    h.id = 'kit-dlg' + nr + '-h';
+    h.tabIndex = -1;
+    rod.setAttribute('aria-labelledby', h.id);
+    top.appendChild(h);
+    let lukKnap = null;
+    if (o.luk) {
+      if (typeof o.luk !== 'object' || !(o.luk.ariaT || o.luk.aria)) throw new Error('dialog: lukkeknappen skal have et navn (luk: { ariaT } eller { aria })');
+      lukKnap = el('button', 'modal-luk');
+      lukKnap.type = 'button';
+      lukKnap.appendChild(ikon('luk'));
+      aria(lukKnap, o.luk);
+      lukKnap.addEventListener('click', () => luk('luk'));
+      top.appendChild(lukKnap);
+    }
+    rod.appendChild(top);
+    if (o.p != null) {
+      const p = el('p', 'modal-tekst', tk(o.p));
+      p.id = 'kit-dlg' + nr + '-p';
+      rod.setAttribute('aria-describedby', p.id);
+      rod.appendChild(p);
+    }
+    const indhold = el('div', 'modal-indhold');
+    if (o.indhold) indhold.appendChild(o.indhold);
+    rod.appendChild(indhold);
+    const knapper = {};
+    const fod = el('div', 'modal-fod');
+    const liste = (o.knapper || []).slice();
+    const pri = liste.findIndex(k => k.variant === 'primary');
+    if (pri >= 0) liste.push(liste.splice(pri, 1)[0]);
+    let api = null;
+    for (const k of liste) {
+      const b = knap({ t: k.t, tekst: k.tekst, variant: k.variant, ikon: k.ikon, ved: () => {
+        if (k.ved && k.ved(api) === false) return;
+        luk(k.svar != null ? k.svar : k.id);
+      } });
+      if (k.id != null) {
+        b.dataset.svar = k.id;
+        knapper[k.id] = b;
+      }
+      fod.appendChild(b);
+    }
+    if (liste.length) rod.appendChild(fod);
+    let fra = null, svar = 'kode';
+    function foersteFokus(f) {
+      if (f && typeof f === 'object') return f;
+      if (f != null) return knapper[f] || document.getElementById(f);
+      const felt = indhold.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+      if (felt) return felt;
+      const alle = [...fod.querySelectorAll('button:not([disabled])')];
+      if (alle.some(b => b.classList.contains('danger'))) return alle.find(b => !b.classList.contains('danger')) || lukKnap || h;
+      return alle.find(b => b.classList.contains('primary')) || alle[alle.length - 1] || lukKnap || h;
+    }
+    function aabn(fokus) {
+      if (rod.open) return;
+      if (!rod.isConnected) document.body.appendChild(rod);
+      const a = document.activeElement;
+      fra = a && a !== document.body ? a : null;
+      svar = 'kode';
+      rod.showModal();
+      const maal = foersteFokus(fokus !== undefined ? fokus : o.fokus);
+      if (maal) maal.focus();
+    }
+    function luk(s) {
+      if (!rod.open) return;
+      svar = s == null ? 'kode' : s;
+      rod.close(String(svar));
+    }
+    rod.addEventListener('cancel', () => { svar = 'esc'; });
+    rod.addEventListener('close', () => {
+      const s = svar, tilbage = fra;
+      svar = 'kode';
+      fra = null;
+      if (tilbage && tilbage.isConnected && typeof tilbage.focus === 'function') tilbage.focus();
+      if (o.vedLuk) o.vedLuk(s);
+    });
+    api = { rod, aabn, luk: s => luk(s == null ? 'kode' : s), indhold, overskrift: h, knap: id => knapper[id], get aaben() { return rod.open; } };
+    return api;
+  }
+
+  /* Bekræftelse som kort vej ("Er du sikker?"): en dialog med en sætning og to knapper, nej til venstre og ja til højre.
+     o: { t|tekst, p, ja, nej, farlig, udfyld(rod) }, hvor ja og nej er { t } eller { tekst }. Returnerer et løfte: true
+     ved ja, false ved nej, Esc og luk. farlig: true gør ja til en farlig knap og giver nej fokus; ellers er ja primær og
+     har fokus. udfyld kaldes med dialogen, lige før den åbner (fx rod => Sprog.anvend(rod), når teksterne er nøgler).
+     Dialogen fjernes fra siden igen, når den er lukket. */
+  function bekraeft(o) {
+    const spec = v => (v && typeof v === 'object' ? { t: v.t, tekst: v.tekst } : { tekst: v });
+    return new Promise(svar => {
+      const d = dialog({
+        t: o.t, tekst: o.tekst, p: o.p, fokus: o.farlig ? 'nej' : 'ja',
+        knapper: [{ id: 'nej', ...spec(o.nej) }, { id: 'ja', ...spec(o.ja), variant: o.farlig ? 'danger' : 'primary' }],
+        vedLuk: s => {
+          d.rod.remove();
+          svar(s === 'ja');
+        },
+      });
+      if (o.udfyld) o.udfyld(d.rod);
+      d.aabn();
+    });
+  }
+
+  /* En række fliser, der ombrydes: <ul role="list"> med én <li> pr. flise. o: { ariaT|aria, fliser: [o | Node, …] }. */
+  function statusfliser(o) {
+    const ul = el('ul', 'sfliser');
+    ul.setAttribute('role', 'list');
+    aria(ul, o);
+    for (const f of o.fliser) {
+      const li = document.createElement('li');
+      li.appendChild(f instanceof Node ? f : statusflise(f));
+      ul.appendChild(li);
+    }
+    return ul;
+  }
+
+  window.Kit = Object.freeze({ IKONER, ikon, registrerIkoner, chip, knap, felt, banner, tabel, commandBar, navTrae, visningsskift, guide, fletbaand, SYMBOL, vaelger, sidepanel, segment, filterchip, filterchips, kasse, statusflise, statusfliser, tomTilstand, fremdrift, vaerktoejstip, afkrydsning, kontakt, radiogruppe, valgliste, dialog, bekraeft, sideskift });
 })();

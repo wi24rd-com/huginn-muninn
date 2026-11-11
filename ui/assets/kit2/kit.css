@@ -3,7 +3,10 @@
    tokens.css; ingen farvekoder her. Hver komponent er beskrevet i pakkens KOMPONENTER.md.
    Komponenter: AppShell (.vindue, .titel, .midte, .arb, .vl, .soeg, .fl, .flade), CommandBar (.cmd), NavPane (.nav),
    StatusFooter (.fodl), DataTable (.tabel), StatusChip (.chip), Button (.btn), TextField (.felt), Banner (.ban), Wizard
-   (.wiz) og Fletbaand (.flet). Fra 2.2.0 også Vælger (.vlg), Sidepanel (.sidepanel) og Segmentknap (.seg). */
+   (.wiz) og Fletbaand (.flet). Fra 2.2.0 også Vælger (.vlg), Sidepanel (.sidepanel) og Segmentknap (.seg). Fra 2.3.0 også
+   Filterchip (.fchip), Kasse (.kasse), StatusTile (.sflise), Tom tilstand (.tomt), Fremdrift (.frem), Værktøjstip (.tip),
+   Afkrydsning (.afk), Radiogruppe (.valgsaet), Kontakt (.tilfra), Valgliste (.vliste), Dialog (.modal), tabellens sortering
+   og sideskift (.sorter, .sideskift) og Tekststørrelse (<html data-tekst>). Kittet sætter aldrig inline-stil. */
 
 /* ── Skrifter (pakket med, OFL; intet hentes) ── */
 @font-face { font-family: "Inter"; font-style: normal; font-display: swap; font-weight: 100 900; src: url(fonts/inter-latin-wght-normal.woff2) format("woff2-variations"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
@@ -124,6 +127,24 @@ button, input, select, textarea { font: inherit; color: inherit; }
   width: 100%; height: 30px; padding: 0 8px;
   border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);
 }
+
+/* Fra 2.3.0: et kolonnehoved, der sorterer, er en knap med hovedets udseende og en pil (↕ kan sorteres, ▲ stigende,
+   ▼ faldende); den sorterede kolonne har aria-sort og står i tekstens farve. En gruppeoverskrift over flere kolonner
+   (.kolgruppe) står midt over dem. Sideskiftet står under tabellen. */
+.tabel th .sorter {
+  display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; height: 28px; padding: 0;
+  border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer;
+}
+.tabel th .sorter:hover, .tabel th[aria-sort] { color: var(--text); }
+.tabel th .sorter:focus-visible { outline-offset: 0; }
+.sorter-pil { font-size: 10px; line-height: 1; }
+.tabel th:not([aria-sort]) .sorter-pil { color: var(--text-muted); }
+.tabel th.kolgruppe { text-align: center; }
+.sideskift { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-top: 1px solid var(--border); font-size: var(--small-size); }
+.sideskift .btn { height: 30px; padding: 0 var(--space-3); font-size: var(--small-size); }
+.sideskift-nr { min-width: 0; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.sideskift-pr { display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto; color: var(--text-muted); }
+.sideskift-pr .vliste select { width: auto; height: 30px; font-size: var(--small-size); }
 
 /* ── AppShell ── */
 .vindue { display: flex; flex-direction: column; height: 100vh; min-width: 900px; min-height: 560px; background: var(--bg); overflow: hidden; }
@@ -360,3 +381,202 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .seg-v:hover { background: var(--surface-raised); }
 .seg-v[aria-checked="true"] { background: var(--accent-soft); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
 .seg-v:focus-visible { outline: 2px solid var(--info); outline-offset: -2px; }
+
+/* ── Filterchip ── En chip, der kan klikkes (fra 2.3.0): en knap med aria-pressed. Valgt har blød accentflade, kant i accent,
+   fed skrift og et flueben, så valget ikke hviler på farven alene. 28 px høj (over WCAG 2.5.8's 24 px). .chip er uændret. */
+.fchips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.fchip {
+  display: inline-flex; align-items: center; gap: var(--space-1); flex: none; height: 28px; padding: 0 var(--space-3) 0 10px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-pill); background: var(--surface); color: var(--text);
+  font-size: var(--small-size); font-weight: 400; white-space: nowrap; cursor: pointer;
+}
+.fchip:hover { background: var(--surface-raised); }
+.fchip-mark { display: none; color: var(--accent); font-weight: 700; }
+.fchip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+.fchip[aria-pressed="true"] .fchip-mark { display: inline; }
+.fchip .ant { color: var(--text-muted); font-weight: 400; }
+.fchip[aria-pressed="true"] .ant { color: var(--text); }
+.fchip[disabled] { opacity: .55; cursor: default; }
+.fchip[disabled]:hover { background: var(--surface); }
+
+/* ── Kasse ── Kittets kort (card) fra 2.3.0: flade med kant, hoved (overskrift og valgfri handling), indhold og valgfri
+   fodlinje. Ingen overflow, så en vælger i hovedet ikke klippes; hovedet og fodlinjen har selv de runde hjørner. */
+.kasse { display: flex; flex-direction: column; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.kasse-top {
+  display: flex; align-items: center; gap: var(--space-2); flex: none; min-height: 44px; padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border-bottom: 1px solid var(--border); border-radius: var(--radius-md) var(--radius-md) 0 0; background: var(--surface-raised);
+}
+.kasse-top > h2, .kasse-top > h3, .kasse-top > h4 { flex: 1; min-width: 0; margin: 0; font-size: var(--h3-size); line-height: var(--h3-line); font-weight: var(--h3-weight); }
+.kasse-handling { display: flex; align-items: center; gap: var(--space-2); flex: none; }
+.kasse-handling .btn.ghost { height: 30px; background: var(--surface-raised); border-color: var(--surface-raised); }
+.kasse-handling .btn.ghost:hover { background: var(--surface); }
+.kasse-indhold { flex: 1; min-height: 0; padding: var(--space-4); }
+.kasse-indhold.fyld { padding: 0; }
+.kasse-fod {
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex: none; padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-md) var(--radius-md); background: var(--surface-raised);
+  font-size: var(--small-size); color: var(--text-muted);
+}
+
+/* ── StatusTile ── Fliser fra 2.3.0: ét tal, én etiket og én status. Stregen til venstre har statussens mærkefarve
+   (*-mark); chippen har symbol, ord og blød flade (*-soft). Kun en flise, der er en knap eller et link, har hover og
+   markør. Rækken ombrydes og holder flisernes bredde ens. */
+.sfliser { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: var(--space-3); }
+.sfliser > li { display: flex; min-width: 0; }
+.sflise {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); flex: 1; min-width: 0; margin: 0;
+  padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text); font: inherit; text-align: left; text-decoration: none;
+}
+.sflise.ok { border-left-color: var(--ok-mark); }
+.sflise.warn { border-left-color: var(--warn-mark); }
+.sflise.danger { border-left-color: var(--danger-mark); }
+.sflise.info { border-left-color: var(--info-mark); }
+.sflise.none { border-left-color: var(--none-mark); }
+button.sflise, a.sflise { cursor: pointer; }
+button.sflise:hover, a.sflise:hover { background: var(--surface-raised); }
+.sflise-navn { font-size: var(--small-size); line-height: var(--small-line); color: var(--text-muted); }
+.sflise-tal { font-size: var(--h1-size); line-height: var(--h1-line); font-weight: 600; letter-spacing: var(--h1-tracking); font-variant-numeric: tabular-nums; }
+.sflise-under { display: inline-flex; align-items: baseline; gap: var(--space-1); font-size: var(--small-size); line-height: var(--small-line); color: var(--text-muted); }
+.sflise-pil { font-weight: 700; }
+
+/* ── Tom tilstand ── Fra 2.3.0: ikon, overskrift, én sætning og højst én handling, midt på fladen. .lille er den lave udgave
+   under en tabel eller en søgning. Målene er dem, det første program brugte til sin egen tomme tilstand. */
+.tomt { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); max-width: 520px; margin: 0 auto; padding: var(--space-8) var(--space-6); text-align: center; }
+.tomt-ikon { width: 40px; height: 40px; flex: none; fill: none; stroke: var(--text-muted); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.tomt-h { margin: var(--space-2) 0 0; font-size: var(--h2-size); line-height: var(--h2-line); font-weight: var(--h2-weight); }
+.tomt-p { margin: 0; color: var(--text-muted); }
+.tomt > .btn { margin-top: var(--space-2); }
+.tomt.lille { max-width: none; gap: var(--space-1); padding: var(--space-6) var(--space-4); }
+.tomt.lille .tomt-ikon { width: 24px; height: 24px; }
+.tomt.lille .tomt-h { margin: 0; font-size: var(--h3-size); line-height: var(--h3-line); font-weight: var(--h3-weight); }
+
+/* ── Fremdrift ── Fra 2.3.0: en bestemt bjælke (<progress>) under teksten, eller en ring, der snurrer, foran teksten.
+   Ringen står stille, når brugeren har bedt om mindre bevægelse. */
+.frem { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; font-size: var(--small-size); line-height: var(--small-line); color: var(--text); }
+.frem.ubestemt { flex-direction: row; align-items: center; gap: var(--space-2); }
+.frem-tekst { min-width: 0; }
+.frem-bjaelke {
+  -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 8px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-pill); background: var(--surface); color: var(--accent); overflow: hidden;
+}
+.frem-bjaelke::-webkit-progress-bar { background: var(--surface); }
+.frem-bjaelke::-webkit-progress-value { background: var(--accent); }
+.frem-bjaelke::-moz-progress-bar { background: var(--accent); }
+.snurr {
+  display: inline-block; width: 16px; height: 16px; flex: none;
+  border: 2px solid var(--border-strong); border-top-color: var(--accent); border-radius: 50%; animation: kit-snurr .9s linear infinite;
+}
+@keyframes kit-snurr { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .snurr { animation: none; } }
+
+/* ── Værktøjstip ── Fra 2.3.0: en mørk boks over (eller under) elementet. Placeringen er klasser, som kit.js slår til:
+   under, venstre-kant og hoejre-kant. .tip-plads er den ramme, tippet placeres ud fra. */
+.tip-plads { position: relative; display: inline-flex; max-width: 100%; }
+.tip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; z-index: 30; transform: translateX(-50%);
+  width: max-content; max-width: 280px; padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm); background: var(--rail); color: var(--rail-strong); box-shadow: var(--shadow-pop);
+  font-size: var(--small-size); line-height: var(--small-line); font-weight: 400; letter-spacing: normal; text-transform: none; text-align: left; white-space: normal;
+}
+.tip.under { bottom: auto; top: calc(100% + 6px); }
+.tip.venstre-kant { left: 0; transform: none; }
+.tip.hoejre-kant { left: auto; right: 0; transform: none; }
+
+/* ── Afkrydsning ── Fra 2.3.0: browserens <input type="checkbox"> (og radioknappen i Radiogruppe) tegnet af kittet: en boks
+   på 16 px med kant i border-strong i en klikflade på mindst 24 px. Valgt: fyldt med accent og et flueben; delvis valgt
+   (indeterminate): en streg. Valgt ses altså på tegnet, ikke kun på farven. */
+.afk-felt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.afk { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 24px; cursor: pointer; }
+.afk:has(> input:disabled) { opacity: .55; cursor: default; }
+.afk-boks {
+  -webkit-appearance: none; appearance: none; display: inline-grid; place-content: center; flex: none; width: 16px; height: 16px; margin: 0;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer;
+}
+.afk-boks:checked, .afk-boks:indeterminate { background: var(--accent); border-color: var(--accent); }
+.afk-boks[type="checkbox"]:checked::before { content: ""; width: 8px; height: 4px; border: solid var(--on-accent); border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+.afk-boks[type="checkbox"]:indeterminate::before { content: ""; width: 8px; height: 2px; border: 0; background: var(--on-accent); transform: none; }
+.afk-boks[aria-invalid="true"] { border-color: var(--danger); }
+.afk-boks:disabled { cursor: default; }
+.afk-tekst { min-width: 0; }
+.afk-hj { margin-left: 24px; font-size: var(--small-size); line-height: var(--small-line); color: var(--text-muted); }
+.afk-hj.fejltekst { color: var(--danger); }
+
+/* ── Radiogruppe ── Fra 2.3.0: <fieldset> med <legend> (som en etiket) og radioknapperne under hinanden, eller i en række
+   (.vandret). Det valgte har en prik i accent med en ring om. */
+.valgsaet { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; margin: 0; padding: 0; border: 0; }
+.valgsaet > legend { padding: 0; margin: 0 0 var(--space-1); }
+.valgsaet.vandret { flex-direction: row; flex-wrap: wrap; gap: var(--space-1) var(--space-4); }
+.valgsaet.vandret > legend { width: 100%; }
+.valgsaet > .afk-hj { margin-left: 0; }
+.valgsaet:has(> .afk-hj.fejltekst) .afk-boks { border-color: var(--danger); }
+.afk-boks[type="radio"] { border-radius: 50%; }
+.afk-boks[type="radio"]:checked { box-shadow: inset 0 0 0 3px var(--surface); }
+
+/* ── Kontakt ── Fra 2.3.0: <input type="checkbox" role="switch">. Fra: knoppen til venstre på en lys flade med kant. Til:
+   knoppen til højre på en flade i accent. Pladsen siger til eller fra; ordet ved siden af (valgfrit) siger det også. */
+.tilfra {
+  -webkit-appearance: none; appearance: none; position: relative; flex: none; width: 36px; height: 20px; margin: 0;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-pill); background: var(--surface); cursor: pointer;
+}
+.tilfra::before { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--border-strong); transition: left .12s; }
+.tilfra:checked { border-color: var(--accent); background: var(--accent); }
+.tilfra:checked::before { left: 18px; background: var(--on-accent); }
+.tilfra[aria-invalid="true"] { border-color: var(--danger); }
+.tilfra:disabled { cursor: default; }
+.tilfra-ord { padding-left: var(--space-1); font-size: var(--small-size); color: var(--text-muted); }
+.tilfra:checked ~ .tilfra-ord > .tilfra-fra, .tilfra:not(:checked) ~ .tilfra-ord > .tilfra-til { display: none; }
+@media (prefers-reduced-motion: reduce) { .tilfra::before { transition: none; } }
+
+/* ── Valgliste ── Fra 2.3.0: browserens <select> med kittets kant, flade og pil (kittets ikon ned; listen er
+   styresystemets). Står i .felt som et tekstfelt. */
+.vliste { position: relative; display: flex; min-width: 0; }
+.vliste select {
+  -webkit-appearance: none; appearance: none; width: 100%; min-width: 0; height: 36px; padding: 0 32px 0 10px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);
+  font-family: var(--font-sans); font-size: var(--body-size); cursor: pointer;
+}
+.vliste select:focus-visible { outline-offset: 0; }
+.vliste select[aria-invalid="true"] { border-color: var(--danger); }
+.vliste select:disabled { opacity: .55; cursor: default; }
+.vliste svg { position: absolute; top: 50%; right: 10px; width: 14px; height: 14px; margin-top: -7px; pointer-events: none; fill: none; stroke: var(--text-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Dialog ── Fra 2.3.0: browserens <dialog> åbnet med showModal(). Målene er dem, det første program brugte til sine egne
+   dialoger: 480 px (620 px med .bred), luft 24 px, radius-lg og shadow-pop; baggrunden er titellinjens farve, dæmpet.
+   Fodlinjens knapper står til højre med den primære yderst. */
+.modal {
+  width: min(480px, calc(100vw - 2 * var(--space-6))); max-height: calc(100vh - 2 * var(--space-6));
+  padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--surface); color: var(--text); box-shadow: var(--shadow-pop); overflow: auto;
+}
+.modal.bred { width: min(620px, calc(100vw - 2 * var(--space-6))); }
+.modal::backdrop { background: var(--rail); opacity: .45; }
+.modal-top { display: flex; align-items: flex-start; gap: var(--space-2); margin: 0 0 var(--space-3); }
+.modal-top h2 { flex: 1; min-width: 0; margin: 0; font-size: var(--h2-size); line-height: var(--h2-line); font-weight: var(--h2-weight); }
+.modal-top h2:focus { outline: none; }
+.modal-luk {
+  display: grid; place-items: center; width: 30px; height: 30px; flex: none; margin: -3px -6px 0 0;
+  border: 0; border-radius: var(--radius-sm); background: var(--surface); color: var(--text-muted); cursor: pointer;
+}
+.modal-luk:hover { background: var(--surface-raised); color: var(--text); }
+.modal-luk svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.modal-tekst { margin: 0 0 var(--space-4); }
+.modal-indhold { margin: 0 0 var(--space-4); }
+.modal-indhold:empty { display: none; }
+.modal-fod { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+
+/* ── Tekststørrelse ── Fra 2.3.0: tre trin som én fælles skala for hele fladen (tema.js sætter <html data-tekst>; normal
+   har ingen attribut og er præcis som før). zoom på roden skalerer tekst, luft, ikoner og mål sammen. */
+:root[data-tekst="lille"] { zoom: .9; }
+:root[data-tekst="stor"] { zoom: 1.125; }
+/* zoom skalerer også vh, vw og px (målt i WebKit), så de mål, der skal følge vinduet, deles med trinnet: skallen fylder
+   stadig vinduet præcis, det mindste vindue er stadig 900 × 560 px på skærmen, og vælgerens liste og dialogen holder
+   sig inden for vinduet. */
+:root[data-tekst="lille"] .vindue { height: calc(100vh / .9); min-width: calc(900px / .9); min-height: calc(560px / .9); }
+:root[data-tekst="stor"] .vindue { height: calc(100vh / 1.125); min-width: calc(900px / 1.125); min-height: calc(560px / 1.125); }
+:root[data-tekst="lille"] .vlg-pop { max-width: min(360px, calc(100vw / .9 - 16px)); max-height: min(360px, calc(50vh / .9 - 48px)); }
+:root[data-tekst="stor"] .vlg-pop { max-width: min(360px, calc(100vw / 1.125 - 16px)); max-height: min(360px, calc(50vh / 1.125 - 48px)); }
+:root[data-tekst="lille"] .modal { width: min(480px, calc(100vw / .9 - 48px)); max-height: calc(100vh / .9 - 48px); }
+:root[data-tekst="stor"] .modal { width: min(480px, calc(100vw / 1.125 - 48px)); max-height: calc(100vh / 1.125 - 48px); }
+:root[data-tekst="lille"] .modal.bred { width: min(620px, calc(100vw / .9 - 48px)); }
+:root[data-tekst="stor"] .modal.bred { width: min(620px, calc(100vw / 1.125 - 48px)); }

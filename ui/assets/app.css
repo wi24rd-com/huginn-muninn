@@ -274,6 +274,9 @@ input.kontakt:disabled { opacity: .5; cursor: default; }
 .vejledning-plads { margin-top: 12px; }
 .sp-indhold > div > .vejledning-plads { margin: 0 0 12px; }
 .dialog { width: min(420px, 90vw); padding: 18px 20px; border: 1px solid var(--color-border); border-radius: var(--card-radius); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-window); }
+/* Tekststørrelsen er kittets zoom på roden (<html data-tekst>), og zoom skalerer også vw og vh: mål, der skal følge vinduet, deles med trinnet (som i kit.css). */
+:root[data-tekst="lille"] .dialog { width: min(420px, calc(90vw / .9)); }
+:root[data-tekst="stor"] .dialog { width: min(420px, calc(90vw / 1.125)); }
 .dialog::backdrop { background: var(--color-overlay-pressed); }
 .dialog h2 { margin-bottom: 6px; font-size: var(--font-size-xl); }
 .dialog p { color: var(--color-text); }

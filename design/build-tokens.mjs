@@ -91,7 +91,6 @@ export function bygCss(tokens) {
   const tema = t => [...blade(tokens.semantic[t], ['semantic', t]), ...blade(tokens.component[t] || {}, ['component', t])];
   const taethed = d => blade(tokens.component.density[d], ['component', 'density', d]);
   const standard = tokens.meta.targets.css.density;
-  const andre = tokens.meta.targets.css.densities.filter(d => d !== standard); // comfortable er kun til XAML
   // Samme navn må ikke komme fra to lag (fx semantic band.* og component band.*).
   const alle = new Map();
   for (const [sti] of [...raw, ...faelles, ...tema('light'), ...taethed(standard)]) {
@@ -102,10 +101,10 @@ export function bygCss(tokens) {
   const ud = [
     `/* GENERERET af design/build-tokens.mjs fra design/wi24rd-tokens.json (${tokens.meta.name} ${tokens.meta.version}). Ret ikke i hånden:`,
     '   ret JSON-filen og kør node design/build-tokens.mjs. Lys er standard; mørk følger macOS/Windows (prefers-color-scheme),',
-    `   når <html data-tema="system">; <html data-tema="moerk"> vælger mørk selv (Wi24rd UI Kit 2's tema.js sætter data-tema). Tæthed: ${standard} er standard, [data-density] skifter. */`,
+    `   når <html data-tema="system">; <html data-tema="moerk"> vælger mørk selv (Wi24rd UI Kit 2's tema.js sætter data-tema). Målene er faste (${standard}):
+   tekststørrelsen i tre trin ejes af Wi24rd UI Kit 2 (<html data-tekst>, zoom på roden i kit.css). */`,
     blok(tokens, ':root', [...raw, ...faelles], ''),
-    blok(tokens, `:root, [data-density="${standard}"]`, taethed(standard), ''),
-    ...andre.map(d => blok(tokens, `[data-density="${d}"]`, taethed(d), '')),
+    blok(tokens, ':root', taethed(standard), ''),
     blok(tokens, ':root', [[['semantic', 'light', 'color-scheme'], 'light'], ...tema('light')], '').replace('--color-scheme: light;', 'color-scheme: light;'),
     `@media (prefers-color-scheme: dark) {\n${blok(tokens, ':root[data-tema="system"]', [[['semantic', 'dark', 'color-scheme'], 'dark'], ...tema('dark')]).replace('--color-scheme: dark;', 'color-scheme: dark;')}\n}`,
     blok(tokens, ':root[data-tema="moerk"]', [[['semantic', 'dark', 'color-scheme'], 'dark'], ...tema('dark')], '').replace('--color-scheme: dark;', 'color-scheme: dark;'),

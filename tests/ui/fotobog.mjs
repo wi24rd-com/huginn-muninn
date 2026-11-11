@@ -81,7 +81,7 @@ const chrome = (profil, args) => new Promise(ok => {
 const side = (n, post, tema, sprog, tjek) => {
   const navn = `foto-${n}-${tjek ? 'tjek' : 'billede'}`;
   genereret.set(`${navn}-stub.js`, stub(post, tema, sprog, tjek));
-  genereret.set(`${navn}.html`, index.replace('<script src="assets/tekst.js"></script>', `<script src="${navn}-stub.js"></script><script src="assets/tekst.js"></script>`).replace('</body>', '<script src="foto-gang.js"></script></body>'));
+  genereret.set(`${navn}.html`, index.replace('<script src="assets/gamle-valg.js"></script>', `<script src="${navn}-stub.js"></script><script src="assets/gamle-valg.js"></script>`).replace('</body>', '<script src="foto-gang.js"></script></body>'));
   return `http://127.0.0.1:${vaert.address().port}/${navn}.html#${post.hash}`;
 };
 

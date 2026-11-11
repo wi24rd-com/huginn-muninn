@@ -624,8 +624,8 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
 {
   const html = ui('index.html');
   const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map(m => m[0]);
-  tjek('S CSP: ingen inline-scripts (hvert <script> har src og defer) og ingen style= i index.html', scripts.length === 17 && scripts.every(t => / src="assets\/(kit2\/)?[a-z-]+\.js"/.test(t) && (/ defer/.test(t) || /assets\/(tekst|kit2\/tema)\.js/.test(t))) && !/<script\b[^>]*>[^<]+<\/script>/.test(html) && !/\sstyle=/.test(html) && !/\son[a-z]+=/.test(html), scripts.join(' '));
-  const nye = ['tekst.js', 'ramme.js', 'vg-tegn.js', 'velkomst.js', 'visning-vaernet.js', 'visning-overblik.js', 'visning-siden.js', 'visning-indstillinger.js', 'sprog.js', 'genforsoeg.js'].map(f => [f, udenKommentarer(ui('assets/' + f))]);
+  tjek('S CSP: ingen inline-scripts (hvert <script> har src og defer) og ingen style= i index.html', scripts.length === 17 && scripts.every(t => / src="assets\/(kit2\/)?[a-z-]+\.js"/.test(t) && (/ defer/.test(t) || /assets\/(gamle-valg|kit2\/tema)\.js/.test(t))) && !/<script\b[^>]*>[^<]+<\/script>/.test(html) && !/\sstyle=/.test(html) && !/\son[a-z]+=/.test(html), scripts.join(' '));
+  const nye = ['gamle-valg.js', 'ramme.js', 'vg-tegn.js', 'velkomst.js', 'visning-vaernet.js', 'visning-overblik.js', 'visning-siden.js', 'visning-indstillinger.js', 'sprog.js', 'genforsoeg.js'].map(f => [f, udenKommentarer(ui('assets/' + f))]);
   tjek('S nyt UI: ingen innerHTML og ingen style-attributter i ramme og visninger', nye.every(([, k]) => !/innerHTML|setAttribute\(\s*'style'|\.style\./.test(k)), nye.filter(([, k]) => /innerHTML|\.style\./.test(k)).map(([f]) => f).join());
   const alleUi = ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => f.endsWith('.js')).map(f => 'assets/' + f)].map(f => [f, udenKommentarer(ui(f))]);
   const inline = /\bstyle\s*=|setAttribute\(\s*['"`]style|\.style\b|cssText|<style/;
@@ -663,8 +663,8 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   tjek('S tokens: genereret tokens.css og Wi24rdTokens.xaml = committet', forskel.length === 0 && Object.keys(ud).join() === 'ui/assets/tokens.css,design/out/Wi24rdTokens.xaml', forskel.join());
   const lag = Object.keys(tokens).filter(k => k !== 'meta').join();
   const d = tokens.component.density;
-  tjek('S tokens: tre lag (raw, semantic, component), lys + mørk, tætheder (comfortable 38/14 til XAML; compact 32/13, normal 36/15, large 40/17 til CSS)', lag === 'raw,semantic,component' && Object.keys(tokens.semantic).join() === 'light,dark'
-    && d.comfortable.control.height === 38 && d.comfortable.font.size === 14 && d.compact.control.height === 32 && d.compact.font.size.lg === 13 && d.normal.control.height === 36 && d.normal.font.size.lg === 15 && d.large.control.height === 40 && d.large.font.size.lg === 17 && tokens.meta.targets.css.density === 'normal', lag);
+  tjek('S tokens: tre lag (raw, semantic, component), lys + mørk, to tætheder (comfortable 38/14 til XAML; normal 36/15 til CSS; tekststørrelsen er kittets)', lag === 'raw,semantic,component' && Object.keys(tokens.semantic).join() === 'light,dark'
+    && Object.keys(d).join() === 'comfortable,normal' && d.comfortable.control.height === 38 && d.comfortable.font.size === 14 && d.normal.control.height === 36 && d.normal.font.size.lg === 15 && tokens.meta.targets.css.density === 'normal' && !('densities' in tokens.meta.targets.css), lag);
   const cssUd = ud['ui/assets/tokens.css'];
   tjek('S tokens: CSS har lyst standard, mørk efter prefers-color-scheme ved data-tema="system" og ved data-tema="moerk" (Kit 2), intet data-theme', /@media \(prefers-color-scheme: dark\) \{\n {2}:root\[data-tema="system"\]/.test(cssUd) && /\n:root\[data-tema="moerk"\]/.test(cssUd) && !/data-theme/.test(cssUd) && /--band-height: 60px;/.test(cssUd) && /--sidebar-width: 212px;/.test(cssUd));
   // Kontrast (WCAG 2.x): tekst ≥ 7:1 (AAA), --color-text-disabled ≥ 4,5:1, UI ≥ 3:1. Gennemsigtige farver lægges oven på den flade, de står på.
@@ -1295,9 +1295,13 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   const tokens = bt.laesTokens(path.join(repo, 'design', 'wi24rd-tokens.json')), d = tokens.component.density, css = ui('assets/tokens.css');
   const n = d.normal;
   tjek('P1 Normal: 15 brødtekst, 14 tabeller, 13 noter, 12 chips, 16 overskrifter, 22 sidetitel, 36 kontroller og rækker, linjehøjde 1,5', n.font.size.lg === 15 && n.font.size.md === 14 && n.font.size.sm === 13 && n.font.size.xs === 12 && n.font.size.xl === 16 && n.font.size.title === 22 && n.control.height === 36 && n.row.height === 36 && n.font['line-height'] === 1.5, JSON.stringify(n));
-  const trin = ['xs', 'sm', 'md', 'lg', 'xl', 'title', 'display'], tre = tokens.meta.targets.css.densities;
-  tjek('P1 tre tætheder i CSS, hver med hele skalaen i stigende orden og aldrig under 12 px', tre.join() === 'compact,normal,large' && tre.every(t => trin.every((k, i) => d[t].font.size[k] >= 12 && (i === 0 || d[t].font.size[k] >= d[t].font.size[trin[i - 1]]))), tre.map(t => JSON.stringify(d[t].font.size)).join(' '));
-  tjek('P1 tokens.css: Normal er standard, [data-density] skifter, comfortable kun til XAML', /:root, \[data-density="normal"\] \{[^}]*--font-size-lg: 15px;/.test(css) && /\[data-density="compact"\] \{[^}]*--font-size-lg: 13px;/.test(css) && /\[data-density="large"\] \{[^}]*--font-size-lg: 17px;/.test(css) && !css.includes('comfortable') && tokens.meta.targets.xaml.density === 'comfortable');
+  const trin = ['xs', 'sm', 'md', 'lg', 'xl', 'title', 'display'], kitCss = ui('assets/kit2/kit.css');
+  tjek('P1 én skala i CSS (Normal): hele skalaen i stigende orden og aldrig under 12 px', trin.every((k, i) => n.font.size[k] >= 12 && (i === 0 || n.font.size[k] >= n.font.size[trin[i - 1]])), JSON.stringify(n.font.size));
+  tjek('P1 tokens.css: målene er faste (Normal på :root), intet data-density, comfortable kun til XAML', /\n:root \{\n {2}--control-height: 36px;[^}]*--font-size-lg: 15px;/.test(css) && !css.includes('data-density') && (css.match(/--font-size-lg:/g) || []).length === 1 && !css.includes('comfortable') && tokens.meta.targets.xaml.density === 'comfortable');
+  tjek('P1 tekststørrelsen er kittets: zoom på roden ved data-tekst (lille .9, stor 1.125), og kittet deler vinduets mål med trinnet', /:root\[data-tekst="lille"\] \{ zoom: \.9; \}/.test(kitCss) && /:root\[data-tekst="stor"\] \{ zoom: 1\.125; \}/.test(kitCss) && /:root\[data-tekst="stor"\] \.vindue \{ height: calc\(100vh \/ 1\.125\)/.test(kitCss));
+  const vMaal = regler(alCss).filter(([s, k]) => /\d(vh|vw)\b/.test(k)), uden = vMaal.filter(([s]) => !s.includes('data-tekst')).map(([s]) => s);
+  tjek('P1 hvert mål i vh/vw i app.css/vagt.css har en regel pr. trin, der deler med kittets zoom', uden.length === 3 && uden.every(s => [['lille', '.9'], ['stor', '1.125']].every(([t, z]) => vMaal.some(([s2, k]) => s2 === `:root[data-tekst="${t}"] ${s}` && k.includes(`/ ${z})`)))), uden.join(' | '));
+  tjek('P1 intet i programmet kender den gamle skala (data-density, hmTekst, tekst.js)', !fs.existsSync(path.join(repo, 'ui', 'assets', 'tekst.js')) && ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f)).map(f => 'assets/' + f)].every(f => !/data-density|hmTekst|tekst\.js/.test(ui(f))));
   const faste = alCss.match(/font-size:\s*[\d.]+px|\bfont:[^;}]*?[\d.]+px/g) || [];
   tjek('P1 ingen faste px-skriftstørrelser i app.css/vagt.css (font-size og font:)', faste.length === 0, faste.join(' | '));
   const brugte = [...new Set(alCss.match(/--font-size[\w-]*|--title-size/g))], mangler = brugte.filter(v => !css.includes(v + ':'));
@@ -1319,43 +1323,46 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   const s = side('#indstillinger', B2()), { d, w, tast, emit } = s, html = d.documentElement;
   await sov(50);
   const v = x => d.querySelector(`input[name=tekst][value=${x}]`);
-  tjek('P1 standard: data-density=normal, Normal valgt, segmentet hedder Lille/Normal/Stor', html.getAttribute('data-density') === 'normal' && v('normal').checked && [...d.querySelectorAll('#tekst label')].map(l => l.textContent).join() === 'Lille,Normal,Stor' && d.getElementById('tekst').getAttribute('role') === 'radiogroup', html.outerHTML.slice(0, 90));
-  v('large').click();
-  tjek('P1 Stor sætter data-density=large og gemmes i hm-tekst', html.getAttribute('data-density') === 'large' && w.localStorage.getItem('hm-tekst') === 'large');
-  v('compact').click();
-  tjek('P1 Lille sætter data-density=compact', html.getAttribute('data-density') === 'compact' && w.localStorage.getItem('hm-tekst') === 'compact');
-  const husket = side('#indstillinger', B2(), 'da', 'windows', x => x.localStorage.setItem('hm-tekst', 'large'));
-  const straks = husket.d.documentElement.getAttribute('data-density');
+  const tk = h => h.getAttribute('data-tekst') || 'normal'; // kittet sætter ingen attribut ved Normal
+  tjek('P1 standard: ingen data-tekst (Normal), Normal valgt, segmentet hedder Lille/Normal/Stor', !html.hasAttribute('data-tekst') && !html.hasAttribute('data-density') && w.Tekst.valg === 'normal' && w.hmTekst === undefined && v('normal').checked && [...d.querySelectorAll('#tekst label')].map(l => l.textContent).join() === 'Lille,Normal,Stor' && d.getElementById('tekst').getAttribute('role') === 'radiogroup', html.outerHTML.slice(0, 90));
+  v('stor').click();
+  tjek('P1 Stor sætter data-tekst=stor og gemmes i hm-tekst', tk(html) === 'stor' && w.localStorage.getItem('hm-tekst') === 'stor');
+  v('lille').click();
+  tjek('P1 Lille sætter data-tekst=lille', tk(html) === 'lille' && w.localStorage.getItem('hm-tekst') === 'lille');
+  const husket = side('#indstillinger', B2(), 'da', 'windows', x => x.localStorage.setItem('hm-tekst', 'stor'));
+  const straks = tk(husket.d.documentElement);
   await sov(40);
-  tjek('P1 valget gælder ved næste start (før siden tegnes) og står i segmentet', straks === 'large' && husket.d.querySelector('input[name=tekst][value=large]').checked);
+  tjek('P1 valget gælder ved næste start (før siden tegnes) og står i segmentet', straks === 'stor' && husket.d.querySelector('input[name=tekst][value=stor]').checked);
   const ugyldig = side('#indstillinger', B2(), 'da', 'windows', x => x.localStorage.setItem('hm-tekst', 'kaempe'));
-  tjek('P1 en ugyldig gemt værdi giver Normal', ugyldig.d.documentElement.getAttribute('data-density') === 'normal');
-  tjek('P1 tekst.js og kittets tema.js står uden defer før de andre scripts (ingen blink), tekst.js først', /<script src="assets\/tekst\.js"><\/script>\s*<script src="assets\/kit2\/tema\.js"><\/script>\s*<script src="assets\/sprog\.js" defer>/.test(ui('index.html')) && /<html lang="da" data-tema="system" data-kit-praefiks="hm">/.test(ui('index.html')));
+  tjek('P1 en ugyldig gemt værdi giver Normal', tk(ugyldig.d.documentElement) === 'normal' && !ugyldig.d.documentElement.hasAttribute('data-tekst'));
+  const gl = x => { const g = side('#indstillinger', B2(), 'da', 'windows', y => y.localStorage.setItem('hm-tekst', x)); return [g.d.documentElement.getAttribute('data-tekst'), g.w.localStorage.getItem('hm-tekst'), g.w.Tekst.valg].join(); };
+  tjek('P1 et valg gemt før Kit 2 oversættes én gang ved start (compact → lille, large → stor), før siden tegnes', gl('compact') === 'lille,lille,lille' && gl('large') === 'stor,stor,stor' && gl('lille') === 'lille,lille,lille', [gl('compact'), gl('large')].join(' '));
+  tjek('P1 gamle-valg.js og kittets tema.js står uden defer før de andre scripts (ingen blink), gamle-valg.js først', /<script src="assets\/gamle-valg\.js"><\/script>\s*<script src="assets\/kit2\/tema\.js"><\/script>\s*<script src="assets\/sprog\.js" defer>/.test(ui('index.html')) && /<html lang="da" data-tema="system" data-kit-praefiks="hm">/.test(ui('index.html')));
   v('normal').click();
-  const spor = [], tryk = (key, x) => { const e = new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...x }); d.dispatchEvent(e); spor.push(html.getAttribute('data-density')); return e; };
+  const spor = [], tryk = (key, x) => { const e = new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...x }); d.dispatchEvent(e); spor.push(tk(html)); return e; };
   const e1 = tryk('+', { ctrlKey: true });
   tryk('+', { ctrlKey: true }); tryk('-', { ctrlKey: true }); tryk('-', { ctrlKey: true }); tryk('-', { ctrlKey: true }); tryk('0', { ctrlKey: true }); tryk('=', { ctrlKey: true });
-  tjek('P1 Ctrl++ Ctrl+− Ctrl+0 og Ctrl+= skifter trin, stopper i enderne og forhindrer standardhandlingen', spor.join() === 'large,large,normal,compact,compact,normal,large' && e1.defaultPrevented, spor.join());
-  tjek('P1 tastaturet gemmer valget, og segmentet følger med', w.localStorage.getItem('hm-tekst') === 'large' && v('large').checked);
+  tjek('P1 Ctrl++ Ctrl+− Ctrl+0 og Ctrl+= skifter trin, stopper i enderne og forhindrer standardhandlingen', spor.join() === 'stor,stor,normal,lille,lille,normal,stor' && e1.defaultPrevented, spor.join());
+  tjek('P1 tastaturet gemmer valget, og segmentet følger med', w.localStorage.getItem('hm-tekst') === 'stor' && v('stor').checked);
   tast('0', { ctrlKey: true, altKey: true }); tast('0');
-  tjek('P1 Ctrl+Alt+0 og et rent 0 gør intet', html.getAttribute('data-density') === 'large');
+  tjek('P1 Ctrl+Alt+0 og et rent 0 gør intet', tk(html) === 'stor');
   tjek('P1 Genveje i hjælpen nævner tekststørrelsen', ['Ctrl++Større tekst', 'Ctrl+−Mindre tekst', 'Ctrl+0Normal tekst'].every(x => d.getElementById('genveje').textContent.includes(x)), d.getElementById('genveje').textContent);
   emit('tekst', 'normal');
-  const a = html.getAttribute('data-density');
+  const a = tk(html);
   emit('tekst', 'mindre');
-  const b = html.getAttribute('data-density');
+  const b = tk(html);
   emit('tekst', 'stoerre');
-  tjek('P1 hændelsen tekst (programmenuen) skifter trin', a === 'normal' && b === 'compact' && html.getAttribute('data-density') === 'normal', `${a} ${b}`);
+  tjek('P1 hændelsen tekst (programmenuen) skifter trin', a === 'normal' && b === 'lille' && tk(html) === 'normal', `${a} ${b}`);
   const m = side('#overblik', B2(), 'da', 'macos');
   await sov(40);
   m.tast('+', { metaKey: true });
-  const ma = m.d.documentElement.getAttribute('data-density');
+  const ma = tk(m.d.documentElement);
   m.tast('0', { ctrlKey: true });
-  tjek('P1 macOS: ⌘+ skifter (⌘ også i Genveje), Ctrl+0 gør intet', ma === 'large' && m.d.documentElement.getAttribute('data-density') === 'large' && m.d.getElementById('genveje').textContent.includes('⌘+Større tekst'), ma);
+  tjek('P1 macOS: ⌘+ skifter (⌘ også i Genveje), Ctrl+0 gør intet', ma === 'stor' && tk(m.d.documentElement) === 'stor' && m.d.getElementById('genveje').textContent.includes('⌘+Større tekst'), ma);
   m.tast('-', { metaKey: true }); m.tast('-', { metaKey: true });
-  const mb = m.d.documentElement.getAttribute('data-density');
+  const mb = tk(m.d.documentElement);
   m.tast('0', { metaKey: true });
-  tjek('P1 macOS: ⌘− går ned til Lille, ⌘0 tilbage til Normal', mb === 'compact' && m.d.documentElement.getAttribute('data-density') === 'normal' && m.w.localStorage.getItem('hm-tekst') === 'normal', mb);
+  tjek('P1 macOS: ⌘− går ned til Lille, ⌘0 tilbage til Normal', mb === 'lille' && tk(m.d.documentElement) === 'normal' && m.w.localStorage.getItem('hm-tekst') === 'normal', mb);
   const rs = fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'programmenu.rs'), 'utf8');
   tjek('P1 programmenuen har Større, Mindre og Normal tekst', ['"Større tekst"', '"Mindre tekst"', '"Normal tekst"', 'punkt(TEKST_STOERRE', 'punkt(TEKST_MINDRE', 'punkt(TEKST_NORMAL'].every(x => rs.includes(x)));
 }
@@ -3023,7 +3030,7 @@ const DOMV = (fravalgte = [], x) => {
       document.body.textContent = 'MAALT:' + JSON.stringify({ tabel, overblik, besoeg, hv, kal, velkomst, felter, segmenter, nav, nyLinje, serverOver, n: document.querySelectorAll('section:not([hidden]) .kort *').length, login: Boolean(document.querySelector('#login-panel .login-valg')), domaener: document.querySelectorAll('#domaener-liste input').length, vandret: document.documentElement.scrollWidth > innerWidth, ud }) + ':SLUT'; }, 1500);`;
     const koer = (bredde, tekst, tema = 'light', hash = '#indstillinger?zone=z2', ekstra = {}, { sprog = 'da', hoejde = 1400 } = {}) => {
       const stub = `<script>localStorage.setItem('hm-sprog',${JSON.stringify(sprog)});localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':${BES_NOEGLE};return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
-      const html = ui('index.html').replace('<script src="assets/tekst.js"></script>', UR_STUB + stub + '<script src="assets/tekst.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
+      const html = ui('index.html').replace('<script src="assets/gamle-valg.js"></script>', UR_STUB + stub + '<script src="assets/gamle-valg.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
       const navn = `${bredde}-${hoejde}-${tekst}-${tema}-${sprog}-${hash.length}-${JSON.stringify(ekstra).length}`, fil = path.join(mappe, 'ui', `maal-${navn}.html`);
       fs.writeFileSync(fil, html);
       const p = spawnSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${path.join(mappe, 'p-' + navn)}`, `--window-size=${bredde},${hoejde}`, '--virtual-time-budget=6000', '--dump-dom', pathToFileURL(fil).href + hash], { encoding: 'utf8', timeout: 60000 });
@@ -4200,7 +4207,7 @@ const DOMV = (fravalgte = [], x) => {
     const vaern = vaernUd(), MED = SIDER.filter(s => !s.ekstra), OPS = SIDER.find(s => s.id === 'opsaetning'), FRA = SIDER.find(s => s.id === 'alle-fra'), EST = SIDER.find(s => s.id === 'angreb-estimat');
     const koer = (navn, tema, ekstra, sider, bredde = 1400, tekst = 'normal') => {
       const stub = `<script>localStorage.setItem('hm-sprog','da');localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';window.__HM_MAAL__=${JSON.stringify(sider)};const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':${BES_NOEGLE};return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
-      const html = ui('index.html').replace('<script src="assets/tekst.js"></script>', UR_STUB + stub + '<script src="assets/tekst.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
+      const html = ui('index.html').replace('<script src="assets/gamle-valg.js"></script>', UR_STUB + stub + '<script src="assets/gamle-valg.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
       const fil = path.join(mappe, 'ui', `kontrast-${navn}-${tema}.html`);
       fs.writeFileSync(fil, html);
       const p = spawnSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${path.join(mappe, `p-${navn}-${tema}`)}`, `--window-size=${bredde},1600`, '--virtual-time-budget=40000', '--dump-dom', pathToFileURL(fil).href], { encoding: 'utf8', timeout: 120000, maxBuffer: 1 << 26 });

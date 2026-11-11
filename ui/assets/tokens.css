@@ -1,6 +1,7 @@
 /* GENERERET af design/build-tokens.mjs fra design/wi24rd-tokens.json (Wi24rd UI kit 1.0.0). Ret ikke i hånden:
    ret JSON-filen og kør node design/build-tokens.mjs. Lys er standard; mørk følger macOS/Windows (prefers-color-scheme),
-   når <html data-tema="system">; <html data-tema="moerk"> vælger mørk selv (Wi24rd UI Kit 2's tema.js sætter data-tema). Tæthed: normal er standard, [data-density] skifter. */
+   når <html data-tema="system">; <html data-tema="moerk"> vælger mørk selv (Wi24rd UI Kit 2's tema.js sætter data-tema). Målene er faste (normal):
+   tekststørrelsen i tre trin ejes af Wi24rd UI Kit 2 (<html data-tekst>, zoom på roden i kit.css). */
 :root {
   --raw-color-white: #FFFFFF;
   --raw-color-black: #000000;
@@ -211,7 +212,7 @@
   --chart-http-4xx: var(--raw-color-chart-4xx);
   --chart-http-5xx: var(--raw-color-chart-5xx);
 }
-:root, [data-density="normal"] {
+:root {
   --control-height: 36px;
   --row-height: 36px;
   --font-size-xs: 12px;
@@ -221,30 +222,6 @@
   --font-size-xl: 16px;
   --font-size-title: 22px;
   --font-size-display: 28px;
-  --font-line-height: 1.5;
-}
-[data-density="compact"] {
-  --control-height: 32px;
-  --row-height: 32px;
-  --font-size-xs: 12px;
-  --font-size-sm: 12px;
-  --font-size-md: 13px;
-  --font-size-lg: 13px;
-  --font-size-xl: 14px;
-  --font-size-title: 20px;
-  --font-size-display: 24px;
-  --font-line-height: 1.45;
-}
-[data-density="large"] {
-  --control-height: 40px;
-  --row-height: 40px;
-  --font-size-xs: 14px;
-  --font-size-sm: 15px;
-  --font-size-md: 16px;
-  --font-size-lg: 17px;
-  --font-size-xl: 18px;
-  --font-size-title: 25px;
-  --font-size-display: 32px;
   --font-line-height: 1.5;
 }
 :root {
