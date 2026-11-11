@@ -59,7 +59,7 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .tek-ikke-set { background: var(--color-field); }
 .tek-ikke-set .tek-radio label { background: var(--color-surface); }
 .tek-n { display: inline-block; min-height: 24px; margin-left: 8px; font-size: var(--font-size-sm); }
-.tek-c .boks { margin-left: 8px; }
+.tek-c .afk-boks { margin-left: 8px; }
 .tek-soeg { margin: 0 0 10px; }
 .tek-soeg input { width: min(100%, 22rem); height: var(--control-height); padding: 0 10px; border: 1px solid var(--color-border-strong); border-radius: var(--control-radius); background: var(--color-field); color: var(--color-text); font: inherit; appearance: none; }
 .tek-ny { margin: 0 0 8px; color: var(--color-text-muted); font-size: var(--font-size-sm); }
@@ -69,7 +69,7 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .tek-gruppe h2 { margin: 0 0 6px; font-size: var(--font-size-md); }
 .tek-katalog { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .tek-katalog-linje { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 2px 0; border-bottom: 1px solid var(--color-border); }
-.tek-katalog-linje .hm-valgmulighed { flex: 1 1 14rem; }
+.tek-katalog-linje .afk { flex: 1 1 14rem; }
 .tek-katalog-linje .tek-n { margin-left: 0; }
 .tek-katalog-linje .tek-lille { display: inline; }
 /* "Dit sites teknologi" og "Hvad angrebene var rettet mod" i Angreb og dyk. */
@@ -404,7 +404,7 @@ button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--ho
 .login-ret summary { color: var(--color-accent-text); font-weight: 600; cursor: pointer; }
 .login-panel { margin-top: 8px; }
 .login-valg li { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
-.login-valg li .hm-valgmulighed { min-width: 0; overflow-wrap: anywhere; }
+.login-valg li .afk { min-width: 0; overflow-wrap: anywhere; }
 .login-valg li .link { flex: none; min-height: 24px; }
 .login-valg li .link:hover { text-decoration: underline; }
 .login-egen { margin: 0 0 12px; }

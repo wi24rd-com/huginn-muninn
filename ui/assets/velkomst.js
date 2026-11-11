@@ -26,7 +26,7 @@
   /* Det, der hører til stedet. */
   function situation(sted) {
     if (sted !== 'intet-valgt') return [];
-    const knap = V.knap(T.intetValgtKnap, { gaa: 'indstillinger?afsnit=domaener' }, 'knap primaer', T.intetValgtKnap);
+    const knap = V.knap(T.intetValgtKnap, { gaa: 'indstillinger?afsnit=domaener' }, 'btn primary', T.intetValgtKnap);
     return [el('div', { className: 'velkomst-situation' }, el('p', {}, el('b', { textContent: T.intetValgtH }), ' ', T.intetValgtP), knap)];
   }
   function ravne() {

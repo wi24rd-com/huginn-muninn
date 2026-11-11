@@ -47,7 +47,7 @@
     /* Reglerne for en sti står kun i Rust (tjek_sti); her bliver det indtastede, til det er godkendt. */
     function egenSti() {
       const felt = el('input', { type: 'text', placeholder: T.loginEgenEksempel, autocomplete: 'off', spellcheck: false, autocapitalize: 'off' });
-      const form = el('form', { className: 'hm-form login-egen' }, el('label', {}, el('span', { textContent: T.loginEgenH }), felt), el('button', { className: 'knap', type: 'submit', textContent: T.loginEgenTilfoej }));
+      const form = el('form', { className: 'hm-form login-egen' }, el('label', {}, el('span', { textContent: T.loginEgenH }), felt), el('button', { className: 'btn', type: 'submit', textContent: T.loginEgenTilfoej }));
       form.addEventListener('submit', async ev => {
         ev.preventDefault();
         if (await saet(felt.value.trim(), true)) { const nyt = boks.querySelector('.login-egen input'); if (nyt) nyt.focus(); }
@@ -59,9 +59,9 @@
       try { d = await invoke('login_stier', { zone }); } catch (e) { R.status(st, S.fejl(e), 'fejl'); boks.replaceChildren(st); return; }
       const ul = el('ul', { className: 'login-valg' });
       for (const s of d.stier) {
-        const i = el('input', { className: 'boks', type: 'checkbox', checked: s.til });
+        const i = el('input', { className: 'afk-boks', type: 'checkbox', checked: s.til });
         i.addEventListener('change', () => saet(s.sti, i.checked));
-        const li = el('li', {}, el('label', { className: 'hm-valgmulighed' }, i, V.sti(s.sti)));
+        const li = el('li', {}, el('label', { className: 'afk' }, i, V.sti(s.sti)));
         if (!s.start) {
           const b = el('button', { className: 'link', type: 'button', textContent: T.loginEgenFjern });
           b.setAttribute('aria-label', fmt(T.loginEgenFjernNavn, { sti: s.sti }));

@@ -84,7 +84,7 @@
           status($('indst-status'), T.notifGemt, 'ok');
         } catch (e) { v.value = foer; status($('indst-status'), S.fejl(e), 'fejl'); }
       });
-      tb.append(el('tr', {}, el('th', { scope: 'row' }, window.hmTegn.knap(window.hmTegn.domaene(r.navn), { gaa: 'vaernet?' + new URLSearchParams({ zone: r.id, navn: r.navn }) }, 'link dyk-celle', fmt(T.aabnFor, { navn: r.navn }))), el('td', {}, v)));
+      tb.append(el('tr', {}, el('th', { scope: 'row' }, window.hmTegn.knap(window.hmTegn.domaene(r.navn), { gaa: 'vaernet?' + new URLSearchParams({ zone: r.id, navn: r.navn }) }, 'link dyk-celle', fmt(T.aabnFor, { navn: r.navn }))), el('td', {}, el('span', { className: 'vliste' }, v, window.Kit.ikon('ned')))));
     }
   }
 
@@ -124,7 +124,7 @@
     const tb = $('domaener-liste');
     if (!liste.length) { tb.replaceChildren(el('tr', {}, el('td', { className: 'note', textContent: T.prDomaeneTom, colSpan: 2 }))); return; }
     tb.replaceChildren(...liste.map(d => {
-      const k = el('input', { className: 'kontakt', type: 'checkbox', checked: d.til });
+      const k = el('input', { className: 'tilfra', type: 'checkbox', checked: d.til });
       k.setAttribute('role', 'switch');
       k.setAttribute('aria-label', fmt(T.domaenerFor, { navn: d.navn }));
       k.addEventListener('change', () => {
@@ -200,8 +200,9 @@
     const st = R.tilstand, c = $('forb-chip'), afvist = Boolean(st.koe && st.koe.fejl && st.koe.fejl.kode === 'afvist');
     const n = st.gemte && st.gemte.zoner ? st.gemte.zoner.length : 0;
     const [klasse, tekst] = !st.sat ? ['graa', T.forbIngen] : afvist ? ['roed', T.forbAfvist] : ['groen', fmt(T.forbOk, { n: T.domaener(n) })];
-    c.className = 'chip chip-knap bred chip-' + klasse;
-    c.textContent = tekst;
+    const ny = window.hmTegn.chip(klasse, tekst, 'button');
+    c.className = ny.className;
+    c.replaceChildren(...ny.childNodes);
     saetMaal(c, st.sat ? { gaa: 'overblik' } : null, tekst);
     $('glem').hidden = !st.sat;
     $('data-hent').disabled = !st.sat || R.henterNu();

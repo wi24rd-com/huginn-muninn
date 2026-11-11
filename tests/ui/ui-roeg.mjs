@@ -121,7 +121,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   const rows = [...d.querySelectorAll('#overblik-raekker tr')];
   tjek('overblik: tre rækker i Rusts rækkefølge', rows.length === 3 && rows[0].textContent.includes('wi24rd.com') && rows[2].textContent.includes('abe.wi24rd.com'));
   const st = rows[0].querySelector('.chip');
-  tjek('status som tekst + klasse (Hold øje, chip-gul)', st && st.textContent === 'Hold øje' && st.classList.contains('chip-gul'), st && st.outerHTML);
+  tjek('status som kittets chip (Hold øje, warn, symbol + ord)', st && st.querySelector('.ord').textContent === 'Hold øje' && st.firstElementChild.getAttribute('aria-hidden') === 'true' && st.classList.contains('warn'), st && st.outerHTML);
   const u0 = hv(rows[0]), u1 = hv(rows[1]);
   tjek('P3 årsag: top 3 uden CVE og "alle stoppet"', u0.textContent === '30 angreb i går (snit 12,4) – alle stoppet. Mest et kendt hul i React (20), angreb på WordPress (7) og din egen regel »min-regel« (2). Bed din webmand tjekke, at siden er opdateret.', u0.textContent);
   tjek('P3 årsag: blandet → "20 blokeret, 8 udfordret"', u1.textContent === '28 angreb i går (snit 23,1) – alle stoppet (20 blokeret, 8 udfordret). Mest et kendt hul i React (25) og browsertjekket (3).', u1.textContent);
@@ -133,7 +133,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   tjek('P4 "Angreb denne uge": 140 (neutral) mod 210, −33 % i title', uge1.textContent === '140' && !uge1.querySelector('.op, .ned') && celler(rows[1])[6].textContent === '210' && uge1.title === '−33 % mod ugen før', uge1.outerHTML);
   const th = [...d.querySelectorAll('#overblik-tabel thead th')].map(x => x.textContent);
   tjek('Overblik-tabel: overskrift i to niveauer: Afvist over i går, 7 og 30 dage, Angreb over denne uge og sidste uge', th.slice(3, 5).join() === 'Afvist,Angreb' && th.slice(6).join() === 'i går,7 dage,30 dage,denne uge,sidste uge', th.join(','));
-  tjek('grå række: streger og "Ingen tal endnu"', rows[2].querySelector('.chip').textContent === 'Ukendt' && hv(rows[2]).textContent === 'Ingen tal endnu – henter.' && celler(rows[2]).slice(2, 7).every(c => c.textContent === '–'));
+  tjek('grå række: streger og "Ingen tal endnu"', rows[2].querySelector('.chip .ord').textContent === 'Ukendt' && hv(rows[2]).textContent === 'Ingen tal endnu – henter.' && celler(rows[2]).slice(2, 7).every(c => c.textContent === '–'));
   tjek('D4: ingen afkrydsning i tabellen', !d.querySelector('#overblik-tabel input') && !d.getElementById('valg-alle'));
   tjek('D4: titlen siger antal domæner, og knappen "Angreb for alle"', d.getElementById('overblik-antal').textContent === '· 3 domæner' && d.getElementById('samlet').textContent === 'Angreb for alle' && !d.getElementById('samlet').disabled, d.getElementById('overblik-antal').textContent);
   tjek('D4: intet slået fra: ingen linje om det', d.getElementById('fravalgt-note').hidden);
@@ -172,7 +172,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   const r0 = s.d.querySelector('#overblik-raekker tr');
   tjek('P3/P4 engelsk: årsag og "Attacks this week"', hv(r0).textContent === '30 attacks yesterday (average 12.4) – all stopped. Mostly a known hole in React (20), attacks on WordPress (7) and your own rule “min-regel” (2). Ask your web person to check that the site is up to date.'
     && [...s.d.querySelectorAll('#overblik-tabel thead th')].slice(3, 5).map(x => x.textContent).join() === 'Refused,Attacks' && [...s.d.querySelectorAll('#overblik-tabel thead th')][9].textContent === 'this week' && celler(r0)[5].textContent === '45', hv(r0).textContent);
-  tjek('engelsk: "3 domains", status "Watch", koe_status vises straks', s.d.getElementById('overblik-antal').textContent === '· 3 domains' && s.d.querySelector('.chip').textContent === 'Watch' && s.d.getElementById('koe-tekst').textContent.startsWith('Fetching in the background: 1 of 3 domains'));
+  tjek('engelsk: "3 domains", status "Watch", koe_status vises straks', s.d.getElementById('overblik-antal').textContent === '· 3 domains' && s.d.querySelector('.chip .ord').textContent === 'Watch' && s.d.getElementById('koe-tekst').textContent.startsWith('Fetching in the background: 1 of 3 domains'));
 }
 
 // ── P3/P5: kanttilfælde i "Hvorfor" ──
@@ -187,7 +187,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   const s = side('', { token_status: { sat: true }, zones_cache: { zoner: [], hentet: null }, zones: [], overblik: rk, valg_hent: [], koe_status: null });
   await sov(50);
   const sm = [...s.d.querySelectorAll('#overblik-raekker .hv-tekst')].map(x => x.textContent);
-  tjek('P5 natten: "i forgårs … Opdateres …", Handl', sm[0] === '40 angreb i forgårs (snit 2) – alle stoppet. Mest et kendt hul i React (40). Bed din webmand tjekke, at siden er opdateret. Opdateres …' && s.d.querySelector('.chip').textContent === 'Handl', sm[0]);
+  tjek('P5 natten: "i forgårs … Opdateres …", Handl', sm[0] === '40 angreb i forgårs (snit 2) – alle stoppet. Mest et kendt hul i React (40). Bed din webmand tjekke, at siden er opdateret. Opdateres …' && s.d.querySelector('.chip .ord').textContent === 'Handl', sm[0]);
   tjek('P3 nul angreb: ingen årsag, ingen "alle stoppet"', sm[1] === 'Ingen angreb i går.', sm[1]);
   tjek('P3 gamle tal: kun "Tallene er gamle" (ingen årsag, ingen title)', sm[2] === 'Tallene er gamle – henter nye.' && !s.d.querySelectorAll('#overblik-raekker td.hv')[2].title, sm[2]);
   tjek('P3 labyrint og andet nævnes, når de findes', sm[3] === '12 angreb i går (snit 1) – 11 af 12 stoppet (2 blokeret, 0 udfordret, 9 i labyrinten, 1 andet). Mest Egen regel (12).', sm[3]);
@@ -355,7 +355,7 @@ const basis = x => Object.assign({ token_status: { sat: true }, zones_cache: { z
   tjek('N siden: vis=true → synlig, overskrift "Siden sidst" har fokus', !d.getElementById('visning-siden').hidden && d.getElementById('siden-sidst-h').textContent === 'Siden sidst' && d.activeElement === d.getElementById('siden-sidst-h'));
   tjek('N siden: "du kiggede her sidst …" fra vist', d.getElementById('siden-vist').textContent === 'Status for i går. Du kiggede her sidst ' + s.w.hmSprog.kl('2026-11-02T07:12:00.000Z') + '. Døgn i UTC, vist i din tid.', d.getElementById('siden-vist').textContent);
   const li = [...d.querySelectorAll('#siden-liste li')];
-  tjek('N siden: Handl og Hold øje hver for sig (Handl først) med statuschip', li[0].className === 'hm-siden-roed' && li[0].querySelector('.chip-roed').textContent === 'Handl' && li[0].querySelector('b').textContent === 'xyz.wi24rd.com' && li[1].className === 'hm-siden-gul', li.map(x => x.className).join(','));
+  tjek('N siden: Handl og Hold øje hver for sig (Handl først) med statuschip', li[0].className === 'hm-siden-roed' && li[0].querySelector('.chip.danger .ord').textContent === 'Handl' && li[0].querySelector('b').textContent === 'xyz.wi24rd.com' && li[1].className === 'hm-siden-gul', li.map(x => x.className).join(','));
   tjek('N siden: linjen som i overblikket', li[0].querySelector('small').textContent === '28 angreb i går (snit 23,1) – alle stoppet (20 blokeret, 8 udfordret). Mest et kendt hul i React (25) og browsertjekket (3). Bed din webmand tjekke, at siden er opdateret.', li[0].querySelector('small').textContent);
   tjek('N siden: "ny" kun ved nye domæner', li[0].querySelector('.ny') && li[0].querySelector('.ny').textContent === 'ny' && !li[1].querySelector('.ny'));
   tjek('N siden: grønne samlet, gamle og grå hver i én linje', li.slice(2).map(x => x.textContent).join(' | ') === '2 domæner: intet usædvanligt | 1 domæne: tallene er gamle – Huginn henter | 1 domæne: ingen tal endnu', li.slice(2).map(x => x.textContent).join(' | '));
@@ -857,7 +857,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   const guideTitel = d.getElementById('hjaelp-h').textContent, guideTekst = d.getElementById('hjaelp-guide').textContent;
   const guideSynlig = !d.getElementById('hjaelp').hidden && !d.getElementById('hjaelp-guide').hidden && d.getElementById('hjaelp-generelt').hidden;
   const kort = [...d.querySelectorAll('#hjaelp-guide .g-kort')];
-  tjek('F2 guide: ét kort pr. Handl/Hold øje-domæne, Handl først (gamle tal ikke med)', kort.map(k => k.dataset.zone).join() === 'z2,z1' && kort[0]?.querySelector('h3 .chip-roed') && kort[1]?.querySelector('h3 .chip-gul'), kort.map(k => k.dataset.zone).join());
+  tjek('F2 guide: ét kort pr. Handl/Hold øje-domæne, Handl først (gamle tal ikke med)', kort.map(k => k.dataset.zone).join() === 'z2,z1' && kort[0]?.querySelector('h3 .chip.danger') && kort[1]?.querySelector('h3 .chip.warn'), kort.map(k => k.dataset.zone).join());
   const afsnit = kort.flatMap(k => [...k.querySelectorAll('.g-afsnit')]);
   tjek('F2 guide: hver top-kategori har "Rammer det dig?" og trin; med spørgsmål også "Hvis ja" og "Hvis nej"', afsnit.length === 3 && afsnit.map(a => a.dataset.kategori).join() === 'react,browsertjek,react'
     && afsnit.every(a => a.querySelector('.g-spoerg b')?.textContent === 'Rammer det dig?' && a.querySelectorAll('.g-trin li').length >= 1)
@@ -954,7 +954,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const s = side('#vaernet?zone=z1&navn=wi24rd.com&vis=angreb-i-gaar', { ...F3_SVAR(v), dyk });
   await sov(80);
   const { d, w } = s, q = new URLSearchParams(w.location.hash.split('?')[1]);
-  tjek('F3 gammel adresse: vis=angreb-i-gaar bliver til dag og Kun angreb, som chip og valg', q.get('vis') === 'seneste' && q.get('slags') === 'angreb' && JSON.stringify(sidsteDyk(s).periode) === JSON.stringify({ dag: q.get('dag') }) && sidsteDyk(s).slags === 'angreb' && d.querySelectorAll('#dyk-filtre .dyk-filter').length === 1 && d.querySelector('.dyk-slags input:checked')?.parentElement.textContent.startsWith('Kun angreb'), w.location.hash);
+  tjek('F3 gammel adresse: vis=angreb-i-gaar bliver til dag og Kun angreb, som chip og valg', q.get('vis') === 'seneste' && q.get('slags') === 'angreb' && JSON.stringify(sidsteDyk(s).periode) === JSON.stringify({ dag: q.get('dag') }) && sidsteDyk(s).slags === 'angreb' && d.querySelectorAll('#dyk-filtre .dyk-filter').length === 1 && d.querySelector('.dyk-slags .seg-v[aria-checked="true"]')?.textContent.startsWith('Kun angreb'), w.location.hash);
   d.querySelector('#dyk-filtre .dyk-nulstil').click(); await sov(80);
   tjek('F3 Nulstil fjerner dagen og Kun angreb uden genindlæsning', w.location.hash === '#vaernet?zone=z1&navn=wi24rd.com' && !d.querySelector('#dyk-filtre .dyk-filter') && w.location.pathname === '/index.html', w.location.hash);
   const nat = side('#overblik', { ...F3_SVAR(v, [raekke('n', 'nat.wi24rd.com', 'gul', { opdateres: true, angreb_i_gaar: 1, status_dag: I_FORGAARS })]), dyk });
@@ -1022,9 +1022,9 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
 
   // Forbindelse
   const chip = d.getElementById('forb-chip');
-  tjek('Indstillinger, status: Forbundet · 3 domæner (grøn)', chip.textContent === 'Forbundet · 3 domæner' && chip.classList.contains('chip-groen'), chip.outerHTML);
+  tjek('Indstillinger, status: Forbundet · 3 domæner (grøn)', chip.querySelector('.ord').textContent === 'Forbundet · 3 domæner' && chip.classList.contains('chip-knap') && chip.classList.contains('ok'), chip.outerHTML);
   s.emit('hentekoe', { zone: null, zoner_i_alt: 3, zoner_faerdige: 0, doegn_i_alt: 1, doegn_faerdige: 0, zoner_fejl: 0, tilstand: 'fejl', fejl: { kode: 'afvist', status: 403 } });
-  tjek('Indstillinger, status: køens fejlkode afvist → Afvist (rød)', chip.textContent === 'Afvist' && chip.classList.contains('chip-roed'), chip.outerHTML);
+  tjek('Indstillinger, status: køens fejlkode afvist → Afvist (rød)', chip.querySelector('.ord').textContent === 'Afvist' && chip.classList.contains('danger'), chip.outerHTML);
   s.emit('hentekoe', { zone: null, zoner_i_alt: 3, zoner_faerdige: 3, doegn_i_alt: 1, doegn_faerdige: 1, zoner_fejl: 0, tilstand: 'faerdig' });
   const form = d.getElementById('skift-form'), knap = d.getElementById('skift-noegle'), felt = d.getElementById('skift-felt');
   tjek('Indstillinger, Skift nøgle: feltet er foldet sammen', form.hidden && knap.getAttribute('aria-expanded') === 'false');
@@ -1048,7 +1048,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   tjek('Indstillinger, Data: størrelse, periode og "N af M" fra data_status', d.getElementById('data-stoerrelse').textContent === '2,4 MB' && d.getElementById('data-historik').textContent === '4. okt. – 2. nov. 2026' && d.getElementById('data-domaener').textContent === '2 af 3', [d.getElementById('data-stoerrelse').textContent, d.getElementById('data-historik').textContent, d.getElementById('data-domaener').textContent].join(' | '));
   tjek('Indstillinger, Data: noten siger "computer" uden for macOS', d.getElementById('data-hist-note').textContent === 'Programmet gemmer al historik på din computer og sletter intet af sig selv.');
   d.getElementById('data-hent').click(); await sov(5);
-  tjek('Indstillinger, Data: "Hent nu" er sekundær og kalder hent_nu', !d.getElementById('data-hent').classList.contains('primaer') && kald.some(k => k[0] === 'hent_nu'));
+  tjek('Indstillinger, Data: "Hent nu" er sekundær og kalder hent_nu', !d.getElementById('data-hent').classList.contains('primary') && kald.some(k => k[0] === 'hent_nu'));
 
   // Om
   const om = d.querySelector('.om');
@@ -1063,7 +1063,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const s = side('#indstillinger', B2({ token_status: { sat: false }, zones_cache: { zoner: [], hentet: null }, data_status: { bytes: 900, foerste: null, sidste: null, domaener: 0 } }), 'en', 'macos');
   await sov(50);
   const { d } = s, c = d.getElementById('forb-chip');
-  tjek('Indstillinger, engelsk uden API Token: "No API Token", ingen anden "token", Glem skjult, Hent slået fra', c.textContent === 'No API Token' && c.classList.contains('chip-graa') && !/token/i.test(d.getElementById('visning-indstillinger').textContent.replace(/API Token(et)?|Create (Custom )?Token|Token name|Token expiration/g, '')) && d.getElementById('glem').hidden && d.getElementById('data-hent').disabled, c.outerHTML);
+  tjek('Indstillinger, engelsk uden API Token: "No API Token", ingen anden "token", Glem skjult, Hent slået fra', c.querySelector('.ord').textContent === 'No API Token' && c.classList.contains('none') && !/token/i.test(d.getElementById('visning-indstillinger').textContent.replace(/API Token(et)?|Create (Custom )?Token|Token name|Token expiration/g, '')) && d.getElementById('glem').hidden && d.getElementById('data-hent').disabled, c.outerHTML);
   tjek('Indstillinger, engelsk: grupperne og trademarket på engelsk', [...d.querySelectorAll('.indst > h2')].map(h => h.textContent).join() === 'General,Domains,Notifications,Connection,Data,About' && d.querySelector('.om').textContent.includes('Cloudflare® is a registered trademark of Cloudflare, Inc. Wi24rd Huginn and Muninn is not affiliated with Cloudflare, Inc.'));
   tjek('Indstillinger, tom database: "1 kB", "None yet", macOS-noterne', d.getElementById('data-stoerrelse').textContent === '1 kB' && d.getElementById('data-historik').textContent === 'None yet' && d.getElementById('data-hist-note').textContent === 'The program keeps all history on your Mac and deletes nothing by itself.' && d.getElementById('forb-note').textContent === 'The API Token is in the macOS Keychain.', d.getElementById('data-stoerrelse').textContent);
   const fejl = side('#indstillinger', B2({ data_status: () => { throw { kode: 'lager' }; } }));
@@ -1302,6 +1302,14 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   const vMaal = regler(alCss).filter(([s, k]) => /\d(vh|vw)\b/.test(k)), uden = vMaal.filter(([s]) => !s.includes('data-tekst')).map(([s]) => s);
   tjek('P1 hvert mål i vh/vw i app.css/vagt.css har en regel pr. trin, der deler med kittets zoom', uden.length === 3 && uden.every(s => [['lille', '.9'], ['stor', '1.125']].every(([t, z]) => vMaal.some(([s2, k]) => s2 === `:root[data-tekst="${t}"] ${s}` && k.includes(`/ ${z})`)))), uden.join(' | '));
   tjek('P1 intet i programmet kender den gamle skala (data-density, hmTekst, tekst.js)', !fs.existsSync(path.join(repo, 'ui', 'assets', 'tekst.js')) && ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f)).map(f => 'assets/' + f)].every(f => !/data-density|hmTekst|tekst\.js/.test(ui(f))));
+  /* V-KIT2.1 B2b: knapper, chips, kontakter, afkrydsning, radiogrupper, valglister og segmentknap er kittets. */
+  const uiKode = ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f)).map(f => 'assets/' + f)].map(f => [f, udenKommentarer(fjernCssKommentarer(ui(f)))]);
+  const gamle = /class="knap\b|'knap\b[^']*'|(?<![\w$\])])\.knap\b(?![(-])|primaer|chip-(roed|gul|groen|graa)|\bkontakt'|class="kontakt|input\.kontakt|hm-valgmulighed|class="segment|'segment'|\.segment\b(?!\()|radiol\b|input\.boks|'boks'/;
+  tjek('B2b intet i ui/ bruger programmets gamle knapper, chips, kontakter, segmenter, radiolister eller afkrydsninger', uiKode.every(([, k]) => !gamle.test(k)), uiKode.filter(([, k]) => gamle.test(k)).map(([f, k]) => f + ': ' + gamle.exec(k)[0]).join(' | '));
+  const ix = ui('index.html');
+  tjek('B2b index.html: knapper er .btn (26), kontakter .tilfra (3), radioer .afk-boks i .valgsaet (12), og hver <select> står i .vliste (4)', (ix.match(/<button class="btn( primary| danger)?"/g) || []).length === 26 && (ix.match(/<input class="tilfra" type="checkbox" role="switch"/g) || []).length === 3 && (ix.match(/<label class="afk"><input class="afk-boks" type="radio"/g) || []).length === 12 && (ix.match(/class="valgsaet/g) || []).length === 4 && (ix.match(/<select/g) || []).length === 4 && (ix.match(/<span class="vliste"><select/g) || []).length === 4);
+  const kitKode = ui('assets/kit2/kit.css');
+  tjek('B2b kittets klasser findes i kit.css, og app.css tegner dem ikke om', ['.btn {', '.btn.primary', '.btn.danger', '.chip.ok', '.chip.warn', '.chip.danger', '.chip.none', '.tilfra {', '.afk-boks {', '.valgsaet {', '.vliste select {', '.seg {', '.seg-v {'].every(s => kitKode.includes(s)) && !/(^|\n)\.(chip|tilfra|afk|afk-boks|valgsaet|vliste|seg|seg-v)\b[^{\n]*\{/.test(appCss) && /\n\.btn \{ white-space: nowrap; \}/.test(appCss));
   const faste = alCss.match(/font-size:\s*[\d.]+px|\bfont:[^;}]*?[\d.]+px/g) || [];
   tjek('P1 ingen faste px-skriftstørrelser i app.css/vagt.css (font-size og font:)', faste.length === 0, faste.join(' | '));
   const brugte = [...new Set(alCss.match(/--font-size[\w-]*|--title-size/g))], mangler = brugte.filter(v => !css.includes(v + ':'));
@@ -1400,10 +1408,10 @@ const dagFor = n => new Date(urNu() - n * 864e5).toISOString().slice(0, 10);
   await sov(50);
   const knap = d.getElementById('nulstil'), dialog = d.getElementById('nulstil-dialog'), p = d.getElementById('nulstil-p');
   const dataKort = d.querySelectorAll('.indst > .kort')[4], rk = [...dataKort.querySelectorAll('.raekke')].at(-1);
-  tjek('Nulstil: rækken siger, hvad der er væk for altid', rk.contains(knap) && knap.classList.contains('fare') && knap.textContent === 'Nulstil historik…' && rk.textContent.includes('Sletter alle tal på din computer og henter dem forfra. Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år — alt ældre er væk for altid.') && knap.getAttribute('aria-describedby') === 'nulstil-note', rk.textContent);
+  tjek('Nulstil: rækken siger, hvad der er væk for altid', rk.contains(knap) && knap.classList.contains('danger') && knap.textContent === 'Nulstil historik…' && rk.textContent.includes('Sletter alle tal på din computer og henter dem forfra. Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år — alt ældre er væk for altid.') && knap.getAttribute('aria-describedby') === 'nulstil-note', rk.textContent);
   knap.click(); await sov(10);
   tjek('Nulstil: dialogen siger det med konkrete datoer, og intet slettes endnu', dialog.hasAttribute('open') && d.getElementById('nulstil-h').textContent === 'Nulstil historikken?' && p.textContent === 'Du har sikkerhedstal fra 4. oktober. Efter nulstilling kan kun tal fra 6. oktober hentes igen. 2 dage forsvinder for altid.' && !kald.some(k => k[0] === 'nulstil_historik'), p.textContent);
-  tjek('Nulstil: knappen er rød og hedder "Slet og hent forfra"; Annullér har fokus', d.getElementById('nulstil-nej').textContent === 'Annullér' && d.getElementById('nulstil-ja').textContent === 'Slet og hent forfra' && d.getElementById('nulstil-ja').classList.contains('fare') && d.activeElement === d.getElementById('nulstil-nej'), d.activeElement.id);
+  tjek('Nulstil: knappen er rød og hedder "Slet og hent forfra"; Annullér har fokus', d.getElementById('nulstil-nej').textContent === 'Annullér' && d.getElementById('nulstil-ja').textContent === 'Slet og hent forfra' && d.getElementById('nulstil-ja').classList.contains('danger') && d.activeElement === d.getElementById('nulstil-nej'), d.activeElement.id);
   d.getElementById('nulstil-nej').click(); await sov(10);
   tjek('P3 Annullér lukker og kalder intet', !dialog.hasAttribute('open') && !kald.some(k => k[0] === 'nulstil_historik'));
   data = { ...data, nulstil: { sikkerhed: tab('2026-10-05', '2026-10-06', 1), trafik: tab('2025-11-01', '2025-11-06', 5) } };
@@ -1574,13 +1582,13 @@ const ROBOT_DYK = dykSvar({ regler: [], top: { regel: [], land: [], netvaerk: []
   const s = side('#dyk?' + dykQ({ land: 'PL' }), DYK());
   await sov(90);
   const { d, w } = s, q = sel => d.querySelector('#visning-vaernet ' + sel), alle = sel => [...d.querySelectorAll('#visning-vaernet ' + sel)];
-  tjek('D land: overskrift, ingen hovedkort, vælgeren med tal', d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com' && !q('.dyk-hoved') && alle('.dyk-slags label').map(l => l.textContent).join() === 'Alt,Kun angreb (150),Kun rutine (48)', alle('.dyk-slags label').map(l => l.textContent).join());
+  tjek('D land: overskrift, ingen hovedkort, vælgeren med tal', d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com' && !q('.dyk-hoved') && alle('.dyk-slags .seg-v').map(l => l.textContent).join() === 'Alt,Kun angreb (150),Kun rutine (48)', alle('.dyk-slags .seg-v').map(l => l.textContent).join());
   tjek('D land: regelkortene erstatter listen, og listen for land er væk', !alle('.dyk-lister h3').some(h => ['Regler', 'Lande'].includes(h.textContent)) && alle('.vg-regel').length === 2);
-  const slag = alle('.dyk-slags input')[1];
-  slag.focus(); slag.checked = true; slag.dispatchEvent(new w.Event('change', { bubbles: true })); await sov(60);
-  tjek('D slags: Kun angreb sendes til Rust, er ét trin i adressen, og fokus bliver på valget', sidsteDyk(s).slags === 'angreb' && w.location.hash.includes('slags=angreb') && d.activeElement === alle('.dyk-slags input')[1], w.location.hash);
-  const p7 = d.querySelectorAll('#dyk-periode input')[0];
-  p7.checked = true; p7.dispatchEvent(new w.Event('change', { bubbles: true })); await sov(60);
+  const slag = alle('.dyk-slags .seg-v')[1];
+  slag.click(); await sov(60);
+  tjek('D slags: Kun angreb sendes til Rust, er ét trin i adressen, og fokus bliver på valget', sidsteDyk(s).slags === 'angreb' && w.location.hash.includes('slags=angreb') && d.activeElement === alle('.dyk-slags .seg-v')[1], w.location.hash);
+  const p7 = d.querySelectorAll('#dyk-periode .seg-v')[0];
+  p7.click(); await sov(60);
   tjek('D periode: 7 dage med samme filter og slags', sidsteDyk(s).periode === 'd7' && sidsteDyk(s).slags === 'angreb' && sidsteDyk(s).filtre[0].vaerdi === 'PL' && q('.vg-flise[aria-current]').textContent.startsWith('57'), JSON.stringify(sidsteDyk(s)));
   d.querySelector('.dato-vaelger button.link').click(); await sov(60);
   tjek('D periode: hele historikken får sin egen flise', sidsteDyk(s).periode === 'alt' && q('.vg-flise[aria-current]').textContent.includes('Angreb i hele historikken'));
@@ -1603,7 +1611,7 @@ const ROBOT_DYK = dykSvar({ regler: [], top: { regel: [], land: [], netvaerk: []
   const dag = side('#dyk?' + dykQ({ regel: REACT, dag: '2026-11-03' }), DYK());
   await sov(90);
   const q = sel => dag.d.querySelector('#visning-vaernet ' + sel);
-  tjek('D dag: ingen søjler, de seneste sidst, ingen periode valgt, dagen som chip', !q('.dyk-soejler') && [...dag.d.querySelectorAll('#visning-vaernet .vg-blok h2')].at(-1).textContent === 'De seneste, der blev afvist' && JSON.stringify(sidsteDyk(dag).periode) === '{"dag":"2026-11-03"}' && ![...dag.d.querySelectorAll('#dyk-periode input')].some(i => i.checked) && [...dag.d.querySelectorAll('.dyk-filter')].at(-1)?.textContent === '3. november×', q('.dyk-filtre').textContent);
+  tjek('D dag: ingen søjler, de seneste sidst, ingen periode valgt, dagen som chip', !q('.dyk-soejler') && [...dag.d.querySelectorAll('#visning-vaernet .vg-blok h2')].at(-1).textContent === 'De seneste, der blev afvist' && JSON.stringify(sidsteDyk(dag).periode) === '{"dag":"2026-11-03"}' && ![...dag.d.querySelectorAll('#dyk-periode .seg-v')].some(i => i.getAttribute('aria-checked') === 'true') && [...dag.d.querySelectorAll('.dyk-filter')].at(-1)?.textContent === '3. november×', q('.dyk-filtre').textContent);
   const tom = side('#dyk?' + dykQ({ land: 'IS' }), DYK({ dyk: () => dykSvar({ sum: 0, noegletal: { i_gaar: 0, i_dag_hidtil: 0, hele7: 0, hele30: 0, alt: 0 }, foerst: null, sidst: null, domaener: [], enkelte: [], top: { regel: [], land: [], netvaerk: [], sti: [], colo: [], metode: [], handling: [] }, buer: [], fordeling: { blokeret: 0, udfordret: 0, labyrint: 0, andet: 0, faelder: 0 } }) }));
   await sov(90);
   tjek('D tomt: besked, ingen tegninger, og 0 er ikke klikbart', tom.d.querySelector('.dyk-tom').textContent === 'Ingen tal i perioden.' && !tom.d.querySelector('#visning-vaernet svg') && !tom.d.querySelector('#vagt [data-dyk]'), tom.d.getElementById('vagt').innerHTML.slice(0, 200));
@@ -1692,7 +1700,9 @@ const ROBOT_DYK = dykSvar({ regler: [], top: { regel: [], land: [], netvaerk: []
   const regler = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim(), m[2]]);
   const delt = v => v.split(/,(?![^(]*\))/).map(x => x.trim()).filter(Boolean);
   const pointer = regler.filter(([, k]) => /cursor:\s*pointer/.test(k)).flatMap(([v]) => delt(v));
-  const hover = regler.flatMap(([v]) => delt(v)).filter(v => v.includes(':hover'));
+  /* Knapper og segmentknapper er kittets, så deres hover-regler står i kit.css. */
+  const kitRegler = [...udenKommentarer(ui('assets/kit2/kit.css')).replace(/@media[^{]+\{/g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => m[1].trim());
+  const hover = regler.flatMap(([v]) => delt(v)).filter(v => v.includes(':hover')), kitHover = kitRegler.flatMap(v => delt(v)).filter(v => /^\.(btn|seg-v)\b[^ ]*:hover/.test(v));
   const ren = v => v.replace(/:(hover|focus-visible|active|focus)\b/g, '').replace(/::[a-z-]+/g, '').replace(/:not\(:disabled\)/g, '').replace(/:not\(\.[a-z]+\)/g, '').replace(/:root/g, 'html');
   const visninger = [
     ['dyk', side('#dyk?' + dykQ({ regel: REACT }), DYK())],
@@ -1740,7 +1750,7 @@ const ROBOT_DYK = dykSvar({ regler: [], top: { regel: [], land: [], netvaerk: []
       e.dispatchEvent(new H('pointerleave'));
       return ja && !maerke.classList.contains('vg-over');
     };
-    const udenHover = m.filter(e => !lyserMaerke(e) && !hover.some(v => { try { return e.matches(hoverMaal(v)); } catch (x) { return false; } }));
+    const udenHover = m.filter(e => !lyserMaerke(e) && ![...hover, ...kitHover].some(v => { try { return e.matches(hoverMaal(v)); } catch (x) { return false; } }));
     /* En stor flade får aldrig understregning. Stor = rummer et blokindhold (tal og tekst i fliser, kort og hele-rækken-lister). */
     const understreg = [...fjernCssKommentarer(ui('assets/app.css') + ui('assets/vagt.css')).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(x => [x[1].trim(), x[2]]).filter(([sel, krop]) => sel.includes(':hover') && /text-decoration:\s*underline/.test(krop)).flatMap(([sel]) => sel.split(',')).map(x => x.trim());
     const store = m.filter(e => !e.matches('.link') && (e.matches('.dyk-flise, .dyk-flise-aabn, .vg-regel-aabn, .dyk-l, .gruppe-kort, .hm-siden-aabn') || e.querySelector('b, div, ol, ul, p, h3, h4')));
@@ -2166,8 +2176,8 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   const T = s.w.hmSprog.T, E = en.w.hmSprog.T, B = id => [s.w.hmSprog.bog(id), en.w.hmSprog.bog(id)];
   tjek('V labyrinten kaldes aldrig blokeret', ![T.robotSlags.labyrint, T.robotLabyrintSub, T.robotLabyrintNote, E.robotSlags.labyrint, E.robotLabyrintSub, E.robotLabyrintNote, ...B('labyrint').flatMap(b => [b.ord, b.alle, ...b.ja])].some(x => /blok|block/i.test(x)));
   tjek('V "blokeret" står heller ikke om det, der blev lokket ind', !/blokeret/i.test(q('.vg-tre').textContent));
-  tjek('V Robotter: to perioder ved siden af datovælgeren, 7 dage er valgt', d.querySelectorAll('#robotter-periode input').length === 2 && d.querySelectorAll('#robotter-periode input')[0].checked);
-  d.querySelectorAll('#robotter-periode input')[1].click();
+  tjek('V Robotter: to perioder ved siden af datovælgeren, 7 dage er valgt', d.querySelectorAll('#robotter-periode .seg-v').length === 2 && d.querySelectorAll('#robotter-periode .seg-v')[0].getAttribute('aria-checked') === 'true');
+  d.querySelectorAll('#robotter-periode .seg-v')[1].click();
   await sov(40);
   tjek('V Robotter: periodevalget er ét trin, og dyk følger med (30 = ingen periode)', s.w.location.hash.includes('periode=30') && s.kald.filter(k => k[0] === 'robotter').pop()[1].periode === 'd30' && !new URLSearchParams(q('.gruppe-kort').dataset.dyk).has('periode'), s.w.location.hash);
   const ingen = side('#robotter?zone=z1&navn=a.wi24rd.com', DYK({ ...VIS, robotter: { ...ROBOT_UD, grupper: [], sider: [], crawlere: { ...ROBOT_UD.crawlere, iAlt: { bots7: 0, bots30: 0, alle7: 0, botNavne: 0, falske7: 0 }, bots: [], falske: [], uverificerede: [] }, stoppet: { ...ROBOT_UD.stoppet, sum: 0, labyrint: 0, robotter: [], labyrint_robotter: [], ikke_tilgaengelig: ['a.wi24rd.com'] } } }));
@@ -2340,14 +2350,13 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('BES landetabellen: kun landet er klikbart, tallene er ikke', rk.every(r => r.querySelector('th button[data-gaa]') && !r.querySelector('td button, td [data-gaa], td [data-dyk]')) && rk[0].querySelector('button').dataset.gaa === `besoegende?${DOM}&land=DK` && rk[0].querySelector('button').getAttribute('aria-label') === 'Vis besøg fra Danmark pr. dag (2.200 besøg)');
   tjek('BES noten siger unikke IP-adresser, robotter, VPN og stikprøve, og intet om Samlet for ét domæne', ['unikke IP-adresser', 'robotter tæller med', 'VPN', 'stikprøve', 'én gang pr. dag'].every(x => q('.besoeg-note').textContent.includes(x)) && !q('.besoeg-note').textContent.includes('Alle domæner'), q('.besoeg-note').textContent);
   tjek('BES engelsk: fliser, tabel og note', en.d.querySelector('.besoeg-fliser').textContent.includes('Unique visitors yesterday') && en.d.querySelector('#besoeg-lande h2').textContent === 'Where the visits came from' && en.d.querySelector('#besoeg-lande details summary').textContent === 'Show all 14 countries' && en.d.querySelector('.besoeg-note').textContent.includes('unique IP addresses'));
-  tjek('BES periodevælgeren: 7, 30 dage og et år, plus Fra/Til med Nulstil til et år', qa('.besoeg-valg .segment label').map(x => x.textContent).join() === '7 dage,30 dage,Et år' && q('.besoeg-valg .dato-vaelger') && q('.dato-vaelger [data-gaa]').dataset.gaa === `besoegende?${DOM}&periode=aar`);
+  tjek('BES periodevælgeren: 7, 30 dage og et år, plus Fra/Til med Nulstil til et år', qa('.besoeg-valg .seg .seg-v').map(x => x.textContent).join() === '7 dage,30 dage,Et år' && q('.besoeg-valg .dato-vaelger') && q('.dato-vaelger [data-gaa]').dataset.gaa === `besoegende?${DOM}&periode=aar`);
   /* F10 (V-BESOEG.2 FIX 1): de faste fliser øverst med en lille overskrift, så vælgeren, så "Valgt periode: …" og alt, der følger perioden. */
   const efter = (x, y) => Boolean(x && y && x.compareDocumentPosition(y) & 4);
-  tjek('F10 fliserne står før vælgeren med overskriften "De seneste dage", og vælgeren står ikke i titelrækken', q('.besoeg-faste h2')?.textContent === 'De seneste dage' && q('.besoeg-faste .besoeg-fliser') && efter(q('.besoeg-faste'), q('.besoeg-valg')) && efter(q('.besoeg-valg'), q('.besoeg-valgt-h')) && efter(q('.besoeg-valgt-h'), q('#besoeg-graf')) && q('#besoegende-rod')?.firstElementChild === q('.besoeg-faste') && !q('.titelrad .segment'), qa('#besoegende-rod > *').map(x => x.className || x.id).join());
+  tjek('F10 fliserne står før vælgeren med overskriften "De seneste dage", og vælgeren står ikke i titelrækken', q('.besoeg-faste h2')?.textContent === 'De seneste dage' && q('.besoeg-faste .besoeg-fliser') && efter(q('.besoeg-faste'), q('.besoeg-valg')) && efter(q('.besoeg-valg'), q('.besoeg-valgt-h')) && efter(q('.besoeg-valgt-h'), q('#besoeg-graf')) && q('#besoegende-rod')?.firstElementChild === q('.besoeg-faste') && !q('.titelrad .seg'), qa('#besoegende-rod > *').map(x => x.className || x.id).join());
   tjek('F10 overskriften "Valgt periode" med datoerne (da/en)', q('.besoeg-valgt-h')?.tagName === 'H2' && q('.besoeg-valgt-h')?.textContent === 'Valgt periode: 30. okt. – 5. nov. 2026' && en.d.querySelector('#visning-besoegende .besoeg-valgt-h')?.textContent === 'Selected period: 30 Oct – 5 Nov 2026' && en.d.querySelector('#visning-besoegende .besoeg-faste h2')?.textContent === 'The last days', q('.besoeg-valgt-h')?.textContent + ' / ' + en.d.querySelector('#visning-besoegende .besoeg-valgt-h')?.textContent);
-  const r30 = qa('.besoeg-valg .segment input')[1];
-  r30.checked = true;
-  r30.dispatchEvent(new s.w.Event('change', { bubbles: true }));
+  const r30 = qa('.besoeg-valg .seg .seg-v')[1];
+  r30.click();
   await sov(60);
   tjek('BES 30 dage er ét trin, og kaldet følger med', s.w.location.hash === `#besoegende?${DOM}&periode=30` && sidst(s, 'besoegende')[1].periode === 'd30', s.w.location.hash);
   // Et land som filter: chip med ×, grafen viser besøg fra landet, og × fjerner det igen.
@@ -2567,7 +2576,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('L navnet følger landet i titlen og sidebjælken', d.title.startsWith('Danmark lige nu · ') && d.getElementById('nav-land').textContent === 'Danmark lige nu', d.title);
   tjek('L visningen beder om nye tal, når den åbnes', s.kald.some(k => k[0] === 'radar_opdater' && k[1].kode === 'DK'));
   tjek('L landevælgeren står i båndet, og domænevælgeren gør ikke', !d.getElementById('band-land').hidden && d.getElementById('band-land').closest('#baand') && landValg(d).value === 'DK');
-  tjek('L to faner, og sidebjælken har ⌘6', [...d.querySelectorAll('#land-faner input')].length === 2 && d.querySelector('#land-faner').textContent === 'DanmarkVerden' && d.querySelector('a[data-visning="land"] kbd').textContent === 'Ctrl+6');
+  tjek('L to faner, og sidebjælken har ⌘6', [...d.querySelectorAll('#land-faner .seg-v')].length === 2 && d.querySelector('#land-faner').textContent === 'DanmarkVerden' && d.querySelector('a[data-visning="land"] kbd').textContent === 'Ctrl+6');
   const kurver = [...rod.querySelectorAll('polyline')].map(p => p.getAttribute('class'));
   tjek('L to kurver på én akse, mine og verden', new Set(kurver).size === 2 && kurver.every(k => /vg-k-(mit|verden)/.test(k)) && !rod.textContent.includes('beregnet'), kurver.join());
   tjek('L et hul bryder min kurve', kurver.filter(k => k.includes('vg-k-mit')).length === 2, String(kurver.length));
@@ -2584,7 +2593,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('L dag for dag er ikke klikbar', !rod.querySelector('.land-dage button, .land-dage [data-gaa]'));
   const mod = d.getElementById('land-kilde'), kol = [...mod.querySelectorAll('.vg-tre > div')];
   tjek('L sammenligningen: to kolonner side om side, fra målsiden', kol.map(k => k.querySelector('h3').textContent).join('|') === 'De største kilder til angreb mod Danmark|Hvor angreb mod dine domæner kom fra (alle lande)', mod.textContent.slice(0, 200));
-  tjek('L sammenligningen: 4 uger er valgt, og landets kolonne har Radars procenter', mod.querySelector('input:checked').parentElement.textContent === '4 uger' && kol[0].textContent.includes('Tyskland') && kol[0].textContent.includes('30 %'), kol[0].textContent);
+  tjek('L sammenligningen: 4 uger er valgt, og landets kolonne har Radars procenter', mod.querySelector('.seg-v[aria-checked="true"]').textContent === '4 uger' && kol[0].textContent.includes('Tyskland') && kol[0].textContent.includes('30 %'), kol[0].textContent);
   tjek('L sammenligningen: landets kolonne kan ikke klikkes', !kol[0].querySelector('button, [data-dyk], [data-gaa]'));
   const minKnap = kol[1].querySelector('button'), mq = new URLSearchParams(minKnap.dataset.dyk);
   tjek('L sammenligningen: dit land åbner dyk med land og samme periode', mq.get('samlet') === '1' && mq.get('land') === 'US' && mq.get('slags') === 'angreb' && !mq.has('periode'), minKnap.dataset.dyk);
@@ -2691,7 +2700,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   await sov(40);
   u.tast('6', { ctrlKey: true });
   await sov(80);
-  const etLand = (x, navn, k) => x.d.getElementById('land-h').textContent === `${navn} lige nu` && x.d.getElementById('nav-land').textContent === `${navn} lige nu` && landValg(x.d).value === k && x.d.querySelector('#land-faner label').textContent === navn && x.d.querySelector('#land-maal h2').textContent === `${navn} som mål` && x.d.querySelector('#land-kilde h3').textContent === `De største kilder til angreb mod ${navn}`;
+  const etLand = (x, navn, k) => x.d.getElementById('land-h').textContent === `${navn} lige nu` && x.d.getElementById('nav-land').textContent === `${navn} lige nu` && landValg(x.d).value === k && x.d.querySelector('#land-faner .seg-v').textContent === navn && x.d.querySelector('#land-maal h2').textContent === `${navn} som mål` && x.d.querySelector('#land-kilde h3').textContent === `De største kilder til angreb mod ${navn}`;
   tjek('L ét land: skift i Indstillinger → ⌘6: overskrift, vælger, fane, afsnit og sidebjælke siger samme land', etLand(u, 'Danmark', 'DK') && u.w.location.hash === '#land', `${u.w.location.hash} ${u.d.getElementById('land-h').textContent} ${landValg(u.d).value}`);
   u.emit('visning', 'overblik');
   await sov(40);
@@ -2709,7 +2718,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   kig.d.querySelector('#land-rod [data-gaa="land?kode=US&afsnit=maal"]').click();
   await sov(80);
   const hjem = kig.d.querySelector('#land-kig button');
-  tjek('L kig: et land fra Verden står overalt på siden, men gemmes ikke', kig.d.getElementById('land-h').textContent === 'USA lige nu' && landValg(kig.d).value === 'US' && kig.d.querySelector('#land-faner label').textContent === 'USA' && kig.d.querySelector('#land-maal h2').textContent === 'USA som mål' && !kig.kald.some(k => k[0] === 'land_saet'), kig.d.getElementById('land-h').textContent);
+  tjek('L kig: et land fra Verden står overalt på siden, men gemmes ikke', kig.d.getElementById('land-h').textContent === 'USA lige nu' && landValg(kig.d).value === 'US' && kig.d.querySelector('#land-faner .seg-v').textContent === 'USA' && kig.d.querySelector('#land-maal h2').textContent === 'USA som mål' && !kig.kald.some(k => k[0] === 'land_saet'), kig.d.getElementById('land-h').textContent);
   tjek('L kig: sidebjælken bliver ved det gemte, og overskriften har vejen hjem', kig.d.getElementById('nav-land').textContent === 'Danmark lige nu' && hjem && hjem.textContent === 'Tilbage til Danmark', hjem && hjem.outerHTML);
   kig.tast('6', { ctrlKey: true });
   await sov(80);
@@ -2720,7 +2729,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   if (hjem2) hjem2.click();
   await sov(80);
   tjek('L kig: "Tilbage til" går til det gemte land', hjem2 && etLand(kig, 'Danmark', 'DK'), kig.w.location.hash);
-  tjek('L det gemte lands egne links har ingen kode', [...kig.d.querySelectorAll('#land-faner input')].length === 2 && kig.w.location.hash === '#land');
+  tjek('L det gemte lands egne links har ingen kode', [...kig.d.querySelectorAll('#land-faner .seg-v')].length === 2 && kig.w.location.hash === '#land');
 
   /* Første valg */
   const sprogEn = reg('en-US');
@@ -2779,7 +2788,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   await sov(70);
   const h = [...hv1.d.querySelectorAll('#overblik-raekker tr')].map(tr => hv(tr).textContent);
   tjek('L Hvorfor: sætningen står før reglerne, så den ikke handler om en regel', h[0].startsWith('30 angreb i går (snit 12,4) – alle stoppet. Følger den globale tendens. Mest et kendt hul i React (20)') && h[1].includes('Verden var normal i går, så stigningen er din egen. Mest '), h.join(' / '));
-  tjek('L Hvorfor: status er den samme', hv1.d.querySelector('#overblik-raekker tr .chip').textContent === 'Hold øje');
+  tjek('L Hvorfor: status er den samme', hv1.d.querySelector('#overblik-raekker tr .chip .ord').textContent === 'Hold øje');
   const hv2 = side('', LANDV());
   await sov(70);
   tjek('L Hvorfor: uden Radar-tal står der ingen sammenligning', !/tendens|verden var normal/i.test(hv(hv2.d.querySelector('#overblik-raekker tr')).textContent));
@@ -2860,7 +2869,7 @@ const DOMV = (fravalgte = [], x) => {
   const liste = () => [...i.d.querySelectorAll('#domaener-liste tr')], erNavn = (r, n) => r.textContent.includes(n) && !r.textContent.includes('.' + n), kontakt = n => liste().find(r => erNavn(r, n)).querySelector('input');
   tjek('Domæner: alle domæner står, også det fravalgte', liste().length === 3 && kontakt('xyz.wi24rd.com').checked === false && kontakt('wi24rd.com').checked === true);
   const k0 = kontakt('wi24rd.com');
-  tjek('Domæner: kontakten er en switch med navn', k0.getAttribute('role') === 'switch' && k0.className === 'kontakt' && k0.getAttribute('aria-label') === 'Vis wi24rd.com i Huginn', k0.outerHTML);
+  tjek('Domæner: kontakten er en switch med navn', k0.getAttribute('role') === 'switch' && k0.className === 'tilfra' && k0.getAttribute('aria-label') === 'Vis wi24rd.com i Huginn', k0.outerHTML);
   tjek('Domæner: forklaringen står', i.d.getElementById('visning-indstillinger').textContent.includes('Vælg de domæner, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere; dets tal bliver liggende.') && i.d.getElementById('domaener-alle-til').textContent === 'Vælg alle' && i.d.getElementById('domaener-alle-fra').textContent === 'Fravælg alle');
   tjek('Domæner: API Tokenet ser N domæner', i.d.getElementById('domaener-ser').textContent === 'API Tokenet ser 3 domæner' && !i.d.getElementById('domaener-ser').hidden, i.d.getElementById('domaener-ser').textContent);
   const navn = n => liste().find(r => erNavn(r, n)).querySelector('th');
@@ -3013,7 +3022,7 @@ const DOMV = (fravalgte = [], x) => {
       while (bag && bg === 'rgba(0, 0, 0, 0)') { bg = getComputedStyle(bag).backgroundColor; bag = bag.parentElement; }
       const velkomst = v && { hm: parseFloat(st('.velkomst-hm').fontSize), cf: parseFloat(st('.velkomst-cf').fontSize), wi: parseFloat(st('.velkomst-wi').fontSize), h: parseFloat(st('.velkomst-h').fontSize), f24: st('.velkomst-wi em').color, hmFarve: st('.velkomst-hm').color, bg };
       const felt = document.getElementById('token'), fr = felt.getBoundingClientRect(), hoved = document.getElementById('indhold');
-      const segmenter = [...sek.querySelectorAll('.segment')].map(g => { const r = g.getBoundingClientRect(), k = [...g.querySelectorAll('span')]; return { id: g.id, v: r.left, h: r.right, b: r.width, knapper: k.map(x => x.getBoundingClientRect().width), afkortet: k.filter(x => x.scrollWidth > x.clientWidth).length }; });
+      const segmenter = [...sek.querySelectorAll('.seg, #tema, #tekst')].map(g => { const r = g.getBoundingClientRect(), k = [...g.querySelectorAll('.seg-v, .afk')]; return { id: g.id, v: r.left, h: r.right, b: r.width, hoejde: r.height, linjer: new Set(k.map(x => Math.round(x.getBoundingClientRect().top))).size, knapper: k.map(x => x.getBoundingClientRect().width), afkortet: k.filter(x => x.scrollWidth > x.clientWidth).length }; });
       const nl = document.getElementById('nav-land'), nf = parseFloat(getComputedStyle(nl).fontSize);
       const nav = { tekst: nl.textContent, title: nl.title, linjer: nl.getBoundingClientRect().height < nf * 2, afskaaret: nl.scrollWidth > nl.clientWidth, ellipse: getComputedStyle(nl).textOverflow };
       const nl2 = document.getElementById('nye-domaener'), nyLinje = nl2 && !nl2.hidden ? { over: [...document.querySelectorAll('body *')].filter(e => !e.closest('.tabel-rul') && e.getBoundingClientRect().right > innerWidth + 1).slice(0, 6).map(e => e.tagName + '.' + e.className + '#' + e.id), bredde: document.documentElement.scrollWidth, inde: innerWidth, h: Math.max(...[...nl2.querySelectorAll('*')].map(x => x.getBoundingClientRect().right)), plads: nl2.getBoundingClientRect().right } : null;
@@ -3071,8 +3080,7 @@ const DOMV = (fravalgte = [], x) => {
     for (const [sprog, tekst, bredde] of [['da', 'normal', 1200], ['en', 'normal', 1200], ['da', 'large', 1200], ['en', 'large', 1200], ['en', 'large', 900], ['da', 'compact', 900]]) {
       const r = koer(bredde, tekst, 'light', '#indstillinger', {}, { sprog }), g = r ? r.segmenter : [], [a, b] = g, nav2 = `${sprog}, ${tekst}, ${bredde} px`;
       grupper.push(a && `${nav2}: ${Math.round(a.b)} og ${Math.round(b.b)} px`);
-      tjek(`F Udseende og Tekststørrelse flugter: ${nav2}`, g.length === 2 && Math.abs(a.v - b.v) <= 1 && Math.abs(a.h - b.h) <= 1 && Math.abs(a.b - b.b) <= 1, JSON.stringify(g));
-      tjek(`F knapperne er lige brede, og ingen etiket er afkortet: ${nav2}`, g.length === 2 && g.every(x => Math.max(...x.knapper) - Math.min(...x.knapper) <= 1 && !x.afkortet), JSON.stringify(g));
+      tjek(`F Udseende og Tekststørrelse er kittets radiogrupper: de tre valg står på én linje, intet afkortet, og grupperne slutter samme sted: ${nav2}`, g.length === 2 && g.every(x => x.knapper.length === 3 && x.linjer === 1 && !x.afkortet) && Math.abs(a.h - b.h) <= 1, JSON.stringify(g));
     }
     const landeSvar = land => ({ land_hent: { land, forslag: null } });
     const kort = koer(1200, 'normal', 'light', '#indstillinger', landeSvar('DK'), { sprog: 'en' }).nav;
@@ -3085,7 +3093,7 @@ const DOMV = (fravalgte = [], x) => {
     tjek('F sidebjælken: ingen ombrydning ved Stor tekst og 900 px', stor.linjer, JSON.stringify(stor));
     for (const [hash, ekstra, navn] of [['#login?samlet=1', { login: LOGIN_UD, login_stier: LOGIN_STIER, valg_hent: ['z1'] }, 'Login'], ['#robotter?samlet=1', { robotter: ROBOT_UD, valg_hent: ['z1'] }, 'Robotter']]) {
       const r = koer(900, 'large', 'light', hash, ekstra), g = r ? r.segmenter : [];
-      tjek(`F ${navn} ved 900 px, Stor: knapperne er lige brede, intet afkortet, ingen vandret rullebjælke`, g.length >= 1 && g.every(x => Math.max(...x.knapper) - Math.min(...x.knapper) <= 1 && !x.afkortet) && !r.vandret, JSON.stringify(g));
+      tjek(`F ${navn} ved 900 px, Stor: segmentknappen står på én linje, intet afkortet, ingen vandret rullebjælke`, g.length >= 1 && g.every(x => x.linjer === 1 && !x.afkortet) && !r.vandret, JSON.stringify(g));
     }
     const nyLang = { domaener_hent: [{ id: 'z1', navn: 'eksempel.wi24rd.com', til: true, ny: false }, { id: 'z2', navn: 'et-meget-langt-domaenenavn-som-skal-kunne-staa-her-uden-at-bryde-noget.wi24rd.com', til: false, ny: true }] };
     for (const [bredde, tekst] of [[1200, 'normal'], [900, 'large']]) {
@@ -3186,8 +3194,8 @@ const DOMV = (fravalgte = [], x) => {
   const a = side('#vaernet?' + Z, S0);
   await sov(120);
   const { d, w } = a, sektioner = [...d.querySelectorAll('section[data-visning]')].map(x => x.getAttribute('data-visning'));
-  tjek('A1 standarden er 7 dage, og 7 dage er valgt', sidsteDyk(a).periode === 'd7' && d.querySelector('#dyk-periode input:checked')?.parentElement.textContent === '7 dage' && d.querySelector('.vg-flise[aria-current]')?.textContent.includes('Afvist på 7 dage'), JSON.stringify(sidsteDyk(a)));
-  tjek('A1 siden har altid datovælger, 7/30 dage og Vis', d.querySelector('#vagt .dato-vaelger') && d.querySelectorAll('#dyk-periode input').length === 2 && [...d.querySelectorAll('.dyk-slags label')].length === 3);
+  tjek('A1 standarden er 7 dage, og 7 dage er valgt', sidsteDyk(a).periode === 'd7' && d.querySelector('#dyk-periode .seg-v[aria-checked="true"]')?.textContent === '7 dage' && d.querySelector('.vg-flise[aria-current]')?.textContent.includes('Afvist på 7 dage'), JSON.stringify(sidsteDyk(a)));
+  tjek('A1 siden har altid datovælger, 7/30 dage og Vis', d.querySelector('#vagt .dato-vaelger') && d.querySelectorAll('#dyk-periode .seg-v').length === 2 && [...d.querySelectorAll('.dyk-slags .seg-v')].length === 3);
   tjek('A1 ingen #visning-dyk og intet data-visning="dyk"', !sektioner.includes('dyk') && !d.querySelector('a[data-visning="dyk"]') && !w.hmRamme.tilstand.visning.includes('dyk'), sektioner.join());
   tjek('A1 uden filtre hentes nye tal, og alle afsnit står', a.kald.some(k => k[0] === 'vaern_oversigt') && ['vg-kort', 'vg-dage', 'vg-regler', 'vg-teknologi', 'vg-forsoeg', 'vg-seneste'].every(id => d.getElementById(id)) && d.querySelector('[data-plads="email"] .email-linje') && !d.querySelector('.ang-skjult'), ['vg-kort', 'vg-dage', 'vg-regler', 'vg-teknologi', 'vg-forsoeg', 'vg-seneste'].filter(id => !d.getElementById(id)).join());
   tjek('A1 mails og "Hvad de ledte efter" følger perioden', JSON.stringify(a.kald.filter(k => k[0] === 'email_oversigt').at(-1)[1]) === '{"zone":"z1","fra":"2026-10-05","til":"2026-11-03"}' && [...d.querySelectorAll('.vg-flise')].some(f => f.textContent.startsWith('120Snusere, der intet fandt (7 dage)')) && d.querySelector('[data-plads="email"]').textContent.includes('7 dage, fra de rapporter'), JSON.stringify(a.kald.filter(k => k[0] === 'email_oversigt').at(-1)));
@@ -3245,7 +3253,7 @@ const DOMV = (fravalgte = [], x) => {
   await sov(80);
   const knap = (x, id) => x.d.getElementById(id), sidste = x => x.kald.filter(k => k[0] === 'aabn_vejledning').at(-1)?.[1];
   for (const [x, tekst, label, navn] of [[da, 'Åbn vejledningen', 'Åbn vejledningen i din browser', 'da'], [en, 'Open the guide', 'Open the guide in your browser', 'en']]) {
-    tjek(`V-BUNDT P2 knappen findes begge steder som rigtig knap med aria-label (${navn})`, ['hjaelp-vejledning', 'om-vejledning'].every(id => knap(x, id)?.tagName === 'BUTTON' && knap(x, id).type === 'button' && knap(x, id).className === 'knap' && knap(x, id).textContent === tekst && knap(x, id).getAttribute('aria-label') === label), knap(x, 'om-vejledning')?.outerHTML);
+    tjek(`V-BUNDT P2 knappen findes begge steder som rigtig knap med aria-label (${navn})`, ['hjaelp-vejledning', 'om-vejledning'].every(id => knap(x, id)?.tagName === 'BUTTON' && knap(x, id).type === 'button' && knap(x, id).className === 'btn' && knap(x, id).textContent === tekst && knap(x, id).getAttribute('aria-label') === label), knap(x, 'om-vejledning')?.outerHTML);
   }
   const plads = knap(da, 'hjaelp-vejledning').parentElement, foerstDel = da.d.querySelector('#hjaelp .hjaelp-del');
   tjek('V-BUNDT FIX1 F2 knappen står øverst i hjælpens indhold (lige under sidepanelets overskrift), før guiden og før første afsnit', plads.parentElement.id === 'hjaelp-indhold' && !plads.previousElementSibling && plads.parentElement.parentElement.previousElementSibling === da.d.querySelector('#hjaelp .sp-top') && plads.nextElementSibling === knap(da, 'hjaelp-guide') && Boolean(plads.compareDocumentPosition(foerstDel) & da.w.Node.DOCUMENT_POSITION_FOLLOWING), plads.previousElementSibling?.outerHTML.slice(0, 80));
@@ -3411,7 +3419,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('DK chips: × på dagen fjerner dagen og bevarer filtrene', !q3.has('dag') && q3.get('land') === 'FR' && q3.get('sti') === '/login' && q3.get('slags') === 'angreb', q3.toString());
   tjek('DK Nulstil: en rigtig knap ved chippene med navn og fast mål', nulstil()?.tagName === 'BUTTON' && nulstil().textContent === 'Nulstil' && nulstil().getAttribute('aria-label') === 'Nulstil alle filtre og perioden' && nulstil().dataset.gaa === 'vaernet?zone=z1&navn=wi24rd.com' && nulstil().closest('#dyk-filtre'), nulstil()?.outerHTML);
   tjek('DK chippen er en knap med egen hover og markør', chips().every(c => c.tagName === 'BUTTON') && /\.dyk-filter:hover \{[^}]*border-color: var\(--color-accent\)/.test(ui('assets/vagt.css')) && /\.dyk-filter \{[^}]*cursor: pointer/.test(ui('assets/vagt.css')));
-  tjek('DK Tab-rækkefølge: fokus på overskriften, så chips og vælgere', d.activeElement === h && foer(h, chips()[0]) && foer(chips().at(-1), d.querySelector('#dyk-periode input')) && h.getAttribute('tabindex') === '-1', d.activeElement && d.activeElement.outerHTML.slice(0, 80));
+  tjek('DK Tab-rækkefølge: fokus på overskriften, så chips og vælgere', d.activeElement === h && foer(h, chips()[0]) && foer(chips().at(-1), d.querySelector('#dyk-periode .seg-v')) && h.getAttribute('tabindex') === '-1', d.activeElement && d.activeElement.outerHTML.slice(0, 80));
   tjek('DK sidebjælken bliver ved Angreb', d.querySelector('a[aria-current]').getAttribute('data-visning') === 'vaernet');
   chips()[1].click(); await sov(60);
   tjek('DK × ét filter: sidste forespørgsel har kun det andet filter', JSON.stringify(sidsteDyk(s).filtre) === JSON.stringify([{ dim: 'land', vaerdi: 'FR' }]) && JSON.stringify(sidsteDyk(s).periode) === '{"dag":"2026-11-03"}' && sidsteDyk(s).slags === 'angreb', JSON.stringify(sidsteDyk(s)));
@@ -3427,10 +3435,10 @@ const DOMV = (fravalgte = [], x) => {
   tjek('DK × på den sidste: siden står uden filtre', en.w.location.hash === '#vaernet?zone=z1&navn=wi24rd.com' && synlige(en.d).join() === 'vaernet', en.w.location.hash);
   const ingen = side('#vaernet?' + Z, FIL);
   await sov(70);
-  tjek('DK uden filter: ingen chips og ingen Nulstil, men perioden og datovælgeren står', ingen.d.getElementById('dyk-filtre').hidden && !ingen.d.querySelector('.dyk-nulstil') && ingen.d.querySelector('#dyk-periode input:checked')?.parentElement.textContent === '7 dage' && ingen.d.querySelector('#vagt .dato-vaelger'));
+  tjek('DK uden filter: ingen chips og ingen Nulstil, men perioden og datovælgeren står', ingen.d.getElementById('dyk-filtre').hidden && !ingen.d.querySelector('.dyk-nulstil') && ingen.d.querySelector('#dyk-periode .seg-v[aria-checked="true"]')?.textContent === '7 dage' && ingen.d.querySelector('#vagt .dato-vaelger'));
   const per = side('#vaernet?' + Z + '&land=FR&periode=30&slags=rutine', FIL);
   await sov(70);
-  tjek('DK perioden og slags står i vælgerne, ikke i overskriften', per.d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com' && per.d.querySelector('#dyk-periode input:checked')?.parentElement.textContent === '30 dage', per.d.getElementById('vaernet-h').textContent);
+  tjek('DK perioden og slags står i vælgerne, ikke i overskriften', per.d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com' && per.d.querySelector('#dyk-periode .seg-v[aria-checked="true"]')?.textContent === '30 dage', per.d.getElementById('vaernet-h').textContent);
   for (const [zoner, sp, h1, reset] of [[['z1', 'z2'], 'da', 'Angreb · 2 domæner', 'Nulstil'], [['z1', 'z2'], 'en', 'Attacks · 2 domains', 'Reset'], [['z1'], 'da', 'Angreb · 1 domæne', 'Nulstil'], [['z1'], 'en', 'Attacks · 1 domain', 'Reset']]) {
     const x = side('#vaernet?samlet=1&land=FR', { ...FIL, valg_hent: zoner }, sp);
     await sov(70);
@@ -3805,7 +3813,7 @@ const DOMV = (fravalgte = [], x) => {
   const od = ob('da'), oe = ob('en');
   await sov(120);
   const mk = x => [...x.d.querySelectorAll('.moenster-maerke')];
-  tjek('Mærke: i Overblik ved status, også på en grøn række', mk(od).map(m => m.textContent).join() === 'Ligner målrettet,Ligner rekognoscering' && mk(od).every(m => m.closest('td.st') && m.closest('td.st').querySelector('.chip-groen')), mk(od).map(m => m.textContent).join());
+  tjek('Mærke: i Overblik ved status, også på en grøn række', mk(od).map(m => m.textContent).join() === 'Ligner målrettet,Ligner rekognoscering' && mk(od).every(m => m.closest('td.st') && m.closest('td.st').querySelector('.chip.ok')), mk(od).map(m => m.textContent).join());
   tjek('Mærke: engelsk', mk(oe).map(m => m.textContent).join() === 'Looks targeted,Looks like reconnaissance', mk(oe).map(m => m.textContent).join());
   const knapAf = (m, x) => od.w.hmTegn.moensterKnap(groen(m, x)), k0 = knapAf(MAAL, { id: 'z1', navn: 'wi24rd.com' }), m0 = new URLSearchParams(k0.dataset.dyk), m1 = new URLSearchParams(knapAf(REK, { id: 'z2', navn: 'xyz.wi24rd.com' }).dataset.dyk);
   tjek('Mærke: målrettet åbner dagen med netværket', m0.get('dag') === '2026-11-02' && m0.get('netvaerk') === 'Mal AS' && m0.get('zone') === 'z1' && m0.get('slags') === 'angreb', m0.toString());
@@ -3816,7 +3824,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Mærke: teksterne er ens med Rust', SP.moensterTekst(MAAL) === 'Ligner målrettet: angrebene steg her, men ikke i resten af verden, og 75 % kom fra ét netværk, og angrebene ramte WordPress, som dit site bruger.' && SE.moensterTekst(MAAL) === 'Looks targeted: attacks rose here but not elsewhere, and 75% came from one network, and the attacks hit WordPress, which your site uses.' && SP.moensterTekst({ ...REK, scanner: false }) === 'Ligner rekognoscering: 240 forskellige stier på én dag (normalt 12).' && SP.moensterTekst(REK) === 'Ligner rekognoscering: 240 forskellige stier på én dag (normalt 12), som en almindelig scanner.', SP.moensterTekst(REK));
   tjek('Mærke: altid "ligner" og "looks"', [MAAL, REK, { ...MAAL, verden: false }].every(m => SP.moensterTekst(m).startsWith('Ligner ') && SE.moensterTekst(m).startsWith('Looks ')));
   tjek('Mærke: uden Radar siger teksten kun dine andre domæner', SP.moensterTekst({ ...MAAL, verden: false, tek: null }) === 'Ligner målrettet: angrebene steg her, men ikke på dine andre domæner, og 75 % kom fra ét netværk.');
-  tjek('Mærke: status er uændret', od.d.querySelector('#overblik-raekker .chip-groen') && !od.d.querySelector('#overblik-raekker .chip-roed'));
+  tjek('Mærke: status er uændret', od.d.querySelector('#overblik-raekker .chip.ok') && !od.d.querySelector('#overblik-raekker .chip.danger'));
   tjek('Mærke: guide-posterne findes på begge sprog', SP.bog('maalrettet').alle && SP.bog('rekognoscering').alle === 'Nogen har prøvet mange adresser for at se, hvad der findes. De fleste er automatiske scannere.' && SE.bog('maalrettet').alle.includes('cannot say for certain') && SP.bog('maalrettet').ja.join(' ').includes('Under Attack Mode'));
   od.d.querySelector('#overblik-raekker .hv-guide').click(); await sov(10);
   tjek('Mærke: "Hvad betyder Ligner målrettet?" i guiden', od.d.getElementById('hjaelp-guide').textContent.includes('Hvad betyder »Ligner målrettet«?'), od.d.getElementById('hjaelp-guide').textContent.slice(0, 200));
@@ -3878,11 +3886,11 @@ const DOMV = (fravalgte = [], x) => {
     const vd = side('#land?kode=DK&fane=verden', LANDV());
     await sov(90);
     const kol = x => [...x.d.getElementById('land-kilde').querySelectorAll('.vg-tre > div')];
-    tjek('Land og site, 7 dage: kolonnerne skifter til 7 dage, og dyk får perioden', kol(s7)[0].textContent.includes('41 %') && new URLSearchParams(kol(s7)[1].querySelector('button').dataset.dyk).get('periode') === '7' && s7.d.querySelector('#land-kilde input:checked').parentElement.textContent === '7 dage', kol(s7)[0].textContent);
+    tjek('Land og site, 7 dage: kolonnerne skifter til 7 dage, og dyk får perioden', kol(s7)[0].textContent.includes('41 %') && new URLSearchParams(kol(s7)[1].querySelector('button').dataset.dyk).get('periode') === '7' && s7.d.querySelector('#land-kilde .seg-v[aria-checked="true"]').textContent === '7 dage', kol(s7)[0].textContent);
     tjek('Land og site, procenterne står pr. kolonne, som Rust sender dem', [...kol(s7)[1].querySelectorAll('.vg-l-n')].map(x => x.textContent).join() === '60 %,40 %', kol(s7)[1].textContent);
     tjek('Land og site, XX i din kolonne er "Ukendt land" og kan stadig åbnes', kol(s30)[1].textContent.includes('Ukendt land') && kol(s30)[1].querySelectorAll('button').length === 2);
-    const radio = s30.d.querySelectorAll('#land-kilde input')[0];
-    radio.focus(); radio.checked = true; radio.dispatchEvent(new s30.w.Event('change', { bubbles: true }));
+    const radio = s30.d.querySelectorAll('#land-kilde .seg-v')[0];
+    radio.click();
     await sov(60);
     tjek('Land og site, vælgeren: ét trin i adressen, afsnittet bevares, og fokus bliver på valget', s30.w.location.hash.includes('periode=7') && s30.w.location.hash.includes('afsnit=kilde') && s30.d.activeElement.dataset.fokus === 'land-mod:7 dage', s30.w.location.hash);
     const svg = s30.d.getElementById('land-maal').querySelector('svg');
@@ -3911,7 +3919,7 @@ const DOMV = (fravalgte = [], x) => {
     tjek('Land og site, dyk: stier og lande på kortet kæder også reglen på', sq.get('regel') === REACT && sq.get('sti') === '/api' && sq.get('land') === 'PL' && lq.get('regel') === REACT && lq.get('land') === 'PL');
     tjek('Land og site, regelkortet: tallet er periodens, uden "7 dage" og "30 dage"', kort[0].querySelector('.vg-regel-n').textContent === '150 i perioden' && !kort[0].querySelector('.vg-regel-n span'), kort[0].querySelector('.vg-regel-n').textContent);
     tjek('Land og site, regel-dyk: ingen andre regelkort, og hovedet står', !dr.d.querySelector('#vagt .vg-regel') && dr.d.querySelector('.dyk-hoved') && !h2(dr).some(h => h.startsWith('Reglerne, der slog til')), h2(dr).join(' | '));
-    tjek('Land og site, Kun rutine: valget står i vælgeren og landet som chip (da, en)', ru.d.querySelector('.dyk-slags input:checked')?.parentElement.textContent.startsWith('Kun rutine') && ru.d.querySelector('#dyk-filtre .dyk-filter').textContent === 'Polen×' && rue.d.querySelector('.dyk-slags input:checked')?.parentElement.textContent.startsWith('Routine only'), rue.d.querySelector('.dyk-slags input:checked')?.parentElement.textContent);
+    tjek('Land og site, Kun rutine: valget står i vælgeren og landet som chip (da, en)', ru.d.querySelector('.dyk-slags .seg-v[aria-checked="true"]')?.textContent.startsWith('Kun rutine') && ru.d.querySelector('#dyk-filtre .dyk-filter').textContent === 'Polen×' && rue.d.querySelector('.dyk-slags .seg-v[aria-checked="true"]')?.textContent.startsWith('Routine only'), rue.d.querySelector('.dyk-slags .seg-v[aria-checked="true"]')?.textContent);
     tjek('Land og site, Kun angreb: overskriften hedder stadig Angreb', ang.d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com');
     tjek('Land og site, fokus ved åbning af dyk lander på knappen', dl.d.activeElement === dl.d.getElementById('vaernet-h'), dl.d.activeElement && dl.d.activeElement.outerHTML.slice(0, 80));
 
@@ -3926,11 +3934,11 @@ const DOMV = (fravalgte = [], x) => {
     const hv = rk('s1').querySelector('.hv-tekst').textContent;
     tjek('Land og site, Hvorfor er ordret den samme som notify::aarsag, plus forstyrrelsen', hv === 'Ingen angreb i går. Din server svarer ikke: 33 % af 120 svar i går var fejl 520–527, så Cloudflare kunne ikke få svar fra din server. Se »Hvad gør jeg?«. Samme dag var der en forstyrrelse hos Fjord Net i Danmark.', hv);
     tjek('Land og site, Hvorfor på engelsk', ove.d.querySelector('tr[data-zone="s1"] .hv-tekst').textContent === 'No attacks yesterday. Your server is not answering: 33% of 120 responses yesterday were errors 520–527, so Cloudflare could not get an answer from your server. See “What do I do?”. The same day there was a disruption at Fjord Net in Denmark.', ove.d.querySelector('tr[data-zone="s1"] .hv-tekst').textContent);
-    tjek('Land og site, rød forbliver rød, og Hvorfor nævner også serveren', rk('r1').querySelector('.chip').className.includes('chip-roed') && rk('r1').querySelector('.hv-tekst').textContent.includes('Din server svarer ikke'));
+    tjek('Land og site, rød forbliver rød, og Hvorfor nævner også serveren', rk('r1').querySelector('.chip').className.includes('danger') && rk('r1').querySelector('.hv-tekst').textContent.includes('Din server svarer ikke'));
     const m = rk('t1').querySelector('.trafik-maerke'), mQ = new URLSearchParams(m.dataset.dyk);
     tjek('Trafik og huller, mærket åbner trafik-dyk for dagen og siger, hvad det er', m.textContent === 'Usædvanlig meget trafik' && mQ.get('dag') === '2026-11-02' && mQ.get('trafik') === '1' && mQ.get('zone') === 't1' && m.getAttribute('aria-label').includes('350.000'), m.getAttribute('aria-label'));
     tjek('Land og site, mærket har egen hover og markør', /\.trafik-maerke:hover \{[^}]*border-color/.test(ui('assets/vagt.css')) && /\.trafik-maerke \{[^}]*cursor: pointer/.test(ui('assets/vagt.css')));
-    tjek('Trafik og huller, trafikspring står som Hold øje, og mærket kalder det ikke angreb', rk('t1').querySelector('.chip').className.includes('chip-gul') && !/angreb/i.test(m.textContent));
+    tjek('Trafik og huller, trafikspring står som Hold øje, og mærket kalder det ikke angreb', rk('t1').querySelector('.chip').className.includes('warn') && !/angreb/i.test(m.textContent));
     rk('s1').querySelector('.hv-guide').click();
     await sov(40);
     const g = ov.d.getElementById('guide-indhold');
@@ -3981,7 +3989,7 @@ const DOMV = (fravalgte = [], x) => {
     const kilde = ld.d.getElementById('land-kilde'), kolL = [...kilde.querySelectorAll('.vg-tre > div')];
     tjek('Trafik og huller, kilderne: overskrift, andele og resten', kolL[0].querySelector('h3').textContent === 'De største kilder til angreb mod Danmark' && kolL[0].textContent.includes('30 %') && kolL[0].textContent.includes('Andre lande (ikke oplyst af Radar)') && kolL[0].textContent.includes('50 %'), kolL[0].textContent);
     tjek('Trafik og huller, kilderne: resten og Radars lande kan ikke klikkes', !kolL[0].querySelector('button'));
-    tjek('Trafik og huller, 4 uger: vælgeren og teksten siger det', kilde.querySelector('input:checked').parentElement.textContent === '4 uger' && kilde.textContent.includes('de seneste 4 uger'), kilde.textContent.slice(0, 200));
+    tjek('Trafik og huller, 4 uger: vælgeren og teksten siger det', kilde.querySelector('.seg-v[aria-checked="true"]').textContent === '4 uger' && kilde.textContent.includes('de seneste 4 uger'), kilde.textContent.slice(0, 200));
     const mitQ = new URLSearchParams(kolL[1].querySelector('button').dataset.dyk);
     tjek('Trafik og huller, 4 uger: dine lande åbner dyk med samme 28 døgn', mitQ.get('fra') === '2026-10-06' && mitQ.get('til') === '2026-11-02' && !mitQ.has('periode'), mitQ.toString());
     const seV = ld.d.getElementById('land-udfald').querySelector('button');
@@ -4002,7 +4010,7 @@ const DOMV = (fravalgte = [], x) => {
     tjek('Datovælger: Fra og Til som tekstknapper i datoformatet; intervallet står i felterne', felter(dv2).map(i => i.textContent).join() === '1. nov. 2026,4. nov. 2026' && felter(dv2).map(i => i.dataset.dag).join() === '2026-11-01,2026-11-04' && felter(dv2)[0].getAttribute('aria-haspopup') === 'dialog', felter(dv2).map(i => i.outerHTML).join());
     tjek('Datovælger: Robotter og Login viser også det aktive udsnit', [ro, lo].every(x => felter(x).map(i => i.dataset.dag).join() === '2026-11-01,2026-11-04'), felter(lo).map(i => i.dataset.dag).join());
     tjek('Datovælger, interval: noten og Nulstil', dv2.d.querySelector('.dato-vaelger').textContent.includes('Hele dage i UTC. Tidspunktet på dagen gemmes ikke.') && dv2.d.querySelector('.dato-vaelger button.link').textContent === 'Nulstil' && dv2.d.querySelector('.dato-vaelger button.link').getAttribute('aria-label') === 'Nulstil til hele historikken');
-    tjek('Datovælger, interval: kun 7 og 30 dage i vælgeren, "Hele historikken" er væk', [ro, lo, dv2].every(x => ![...x.d.querySelectorAll('.segment')].some(s => s.textContent.includes('Hele historikken'))));
+    tjek('Datovælger, interval: kun 7 og 30 dage i vælgeren, "Hele historikken" er væk', [ro, lo, dv2].every(x => ![...x.d.querySelectorAll('.seg')].some(s => s.textContent.includes('Hele historikken'))));
     const chip = [...dv2.d.querySelectorAll('#dyk-filtre .dyk-filter')].map(b => b.textContent);
     tjek('Datovælger, interval: intervallet får en chip', chip.join() === '1.–4. november×', chip.join());
     const antal = dv2.kald.filter(k => k[0] === 'dyk').length, fejlT = dv2.d.querySelector('.dato-fejl');
@@ -4048,7 +4056,7 @@ const DOMV = (fravalgte = [], x) => {
     await sov(90);
     const hv2 = id => ovK.d.querySelector(`tr[data-zone="${id}"] .hv-tekst`);
     tjek('Trafik og huller, Hvorfor: "Bruger vi ikke" er ordret som notify::aarsag, uden råd', hv2('i1').textContent === '47 angreb i går (snit 40) – alle stoppet. Mest angreb på WordPress (47). 47 angreb på WordPress, som du ikke bruger — ufarlige for dig.', hv2('i1').textContent);
-    tjek('Trafik og huller, Hvorfor: tallene står fuldt ved "Bruger vi ikke"', hv2('i1').closest('tr').querySelector('.chip').className.includes('chip-groen') && hv2('i1').textContent.startsWith('47 angreb'));
+    tjek('Trafik og huller, Hvorfor: tallene står fuldt ved "Bruger vi ikke"', hv2('i1').closest('tr').querySelector('.chip').className.includes('ok') && hv2('i1').textContent.startsWith('47 angreb'));
     tjek('Trafik og huller, Hvorfor: sikkerhedsnettet', hv2('u1').textContent === 'Ingen angreb i går. Uventet: din server svarede på en WordPress-sti. Bruger du alligevel WordPress?', hv2('u1').textContent);
     tjek('Trafik og huller, Hvorfor: nåede din server', hv2('n1').textContent.endsWith(' 4 angreb på WordPress nåede din server, og du har sagt, at du bruger WordPress.'), hv2('n1').textContent);
     const lk = hv2('s1').closest('td').querySelector('.hv-spoerg');
@@ -4229,7 +4237,7 @@ const DOMV = (fravalgte = [], x) => {
       const sider = r.flatMap(x => (x ? x.sider : [])), ud = [...r, ...smalle].flatMap(x => (x ? x.ud : [])), klasser = new Set(sider.flatMap(s => s.klasser));
       console.log(`     kontrast ${tema}: ` + sider.map(s => `${s.hvad} ${s.n}`).join(' · ') + ` · undtaget ${sider.reduce((a, s) => a + s.undtaget, 0)}`);
       tjek(`K7 ${tema}: alle ${SIDER.length + 14} visninger er målt, hver med tekst`, sider.length === SIDER.length + 14 && sider.every(s => s.n >= 3), sider.map(s => `${s.hvad} ${s.n}`).join(' · '));
-      tjek(`K7 ${tema}: målingen rammer brødteksten (.vg-fordeling, .vg-note, .vg-intro), og dyks knap, mærke og chips`, ['vg-fordeling', 'vg-note', 'vg-intro', 'dyk-filter', 'knap', 'vg-saerligt', 'trafik-maerke', 'server-linje', 'hul-linje', 'tek-chip', 'dato-felt', 'vg-trafik-note', 'land-udfald', 'moenster-maerke', 'moenster-linje', 'autostart-banner', 'autostart-note', 'dato-knap', 'kal-dag', 'dyk-trafik-linje', 'dyk-kun-i-dag'].every(k => klasser.has(k)), ['vg-fordeling', 'vg-note', 'vg-intro', 'dyk-filter', 'knap', 'vg-saerligt', 'trafik-maerke', 'server-linje', 'hul-linje', 'tek-chip', 'dato-felt', 'vg-trafik-note', 'land-udfald', 'moenster-maerke', 'moenster-linje', 'autostart-banner', 'autostart-note', 'dato-knap', 'kal-dag', 'dyk-trafik-linje', 'dyk-kun-i-dag'].filter(k => !klasser.has(k)).join());
+      tjek(`K7 ${tema}: målingen rammer brødteksten (.vg-fordeling, .vg-note, .vg-intro), og dyks knap, mærke og chips`, ['vg-fordeling', 'vg-note', 'vg-intro', 'dyk-filter', 'btn', 'vg-saerligt', 'trafik-maerke', 'server-linje', 'hul-linje', 'tek-chip', 'dato-felt', 'vg-trafik-note', 'land-udfald', 'moenster-maerke', 'moenster-linje', 'autostart-banner', 'autostart-note', 'dato-knap', 'kal-dag', 'dyk-trafik-linje', 'dyk-kun-i-dag'].every(k => klasser.has(k)), ['vg-fordeling', 'vg-note', 'vg-intro', 'dyk-filter', 'btn', 'vg-saerligt', 'trafik-maerke', 'server-linje', 'hul-linje', 'tek-chip', 'dato-felt', 'vg-trafik-note', 'land-udfald', 'moenster-maerke', 'moenster-linje', 'autostart-banner', 'autostart-note', 'dato-knap', 'kal-dag', 'dyk-trafik-linje', 'dyk-kun-i-dag'].filter(k => !klasser.has(k)).join());
       tjek(`K7 ${tema}: kontrolprøven: 3,69:1 fejler som lille tekst og består som stor`, r[0] && r[0].kontrol.join() === 'lille', r[0] && r[0].kontrol.join());
       const baand = [r[0], ...smalle].flatMap(x => (x ? x.baand : [])), navne = baand.filter(b => b.e !== 'SMALL'), lille = baand.filter(b => b.e === 'SMALL'), lav = l => Math.min(...l.map(b => b.k));
       console.log(`     titellinje ${tema}: navnet og knapperne ${lav(navne)}:1 (${navne[0]?.px}), "for Cloudflare®" ${lav(lille)}:1 (${lille[0]?.px})`);
@@ -4774,8 +4782,8 @@ const DOMV = (fravalgte = [], x) => {
   tjek('V-TOKEN.1 B2: spørger om domænet og perioden', JSON.stringify(t1.kald.find(k => k[0] === 'sti200_oversigt')[1]) === JSON.stringify({ zone: 'z1', fra: t1.kald.find(k => k[0] === 'email_oversigt')[1].fra, til: t1.kald.find(k => k[0] === 'email_oversigt')[1].til }), JSON.stringify(t1.kald.find(k => k[0] === 'sti200_oversigt')));
   tjek('V-TOKEN.1 B2+B3: kun for ét domæne og uden filter (linjen nævner dem)', !s2p(t8) && !cfp(t8) && !t8.kald.some(k => k[0] === 'sti200_oversigt' || k[0] === 'sikkerhedsfund_oversigt') && !s2p(t9) && (t9.d.querySelector('.ang-skjult')?.textContent || '').includes('Følsomme filer, der svarede 200') && t9.d.querySelector('.ang-skjult').textContent.includes('Cloudflares egne fund'), t9.d.querySelector('.ang-skjult')?.textContent);
   const cfl = x => [...cfp(x).querySelectorAll('.cf-liste li')];
-  tjek('V-TOKEN.1 B3: fundene med alvor, titel og dato, højeste først', cfl(t1).map(li => li.textContent).join(';') === 'Kritisk Always Use HTTPS er ikke slået til · siden 24. april;Lav ny klasse fra cloudflare · siden 24. april' && cfl(t1)[0].querySelector('.chip-roed') && cfl(t1)[1].querySelector('.chip-graa'), cfl(t1).map(li => li.textContent).join(';'));
-  tjek('V-TOKEN.1 B3: engelsk', cfl(t2)[0].textContent.startsWith('Critical Always Use HTTPS is not turned on') && cfp(t2).querySelector('h2').textContent === 'Cloudflare’s own findings', cfl(t2)[0]?.textContent);
+  tjek('V-TOKEN.1 B3: fundene med alvor, titel og dato, højeste først', cfl(t1).map(li => li.textContent).join(';') === '?Kritisk Always Use HTTPS er ikke slået til · siden 24. april;–Lav ny klasse fra cloudflare · siden 24. april' && cfl(t1)[0].querySelector('.chip .ord').textContent === 'Kritisk' && cfl(t1)[0].querySelector('.chip.danger') && cfl(t1)[1].querySelector('.chip.none'), cfl(t1).map(li => li.textContent).join(';'));
+  tjek('V-TOKEN.1 B3: engelsk', cfl(t2)[0].textContent.startsWith('?Critical Always Use HTTPS is not turned on') && cfp(t2).querySelector('h2').textContent === 'Cloudflare’s own findings', cfl(t2)[0]?.textContent);
   const cfb = cfp(t1).querySelector('.cf-fund');
   tjek('V-TOKEN.1 B3: hvert fund er klikbart med aria-label', cfp(t1).querySelectorAll('.cf-fund').length === 2 && cfb.tagName === 'BUTTON' && cfb.classList.contains('link') && cfb.getAttribute('aria-label') === 'Åbn fundet hos Cloudflare: Always Use HTTPS er ikke slået til', cfb?.outerHTML);
   cfb.click();

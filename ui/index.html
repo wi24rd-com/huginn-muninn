@@ -56,7 +56,7 @@
 <div class="arb">
 <main class="flade hovedomr" id="indhold" tabindex="-1">
   <p class="r6-status" id="zone-status" role="status" aria-live="polite"></p>
-  <div class="hm-genforsoeg" id="genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="knap" type="button" data-t="proevNu">Prøv igen nu</button></div>
+  <div class="hm-genforsoeg" id="genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="btn" type="button" data-t="proevNu">Prøv igen nu</button></div>
   <p class="r6-status" id="koe-besked" aria-live="polite"></p>
 
   <section class="visning" id="visning-opsaetning" data-visning="opsaetning" aria-labelledby="opsaetning-h" hidden>
@@ -69,15 +69,15 @@
     <p class="note token-it" data-t="tokenItFirma">Har du fået et API Token af dit IT-firma? Indsæt det her.</p>
     <form class="hm-form" id="token-form" autocomplete="off">
       <label><span data-t="tokenFelt">API Token (kun læsning)</span><input id="token" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" required></label>
-      <button class="knap primaer" type="submit" id="token-knap" data-t="tokenKnap">Gem og forbind</button>
+      <button class="btn primary" type="submit" id="token-knap" data-t="tokenKnap">Gem og forbind</button>
     </form>
     <p class="r6-status" id="token-status" role="status" aria-live="polite"></p>
-    <fieldset class="hm-niveau" id="opsaet-niveau" aria-describedby="opsaet-niveau-p">
-      <legend data-t="niveauH">Notifikationer</legend>
+    <fieldset class="valgsaet hm-niveau" id="opsaet-niveau" aria-describedby="opsaet-niveau-p">
+      <legend class="label" data-t="niveauH">Notifikationer</legend>
       <p class="note" id="opsaet-niveau-p" data-t="opsaetNiveauP"></p>
-      <label class="hm-valgmulighed"><input type="radio" name="opsaet-niveau" value="rolig"><span data-t="niveauRolig"></span></label>
-      <label class="hm-valgmulighed"><input type="radio" name="opsaet-niveau" value="standard" checked><span data-t="niveauStandard"></span></label>
-      <label class="hm-valgmulighed"><input type="radio" name="opsaet-niveau" value="alt"><span data-t="niveauAlt"></span></label>
+      <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="opsaet-niveau" value="rolig"><span class="afk-tekst" data-t="niveauRolig"></span></label></div>
+      <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="opsaet-niveau" value="standard" checked><span class="afk-tekst" data-t="niveauStandard"></span></label></div>
+      <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="opsaet-niveau" value="alt"><span class="afk-tekst" data-t="niveauAlt"></span></label></div>
     </fieldset>
     </div>
     <div class="opsaetning-punkter" data-velkomst="opsaetning-punkter"></div>
@@ -88,7 +88,7 @@
   <section class="visning" id="visning-overblik" data-visning="overblik" aria-labelledby="overblik-h" hidden>
     <div class="titelrad">
       <h1 id="overblik-h" data-t="zonerH">Overblik</h1><span class="under" id="overblik-antal" aria-live="polite"></span>
-      <div class="hoejre"><button class="knap primaer" type="button" id="samlet" disabled></button></div>
+      <div class="hoejre"><button class="btn primary" type="button" id="samlet" disabled></button></div>
     </div>
     <div id="hul-linjer"></div>
     <p class="server-linje" id="server-linje" hidden></p>
@@ -128,7 +128,7 @@
     <p class="lead" id="siden-vist"></p>
     <div id="siden-huller"></div>
     <ul class="hm-siden" id="siden-liste"></ul>
-    <button class="knap" type="button" id="siden-skjul" data-t="sidenSkjul">Til overblikket</button>
+    <button class="btn" type="button" id="siden-skjul" data-t="sidenSkjul">Til overblikket</button>
   </section>
 
   <section class="visning" id="visning-vaernet" data-visning="vaernet" aria-labelledby="vaernet-h" hidden>
@@ -140,7 +140,7 @@
       <nav class="dyk-filtre" id="dyk-filtre" hidden></nav>
       <div class="hoejre" id="dyk-periode"></div>
     </div>
-    <div class="hm-genforsoeg" id="vg-genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="knap" type="button" data-t="proevNu">Prøv igen nu</button></div>
+    <div class="hm-genforsoeg" id="vg-genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="btn" type="button" data-t="proevNu">Prøv igen nu</button></div>
     <div class="vg" id="vagt" data-vagt="vaern"></div>
   </section>
 
@@ -172,42 +172,42 @@
   <section class="visning" id="visning-indstillinger" data-visning="indstillinger" aria-labelledby="indstillinger-h" hidden>
     <div class="titelrad"><h1 id="indstillinger-h" data-t="indstH">Indstillinger</h1></div>
     <p class="r6-status" id="indst-status" role="status" aria-live="polite"></p>
-    <div class="autostart-banner" id="autostart-banner" hidden><p><b data-t="autostartBanner">Programmet starter ikke ved login.</b> <span data-t="autostartHul"></span></p><button class="knap" type="button" id="autostart-til" data-t="autostartSlaaTil">Slå Start ved login til</button></div>
+    <div class="autostart-banner" id="autostart-banner" hidden><p><b data-t="autostartBanner">Programmet starter ikke ved login.</b> <span data-t="autostartHul"></span></p><button class="btn" type="button" id="autostart-til" data-t="autostartSlaaTil">Slå Start ved login til</button></div>
     <div class="indst">
       <h2><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span data-t="grpGenerelt">Generelt</span></h2>
       <div class="kort">
         <div class="raekke"><label class="etik" for="sprog" data-t="sprog">Sprog</label>
-          <select id="sprog"><option value="auto" data-t="sprogAuto">Systemets sprog</option><option value="da">Dansk</option><option value="en">English</option></select></div>
+          <span class="vliste"><select id="sprog"><option value="auto" data-t="sprogAuto">Systemets sprog</option><option value="da">Dansk</option><option value="en">English</option></select><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></span></div>
         <div class="raekke"><label class="etik" for="dato-format"><span data-t="datoFormat">Datoformat</span><small data-t="datoFormatNote"></small></label>
-          <select id="dato-format"><option value="sprog" data-t="datoFormatSprog">Følg sproget</option><option value="system" data-t="datoFormatSystem">Følg systemet</option><option value="iso" data-t="datoFormatIso">ISO (2026-11-04)</option></select></div>
+          <span class="vliste"><select id="dato-format"><option value="sprog" data-t="datoFormatSprog">Følg sproget</option><option value="system" data-t="datoFormatSystem">Følg systemet</option><option value="iso" data-t="datoFormatIso">ISO (2026-11-04)</option></select><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></span></div>
         <div class="raekke"><label class="etik" for="indst-land"><span data-t="landVaelg">Land</span><small id="indst-land-note"></small></label>
-          <div class="raekke-knapper"><button class="knap" type="button" id="indst-land-tilbage" hidden></button><button class="knap" type="button" id="indst-land-forslag" hidden></button><select id="indst-land"></select></div></div>
+          <div class="raekke-knapper"><button class="btn" type="button" id="indst-land-tilbage" hidden></button><button class="btn" type="button" id="indst-land-forslag" hidden></button><span class="vliste"><select id="indst-land"></select><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
         <div class="raekke"><span class="etik" id="tema-h"><span data-t="tema">Udseende</span><small data-t="temaNote"></small></span>
-          <div class="segment" id="tema" role="radiogroup" aria-labelledby="tema-h">
-            <label><input type="radio" name="tema" value="system"><span data-t="temaSystem">System</span></label>
-            <label><input type="radio" name="tema" value="lys"><span data-t="temaLys">Lys</span></label>
-            <label><input type="radio" name="tema" value="moerk"><span data-t="temaMoerk">Mørk</span></label>
+          <div class="valgsaet vandret" id="tema" role="radiogroup" aria-labelledby="tema-h">
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="tema" value="system"><span class="afk-tekst" data-t="temaSystem">System</span></label></div>
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="tema" value="lys"><span class="afk-tekst" data-t="temaLys">Lys</span></label></div>
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="tema" value="moerk"><span class="afk-tekst" data-t="temaMoerk">Mørk</span></label></div>
           </div></div>
         <div class="raekke"><span class="etik" id="tekst-h"><span data-t="tekst">Tekststørrelse</span><small data-t="tekstNote"></small></span>
-          <div class="segment" id="tekst" role="radiogroup" aria-labelledby="tekst-h">
-            <label><input type="radio" name="tekst" value="lille"><span data-t="tekstLille">Lille</span></label>
-            <label><input type="radio" name="tekst" value="normal"><span data-t="tekstMellem">Normal</span></label>
-            <label><input type="radio" name="tekst" value="stor"><span data-t="tekstStor">Stor</span></label>
+          <div class="valgsaet vandret" id="tekst" role="radiogroup" aria-labelledby="tekst-h">
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="tekst" value="lille"><span class="afk-tekst" data-t="tekstLille">Lille</span></label></div>
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="tekst" value="normal"><span class="afk-tekst" data-t="tekstMellem">Normal</span></label></div>
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="tekst" value="stor"><span class="afk-tekst" data-t="tekstStor">Stor</span></label></div>
           </div></div>
         <div class="raekke"><label class="etik" for="autostart"><span data-t="autostart">Start ved login</span><small id="autostart-note" data-t="autostartKort"></small></label>
-          <input class="kontakt" type="checkbox" role="switch" id="autostart" aria-describedby="autostart-note"></div>
+          <input class="tilfra" type="checkbox" role="switch" id="autostart" aria-describedby="autostart-note"></div>
         <p class="note kort-note autostart-note" id="autostart-hul" data-t="autostartHulKort" hidden></p>
       </div>
 
       <h2 id="indst-domaener"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span data-t="domaenerH">Domæner</span></h2>
       <div class="kort">
         <div class="raekke"><span class="etik"><span data-t="domaenerVis">Vis i Huginn</span><small data-t="domaenerP"></small></span>
-          <div class="raekke-knapper"><button class="knap" type="button" id="domaener-alle-til" data-t="domaenerAlleTil">Vælg alle</button><button class="knap" type="button" id="domaener-alle-fra" data-t="domaenerAlleFra">Fravælg alle</button></div></div>
+          <div class="raekke-knapper"><button class="btn" type="button" id="domaener-alle-til" data-t="domaenerAlleTil">Vælg alle</button><button class="btn" type="button" id="domaener-alle-fra" data-t="domaenerAlleFra">Fravælg alle</button></div></div>
         <table class="mini" aria-labelledby="indst-domaener"><thead class="sr-only"><tr><th scope="col" data-t="thDomaene">Domæne</th><th scope="col" data-t="domaenerVis">Vis i Huginn</th></tr></thead><tbody id="domaener-liste"></tbody></table>
         <p class="note kort-note" id="domaener-ser" hidden></p>
         <div class="tek-blok" id="tek-blok" hidden>
           <p class="etik"><span data-t="domTekH">Teknologi pr. domæne</span><small id="tek-linje"></small></p>
-          <p class="tek-alle-raekke"><button class="knap" type="button" id="tek-aabn" data-gaa="teknologi" data-t="domTekAabn">Teknologi pr. domæne →</button> <span id="tek-raekke" hidden><button class="knap" type="button" id="tek-nulstil-alle" data-t="domTekAlle">Nulstil for alle domæner</button></span></p>
+          <p class="tek-alle-raekke"><button class="btn" type="button" id="tek-aabn" data-gaa="teknologi" data-t="domTekAabn">Teknologi pr. domæne →</button> <span id="tek-raekke" hidden><button class="btn" type="button" id="tek-nulstil-alle" data-t="domTekAlle">Nulstil for alle domæner</button></span></p>
         </div>
         <p class="r6-status kort-status" id="domaener-status" role="status" aria-live="polite"></p>
       </div>
@@ -215,36 +215,36 @@
       <h2><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span data-t="niveauH">Notifikationer</span></h2>
       <div class="kort">
         <div class="raekke top"><span class="etik" id="indst-niveau-h"><span data-t="niveauSp">Hvornår vil du have besked?</span><small data-t="niveauSpNote"></small></span>
-          <div class="radiol" id="indst-niveau" role="radiogroup" aria-labelledby="indst-niveau-h">
-            <label><input type="radio" name="indst-niveau" value="rolig"><span data-t="niveauRolig"></span></label>
-            <label><input type="radio" name="indst-niveau" value="standard" checked><span data-t="niveauStandard"></span></label>
-            <label><input type="radio" name="indst-niveau" value="alt"><span data-t="niveauAlt"></span></label>
+          <div class="valgsaet" id="indst-niveau" role="radiogroup" aria-labelledby="indst-niveau-h">
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="indst-niveau" value="rolig"><span class="afk-tekst" data-t="niveauRolig"></span></label></div>
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="indst-niveau" value="standard" checked><span class="afk-tekst" data-t="niveauStandard"></span></label></div>
+            <div class="afk-felt"><label class="afk"><input class="afk-boks" type="radio" name="indst-niveau" value="alt"><span class="afk-tekst" data-t="niveauAlt"></span></label></div>
           </div></div>
         <div class="raekke"><label class="etik" for="notif-roed" data-t="notifRoed">Giv besked, når et domæne kræver handling</label>
-          <input class="kontakt" type="checkbox" role="switch" id="notif-roed" checked></div>
+          <input class="tilfra" type="checkbox" role="switch" id="notif-roed" checked></div>
         <div class="raekke"><label class="etik" for="notif-rekog"><span data-t="notifRekog">Giv besked ved »Ligner rekognoscering«</span><small data-t="notifRekogNote"></small></label>
-          <input class="kontakt" type="checkbox" role="switch" id="notif-rekog"></div>
+          <input class="tilfra" type="checkbox" role="switch" id="notif-rekog"></div>
         <div class="raekke blok"><span class="etik" id="pr-domaene-h" data-t="prDomaene">Pr. domæne</span>
           <table class="mini" aria-labelledby="pr-domaene-h"><thead class="sr-only"><tr><th scope="col" data-t="thDomaene">Domæne</th><th scope="col" data-t="niveauH">Notifikationer</th></tr></thead><tbody id="pr-domaene-liste"></tbody></table></div>
         <div class="raekke blok" id="indst-login"><span class="etik" id="indst-login-h" data-t="loginStierH">Login-stier pr. domæne</span>
           <p class="note" data-t="loginStierP"></p>
-          <label class="login-domaene"><span class="sr-only" data-t="vaelgDomaene">Domæne</span><select id="login-domaene"></select></label>
+          <label class="login-domaene"><span class="sr-only" data-t="vaelgDomaene">Domæne</span><span class="vliste"><select id="login-domaene"></select><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></span></label>
           <div id="login-panel"></div></div>
         <p class="note kort-note" data-t="notifSystem"></p>
       </div>
 
       <h2><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="5"/><path d="M12 11l8-8M16 7l3 3M18 5l2 2"/></svg><span data-t="grpForbindelse">Forbindelse</span></h2>
       <div class="kort">
-        <div class="raekke"><span class="etik"><span data-t="forbStatus">Status</span><small id="forb-note" data-t="forbNote"></small></span><button class="chip chip-graa chip-knap bred" type="button" id="forb-chip" disabled></button></div>
+        <div class="raekke"><span class="etik"><span data-t="forbStatus">Status</span><small id="forb-note" data-t="forbNote"></small></span><button class="chip none chip-knap" type="button" id="forb-chip" disabled></button></div>
         <div class="raekke"><span class="etik"><span data-t="forbNoegle">API Token til Cloudflare</span><small data-t="forbNoegleNote"></small></span>
-          <div class="raekke-knapper"><button class="knap" type="button" id="skift-noegle" aria-expanded="false" aria-controls="skift-form" data-t="skift">Skift API Token…</button>
-          <button class="knap fare" type="button" id="glem" data-t="glem" hidden>Glem API Token…</button></div></div>
+          <div class="raekke-knapper"><button class="btn" type="button" id="skift-noegle" aria-expanded="false" aria-controls="skift-form" data-t="skift">Skift API Token…</button>
+          <button class="btn danger" type="button" id="glem" data-t="glem" hidden>Glem API Token…</button></div></div>
         <div class="kort-hjaelp token-hjaelp" data-token-hjaelp></div>
         <form class="hm-form kort-form" id="skift-form" autocomplete="off" hidden>
           <p class="note token-it" data-t="tokenItFirma"></p>
           <label><span data-t="tokenFelt">API Token (kun læsning)</span><input id="skift-felt" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" required></label>
-          <button class="knap primaer" type="submit" id="skift-gem" data-t="tokenKnap">Gem og forbind</button>
-          <button class="knap" type="button" id="skift-annuller" data-t="annuller">Annullér</button>
+          <button class="btn primary" type="submit" id="skift-gem" data-t="tokenKnap">Gem og forbind</button>
+          <button class="btn" type="button" id="skift-annuller" data-t="annuller">Annullér</button>
         </form>
         <p class="r6-status kort-status" id="skift-status" role="status" aria-live="polite"></p>
       </div>
@@ -258,8 +258,8 @@
         <div class="raekke" id="data-kvote-raekke" hidden><span class="etik" data-t="dataKvoteH">Kvote hos Cloudflare</span><span id="data-kvote"></span></div>
         <div class="raekke"><span class="etik" data-t="dataHuller">Huller</span><button class="felt-mono felt-knap" type="button" id="data-huller" disabled>–</button></div>
         <div class="raekke"><span class="etik" data-t="dataDomaener">Domæner med tal</span><button class="felt-mono felt-knap" type="button" id="data-domaener" disabled>–</button></div>
-        <div class="raekke"><span class="etik" data-t="dataHent">Hent nye tal nu</span><button class="knap" type="button" id="data-hent"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span data-t="hentNu">Hent nu</span></button> <span class="hent-status" id="data-hent-status" role="status" aria-live="polite"></span></div>
-        <div class="raekke"><span class="etik"><small id="nulstil-note" data-t="nulstilNote"></small></span><button class="knap fare" type="button" id="nulstil" aria-describedby="nulstil-note" data-t="nulstil">Nulstil historik…</button></div>
+        <div class="raekke"><span class="etik" data-t="dataHent">Hent nye tal nu</span><button class="btn" type="button" id="data-hent"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span data-t="hentNu">Hent nu</span></button> <span class="hent-status" id="data-hent-status" role="status" aria-live="polite"></span></div>
+        <div class="raekke"><span class="etik"><small id="nulstil-note" data-t="nulstilNote"></small></span><button class="btn danger" type="button" id="nulstil" aria-describedby="nulstil-note" data-t="nulstil">Nulstil historik…</button></div>
       </div>
 
       <h2 id="indst-om"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span data-t="grpOm">Om</span></h2>
@@ -272,7 +272,7 @@
             <p data-t="om3"></p>
             <p data-t="om2"></p>
             <p class="om-kilde" id="om-kilde" hidden></p>
-            <p class="vejledning-plads"><button class="knap" type="button" id="om-vejledning" data-t="vejledningAabn">Åbn vejledningen</button></p>
+            <p class="vejledning-plads"><button class="btn" type="button" id="om-vejledning" data-t="vejledningAabn">Åbn vejledningen</button></p>
           </div>
         </div>
       </div>
@@ -280,18 +280,18 @@
     <dialog class="dialog" id="glem-dialog" aria-labelledby="glem-h" aria-describedby="glem-p">
       <h2 id="glem-h" data-t="glemH">Glem API Tokenet?</h2>
       <p id="glem-p" data-t="glemP"></p>
-      <div class="dialog-knapper"><button class="knap" type="button" id="glem-nej" data-t="annuller" autofocus>Annullér</button><button class="knap fare" type="button" id="glem-ja" data-t="glemJa">Glem</button></div>
+      <div class="dialog-knapper"><button class="btn" type="button" id="glem-nej" data-t="annuller" autofocus>Annullér</button><button class="btn danger" type="button" id="glem-ja" data-t="glemJa">Glem</button></div>
     </dialog>
     <dialog class="dialog" id="nulstil-dialog" aria-labelledby="nulstil-h" aria-describedby="nulstil-p">
       <h2 id="nulstil-h" data-t="nulstilH">Nulstil historikken?</h2>
       <p id="nulstil-p"></p>
-      <div class="dialog-knapper"><button class="knap" type="button" id="nulstil-nej" data-t="annuller" autofocus>Annullér</button><button class="knap fare" type="button" id="nulstil-ja" data-t="nulstilJa">Slet og hent forfra</button></div>
+      <div class="dialog-knapper"><button class="btn" type="button" id="nulstil-nej" data-t="annuller" autofocus>Annullér</button><button class="btn danger" type="button" id="nulstil-ja" data-t="nulstilJa">Slet og hent forfra</button></div>
     </dialog>
   </section>
   <dialog class="dialog" id="bekraeft-dialog" aria-labelledby="bekraeft-h" aria-describedby="bekraeft-p">
     <h2 id="bekraeft-h" data-t="bekraeftTekH">Nulstil teknologi-valg?</h2>
     <p id="bekraeft-p"></p>
-    <div class="dialog-knapper"><button class="knap" type="button" id="bekraeft-nej" data-t="annuller" autofocus>Annullér</button><button class="knap fare" type="button" id="bekraeft-ja" data-t="bekraeftJa">Nulstil</button></div>
+    <div class="dialog-knapper"><button class="btn" type="button" id="bekraeft-nej" data-t="annuller" autofocus>Annullér</button><button class="btn danger" type="button" id="bekraeft-ja" data-t="bekraeftJa">Nulstil</button></div>
   </dialog>
 </main>
 <footer class="fodl" id="fod">
@@ -305,7 +305,7 @@
 
 <aside class="hjaelp" id="hjaelp" hidden>
   <div id="hjaelp-indhold">
-  <p class="vejledning-plads"><button class="knap" type="button" id="hjaelp-vejledning" data-t="vejledningAabn">Åbn vejledningen</button></p>
+  <p class="vejledning-plads"><button class="btn" type="button" id="hjaelp-vejledning" data-t="vejledningAabn">Åbn vejledningen</button></p>
   <div class="guide-ramme" id="hjaelp-guide" hidden></div>
   <div id="hjaelp-generelt">
   <div class="hjaelp-del" data-hjaelp="opsaetning">

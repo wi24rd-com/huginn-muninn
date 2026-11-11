@@ -4,6 +4,14 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-11 23:30 — Wi24rd UI Kit 2: knapper, chips og valg
+#### Ændret
+- **Knapper, statuschips, kontakter, afkrydsninger, radiogrupper, valglister og segmentknapper er kittets** (pakke 2.3.0). Programmets egne udgaver er væk fra `app.css`.
+- **Udseende og Tekststørrelse** i Indstillinger er radioknapper i stedet for tre brede knapper.
+- **Status** (Handl, Hold øje, Roligt, Ukendt) har kittets symbol foran ordet, så status aldrig hviler på farven alene.
+- **7 dage / 30 dage, Alt / Kun angreb / Kun rutine og fanerne** på Land og Teknologi er kittets segmentknap.
+- `npm run test:ui` kører med 8 GB til Node (testen løb tør ved 4 GB).
+
 ### 2026-11-11 23:30 — Wi24rd UI Kit 2: tekststørrelsen
 #### Ændret
 - **Tekststørrelsen (Lille, Normal, Stor) er kittets** (pakke 2.3.0, kopieret uændret til `ui/assets/kit2/`): `<html data-tekst="lille | stor">`, og hele fladen skaleres samlet (tekst, knapper, ikoner og luft), ikke kun skriften. ⌘+ ⌘− ⌘0, programmenuen og Indstillinger virker som før. Et valg gemt før skiftet oversættes én gang ved start.

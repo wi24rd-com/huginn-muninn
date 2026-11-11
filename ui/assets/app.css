@@ -90,25 +90,11 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .titelrad h1 { font-size: var(--font-size-title); }
 .titelrad .under { color: var(--color-text); }
 .titelrad .hoejre { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.knap {
-  display: inline-flex; align-items: center; gap: 6px; height: var(--control-height); padding: 0 14px;
-  border: 1px solid var(--color-border-strong); border-radius: var(--control-radius); background: var(--color-surface);
-  color: var(--color-text); font-weight: 600; white-space: nowrap; cursor: pointer;
-}
-.knap .ik { width: 15px; height: 15px; }
-:root:not([data-platform="windows"]) .knap:not(.primaer):not(.fare):hover:not(:disabled) { background-color: var(--color-hover); }
-.knap:hover:not(:disabled) { box-shadow: var(--hover-shadow); }
-.knap:active:not(:disabled) { box-shadow: var(--press-shadow); }
-.knap.primaer { background: var(--primary-fill); border-color: var(--color-accent); color: var(--color-on-accent); }
-.knap.fare { background: transparent; border-color: var(--color-danger-fill); color: var(--status-danger-fg); }
-.knap:disabled { opacity: .5; cursor: default; }
+/* Knapper er kittets (.btn, .primary, .danger). KIT-ØNSKE K29: en knaps tekst må ikke ombrydes (kittets .btn har fast højde). */
+.btn { white-space: nowrap; }
 .link { padding: 0; border: 0; background: none; color: var(--color-accent-text); font-weight: 600; cursor: pointer; min-height: 24px; }
 .luk { min-width: 24px; min-height: 24px; padding: 0 4px; border: 0; border-radius: var(--control-radius); background: none; color: var(--color-text-muted); font-size: var(--font-size-xl); line-height: 1; cursor: pointer; }
 .luk:hover { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
-select {
-  height: var(--control-height); padding: 0 8px; border: 1px solid var(--color-border-strong); border-radius: var(--control-radius);
-  background: var(--color-field); color: var(--color-text); font-weight: 500;
-}
 .kort { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); }
 .raekke { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 48px; padding: 8px 16px; border-bottom: 1px solid var(--color-border); }
 .raekke:last-child { border-bottom: 0; }
@@ -131,25 +117,7 @@ select {
 .tom-ravn { width: 190px; aspect-ratio: 1034 / 804; margin: 0 auto 14px; background: var(--color-text); -webkit-mask: url(hm-ravne.png) center / contain no-repeat; mask: url(hm-ravne.png) center / contain no-repeat; }
 
 /* Status som chip: tekst + symbol (! ✓ –), farven er aldrig den eneste information. Symbolet står i CSS (::before). */
-.chip { display: inline-flex; align-items: center; gap: 5px; min-height: var(--chip-height); min-width: var(--chip-min-width); padding: 0 9px 0 5px; border-radius: var(--chip-radius); font-size: var(--font-size-xs); font-weight: 600; white-space: nowrap; }
-.chip::before { content: "–"; display: grid; place-items: center; width: 1.2em; height: 1.2em; border-radius: 50%; color: var(--color-on-accent); font-size: var(--font-size-xs); font-weight: 800; line-height: 1; }
-.chip-roed { background: var(--status-danger-bg); color: var(--status-danger-fg); }
-.chip-roed::before { content: "!"; background: var(--status-danger-dot); }
-.chip-gul { background: var(--status-warn-bg); color: var(--status-warn-fg); }
-.chip-gul::before { content: "!"; background: var(--status-warn-dot); }
-.chip-groen { background: var(--status-ok-bg); color: var(--status-ok-fg); }
-.chip-groen::before { content: "✓"; background: var(--status-ok-dot); }
-.chip-graa { background: var(--status-none-bg); color: var(--status-none-fg); }
-.chip-graa::before { background: var(--status-none-dot); }
 
-/* Afkrydsning: 16 px boks i en 24 px klikflade. */
-input.boks {
-  -webkit-appearance: none; appearance: none; display: inline-grid; place-content: center; width: var(--checkbox-size); height: var(--checkbox-size);
-  margin: 0; border: 1.5px solid var(--color-switch-off); border-radius: var(--checkbox-radius); background: var(--color-surface); cursor: pointer;
-}
-input.boks:checked, input.boks:indeterminate { background: var(--color-control-on); border-color: var(--color-control-on); }
-input.boks:checked::after { content: ""; width: 8px; height: 4px; border: solid var(--color-on-accent); border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
-input.boks:indeterminate::after { content: ""; width: 8px; height: 2px; background: var(--color-on-accent); }
 
 /* ── Overblik: domslinje og tabel (mockup 3) ── */
 .dom { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--status-none-dot); border-radius: var(--card-radius); }
@@ -229,26 +197,6 @@ input.boks:indeterminate::after { content: ""; width: 8px; height: 2px; backgrou
 .indst h2 { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px 2px; font-size: var(--font-size-xl); }
 .indst h2:first-child { margin-top: 0; }
 .indst h2 .ik { color: var(--color-accent); }
-/* Knapperne i en gruppe er lige brede: alle kolonner får den længste etikets bredde. */
-.segment { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; flex: none; gap: 6px; }
-.segment label { position: relative; display: block; cursor: pointer; }
-.segment input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.segment span { display: flex; justify-content: center; align-items: center; white-space: nowrap; height: var(--control-height); padding: 0 12px; border: 1px solid var(--color-border-strong); border-radius: var(--control-radius); background: var(--color-field); font-weight: 600; }
-/* Udseende og Tekststørrelse står over hinanden: samme bredde, så begge kanter flugter. em følger Tekststørrelse, og det længste ord er "Normal". */
-.indst .segment { width: 18em; }
-.segment input:checked + span { background: var(--color-accent-fill); border-color: var(--color-accent); color: var(--color-on-accent); }
-.segment input:focus-visible + span { outline: var(--focus-ring-width) solid var(--color-focus-ring); outline-offset: var(--focus-ring-offset); }
-input.kontakt {
-  position: relative; flex: none; width: 38px; height: 22px; margin: 0; border-radius: 11px; background: var(--color-switch-off); cursor: pointer;
-  -webkit-appearance: none; appearance: none;
-}
-input.kontakt::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--color-on-accent); box-shadow: var(--shadow-tile); }
-input.kontakt:checked { background: var(--color-control-on); }
-input.kontakt:checked::after { left: 19px; }
-input.kontakt:disabled { opacity: .5; cursor: default; }
-.radiol { display: grid; gap: 6px; flex: none; max-width: 100%; }
-.radiol label { display: flex; align-items: center; gap: 8px; min-height: 24px; font-weight: 500; cursor: pointer; }
-.radiol input { margin: 0; accent-color: var(--color-control-on); }
 .mini { width: 100%; border-collapse: collapse; }
 .mini th, .mini td { padding: 6px 16px; border-top: 1px solid var(--color-border); font-size: var(--font-size-md); font-weight: 400; text-align: left; overflow-wrap: anywhere; }
 .mini td:last-child { text-align: right; }
@@ -264,7 +212,6 @@ input.kontakt:disabled { opacity: .5; cursor: default; }
 .kort-note { margin: 0; padding: 8px 16px 10px; border-top: 1px solid var(--color-border); max-width: none; }
 .kort-form { max-width: none; margin: 0; padding: 10px 16px 12px; }
 .kort-status:not(:empty) { margin: 0 16px 12px; }
-.chip.bred { min-width: 0; }
 .felt-knap { color: inherit; }
 .felt-knap:hover:not(:disabled) { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
 .felt-mono { padding: 5px 10px; border: 1px solid var(--color-border); border-radius: var(--control-radius); background: var(--color-field); font-family: var(--font-mono); font-size: var(--font-size-sm); white-space: nowrap; }
@@ -288,10 +235,8 @@ input.kontakt:disabled { opacity: .5; cursor: default; }
 .hm-hjaelp summary { color: var(--color-accent-text); font-weight: 600; cursor: pointer; }
 .hm-hjaelp ol { margin: 8px 0 2px; padding-left: 20px; display: grid; gap: 4px; }
 .hm-niveau { display: grid; gap: 6px; max-width: 46rem; margin: 14px 0 0; padding: 10px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); }
-.hm-niveau legend { float: left; width: 100%; margin-bottom: 4px; padding: 0; font-weight: 600; }
+.hm-niveau legend { float: left; width: 100%; } /* ellers står <legend> i kassens kant */
 .hm-niveau .note { margin: 0; }
-.hm-valgmulighed { display: flex; align-items: baseline; gap: 8px; min-height: 24px; cursor: pointer; }
-.hm-valgmulighed input { margin: 0; accent-color: var(--color-control-on); }
 
 /* ── Svar og status (.r6-status, fra maskinrum.css) og genforsøg ── */
 .r6-status { margin: 0; }
@@ -328,7 +273,7 @@ input.kontakt:disabled { opacity: .5; cursor: default; }
 .hjaelp .g-kort .g-slut { padding-top: 8px; border-top: 1px solid var(--color-border); font-weight: 600; }
 .hjaelp .g-kort .g-igennem { color: var(--status-danger-fg); }
 .g-kort > .link, .g-afsnit > .link { justify-self: start; }
-button.chip-knap { border: 0; font: inherit; font-size: var(--font-size-xs); font-weight: 600; cursor: pointer; }
+button.chip-knap { border: 0; cursor: pointer; } /* en StatusChip (kittets .chip), der kan klikkes */
 button.chip-knap:disabled { cursor: default; }
 button.chip-knap:hover:not(:disabled) { box-shadow: inset 0 0 0 100vmax var(--color-overlay-hover); }
 .genveje { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }

@@ -240,7 +240,7 @@
     rod.querySelectorAll('.vg-soejler-rul').forEach(r => { r.scrollLeft = r.scrollWidth; });
   }
   function forslagValg() {
-    const b = el('button', { type: 'button', className: 'knap', textContent: fmt(T.landForslag, { land: V.land(forslag) }) });
+    const b = el('button', { type: 'button', className: 'btn', textContent: fmt(T.landForslag, { land: V.land(forslag) }) });
     b.addEventListener('click', () => skift(forslag, false).catch(e => besked(S.fejl(e))));
     return el('p', { className: 'land-valg' }, b, el('span', { className: 'note', textContent: T.landForslagNote }));
   }

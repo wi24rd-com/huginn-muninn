@@ -155,7 +155,7 @@
       boks.after(b);
     });
   }
-  const chip = r => el('span', { className: 'chip chip-' + r.status, textContent: T.status[r.status] || r.status });
+  const chip = r => window.hmTegn.chip(r.status, T.status[r.status] || r.status);
   const kraever = r => !r.gammel && (r.status === 'roed' || r.status === 'gul');
   /* ── "Hvad gør jeg?": handlingsguiden ── */
   function guideKort(r) {

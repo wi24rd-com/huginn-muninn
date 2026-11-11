@@ -91,18 +91,29 @@
     s.append(...indhold);
     return s;
   }
-  /* Et segment af radioknapper; et valg er ét trin i tilbage/frem. Fokus bliver på valget, når siden tegnes om. */
+  /* Kittets segmentknap (Kit.segment); et valg er ét trin i tilbage/frem. Fokus bliver på valget, når siden tegnes om.
+     KIT-ØNSKE K28: kittet har altid ét valgt. Her kan intet være valgt (et eget interval gælder): så står alle som ikke
+     valgt, og et klik på det første valg, som kittet tror er valgt og derfor ikke melder, går videre herfra. */
   function segment(navn, etiket, valg, visning) {
-    const boks = el('div', { className: 'segment' });
-    boks.setAttribute('role', 'radiogroup');
-    boks.setAttribute('aria-label', etiket);
-    for (const [tekst, query, valgt] of valg) {
-      const i = el('input', { type: 'radio', name: navn, checked: valgt });
-      i.dataset.fokus = `${navn}:${tekst}`;
-      i.addEventListener('change', () => { if (i.checked) R.gaaTil(visning, query); });
-      boks.append(el('label', {}, i, el('span', { textContent: tekst })));
+    const valgt = valg.findIndex(v => v[2]);
+    const s = window.Kit.segment({ aria: etiket, valg: valg.map(([tekst], i) => ({ id: String(i), tekst })), valgt: String(Math.max(valgt, 0)), vedValg: id => R.gaaTil(visning, valg[Number(id)][1]) });
+    s.knapper.forEach((b, i) => { b.dataset.fokus = `${navn}:${valg[i][0]}`; });
+    s.rod.dataset.navn = navn;
+    if (valgt < 0) {
+      s.knapper[0].setAttribute('aria-checked', 'false');
+      s.knapper[0].addEventListener('click', () => R.gaaTil(visning, valg[0][1]));
     }
-    return boks;
+    return s.rod;
+  }
+  /* Status som kittets StatusChip (Kit.chip): roed, gul, groen og graa er programmets ord for kittets danger, warn, ok og
+     none. tag 'button' giver en chip, der kan klikkes (.chip-knap). */
+  const CHIP = { roed: 'danger', gul: 'warn', groen: 'ok', graa: 'none' };
+  function chip(status, ord, tag) {
+    const k = window.Kit.chip(CHIP[status] || 'none', ord);
+    if (tag !== 'button') return k;
+    const b = el('button', { type: 'button', className: k.className + ' chip-knap' });
+    b.append(...k.childNodes);
+    return b;
   }
   /* To datoer som chip: "1.–4. november" i samme måned, ellers den lange form. */
   function interval(a, b) {
@@ -390,7 +401,7 @@
   function tekKort(o) {
     const navne = v => o.linjer.filter(l => l.valg === v).map(l => S.tekNavn(l.tek)).join(', '), bruger = navne('bruger'), ikke = navne('bruger_ikke');
     const chips = [...(bruger ? [fmt(T.tekChipBruger, { l: bruger })] : []), ...(ikke ? [fmt(T.tekChipIkke, { l: ikke })] : [])];
-    const ret = knap(`${T.tekRet} →`, { gaa: 'teknologi?' + new URLSearchParams({ zone: o.zone, navn: o.navn }) }, 'knap tek-ret', fmt(T.tekRetAabn, { navn: o.navn }));
+    const ret = knap(`${T.tekRet} →`, { gaa: 'teknologi?' + new URLSearchParams({ zone: o.zone, navn: o.navn }) }, 'btn tek-ret', fmt(T.tekRetAabn, { navn: o.navn }));
     const ud = [chips.length ? el('ul', { className: 'tek-chips' }, ...chips.map(t => el('li', { className: 'tek-chip', textContent: t }))) : el('p', { className: 'tek-tomt', textContent: T.tekIngenValg })];
     const f = o.linjer.find(l => l.forslag);
     if (f) {
@@ -625,5 +636,5 @@
   const paaKortet = p => Boolean(p) && iBilledet(p, VIEW.verden);
   const udenPlads = v => [...v.lande.filter(l => !paaKortet((verden.lande || {})[l.kode])).map(l => land(l.kode)), ...v.colos.filter(c => !paaKortet(xyColo(c.kode))).map(c => colo(c.kode))];
 
-  window.hmTegn = { angrebsTrin, kortSkala, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, flise, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
+  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, flise, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
 })();

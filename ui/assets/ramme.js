@@ -606,7 +606,7 @@
   }
   /* "Opret API Token hos Cloudflare" og trinene: i opsætningen og under Indstillinger → Forbindelse. Rust åbner én fast adresse. */
   document.querySelectorAll('[data-token-hjaelp]').forEach(plads => {
-    const aabn = el('button', { type: 'button', className: 'knap', textContent: T.tokenAabn });
+    const aabn = el('button', { type: 'button', className: 'btn', textContent: T.tokenAabn });
     aabn.addEventListener('click', () => { if (invoke) invoke('aabn_api_token').catch(() => { }); });
     const trin = el('details', { className: 'hm-hjaelp token-trin' }, el('summary', { textContent: T.hjaelpTokenH }), el('ol', {}, ...T.tokenTrin.map(t => el('li', { textContent: t }))), el('p', { className: 'note', textContent: T.tokenTrinNote }));
     plads.append(aabn, el('p', { className: 'note', textContent: T.tokenAabnNote }), trin);

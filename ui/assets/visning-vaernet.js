@@ -359,7 +359,7 @@
     /* Forrige/Næste henter kun den nye side og bytter afsnittet ud på stedet (skiftSide): ingen ny tegning, rullepositionen bliver, og adressen
        erstattes, så tilbage/frem ikke får et trin pr. side (V-BESOEG.2 FIX 1). */
     const sideKnap = (tekst, n, hvilken) => {
-      const b = el('button', { type: 'button', className: 'knap dyk-side-knap', textContent: tekst });
+      const b = el('button', { type: 'button', className: 'btn dyk-side-knap', textContent: tekst });
       b.dataset.side = hvilken;
       b.setAttribute('aria-label', fmt(T.dykSideAabn, { a: tal(n), b: tal(e.sider) }));
       b.addEventListener('click', () => skiftSide(n, hvilken));
@@ -483,7 +483,7 @@
         b.setAttribute('aria-label', fmt(T.cfAabn, { t: titel }));
         b.dataset.fokus = 'cf:' + x.klasse;
         b.addEventListener('click', () => { if (invoke) invoke('aabn_sikkerhedsfund').catch(() => { }); });
-        return el('li', {}, el('span', { className: 'chip chip-' + (ALVOR_CHIP[alvor] || 'graa'), textContent: T.cfAlvor[alvor] || x.alvor }), ' ', b, x.siden ? el('small', { className: 'cf-siden', textContent: ' · ' + fmt(T.cfSiden, { d: V.datoLang(x.siden) }) }) : '');
+        return el('li', {}, V.chip(ALVOR_CHIP[alvor] || 'graa', T.cfAlvor[alvor] || x.alvor), ' ', b, x.siden ? el('small', { className: 'cf-siden', textContent: ' · ' + fmt(T.cfSiden, { d: V.datoLang(x.siden) }) }) : '');
       })));
     } else if (f.tilstand === 'ok') linjer.push(el('p', { className: 'cf-tom', textContent: T.cfIngen }));
     if (f.hentet && f.tilstand !== 'venter') linjer.push(el('p', { className: 'vg-note', textContent: fmt(T.cfHentet, { t: V.datoLang(f.hentet.slice(0, 10)) }) }));

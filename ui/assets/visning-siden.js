@@ -29,7 +29,8 @@
     const orden = { roed: 0, gul: 1, groen: 2 }, usaed = rk.filter(usaedvanlig).sort((a, b) => orden[a.status] - orden[b.status]);
     const gamle = rk.filter(r => r.gammel), groenne = rk.filter(r => r.status === 'groen' && !r.moenster), graa = rk.filter(r => r.status === 'graa');
     for (const r of usaed) {
-      const chip = el('button', { type: 'button', className: 'chip chip-knap chip-' + r.status, textContent: T.status[r.status], title: T.gTitel });
+      const chip = window.hmTegn.chip(r.status, T.status[r.status], 'button');
+      chip.title = T.gTitel;
       chip.setAttribute('aria-label', `${T.status[r.status]}: ${T.gTitel} (${r.navn})`);
       chip.addEventListener('click', () => R.guide(r.id));
       const aabn = window.hmTegn.knap(window.hmTegn.domaene(r.navn, 'b'), { gaa: 'vaernet?' + new URLSearchParams({ zone: r.id, navn: r.navn }) }, 'hm-siden-aabn', fmt(T.aabnFor, { navn: r.navn }));

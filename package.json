@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "tauri": "tauri",
-    "test:ui": "node tests/ui/ui-roeg.mjs",
+    "test:ui": "node --max-old-space-size=8192 tests/ui/ui-roeg.mjs",
     "test:foto": "node tests/ui/fotobog.mjs",
     "kit:tjek": "node tools/kit2-tjek.mjs"
   },

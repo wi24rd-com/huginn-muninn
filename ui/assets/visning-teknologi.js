@@ -107,7 +107,7 @@
     }
     if (n) td.append(V.knap(tal(n), dykZone(dom, k.tek), 'link tek-n', fmt(T.tekCelleAntal, { n: tal(n), t: k.navn, navn: dom.navn })));
     if (v === 'bruger') {
-      const boks = el('input', { className: 'boks', type: 'checkbox', checked: bedt });
+      const boks = el('input', { className: 'afk-boks', type: 'checkbox', checked: bedt });
       boks.setAttribute('aria-label', `${T.tekBesked}: ${dom.navn}, ${k.navn}`);
       boks.title = fmt(T.tekBeskedNote, { t: k.navn });
       boks.addEventListener('change', () => gem(dom, k.tek, 'bruger', boks.checked));
@@ -163,20 +163,20 @@
 
   /* ── "Alle teknologier" ── */
   function linje(k) {
-    const boks = el('input', { className: 'boks', type: 'checkbox', checked: k.vis });
+    const boks = el('input', { className: 'afk-boks', type: 'checkbox', checked: k.vis });
     boks.setAttribute('aria-label', fmt(T.tekVisFor, { t: k.navn }));
     boks.addEventListener('change', async () => {
       try { await invoke('teknologi_vis_saet', { tek: k.tek, vis: boks.checked }); k.vis = boks.checked; k.ny = false; besked(T.tekGemt, 'ok'); } catch (e) { boks.checked = !boks.checked; besked(S.fejl(e), 'fejl'); }
     });
     const antal = k.angreb ? V.knap(fmt(T.tekKontoAntal, { n: tal(k.angreb) }), new URLSearchParams({ samlet: '1', teknologi: k.tek, slags: 'angreb' }).toString(), 'link tek-n') : el('span', { className: 'note', textContent: k.set ? fmt(T.tekKontoAntal, { n: tal(0) }) : T.tekIkkeSetKonto });
-    const li = el('li', { className: 'tek-katalog-linje' }, el('label', { className: 'hm-valgmulighed' }, boks, el('span', { textContent: k.navn })), antal, smaaKnap(T.tekIkkeAlle, fmt(T.tekIkkeAlleFor, { t: k.navn }), () => handling(() => invoke('teknologi_kolonne', { tek: k.tek, valg: 'bruger_ikke' }))));
+    const li = el('li', { className: 'tek-katalog-linje' }, el('label', { className: 'afk' }, boks, el('span', { className: 'afk-tekst', textContent: k.navn })), antal, smaaKnap(T.tekIkkeAlle, fmt(T.tekIkkeAlleFor, { t: k.navn }), () => handling(() => invoke('teknologi_kolonne', { tek: k.tek, valg: 'bruger_ikke' }))));
     li.dataset.tek = k.tek;
     return li;
   }
   function tilfoej() {
     const felt = el('input', { type: 'text', autocomplete: 'off', spellcheck: false, autocapitalize: 'off' }), liste = el('datalist', { id: 'tek-navne' }, ...d.katalog.map(k => el('option', { value: k.navn })));
     felt.setAttribute('list', 'tek-navne');
-    const form = el('form', { className: 'hm-form login-egen' }, el('label', {}, el('span', { textContent: T.tekTilfoej }), felt), liste, el('button', { className: 'knap', type: 'submit', textContent: T.tekTilfoejKnap }));
+    const form = el('form', { className: 'hm-form login-egen' }, el('label', {}, el('span', { textContent: T.tekTilfoej }), felt), liste, el('button', { className: 'btn', type: 'submit', textContent: T.tekTilfoejKnap }));
     form.addEventListener('submit', async ev => {
       ev.preventDefault();
       try {
