@@ -35,7 +35,7 @@
     return boks;
   }
   function grupper(d) {
-    const ul = el('ul', { className: 'grupper' });
+    const ul = el('ul', { className: 'hm-grupper' });
     for (const g of d.grupper) {
       const [navn, hvad, konsekvens] = T.robotGrupper[g.id];
       const b = V.knap('', dyk({ robotgruppe: g.id }), 'gruppe-kort', fmt(T.dykAabn, { navn, n: tal(g.n) }));

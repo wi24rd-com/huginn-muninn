@@ -1,5 +1,5 @@
-/* Huginn and Muninn — programrammen: blåt bånd som titel- og værktøjslinje, sidebjælke, indholdsområde og
-   hjælpeskuffe. Farver, mål og skrifter kommer fra tokens.css (genereret fra design/wi24rd-tokens.json); her står kun
+/* Huginn and Muninn — programmets egen CSS oven på Wi24rd UI Kit 2 (kit2/kit.css): skallen (titellinje, bånd,
+   navigationsrude, arbejdsflade, fodlinje, sidepanel) er kittets; her står det, programmet selv skal give, og visningerne. Farver, mål og skrifter kommer fra tokens.css (genereret fra design/wi24rd-tokens.json); her står kun
    var(--…), ingen farvekoder. Lys og mørk følger systemet (tokens.css). Erstatter site.css og maskinrum.css: skrifterne,
    .sr-only/.skip og statusboksen .r6-status er flyttet hertil, resten (hero, bånd, topbjælke, print) er væk.
    Hover: macOS let baggrundsskift (--color-hover); Windows FTP's sorte overlay (12 %/22 %). <html data-platform> sættes af
@@ -16,7 +16,7 @@
 html, body { margin: 0; height: 100%; }
 html { -webkit-text-size-adjust: 100%; }
 body {
-  display: grid; grid-template-rows: var(--band-height) minmax(0, 1fr); overflow: hidden;
+  overflow: hidden;
   background: var(--color-bg); color: var(--color-text);
   font-family: var(--font-body); font-size: var(--font-size-lg); line-height: var(--font-line-height);
   -webkit-font-smoothing: antialiased;
@@ -36,51 +36,45 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .skip { position: absolute; left: -999px; top: 8px; z-index: 50; padding: 6px 12px; border-radius: var(--control-radius); background: var(--color-accent-fill); color: var(--color-on-accent); font-weight: 600; }
 .skip:focus { left: 8px; }
 .ik { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.mono { font-family: var(--font-mono); }
+.mono { font-family: var(--font-mono); font-size: inherit; } /* kittets .mono er 13 px; her følger den tekststørrelsen */
 /* Et domænenavn på én linje: aldrig brudt midt i et ord; mangler der plads, står det med … og fuldt navn i title. */
 .domaene { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 .note { font-size: var(--font-size-sm); color: var(--color-text-muted); }
 ::placeholder { color: var(--color-text-muted); opacity: 1; }
 .lead { color: var(--color-text-muted); }
 
-/* ── båndet: titel- og værktøjslinje (trækbart; knapperne blokerer selv trækket, se Tauris drag.js) ── */
-.band {
-  position: relative; display: flex; align-items: center; gap: 12px; min-width: 0; overflow: hidden;
-  padding: 0 var(--band-padding); background: var(--band-fill); color: var(--band-text);
-  -webkit-user-select: none; user-select: none;
-}
-[data-platform="macos"] .band { padding-left: var(--band-traffic-light-reserve); }
-.band-boelge { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.band-boelge .b1 { fill: var(--band-wave-1); }
-.band-boelge .b2 { fill: var(--band-wave-2); }
-.band-boelge .b3 { fill: var(--band-wave-3); }
-.band-nav { position: relative; display: flex; flex: none; gap: 4px; }
-.band-logo { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; }
-.flise { display: block; width: var(--band-logo-size); height: var(--band-logo-size); flex: none; filter: drop-shadow(var(--shadow-tile)); }
-.band-navn { min-width: 0; }
-.band-navn b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 var(--band-title-size)/1.15 var(--font-display); letter-spacing: -.01em; }
-.band-navn b em { font-style: normal; color: var(--band-text-accent); }
-/* Lille tekst skal have 7:1, og det kan intet hvidt på båndet: linjen får sin egen flade, så båndet kan beholde farven. */
-.band-navn small { display: block; width: fit-content; margin-left: -5px; padding: 0 5px; border-radius: var(--control-radius); background: var(--band-subtitle-bg); font-size: var(--band-subtitle-size); color: var(--band-text); }
-/* Domænevælgeren (visninger med domaener: true). <select> blokerer trækket i Tauris drag.js; båndet rundt om er trækbart. */
-.band-vaelger { position: relative; flex: 0 100 200px; min-width: 110px; } /* giver sig før navnet */
-.band-vaelger select {
-  display: block; width: 100%; height: var(--pill-height); padding: 0 26px 0 14px; border: 0; border-radius: var(--pill-radius);
-  background: var(--band-pill-bg); color: var(--band-pill-fg); font-weight: 600; text-overflow: ellipsis; cursor: pointer;
-  -webkit-appearance: none; appearance: none;
-}
-.band-vaelger select:hover { box-shadow: inset 0 0 0 100vmax var(--color-overlay-hover); }
-.band-vaelger option { background: var(--color-surface); color: var(--color-text); }
-.band-vaelger::after { content: ""; position: absolute; top: 11px; right: 12px; width: 6px; height: 6px; border: solid var(--band-pill-fg); border-width: 0 2px 2px 0; transform: rotate(45deg); pointer-events: none; }
-.band-hoejre { position: relative; flex: none; margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.pille {
-  position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 8px; height: var(--pill-height);
-  padding: 0 14px; border: 0; border-radius: var(--pill-radius); background: var(--band-pill-bg); color: var(--band-pill-fg);
-  font-weight: 600; white-space: nowrap;
-}
-.pille:hover { box-shadow: inset 0 0 0 100vmax var(--color-overlay-hover); }
-.pille-ikon { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--status-none-dot); }
-.pille.henter .pille-ikon { width: 12px; height: 12px; background: none; border: 2px solid currentColor; border-right-color: transparent; animation: snurr 1s linear infinite; }
+/* ── skallen: det, Wi24rd UI Kit 2 lader programmet give selv ── */
+/* macOS: vinduesknapperne ligger oven på titellinjen (titleBarStyle Overlay). */
+[data-platform="macos"] .titel { padding-left: var(--band-traffic-light-reserve); }
+/* KIT-ØNSKE K22: et mærke med programmets eget billede i titellinjen (kittets .mrk er et bogstav). */
+.titel .hm-mrk { width: 26px; height: 20px; flex: none; background: var(--accent-on-rail); -webkit-mask: url(hm-ravne.png) center / contain no-repeat; mask: url(hm-ravne.png) center / contain no-repeat; }
+.titel b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.titel small { flex: none; color: var(--rail-text); font-size: var(--small-size); }
+.titel a.rk { text-decoration: none; }
+.titel .rk .ik { width: 15px; height: 15px; }
+/* KIT-ØNSKE K23: en knap på titellinjen, der er slået fra (tilbage/frem) eller viser den aktive visning (Indstillinger). */
+.titel .rk:disabled { opacity: .45; cursor: default; }
+.titel .rk:disabled:hover { background: var(--rail); color: var(--rail-text); }
+.titel .rk[aria-current="page"], .titel .rk[aria-expanded="true"] { background: var(--rail-active); color: var(--rail-strong); }
+/* Navigationsruden: træet tager pladsen over visningsskiftet og ruller selv. */
+.nav { min-height: 0; }
+.nav .trae { flex: 1 1 auto; min-height: 0; }
+.trae-tom { margin: 0; padding: 0 var(--space-3) var(--space-3); }
+/* KIT-ØNSKE K24: et punkt i visningsskiftet, der er slået fra (uden API Token), og et tal ved et punkt (Siden sidst). */
+.vs[aria-disabled="true"] { color: var(--color-text-disabled); cursor: default; }
+.vs[aria-disabled="true"]:hover { background: none; }
+.vs[aria-disabled="true"] svg { stroke: var(--color-text-disabled); }
+.tal { flex: none; margin-left: auto; min-width: 1.7em; height: 1.5em; padding: 0 .5em; border-radius: .75em; background: var(--color-danger-strong); color: var(--color-on-accent); font: 600 var(--font-size-xs)/1.5 var(--font-body); text-align: center; }
+.tal:not([hidden]) + kbd { margin-left: 6px; }
+/* Båndet: spinneren i Hent nu. */
+.cb.henter svg { animation: hent-drej 1s linear infinite; }
+/* Arbejdsfladen: position: relative holder .sr-only inde i den rullende flade, ellers gør den hele dokumentet højere. */
+.hovedomr { position: relative; min-width: 0; padding: 16px 20px 24px; outline: none; }
+/* KIT-ØNSKE K25: status med fremdrift i fodlinjen (køen). Et klik går til Overblik. */
+.fodl .pille { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 6px; border: 0; border-radius: var(--control-radius); background: none; color: inherit; font: inherit; white-space: nowrap; cursor: pointer; }
+.fodl .pille:hover { background: var(--surface); color: var(--text); }
+.pille-ikon { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--status-none-dot); }
+.pille.henter .pille-ikon { width: 10px; height: 10px; background: none; border: 2px solid currentColor; border-right-color: transparent; animation: snurr 1s linear infinite; }
 .pille.ok .pille-ikon { background: var(--status-ok-dot); }
 .pille.gul .pille-ikon { background: var(--status-warn-dot); }
 .pille.roed .pille-ikon { background: var(--status-danger-dot); }
@@ -89,40 +83,7 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .pille-bar::-webkit-progress-value { background: currentColor; }
 .pille:not(.henter) .pille-bar { display: none; }
 @keyframes snurr { to { transform: rotate(360deg); } }
-.bknap {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--pill-height); min-width: var(--pill-height);
-  padding: 0 10px; border: 0; border-radius: var(--control-radius); background: var(--band-pill-bg); color: var(--band-pill-fg);
-  font-weight: 600; cursor: pointer;
-}
-.bknap .ik { width: 15px; height: 15px; }
-.bknap:hover { box-shadow: inset 0 0 0 100vmax var(--color-overlay-hover); }
-.bknap:active { box-shadow: inset 0 0 0 100vmax var(--color-overlay-pressed); }
-.bknap:disabled { opacity: .45; cursor: default; box-shadow: none; }
-.bknap[aria-expanded="true"] { box-shadow: inset 0 0 0 100vmax var(--color-overlay-hover); }
-.bknap:focus-visible, .band :focus-visible { outline-color: var(--band-text); }
-
-/* ── kroppen: sidebjælke + indhold (+ hjælpeskuffen over indholdet) ── */
-.krop { position: relative; display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); min-height: 0; }
-.side { display: flex; flex-direction: column; min-height: 0; overflow: auto; padding: 12px var(--sidebar-padding); background: var(--color-sidebar); border-right: 1px solid var(--color-border); }
-.nav { list-style: none; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
-.nav a {
-  display: flex; align-items: center; gap: 9px; min-height: var(--sidebar-item-height); padding: 2px 10px; /* et langt navn ved Stor får to linjer */
-  border-radius: var(--sidebar-item-radius); color: var(--color-text); font-size: var(--font-size-md); font-weight: 500; line-height: 1.25; text-decoration: none; cursor: pointer;
-}
-.nav a .ik { color: var(--color-accent); }
-.nav a:hover { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
-.nav a:active { box-shadow: var(--press-shadow); }
-.nav a[aria-current="page"] { background-color: var(--nav-selected-bg); color: var(--nav-selected-text); font-weight: 600; }
-.nav a[aria-disabled="true"] { color: var(--color-text-disabled); cursor: default; }
-.nav a[aria-disabled="true"] .ik { color: var(--color-text-disabled); }
-.nav a[aria-disabled="true"]:hover { background-color: transparent; box-shadow: none; }
-.nav a > span:not(.tal) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* aldrig på to linjer; det fulde navn står i title */
-.nav kbd { flex: none; margin-left: auto; font: var(--font-size-xs) var(--font-body); color: var(--color-text-disabled); }
-.tal { flex: none; margin-left: auto; min-width: 1.7em; height: 1.5em; padding: 0 .5em; border-radius: .75em; background: var(--color-danger-strong); color: var(--color-on-accent); font: 600 var(--font-size-xs)/1.5 var(--font-body); text-align: center; }
-.tal + kbd { margin-left: 6px; }
-.side .fod { margin-top: auto; padding-top: 12px; }
-/* position: relative holder .sr-only inde i den rullende flade: ellers gør den hele dokumentet højere, og hele vinduet kan rulle med båndet. */
-.hovedomr { position: relative; min-width: 0; overflow: auto; padding: 16px 20px 24px; outline: none; }
+.fodl .hent-status { font-size: inherit; }
 
 /* ── fælles byggeklodser ── */
 .titelrad { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
@@ -201,7 +162,9 @@ input.boks:indeterminate::after { content: ""; width: 8px; height: 2px; backgrou
 .dom-handling { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
 /* position: relative holder .sr-only inde i boksen: ellers ruller den hele siden vandret, når tabellen er bredere end vinduet. */
 .tabel-rul { position: relative; overflow-x: auto; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); }
-.tabel { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+.tabel { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; font-variant-numeric: tabular-nums; }
+/* Programmets tabel deler navn med kittets (skifter til Kit.tabel i komponent-trinnet): her nulstilles det, kittets .tabel th ellers lægger på. */
+.tabel th { background: none; color: inherit; letter-spacing: normal; text-transform: none; }
 .tabel th, .tabel td { height: var(--row-height); padding: 0 12px; border-bottom: 1px solid var(--color-border); font-size: var(--font-size-md); text-align: right; white-space: nowrap; }
 .tabel thead th { height: 34px; padding-top: 4px; padding-bottom: 4px; background: var(--color-field); color: var(--color-text-muted); font-size: var(--font-size-sm); font-weight: 600; line-height: 1.25; white-space: normal; vertical-align: bottom; }
 /* To niveauer: Afvist over i går · 7 · 30, Angreb over denne uge · sidste uge. Svag streg mellem talkolonnerne, tydelig mellem grupperne. */
@@ -235,12 +198,11 @@ input.boks:indeterminate::after { content: ""; width: 8px; height: 2px; backgrou
 .hent-status:empty { display: none; }
 .hent-status.ok { color: var(--status-ok-fg); }
 .hent-status.roed { color: var(--status-danger-fg); }
-.band .hent-status, .band .hent-status.ok, .band .hent-status.roed { color: var(--band-text); }
 .henter .ik { animation: hent-drej 1s linear infinite; }
 @keyframes hent-drej { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .henter .ik { animation: none; } }
 .dom-navn { min-height: 0; color: inherit; font: inherit; white-space: nowrap; }
-.op { color: var(--status-danger-fg); font-weight: 600; }
+.tabel .op { color: var(--status-danger-fg); font-weight: 600; } /* kun i tabellen: kittets vælger bruger også klassen op (listen åbner opad) */
 .ned { color: var(--status-ok-fg); font-weight: 600; }
 .raekke-henter { margin-left: 6px; color: var(--color-text-muted); font-size: var(--font-size-sm); font-weight: 400; }
 
@@ -310,7 +272,7 @@ input.kontakt:disabled { opacity: .5; cursor: default; }
 .om p { margin: 0 0 4px; color: var(--color-text-muted); font-size: var(--font-size-sm); }
 .om-kilde { -webkit-user-select: text; user-select: text; font-family: var(--font-mono); }
 .vejledning-plads { margin-top: 12px; }
-.hjaelp-top + .vejledning-plads { margin: 0 0 12px; }
+.sp-indhold > div > .vejledning-plads { margin: 0 0 12px; }
 .dialog { width: min(420px, 90vw); padding: 18px 20px; border: 1px solid var(--color-border); border-radius: var(--card-radius); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-window); }
 .dialog::backdrop { background: var(--color-overlay-pressed); }
 .dialog h2 { margin-bottom: 6px; font-size: var(--font-size-xl); }
@@ -346,12 +308,6 @@ input.kontakt:disabled { opacity: .5; cursor: default; }
 .hm-genforsoeg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; color: var(--color-text-muted); }
 
 /* ── Hjælpeskuffen ("?"): forklaringerne pr. visning, genvejene og Om ── */
-.hjaelp {
-  position: absolute; top: 0; right: 0; bottom: 0; z-index: 5; width: var(--help-width); max-width: 90%; overflow: auto;
-  padding: 14px 18px 24px; background: var(--color-surface); border-left: 1px solid var(--color-border); box-shadow: var(--shadow-window);
-}
-.hjaelp-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.hjaelp h2 { font-size: var(--font-size-xl); }
 .hjaelp h3 { margin: 16px 0 6px; font-size: var(--font-size-lg); }
 .hjaelp p, .hjaelp li, .hjaelp dd { color: var(--color-text); font-size: var(--font-size-md); }
 .hjaelp ul, .hjaelp ol { padding-left: 18px; display: grid; gap: 6px; }
@@ -386,9 +342,8 @@ button.chip-knap:hover:not(:disabled) { box-shadow: inset 0 0 0 100vmax var(--co
 .hm-valgte-flere summary { color: var(--color-accent-text); font-weight: 600; cursor: pointer; }
 .hm-valgte-flere[open] summary { margin-bottom: 6px; }
 
-/* Smalt vindue: navnet forkortes, så båndet har plads til ‹ ›, vælgeren, pillen og knapperne. Overblikket ruller i sin boks, og domænet bliver stående. */
+/* Smalt vindue: Overblikket ruller i sin boks, og domænet bliver stående. */
 @media (max-width: 1099px) {
-  .band-wi { display: none; }
   .tabel-rul { scroll-padding-left: calc(24ch + 24px); }
   .tabel thead th:first-child, .tabel tbody th { position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--color-border); }
   .tabel tbody th { background-color: var(--color-surface); }

@@ -220,15 +220,25 @@
 
   /* ── CommandBar ── faner: [{id, t, grupper: [{t, knapper: [{id, t, ikon, pri, deaktiveret, hvorfor, ved, trykket}]}]}].
      Fanerne skifter båndets indhold, aldrig visningen. En deaktiveret kommando står nedtonet med aria-disabled (så den
-     stadig kan nås med Tab og forklarer hvorfor i title); den forsvinder ikke. Returnerer { rod, vaelgFane, knap(id) }. */
+     stadig kan nås med Tab og forklarer hvorfor i title); den forsvinder ikke. Returnerer { rod, vaelgFane, knap(id) }.
+     Fra 2.2.0: udenFaner: true giver et bånd med præcis én fane og ingen fanerække (et program, man ser i). En post i
+     knapper kan være { id, element } i stedet for en kommando; elementet (fx en vælger eller en segmentknap) står så i
+     gruppen som det er. Uden de to er båndet præcis som i 2.0.0. */
   let cbNr = 0;
   function commandBar(rod, o) {
+    const enkel = Boolean(o.udenFaner);
+    if (enkel && o.faner.length !== 1) throw new Error('commandBar: udenFaner kræver præcis én fane (fik ' + o.faner.length + ')');
     rod.classList.add('cmd');
     rod.textContent = '';
     const nr = ++cbNr;
     const tabs = el('div', 'tabs');
     tabs.setAttribute('role', 'tablist');
     if (o.ariaT) tabs.setAttribute('data-t-aria', o.ariaT);
+    if (enkel) {
+      rod.classList.add('enkel');
+      rod.setAttribute('role', 'group');
+      if (o.ariaT) rod.setAttribute('data-t-aria', o.ariaT);
+    }
     const knapper = {}, faner = [], paneler = [];
     let grpNr = 0;
     for (const f of o.faner) {
@@ -242,14 +252,23 @@
       faner.push(tab);
       const panel = el('div', 'grupper');
       panel.id = `kit-cb${nr}-panel-${f.id}`;
-      panel.setAttribute('role', 'tabpanel');
-      panel.setAttribute('aria-labelledby', tab.id);
+      if (!enkel) {
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', tab.id);
+      }
       panel.dataset.fane = f.id;
       for (const g of f.grupper) {
         const grp = el('div', 'grp');
         grp.setAttribute('role', 'group');
         const kn = el('div', 'kn');
         for (const k of g.knapper) {
+          if (k.element) {
+            const plads = el('div', 'baand-el');
+            plads.appendChild(k.element);
+            if (k.id) knapper[k.id] = k.element;
+            kn.appendChild(plads);
+            continue;
+          }
           const b = el('button', 'cb' + (k.pri ? ' pri' : ''));
           b.type = 'button';
           b.dataset.kommando = k.id;
@@ -275,7 +294,8 @@
       }
       paneler.push(panel);
     }
-    rod.append(tabs, ...paneler);
+    if (enkel) rod.append(...paneler);
+    else rod.append(tabs, ...paneler);
     function vaelgFane(id, fokus) {
       for (const t of faner) {
         const on = t.dataset.fane === id;
@@ -391,10 +411,15 @@
     return { vaelg: id => vaelg(alle.find(b => b.dataset.punkt === id), false), punkter: alle };
   }
 
-  /* ── NavPane: visningsskift ── visninger: [{id, t, ikon, genvej}] (højst seks, altid samme rækkefølge). Hver er et link
-     til #id; den aktive har aria-current="page". markér(id) sætter den aktive (programmet ejer skiftet). */
+  /* ── NavPane: visningsskift ── visninger: [{id, t, ikon, genvej}] (højst otte, altid samme rækkefølge). Hver er et link
+     til #id; den aktive har aria-current="page". markér(id) sætter den aktive (programmet ejer skiftet). Fra 2.2.0: ved
+     syv og otte får skiftet klassen taet (punkter på 30 px, så otte kan stå i det mindste vindue); seks eller færre er
+     præcis som i 2.0.0. Ni eller flere afvises med en fejl, som et ukendt ikon. */
+  const MAKS_VISNINGER = 8;
   function visningsskift(rod, visninger, o = {}) {
+    if (visninger.length > MAKS_VISNINGER) throw new Error('visningsskift: højst otte visninger (fik ' + visninger.length + ')');
     rod.classList.add('skift');
+    rod.classList.toggle('taet', visninger.length > 6);
     rod.textContent = '';
     rod.setAttribute('role', 'group');
     if (o.ariaT) rod.setAttribute('data-t-aria', o.ariaT);
@@ -514,5 +539,401 @@
     return svg;
   }
 
-  window.Kit = Object.freeze({ IKONER, ikon, registrerIkoner, chip, knap, felt, banner, tabel, commandBar, navTrae, visningsskift, guide, fletbaand, SYMBOL });
+  /* En tekst som nøgle eller færdig tekst: { t: 'noegle' }, { tekst: 'Domæne' } eller 'Domæne'. */
+  const tk = v => (v && typeof v === 'object' ? (v.t ? { t: v.t } : v.tekst) : v);
+
+  /* ── Vaelger (fra 2.2.0) ── En knap, der viser den aktuelle værdi, og en liste, der åbner under den. Må stå i
+     .titel .hoejre, i værktøjslinjen og i båndet; udseendet følger fladen (kit.css). Listen ligger over siden under
+     knappen (eller over den) og holder sig inden for vinduet, så hverken titellinjen eller vinduets kant klipper den.
+     o: { etiket, punkter: [{id, t|tekst, antal}], valgt, flere, alle, nValgt, soeg: {ph, ariaT|aria}, ingen, vedValg }.
+     Ét valg (standard): listen lukker ved valg, og vedValg(id) kaldes, når valget ændres. Flere valg (flere: true):
+     afkrydsning pr. punkt, alle (valgfri) øverst, listen bliver åben, vedValg([id, …]) ved hver ændring. Knappen viser
+     det valgte navn, alle-teksten, når alt er valgt, eller nValgt med data-v = antallet. saetPunkter og saetValgt sætter
+     indhold og valg udefra uden at kalde vedValg. */
+  let vlgNr = 0, vlgPNr = 0;
+  const VLG_KANT = 8, VLG_AFSTAND = 4;
+  function vaelger(o) {
+    const nr = ++vlgNr, flere = Boolean(o.flere);
+    const rod = el('div', 'vlg');
+    const knap = el('button', 'vlg-knap');
+    knap.type = 'button';
+    knap.setAttribute('aria-haspopup', 'listbox');
+    knap.setAttribute('aria-expanded', 'false');
+    const etiket = el('span', 'skjult-tekst', tk(o.etiket));
+    etiket.id = `kit-vlg${nr}-etiket`;
+    const vaerdi = el('span', 'vlg-vaerdi');
+    knap.append(etiket, vaerdi, ikon('ned'));
+    const pop = el('div', 'vlg-pop');
+    pop.hidden = true;
+    const liste = el('ul', 'vlg-liste');
+    liste.id = `kit-vlg${nr}-liste`;
+    liste.setAttribute('role', 'listbox');
+    liste.setAttribute('aria-labelledby', etiket.id);
+    liste.tabIndex = -1;
+    if (flere) liste.setAttribute('aria-multiselectable', 'true');
+    knap.setAttribute('aria-controls', liste.id);
+    let soeg = null;
+    if (o.soeg) {
+      const felt = el('label', 'soeg vlg-soeg');
+      felt.appendChild(ikon('soeg'));
+      soeg = document.createElement('input');
+      soeg.type = 'search';
+      soeg.spellcheck = false;
+      soeg.setAttribute('autocomplete', 'off');
+      soeg.setAttribute('aria-controls', liste.id);
+      if (o.soeg.ph) soeg.setAttribute('data-t-ph', o.soeg.ph);
+      aria(soeg, o.soeg);
+      felt.appendChild(soeg);
+      pop.appendChild(felt);
+    }
+    pop.appendChild(liste);
+    const ingen = o.ingen ? el('p', 'vlg-ingen', tk(o.ingen)) : null;
+    if (ingen) {
+      ingen.hidden = true;
+      pop.appendChild(ingen);
+    }
+    rod.append(knap, pop);
+
+    let punkter = [], opts = [], alleLi = null, aktiv = null;
+    let valgt = flere ? new Set() : null;
+    const navnAf = li => li.querySelector('.vlg-navn');
+    const synlige = () => [alleLi, ...opts].filter(li => li && !li.hidden);
+    function punkt(id, tekst, antal) {
+      const li = el('li', 'vlg-p');
+      li.id = `kit-vlg${nr}-p${++vlgPNr}`;
+      li.setAttribute('role', 'option');
+      li.dataset.punkt = id;
+      const m = flere ? el('span', 'vlg-boks', '✓') : el('span', 'vlg-mark', '✓');
+      m.setAttribute('aria-hidden', 'true');
+      li.append(m, el('span', 'vlg-navn', tekst));
+      if (antal != null) li.appendChild(el('span', 'ant', String(antal)));
+      liste.appendChild(li);
+      return li;
+    }
+    function bygListe() {
+      liste.textContent = '';
+      alleLi = flere && o.alle ? punkt('', tk(o.alle), null) : null;
+      if (alleLi) alleLi.classList.add('vlg-alle');
+      opts = punkter.map(p => punkt(p.id, tekstAf(p), p.antal));
+      aktiv = null;
+    }
+    const valgteIds = () => opts.filter(li => valgt.has(li.dataset.punkt)).map(li => li.dataset.punkt);
+    function tegnValg() {
+      for (const li of opts) li.setAttribute('aria-selected', String(flere ? valgt.has(li.dataset.punkt) : li.dataset.punkt === valgt));
+      const alt = flere && opts.length > 0 && valgt.size === opts.length;
+      if (alleLi) alleLi.setAttribute('aria-selected', String(alt));
+      vaerdi.removeAttribute('data-t');
+      vaerdi.removeAttribute('data-v');
+      vaerdi.textContent = '';
+      let kilde = null;
+      if (!flere) kilde = opts.find(li => li.dataset.punkt === valgt) || null;
+      else if (alt && alleLi) kilde = alleLi;
+      else if (valgt.size === 1) kilde = opts.find(li => valgt.has(li.dataset.punkt));
+      if (kilde) {
+        const n = navnAf(kilde);
+        if (n.hasAttribute('data-t')) vaerdi.setAttribute('data-t', n.getAttribute('data-t'));
+        vaerdi.textContent = n.textContent;
+      } else if (flere && o.nValgt) {
+        const nv = tk(o.nValgt);
+        if (nv && typeof nv === 'object') {
+          vaerdi.setAttribute('data-t', nv.t);
+          vaerdi.setAttribute('data-v', String(valgt.size));
+        } else vaerdi.textContent = String(nv).replace(/\{v\}/g, String(valgt.size));
+      }
+    }
+    function saetValgt(v) {
+      const findes = id => punkter.some(p => p.id === id);
+      if (flere) valgt = new Set((Array.isArray(v) ? v : v == null ? [] : [v]).filter(findes));
+      else valgt = findes(v) ? v : punkter.length ? punkter[0].id : null;
+      tegnValg();
+    }
+    function saetPunkter(nye, nytValg) {
+      const foer = flere ? [...valgt] : valgt;
+      punkter = nye.slice();
+      bygListe();
+      saetValgt(nytValg === undefined ? foer : nytValg);
+      if (!pop.hidden) {
+        if (soeg) filtrer();
+        saetAktiv(synlige()[0] || null);
+        placer();
+      }
+    }
+    function saetAktiv(li) {
+      for (const x of [alleLi, ...opts]) if (x) x.classList.toggle('aktiv', x === li);
+      aktiv = li;
+      for (const f of soeg ? [liste, soeg] : [liste]) {
+        if (li) f.setAttribute('aria-activedescendant', li.id);
+        else f.removeAttribute('aria-activedescendant');
+      }
+      if (li && li.scrollIntoView) li.scrollIntoView({ block: 'nearest' });
+    }
+    function filtrer() {
+      const q = soeg.value.trim().toLocaleLowerCase();
+      let n = 0;
+      for (const li of opts) {
+        const vis = !q || navnAf(li).textContent.toLocaleLowerCase().includes(q);
+        li.hidden = !vis;
+        if (vis) n++;
+      }
+      if (alleLi) alleLi.hidden = Boolean(q);
+      if (ingen) ingen.hidden = n > 0;
+      const s = synlige();
+      if (!s.includes(aktiv)) saetAktiv(s[0] || null);
+    }
+    /* Under knappen, eller over den, hvis der er mere plads dér; venstre kant ved knappens, eller højre kant ved knappens,
+       hvis listen ellers ville gå ud over vinduet. Kun klasser (op, hoejre-kant): ingen inline-stil, så kittet også virker
+       i et program, der forbyder den. Største højde står i kit.css (højst 360 px og højst et halvt vindue minus 48 px),
+       så listen altid er der, hvor der er mest plads. */
+    function placer() {
+      if (pop.hidden) return;
+      pop.classList.remove('op', 'hoejre-kant');
+      const k = knap.getBoundingClientRect(), p = pop.getBoundingClientRect();
+      const vb = window.innerWidth || document.documentElement.clientWidth;
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      const under = vh - k.bottom - VLG_AFSTAND - VLG_KANT, over = k.top - VLG_AFSTAND - VLG_KANT;
+      pop.classList.toggle('op', p.height > under && over > under);
+      pop.classList.toggle('hoejre-kant', k.left + p.width > vb - VLG_KANT && k.right - p.width >= 0);
+    }
+    function udenfor(e) {
+      if (!rod.contains(e.target)) luk(false);
+    }
+    function aabn() {
+      if (!pop.hidden) return;
+      pop.hidden = false;
+      knap.setAttribute('aria-expanded', 'true');
+      if (soeg) {
+        soeg.value = '';
+        filtrer();
+      }
+      const s = synlige();
+      saetAktiv(s.find(li => li.getAttribute('aria-selected') === 'true' && li !== alleLi) || s[0] || null);
+      placer();
+      window.addEventListener('resize', placer);
+      document.addEventListener('scroll', placer, true);
+      document.addEventListener('mousedown', udenfor, true);
+      (soeg || liste).focus();
+    }
+    function luk(fokus) {
+      if (pop.hidden) return;
+      pop.hidden = true;
+      knap.setAttribute('aria-expanded', 'false');
+      window.removeEventListener('resize', placer);
+      document.removeEventListener('scroll', placer, true);
+      document.removeEventListener('mousedown', udenfor, true);
+      if (fokus) knap.focus();
+    }
+    function vaelg(li) {
+      if (!li) return;
+      if (!flere) {
+        const aendret = valgt !== li.dataset.punkt;
+        valgt = li.dataset.punkt;
+        tegnValg();
+        luk(true);
+        if (aendret && o.vedValg) o.vedValg(valgt);
+        return;
+      }
+      if (li === alleLi) {
+        if (valgt.size === opts.length) valgt.clear();
+        else for (const x of opts) valgt.add(x.dataset.punkt);
+      } else if (valgt.has(li.dataset.punkt)) valgt.delete(li.dataset.punkt);
+      else valgt.add(li.dataset.punkt);
+      tegnValg();
+      saetAktiv(li);
+      if (o.vedValg) o.vedValg(valgteIds());
+    }
+    /* Et museklik på knappen skal lukke en åben liste, også i WebKit, hvor knappen ikke får fokus ved klik. */
+    let aabenVedNed = null;
+    knap.addEventListener('mousedown', () => { aabenVedNed = !pop.hidden; });
+    knap.addEventListener('click', () => {
+      const varAaben = aabenVedNed === null ? !pop.hidden : aabenVedNed;
+      aabenVedNed = null;
+      if (varAaben) luk(true);
+      else aabn();
+    });
+    knap.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        aabn();
+      }
+    });
+    /* Klik i listen tager ikke fokus fra listen eller søgefeltet. */
+    pop.addEventListener('mousedown', e => { if (e.target !== soeg) e.preventDefault(); });
+    liste.addEventListener('click', e => {
+      const li = e.target.closest('.vlg-p');
+      if (li && liste.contains(li)) vaelg(li);
+    });
+    if (soeg) soeg.addEventListener('input', filtrer);
+    pop.addEventListener('keydown', e => {
+      const s = synlige(), i = s.indexOf(aktiv), iFelt = e.target === soeg;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        luk(true);
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const ny = s[Math.max(0, Math.min(s.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+        if (ny) saetAktiv(ny);
+      } else if ((e.key === 'Home' || e.key === 'End') && !iFelt) {
+        e.preventDefault();
+        if (s.length) saetAktiv(e.key === 'Home' ? s[0] : s[s.length - 1]);
+      } else if (e.key === 'Enter' || (e.key === ' ' && !iFelt)) {
+        e.preventDefault();
+        vaelg(aktiv);
+      } else if (!iFelt && !soeg && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const b = e.key.toLocaleLowerCase();
+        const ny = [...s.slice(i + 1), ...s.slice(0, i + 1)].find(li => navnAf(li).textContent.trim().toLocaleLowerCase().startsWith(b));
+        if (ny) {
+          e.preventDefault();
+          saetAktiv(ny);
+        }
+      }
+    });
+    rod.addEventListener('focusout', e => {
+      if (!pop.hidden && e.relatedTarget && !rod.contains(e.relatedTarget)) luk(false);
+    });
+
+    punkter = (o.punkter || []).slice();
+    bygListe();
+    saetValgt(o.valgt);
+    return {
+      rod, knap, liste, aabn, luk: () => luk(false), saetPunkter, saetValgt,
+      get valgt() { return flere ? valgteIds() : valgt; },
+      get aaben() { return !pop.hidden; },
+    };
+  }
+
+  /* ── Sidepanel (fra 2.2.0) ── Et panel i højre side af .midte (programmet lægger <aside> efter .arb) med overskrift,
+     lukkeknap og rulbart indhold. Fra GRAENSE px vindue og op skubber det arbejdsfladen; under lægger det sig over med
+     skygge (klassen over). overlaeg: true lægger det altid over. Ikke modalt: fokus fanges ikke. Fokus går til
+     overskriften ved åbning og tilbage til det, der havde fokus, ved lukning (hvis fokus var i panelet). Esc i panelet
+     lukker; ligger det over, lukker Esc også fra resten af siden. Knapper med aria-controls = panelets id får
+     aria-expanded. o: { t|tekst, lukAriaT|lukAria, indhold, overlaeg, graense, vedAabn(), vedLuk(aarsag) }, hvor
+     aarsag er 'knap', 'esc' eller 'kode'. Returnerer { rod, aabn, luk, skift, aaben, overlagt, indhold, overskrift }. */
+  const SP_GRAENSE = 1200;
+  let spNr = 0;
+  function sidepanel(rod, o) {
+    const nr = ++spNr, graense = o.graense || SP_GRAENSE;
+    rod.classList.add('sidepanel');
+    rod.textContent = '';
+    if (!rod.id) rod.id = 'kit-sp' + nr;
+    rod.setAttribute('role', 'complementary');
+    rod.hidden = true;
+    const top = el('div', 'sp-top');
+    const h = el('h2', null, tekstAf(o));
+    h.id = rod.id + '-h';
+    h.tabIndex = -1;
+    rod.setAttribute('aria-labelledby', h.id);
+    const lukKnap = el('button', 'sp-luk');
+    lukKnap.type = 'button';
+    lukKnap.appendChild(ikon('luk'));
+    aria(lukKnap, { ariaT: o.lukAriaT, aria: o.lukAria });
+    top.append(h, lukKnap);
+    const indhold = el('div', 'sp-indhold');
+    if (o.indhold) indhold.appendChild(o.indhold);
+    rod.append(top, indhold);
+    let fra = null;
+    function lag() {
+      rod.classList.toggle('over', Boolean(o.overlaeg) || window.innerWidth < graense);
+    }
+    function styrere(aaben) {
+      for (const b of document.querySelectorAll('[aria-controls]')) {
+        if (b.getAttribute('aria-controls') === rod.id) b.setAttribute('aria-expanded', String(aaben));
+      }
+    }
+    function escOver(e) {
+      if (e.key === 'Escape' && !e.defaultPrevented && rod.classList.contains('over') && !rod.contains(e.target)) luk('esc');
+    }
+    function aabn() {
+      if (!rod.hidden) {
+        h.focus();
+        return;
+      }
+      const a = document.activeElement;
+      fra = a && a !== document.body ? a : null;
+      lag();
+      rod.hidden = false;
+      styrere(true);
+      window.addEventListener('resize', lag);
+      document.addEventListener('keydown', escOver);
+      h.focus();
+      if (o.vedAabn) o.vedAabn();
+    }
+    function luk(aarsag) {
+      if (rod.hidden) return;
+      const varInde = rod.contains(document.activeElement);
+      rod.hidden = true;
+      styrere(false);
+      window.removeEventListener('resize', lag);
+      document.removeEventListener('keydown', escOver);
+      const tilbage = fra;
+      fra = null;
+      if (varInde && tilbage && tilbage.isConnected) tilbage.focus();
+      if (o.vedLuk) o.vedLuk(aarsag);
+    }
+    lukKnap.addEventListener('click', () => luk('knap'));
+    rod.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !e.defaultPrevented) {
+        e.preventDefault();
+        luk('esc');
+      }
+    });
+    return {
+      rod, aabn, luk: () => luk('kode'), skift: () => (rod.hidden ? aabn() : luk('kode')),
+      get aaben() { return !rod.hidden; },
+      get overlagt() { return !rod.hidden && rod.classList.contains('over'); },
+      indhold, overskrift: h,
+    };
+  }
+
+  /* ── Segmentknap (fra 2.2.0) ── To til fem valg, præcis ét valgt (fx 7 dage / 30 dage / År). role="radiogroup" med
+     role="radio" og aria-checked. Tab går ind og ud som én kontrol (kun det valgte kan nås med Tab); pilene flytter og
+     vælger, Home og End går til første og sidste. o: { ariaT|aria, valg: [{id, t|tekst}], valgt, vedValg(id) }.
+     vedValg kaldes, når valget ændres; vaelg(id) sætter valget udefra uden at kalde den. */
+  function segment(o) {
+    const n = o.valg.length;
+    if (n < 2 || n > 5) throw new Error('segment: to til fem valg (fik ' + n + ')');
+    const rod = el('div', 'seg');
+    rod.setAttribute('role', 'radiogroup');
+    aria(rod, o);
+    const knapper = o.valg.map(v => {
+      const b = el('button', 'seg-v', tekstAf(v));
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.dataset.valg = v.id;
+      rod.appendChild(b);
+      return b;
+    });
+    let valgt = null;
+    function saet(id, fokus) {
+      const b = knapper.find(x => x.dataset.valg === id) || knapper[0];
+      valgt = b.dataset.valg;
+      for (const x of knapper) {
+        const on = x === b;
+        x.setAttribute('aria-checked', String(on));
+        x.tabIndex = on ? 0 : -1;
+      }
+      if (fokus) b.focus();
+    }
+    function vaelg(b, fokus) {
+      const foer = valgt;
+      saet(b.dataset.valg, fokus);
+      if (valgt !== foer && o.vedValg) o.vedValg(valgt);
+    }
+    rod.addEventListener('click', e => {
+      const b = e.target.closest('.seg-v');
+      if (b && knapper.includes(b)) vaelg(b, true);
+    });
+    rod.addEventListener('keydown', e => {
+      const i = knapper.indexOf(e.target);
+      if (i < 0) return;
+      const ny = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: n - 1 }[e.key];
+      if (ny == null) return;
+      e.preventDefault();
+      vaelg(knapper[(ny + n) % n], true);
+    });
+    saet(o.valgt, false);
+    return { rod, knapper, vaelg: id => saet(id, false), get valgt() { return valgt; } };
+  }
+
+  window.Kit = Object.freeze({ IKONER, ikon, registrerIkoner, chip, knap, felt, banner, tabel, commandBar, navTrae, visningsskift, guide, fletbaand, SYMBOL, vaelger, sidepanel, segment });
 })();

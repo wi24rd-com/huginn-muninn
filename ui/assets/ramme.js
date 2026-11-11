@@ -4,7 +4,7 @@
    den eneste, der lytter på Rust-hændelserne: 'hentekoe' (køen), 'siden_sidst' (menulinjen/en notifikation), 'visning'
    (programmenuen på macOS: ⌘1–7, ⌘, og Om), 'historik' (Vis → Tilbage/Frem), 'ekstra' (de ekstra tal for et domæne er gemt) og 'radar' (nye tal fra Radar). Visningerne (visning-*.js) registrerer sig med
    vis()/skjul() og abonnerer på rammens egne beskeder (paa → afmeld), så et skift aldrig efterlader lyttere. domaener: true
-   på en visning viser domænevælgeren i båndet; visningen svarer med hvad() og skift(). Domænevalget er fælles (tilstand.domaeneValg, gemt i Rust som domaene_valg): enhver adresse med zone eller samlet=1 sætter det, og sidebjælken, ⌘ og
+   på en visning lader domænetræet i navigationsruden styre den; visningen svarer med hvad() og skift(). Domænevalget er fælles (tilstand.domaeneValg, gemt i Rust som domaene_valg): enhver adresse med zone eller samlet=1 sætter det, og sidebjælken, ⌘ og
    programmenuen åbner visningen med det. Historikken beholder sin egen adresse. land: true viser landevælgeren, som visningen selv fylder. data-dyk, data-gaa, data-cve, data-radar og data-rul på et
    element gør det klikbart: én lytter her (klik, Enter, mellemrum), så det overlever, at visningerne tegner om. Et mål i hjælpeskuffen
    lukker skuffen. I en tegning (SVG) flytter piletasterne mellem mærkerne, så tegningen kun er ét Tab-stop; .dyk-hit er den usynlige,
@@ -34,6 +34,44 @@
   const paa = (navn, fn) => { (abonnenter[navn] ||= new Set()).add(fn); return () => abonnenter[navn].delete(fn); };
   const udsend = (navn, data) => { for (const fn of [...(abonnenter[navn] || [])]) { try { fn(data); } catch (e) { console.error(e); } } };
   const antalAbonnenter = navn => (abonnenter[navn] ? abonnenter[navn].size : 0);
+
+  /* ── skallen (Wi24rd UI Kit 2, kit.js): bånd uden faner, visningsskift, landevælger og sidepanel. Kittet bygger elementerne;
+     rammen giver dem de id'er, resten af programmet kender (hent-nu, band-land, nav-land, siden-tal, hjaelp-luk). ── */
+  const Kit = window.Kit;
+  Kit.registrerIkoner({
+    'hm-overblik': [['rect', { x: 3, y: 3, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 14, y: 3, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 3, y: 14, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 14, y: 14, width: 7, height: 7, rx: 1.5 }]],
+    'hm-siden': [['circle', { cx: 12, cy: 12, r: 9 }], ['path', { d: 'M12 7v5l3 2' }]],
+    'hm-robot': [['rect', { x: 5, y: 8, width: 14, height: 11, rx: 2 }], ['path', { d: 'M12 4v4M9 13h.01M15 13h.01' }]],
+    'hm-klode': [['circle', { cx: 12, cy: 12, r: 9 }], ['path', { d: 'M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z' }]],
+    'hm-besoeg': [['circle', { cx: 9, cy: 8, r: 3.5 }], ['path', { d: 'M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5' }], ['path', { d: 'M15.5 4.8a3.5 3.5 0 0 1 0 6.4M17.5 14c2.4.8 4 3.1 4 6' }]],
+    'hm-hent': [['path', { d: 'M20 11a8 8 0 1 0-2.3 5.7' }], ['path', { d: 'M20 4v7h-7' }]],
+  });
+  /* De syv visninger i navigationsruden: tast, visning, tekstnøgle, ikon. Indstillinger står i titellinjen (tandhjulet). */
+  const SKIFT = [['1', 'overblik', 'navOverblik', 'hm-overblik'], ['2', 'siden-sidst', 'navSiden', 'hm-siden'], ['3', 'vaernet', 'navVaernet', 'skjold'], ['4', 'robotter', 'navRobotter', 'hm-robot'], ['5', 'login', 'navLogin', 'laas'], ['6', 'land', 'navLand', 'hm-klode'], ['7', 'besoegende', 'navBesoeg', 'hm-besoeg']];
+  const skift = Kit.visningsskift($('skift'), SKIFT.map(([tast, id, t, ikon]) => ({ id, t, ikon, genvej: (mac ? '⌘' : 'Ctrl+') + tast, genvejAria: (mac ? 'Meta+' : 'Control+') + tast })), { ariaT: 'navH' });
+  for (const a of skift.links) {
+    const navn = a.querySelector('span'), k = a.querySelector('kbd'), v = a.dataset.visning;
+    if (k) k.dataset.genvej = SKIFT.find(x => x[1] === v)[0];
+    if (v === 'land') navn.id = 'nav-land';
+    if (v === 'siden-sidst') a.insertBefore(el('span', { className: 'tal', id: 'siden-tal', hidden: true }), k);
+  }
+  /* Landevælgeren står i båndet og vises kun på visninger med land: true; visningen fylder den og lytter på 'landValg'. */
+  const landVaelger = Kit.vaelger({ etiket: { t: 'landVaelg' }, soeg: { ph: 'landSoegPh', ariaT: 'landSoeg' }, ingen: { t: 'landIngen' }, punkter: [], vedValg: id => udsend('landValg', id) });
+  const baand = Kit.commandBar($('baand'), { ariaT: 'baandAria', udenFaner: true, faner: [{ id: 'start', t: 'baandAria', grupper: [
+    { t: 'gData', knapper: [{ id: 'hent', t: 'hentNu', ikon: 'hm-hent', pri: true }] },
+    { t: 'gLand', knapper: [{ id: 'land', element: landVaelger.rod }] },
+    { t: 'gHjaelp', knapper: [{ id: 'vejledning', t: 'vejledningAabn', ikon: 'bog', ved: () => aabnVejledning() }] },
+  ] }] });
+  baand.knap('hent').id = 'hent-nu';
+  baand.knap('vejledning').id = 'baand-vejledning';
+  const landGruppe = landVaelger.rod.closest('.grp');
+  landGruppe.id = 'band-land';
+  landGruppe.hidden = true;
+  /* Hjælpen er kittets sidepanel og ligger over arbejdsfladen, som skuffen gjorde. */
+  const hjPanel = Kit.sidepanel($('hjaelp'), { t: 'hjaelpH', lukAriaT: 'hjaelpLuk', indhold: $('hjaelp-indhold'), overlaeg: true });
+  hjPanel.rod.querySelector('.sp-luk').id = 'hjaelp-luk';
+  $('fod-lokalt').prepend(Kit.ikon('laas'));
+  S.anvend();
 
   /* ── visninger og router ── */
   const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'robotter', 'login', 'land', 'besoegende', 'teknologi', 'indstillinger'];
@@ -98,25 +136,24 @@
     tilstand.params = params;
     document.querySelectorAll('section[data-visning]').forEach(s => { s.hidden = s.getAttribute('data-visning') !== navn; });
     const punkt = navn === 'teknologi' ? 'indstillinger' : navn === 'vaernet' && (params.has('robot') || params.has('robotgruppe')) ? 'robotter' : navn;
-    document.querySelectorAll('#side a[data-visning]').forEach(a => {
-      if (a.getAttribute('data-visning') === punkt) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-    });
+    skift.markér(punkt);
+    if (punkt === 'indstillinger') $('indst-knap').setAttribute('aria-current', 'page'); else $('indst-knap').removeAttribute('aria-current');
     document.querySelectorAll('#hjaelp .hjaelp-del').forEach(d => { d.hidden = d.getAttribute('data-hjaelp') !== navn; });
-    vaelgerSynlig();
     $('band-land').hidden = !(visninger[navn] && visninger[navn].land);
     opdaterTitel();
     if (visninger[navn] && visninger[navn].vis) visninger[navn].vis(params, { samme: foer === navn && foerParams === params.toString() });
+    visVaelger();
   }
   /* En visning kan låne en anden visnings titel (titel()): Angreb med robotfilter hedder Robotter. */
   function opdaterTitel() { const v = visninger[tilstand.visning]; document.title = S.titel((v && v.titel && v.titel()) || tilstand.visning); }
   function navTilstand() {
-    document.querySelectorAll('#side a[data-visning]').forEach(a => {
+    document.querySelectorAll('a[data-visning]').forEach(a => {
       const fri = tilstand.sat || a.getAttribute('data-visning') === 'indstillinger';
       if (fri) a.removeAttribute('aria-disabled'); else a.setAttribute('aria-disabled', 'true');
     });
   }
   // Altid gennem gaaTil: et klik på den adresse, der allerede står, ville ellers rydde history.state (trinets nummer).
-  document.querySelectorAll('#side a[data-visning]').forEach(a => a.addEventListener('click', ev => {
+  document.querySelectorAll('a[data-visning]').forEach(a => a.addEventListener('click', ev => {
     ev.preventDefault();
     if (a.getAttribute('aria-disabled') !== 'true') aabnGenvej(a.getAttribute('data-visning'));
   }));
@@ -162,31 +199,39 @@
     return p.toString();
   }
 
-  /* ── domænevælgeren i båndet: visningen siger, hvad den viser (hvad), og hvad et skift betyder (skift) ── */
-  const vaelger = $('vg-zone');
-  /* Er intet domæne valgt, er der intet at vælge imellem: ingen "Samlet (0)". Skjult, så Tab springer den over. */
-  function vaelgerSynlig() {
-    const v = visninger[tilstand.visning];
-    $('band-zone').hidden = !(v && v.domaener && tilstand.raekker.length);
+  /* ── domænetræet i navigationsruden (Kit.navTrae): "Alle domæner" med hvert valgt domæne under. Ét valg. En visning med
+     domaener: true siger, hvad den viser (hvad), og hvad et skift betyder (skift); på de andre visninger åbner et valg Angreb
+     for domænet. Træet bygges i et nyt <ul> hver gang, så kittets lyttere ikke lægger sig oven på hinanden; kittet melder
+     også det valg, det selv sætter, så stille er sat imens. ── */
+  let traeStille = false;
+  function traeValg(id, navn) {
+    const v = visninger[tilstand.visning], q = id === 'samlet' ? 'samlet=1' : new URLSearchParams({ zone: id, navn });
+    if (v && v.domaener) { v.skift(q); return; }
+    tilstand.domaeneValg = id;
+    if (invoke) invoke('domaene_valg_saet', { valg: id }).catch(() => { });
+    aabnGenvej('vaernet');
   }
   function visVaelger() {
-    vaelgerSynlig();
-    const v = visninger[tilstand.visning];
-    if (!v || !v.domaener) return;
-    const { samlet, zone, navn } = v.hvad(), zoner = [...tilstand.raekker].sort((a, b) => a.navn.localeCompare(b.navn));
-    vaelger.replaceChildren();
-    const opt = (value, tekst) => vaelger.append(el('option', { value, textContent: tekst }));
-    opt('samlet', fmt(T.samletValg, { n: zoner.length }));
-    for (const r of zoner) opt(r.id, r.navn);
-    if (!samlet && zone && !zoner.some(r => r.id === zone)) opt(zone, navn);
-    vaelger.value = samlet ? 'samlet' : zone;
+    const v = visninger[tilstand.visning], zoner = [...tilstand.raekker].sort((a, b) => a.navn.localeCompare(b.navn));
+    const ny = el('ul', { id: 'trae' }), hadeFokus = $('trae').contains(document.activeElement);
+    $('trae').replaceWith(ny);
+    /* Er intet domæne valgt, er der intet at vælge imellem: ingen "Alle domæner (0)". */
+    $('trae-tom').hidden = zoner.length > 0;
+    if (!zoner.length) return;
+    const boern = zoner.map(r => ({ id: r.id, tekst: r.navn }));
+    let valgt = zoner.some(r => r.id === tilstand.domaeneValg) ? tilstand.domaeneValg : 'samlet';
+    if (v && v.domaener) {
+      const { samlet, zone, navn } = v.hvad();
+      if (!samlet && zone && !zoner.some(r => r.id === zone)) boern.push({ id: zone, tekst: navn });
+      valgt = samlet ? 'samlet' : zone;
+    }
+    const navne = Object.fromEntries(boern.map(b => [b.id, b.tekst]));
+    traeStille = true;
+    Kit.navTrae(ny, [{ id: 'samlet', tekst: T.traeAlle, antal: zoner.length, boern }], { ariaT: 'traeAria', valgt, vedValg: id => { if (!traeStille) traeValg(id, navne[id]); } });
+    traeStille = false;
+    S.anvend(ny);
+    if (hadeFokus) { const b = ny.querySelector('.tr.on'); if (b) b.focus(); }
   }
-  vaelger.addEventListener('change', () => {
-    const v = visninger[tilstand.visning];
-    if (!v || !v.domaener) return;
-    if (vaelger.value === 'samlet') v.skift('samlet=1');
-    else v.skift(new URLSearchParams({ zone: vaelger.value, navn: vaelger.options[vaelger.selectedIndex].textContent }));
-  });
   paa('raekker', visVaelger);
 
   /* ── klikbart med data bag: data-dyk = en forespørgsel til Angreb (uden periode: 30 dage, se fraDyk), data-gaa = en anden visning ("vaernet?zone=…"), data-cve = cve.org,
@@ -299,7 +344,6 @@
     $(id).title = `${tekst} (${genvej})`;
     $(id).setAttribute('aria-label', tekst);
   }
-  document.querySelectorAll('#side kbd[data-genvej]').forEach(k => { k.textContent = genvejTekst(k.getAttribute('data-genvej')); });
   {
     const dl = $('genveje');
     for (const [tast, , noegle] of GENVEJE) dl.append(el('dt', {}, el('kbd', { textContent: genvejTekst(tast) })), el('dd', { textContent: T[noegle] }));
@@ -334,7 +378,7 @@
     if (g[1] === 'indstillinger' || tilstand.sat) aabnGenvej(g[1]);
   });
 
-  /* ── hjælpeskuffen: den generelle forklaring ("?") eller en guide (Overblikkets "Hvad gør jeg?": { titel: nøglen i T, indhold }) ── */
+  /* ── hjælpen (kittets sidepanel, se øverst): den generelle forklaring ("?") eller en guide (Overblikkets "Hvad gør jeg?": { titel: nøglen i T, indhold }) ── */
   function hjaelp(aaben, guide) {
     const g = $('hjaelp-guide');
     if (aaben) {
@@ -344,9 +388,7 @@
       $('hjaelp-h').dataset.t = guide ? guide.titel : 'hjaelpH'; // data-t, så sprog.js' anvend() ikke skriver en anden tekst tilbage
       $('hjaelp-h').textContent = T[$('hjaelp-h').dataset.t];
     }
-    $('hjaelp').hidden = !aaben;
-    $('hjaelp-knap').setAttribute('aria-expanded', String(aaben));
-    if (aaben) $('hjaelp-luk').focus(); else $('hjaelp-knap').focus();
+    if (aaben) { hjPanel.aabn(); $('hjaelp-luk').focus(); } else { hjPanel.luk(); $('hjaelp-knap').focus(); }
   }
   // "?" åbner (eller skifter fra en guide til) den generelle forklaring; står den allerede, lukker "?".
   $('hjaelp-knap').addEventListener('click', () => hjaelp($('hjaelp').hidden || !$('hjaelp-guide').hidden));
@@ -460,6 +502,10 @@
     await invoke('domaene_afvis', { zoner: [...ids] });
     await hentDomaener();
   }
+  /* Fodlinjen: antal valgte domæner til venstre (køens status står ved siden af), versionen til højre. */
+  function fodAntal() { $('fod-antal').textContent = tilstand.raekker.length ? T.domaener(tilstand.raekker.length) : ''; }
+  paa('raekker', fodAntal);
+  if (window.__TAURI__ && window.__TAURI__.app) window.__TAURI__.app.getVersion().then(v => { $('fod-version').textContent = fmt(T.omVersion, { v }); }).catch(() => { });
   function sidenTal() {
     const n = tilstand.raekker.filter(r => r.status === 'roed' && !r.gammel).length, b = $('siden-tal');
     b.hidden = !n;
@@ -530,6 +576,7 @@
     try { sat = (await invoke('token_status')).sat; } catch (e) { status($('token-status'), S.fejl(e), 'fejl'); }
     tilstand.sat = sat;
     $('hent-nu').hidden = !sat;
+    $('hent-nu').closest('.grp').hidden = !sat; // uden API Token er der intet at hente: hele gruppen væk, ikke kun knappen
     navTilstand();
     udsend('token', sat);
     if (sat) { route(); await zoner(); await sidenSidst(false); }
@@ -576,7 +623,7 @@
   const aabnCve = id => (invoke && CVE.test(id) ? invoke('aabn_cve', { id }).catch(() => { }) : null);
 
   window.hmRamme = {
-    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, aabnVejledning,
+    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, erstatAdresse, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
     platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
   };

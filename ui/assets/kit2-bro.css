@@ -2,9 +2,12 @@
    vagt.css) peger her på kittets tokens (assets/kit2/tokens.css). Kittets tokens skifter selv med <html data-tema>, så broen
    har ingen temablokke og ingen farvekoder. Indlæses efter tokens.css og kit2/tokens.css; :root[data-tema] vejer som
    temablokkene i tokens.css og vinder på rækkefølgen. Broen udgår, når app.css og vagt.css bruger kittets navne direkte.
-   Ikke med: --band-* (båndet udgår med skallen), mål, skrift og tekststørrelse. --font-mono og --shadow-card har samme navn
+   Ikke med: --band-* (udgået med skallen), mål og tekststørrelse. Skriften er kittets (Inter). --font-mono og --shadow-card har samme navn
    i begge sæt; kittets gælder, fordi kit2/tokens.css indlæses efter tokens.css. */
 :root[data-tema] {
+  /* Skrift: Inter fra kittet; Outfit er udgået */
+  --font-body: var(--font-sans);
+  --font-display: var(--font-sans);
   /* Flader, streger og tekst */
   --color-bg: var(--bg);
   --color-surface: var(--surface);

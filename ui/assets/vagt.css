@@ -384,7 +384,7 @@ button.dyk-flise:hover { background-color: var(--hover-bg); box-shadow: var(--ho
 }
 
 /* ── Robotter og Login ── */
-.grupper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 10px; }
+.hm-grupper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 10px; }
 .gruppe-kort { width: 100%; height: 100%; display: grid; grid-template-columns: 1fr auto; align-content: start; gap: 2px 12px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--card-radius); background: var(--color-surface); color: var(--color-text); font: inherit; text-align: left; cursor: pointer; }
 .gr-navn { font-size: var(--font-size-md); }
 .gr-n { font: 700 var(--font-size-lg) var(--font-mono); font-variant-numeric: tabular-nums; }

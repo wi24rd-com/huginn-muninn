@@ -15,7 +15,8 @@
   const IKONER = [() => nav('vaernet'), klokke, () => nav('overblik'), () => nav('siden-sidst'), () => nav('login')];
   const saetninger = [];
   let land = null;
-  const ikon = hent => { const s = hent(); return s ? [s.cloneNode(true)] : []; };
+  /* Ikonerne i visningsskiftet er kittets (uden klasse); kopien får programmets .ik, så den følger teksten her. */
+  const ikon = hent => { const s = hent(); if (!s) return []; const k = s.cloneNode(true); k.setAttribute('class', 'ik'); return [k]; };
   const udfyld = s => fmt(s, { groen: T.status.groen, gul: T.status.gul, roed: T.status.roed, land: land || T.velkomstLand });
   function punkt([fed, rest], i) {
     const span = el('span', { textContent: udfyld(rest) });

@@ -14,7 +14,7 @@
   const $ = id => document.getElementById(id);
   const { el, fmt, invoke } = R, tal = S.tal;
   const loc = S.lang === 'da' ? 'da-DK' : 'en-GB';
-  const rod = $('land-rod'), vaelger = $('vg-land'), indst = $('indst-land'), forslagKnap = $('indst-land-forslag'), tilbageKnap = $('indst-land-tilbage');
+  const rod = $('land-rod'), vaelger = R.landVaelger, indst = $('indst-land'), forslagKnap = $('indst-land-forslag'), tilbageKnap = $('indst-land-tilbage');
   const pct = v => Number(v).toLocaleString(loc, { maximumFractionDigits: v < 1 ? 2 : 1 }) + (S.lang === 'da' ? ' %' : '%');
   const indeks = v => (v === null || v === undefined ? '–' : tal(Math.round(v)));
 
@@ -55,7 +55,9 @@
     s.value = valgt || '';
   }
   function tegnValg() {
-    fyld(vaelger, kode || gemt);
+    /* Landevælgeren i båndet (Kit.vaelger): de samme lande som i Indstillinger. Uden valgt land står "ukendt" øverst. */
+    const valgt = kode || gemt;
+    vaelger.saetPunkter([{ id: 'ukendt', tekst: T.landUkendt }, ...medTal.map(k => ({ id: k, tekst: V.land(k) }))], valgt || 'ukendt');
     fyld(indst, gemt);
     $('nav-land').dataset.t = gemt ? '' : 'navLand';
     $('nav-land').textContent = gemt ? ligeNu(gemt) : T.navLand;
@@ -82,7 +84,7 @@
   forslagKnap.addEventListener('click', () => iIndst(forslag));
   tilbageKnap.addEventListener('click', () => { const k = tilbage; tilbage = null; skift(k, false).catch(e => R.status($('indst-status'), S.fejl(e), 'fejl')); });
   indst.addEventListener('change', () => { if (indst.value) iIndst(indst.value); });
-  vaelger.addEventListener('change', () => { if (vaelger.value) skift(vaelger.value, false).catch(e => besked(S.fejl(e))); });
+  R.paa('landValg', k => { if (k && k !== 'ukendt') skift(k, false).catch(e => besked(S.fejl(e))); });
 
   /* ── Land ── */
   const dagTekst = (d, iGaar) => (d === iGaar ? T.dagIGaar : fmt(T.dagDen, { d: V.datoLang(d) }));

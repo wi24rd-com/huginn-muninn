@@ -6,12 +6,14 @@
 <title>Wi24rd Huginn and Muninn</title>
 <link rel="stylesheet" href="assets/tokens.css">
 <link rel="stylesheet" href="assets/kit2/tokens.css">
+<link rel="stylesheet" href="assets/kit2/kit.css">
 <link rel="stylesheet" href="assets/kit2-bro.css">
 <link rel="stylesheet" href="assets/app.css">
 <link rel="stylesheet" href="assets/vagt.css">
 <script src="assets/tekst.js"></script>
 <script src="assets/kit2/tema.js"></script>
 <script src="assets/sprog.js" defer></script>
+<script src="assets/kit2/kit.js" defer></script>
 <script src="assets/genforsoeg.js" defer></script>
 <script src="assets/ramme.js" defer></script>
 <script src="assets/vg-tegn.js" defer></script>
@@ -29,45 +31,30 @@
 <body>
 <a class="skip" href="#indhold" id="skip" data-t="skip">Gå til indhold</a>
 
-<header class="band" data-tauri-drag-region="deep">
-  <svg class="band-boelge" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true"><path class="b1" d="M0,50 C200,14 420,80 640,42 C820,14 1000,58 1200,28 L1200,0 L0,0 Z"/><path class="b2" d="M0,60 C260,28 520,72 780,36 C960,12 1100,42 1200,20 L1200,60 Z"/><path class="b3" d="M300,60 C500,22 700,66 900,34 C1050,12 1150,38 1200,30 L1200,0 L300,0 Z"/></svg>
-  <div class="band-nav">
-    <button class="bknap" type="button" id="hist-tilbage" disabled><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
-    <button class="bknap" type="button" id="hist-frem" disabled><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-  </div>
-  <div class="band-logo">
-    <img class="flise" src="assets/flise-76.png" srcset="assets/flise-38.png 38w, assets/flise-76.png 76w, assets/flise-114.png 114w" sizes="38px" alt="">
-    <span class="band-navn"><b><span class="band-wi">Wi<em>24</em>rd </span>Huginn and Muninn</b><small data-t="under">for Cloudflare®</small></span>
-  </div>
-  <label class="band-vaelger" id="band-zone" hidden><span class="sr-only" data-t="vaelgDomaene">Domæne</span><select id="vg-zone"></select></label>
-  <label class="band-vaelger" id="band-land" hidden><span class="sr-only" data-t="landVaelg">Land</span><select id="vg-land"></select></label>
-  <div class="band-hoejre">
-    <span class="sr-only" id="koe-tekst" role="status" aria-live="polite"></span>
-    <button class="pille" type="button" id="koe" data-gaa="overblik" hidden><span class="pille-ikon" aria-hidden="true"></span><span id="koe-kort" aria-hidden="true"></span><progress class="pille-bar" id="koe-fremskridt" max="1" value="0"></progress></button>
-    <button class="bknap" type="button" id="hent-nu"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span data-t="hentNu">Hent nu</span></button>
-    <span class="hent-status" id="hent-status" role="status" aria-live="polite"></span>
-    <button class="bknap" type="button" id="hjaelp-knap" aria-controls="hjaelp" aria-expanded="false"><span aria-hidden="true">?</span><span class="sr-only" data-t="hjaelpKnap">Hjælp</span></button>
-  </div>
+<div class="vindue">
+<header class="titel" data-tauri-drag-region="deep">
+  <span class="hm-mrk" aria-hidden="true"></span>
+  <b>Wi24rd Huginn and Muninn</b><small data-t="under">for Cloudflare®</small>
+  <span class="hoejre">
+    <button class="rk" type="button" id="hist-tilbage" disabled><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="rk" type="button" id="hist-frem" disabled><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button class="rk" type="button" id="hjaelp-knap" aria-controls="hjaelp" aria-expanded="false"><span aria-hidden="true">?</span><span class="sr-only" data-t="hjaelpKnap">Hjælp</span></button>
+    <a class="rk" href="#indstillinger" data-visning="indstillinger" id="indst-knap"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span class="sr-only" data-t="navIndst">Indstillinger</span></a>
+  </span>
 </header>
+<div id="baand"></div>
 
-<div class="krop">
-<nav class="side" id="side" aria-labelledby="side-h">
+<div class="midte">
+<nav class="nav" id="side" aria-labelledby="side-h">
   <h2 class="sr-only" id="side-h" data-t="navH">Visninger</h2>
-  <ul class="nav">
-    <li><a href="#overblik" data-visning="overblik"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span data-t="navOverblik">Overblik</span><kbd data-genvej="1"></kbd></a></li>
-    <li><a href="#siden-sidst" data-visning="siden-sidst"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span data-t="navSiden">Siden sidst</span><span class="tal" id="siden-tal" hidden></span><kbd data-genvej="2"></kbd></a></li>
-    <li><a href="#vaernet" data-visning="vaernet"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/></svg><span data-t="navVaernet">Angreb</span><kbd data-genvej="3"></kbd></a></li>
-    <li><a href="#robotter" data-visning="robotter"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 4v4M9 13h.01M15 13h.01"/></svg><span data-t="navRobotter">Robotter</span><kbd data-genvej="4"></kbd></a></li>
-    <li><a href="#login" data-visning="login"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-t="navLogin">Login</span><kbd data-genvej="5"></kbd></a></li>
-    <li><a href="#land" data-visning="land"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span id="nav-land" data-t="navLand">Land lige nu</span><kbd data-genvej="6"></kbd></a></li>
-    <li><a href="#besoegende" data-visning="besoegende"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M17.5 14c2.4.8 4 3.1 4 6"/></svg><span data-t="navBesoeg">Besøgende</span><kbd data-genvej="7"></kbd></a></li>
-  </ul>
-  <ul class="nav fod">
-    <li><a href="#indstillinger" data-visning="indstillinger"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span data-t="navIndst">Indstillinger</span><kbd data-genvej=","></kbd></a></li>
-  </ul>
+  <h3 id="trae-h" data-t="traeH">Domæner</h3>
+  <ul id="trae"></ul>
+  <p class="note trae-tom" id="trae-tom" data-t="traeTom" hidden></p>
+  <div id="skift"></div>
 </nav>
 
-<main class="hovedomr" id="indhold" tabindex="-1">
+<div class="arb">
+<main class="flade hovedomr" id="indhold" tabindex="-1">
   <p class="r6-status" id="zone-status" role="status" aria-live="polite"></p>
   <div class="hm-genforsoeg" id="genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="knap" type="button" data-t="proevNu">Prøv igen nu</button></div>
   <p class="r6-status" id="koe-besked" aria-live="polite"></p>
@@ -307,9 +294,17 @@
     <div class="dialog-knapper"><button class="knap" type="button" id="bekraeft-nej" data-t="annuller" autofocus>Annullér</button><button class="knap fare" type="button" id="bekraeft-ja" data-t="bekraeftJa">Nulstil</button></div>
   </dialog>
 </main>
+<footer class="fodl" id="fod">
+  <span id="fod-antal"></span>
+  <span class="sr-only" id="koe-tekst" role="status" aria-live="polite"></span>
+  <button class="pille" type="button" id="koe" data-gaa="overblik" hidden><span class="pille-ikon" aria-hidden="true"></span><span id="koe-kort" aria-hidden="true"></span><progress class="pille-bar" id="koe-fremskridt" max="1" value="0"></progress></button>
+  <span class="hent-status" id="hent-status" role="status" aria-live="polite"></span>
+  <span class="h"><span id="fod-lokalt"><span data-t="fodLokalt">Kun på denne maskine</span></span><span id="fod-version"></span></span>
+</footer>
+</div>
 
-<aside class="hjaelp" id="hjaelp" aria-labelledby="hjaelp-h" hidden>
-  <div class="hjaelp-top"><h2 id="hjaelp-h" data-t="hjaelpH">Hjælp</h2><button class="luk" type="button" id="hjaelp-luk"><span aria-hidden="true">×</span><span class="sr-only" data-t="hjaelpLuk">Luk hjælpen</span></button></div>
+<aside class="hjaelp" id="hjaelp" hidden>
+  <div id="hjaelp-indhold">
   <p class="vejledning-plads"><button class="knap" type="button" id="hjaelp-vejledning" data-t="vejledningAabn">Åbn vejledningen</button></p>
   <div class="guide-ramme" id="hjaelp-guide" hidden></div>
   <div id="hjaelp-generelt">
@@ -368,7 +363,9 @@
   <p data-t="hjCve">Et klik på et CVE-nummer åbner cve.org i din browser.</p>
   <p data-t="hjOm">Version, licenser og varemærke står under Indstillinger → Om.</p>
   </div>
+  </div>
 </aside>
+</div>
 </div>
 </body>
 </html>

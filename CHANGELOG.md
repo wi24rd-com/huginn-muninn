@@ -4,6 +4,13 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-11 23:30 — Wi24rd UI Kit 2: skallen
+#### Ændret
+- **Programmet har fået Wi24rd UI Kit 2's opbygning** (pakke 2.2.0): mørk titellinje med tilbage, frem, Hjælp og Indstillinger; et bånd med Hent nu, landevælgeren (på Land lige nu) og Åbn vejledningen; en navigationsrude med domænerne øverst og de syv visninger nederst; en fodlinje med antal domæner, hentningens status, "Kun på denne maskine" og versionen. Det blå bånd, bølgerne og sidebjælken er væk.
+- **Domænet vælges i træet** i navigationsruden ("Alle domæner" og hvert domæne) i stedet for i en liste i båndet. På Overblik, Siden sidst og Land åbner et klik på et domæne dets Angreb.
+- **Hjælpen** er kittets sidepanel og ligger over indholdet som før.
+- **Skriften** er Inter (kittets); Outfit bruges ikke længere.
+
 ### 2026-11-11 23:30 — Wi24rd UI Kit 2: farverne og temaet
 #### Ændret
 - **Farverne kommer fra Wi24rd UI Kit 2** (pakke 2.1.0, kopieret uændret til `ui/assets/kit2/`). En bro (`ui/assets/kit2-bro.css`) sætter programmets farvevariabler til kittets: nordlysgrøn accent, "ok" som sin egen farve, angreb i `--danger-mark`, besøg i `--info-mark`, og kortets fem trin fra kittets skala. Rammen (båndet, sidebjælken) og skriften er som før; de følger i de næste trin.

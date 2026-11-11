@@ -34,7 +34,7 @@
     da: {
       skip: 'Gå til indhold', under: 'for Cloudflare®', sprog: 'Sprog', sprogAuto: 'Systemets sprog', appNavn: 'Wi24rd Huginn and Muninn',
       titel: { teknologi: 'Teknologi pr. domæne', overblik: 'Overblik', 'siden-sidst': 'Siden sidst', vaernet: 'Angreb · {domaene}', robotter: 'Robotter · {domaene}', login: 'Login · {domaene}', land: '{land}', besoegende: 'Besøgende · {domaene}', indstillinger: 'Indstillinger', opsaetning: 'Forbind med Cloudflare' },
-      navH: 'Visninger', navOverblik: 'Overblik', navSiden: 'Siden sidst', navVaernet: 'Angreb', navIndst: 'Indstillinger',
+      navH: 'Visninger', traeH: 'Domæner', traeAria: 'Vælg domæne', traeAlle: 'Alle domæner', traeTom: 'Ingen domæner er valgt endnu.', baandAria: 'Kommandoer', gData: 'Data', gLand: 'Land', gHjaelp: 'Hjælp', landSoeg: 'Søg efter land', landSoegPh: 'Søg', landIngen: 'Intet land passer.', fodLokalt: 'Kun på denne maskine', navOverblik: 'Overblik', navSiden: 'Siden sidst', navVaernet: 'Angreb', navIndst: 'Indstillinger',
       navRobotter: 'Robotter', navLogin: 'Login', navLand: 'Land lige nu',
       maalMin: 'Huginn kan kun sige »Ligner målrettet«, når du har mindst 3 domæner valgt at sammenligne med.', moensterForeloebig: 'Foreløbig — afgøres, når dagen efter er hentet.', maerkeForeloebig: 'foreløbig',
       vurdSpoerg: 'Hvorfor fik dagen (ikke) et mærke?', vurdIntro: 'Hver betingelse med det tal, mærket afgøres af, for {d}.', vurdJa: 'Opfyldt', vurdNej: 'Ikke opfyldt', vurdIkke: 'Tæller ikke med', vurdStatusJa: '{m}: ja', vurdStatusForeloebig: '{m}: ja, foreløbigt — afgøres, når dagen efter er hentet', vurdStatusNej: '{m}: nej',
@@ -367,7 +367,7 @@
     en: {
       skip: 'Skip to content', under: 'for Cloudflare®', sprog: 'Language', sprogAuto: 'System language', appNavn: 'Wi24rd Huginn and Muninn',
       titel: { teknologi: 'Technology by domain', overblik: 'Overview', 'siden-sidst': 'Since last time', vaernet: 'Attacks · {domaene}', robotter: 'Robots · {domaene}', login: 'Login · {domaene}', land: '{land}', besoegende: 'Visitors · {domaene}', indstillinger: 'Settings', opsaetning: 'Connect to Cloudflare' },
-      navH: 'Views', navOverblik: 'Overview', navSiden: 'Since last time', navVaernet: 'Attacks', navIndst: 'Settings',
+      navH: 'Views', traeH: 'Domains', traeAria: 'Choose domain', traeAlle: 'All domains', traeTom: 'No domains are chosen yet.', baandAria: 'Commands', gData: 'Data', gLand: 'Country', gHjaelp: 'Help', landSoeg: 'Search for a country', landSoegPh: 'Search', landIngen: 'No country matches.', fodLokalt: 'Only on this machine', navOverblik: 'Overview', navSiden: 'Since last time', navVaernet: 'Attacks', navIndst: 'Settings',
       navRobotter: 'Robots', navLogin: 'Login', navLand: 'Country now',
       maalMin: 'Huginn can only say “Looks targeted” when you have at least 3 domains chosen to compare with.', moensterForeloebig: 'Preliminary — decided when the next day is fetched.', maerkeForeloebig: 'preliminary',
       vurdSpoerg: 'Why did the day (not) get a label?', vurdIntro: 'Each condition with the figure that decides the mark, for {d}.', vurdJa: 'Met', vurdNej: 'Not met', vurdIkke: 'Does not count', vurdStatusJa: '{m}: yes', vurdStatusForeloebig: '{m}: yes, preliminary — decided when the next day is fetched', vurdStatusNej: '{m}: no',
@@ -891,11 +891,13 @@
   /* Flertalsnøgler slutter på __fl. Et almindeligt "P" duede ikke: glem + glemP (P for paragraf) blev læst som flertal. */
   const FLERTAL = '__fl';
   let flereDomaener = false;
-  function anvend() {
-    document.querySelectorAll('[data-t]').forEach(el => {
-      const k = el.getAttribute('data-t'), kk = flereDomaener && (k + FLERTAL) in T ? k + FLERTAL : k;
-      if (kk in T && typeof T[kk] === 'string') el.textContent = udfyld(T[kk]);
-    });
+  /* Wi24rd UI Kit 2 (kit.js) sætter også data-t-aria, data-t-title og data-t-ph på det, den bygger: de udfyldes her som aria-label, title og placeholder. */
+  const ATTRIBUTTER = [['data-t-aria', 'aria-label'], ['data-t-title', 'title'], ['data-t-ph', 'placeholder']];
+  function anvend(rod = document) {
+    const opslag = k => { const kk = flereDomaener && (k + FLERTAL) in T ? k + FLERTAL : k; return kk in T && typeof T[kk] === 'string' ? udfyld(T[kk]) : null; };
+    const alle = (vaelger, fn) => { if (rod.matches && rod.matches(vaelger)) fn(rod); rod.querySelectorAll(vaelger).forEach(fn); };
+    alle('[data-t]', el => { const t = opslag(el.getAttribute('data-t')); if (t !== null) el.textContent = t; });
+    for (const [fra, til] of ATTRIBUTTER) alle(`[${fra}]`, el => { const t = opslag(el.getAttribute(fra)); if (t !== null) el.setAttribute(til, t); });
   }
   anvend();
   function saetDomaene(tekst, fl) { domaene = String(tekst).slice(0, 253); flereDomaener = Boolean(fl); anvend(); }
@@ -999,5 +1001,5 @@
   /* Det, Cloudflare stoppede, er angreb; det øvrige er ikke (notify::trafik_tekst). Stoppede den mindst halvdelen, siger sætningen det. */
   const trafikStop = (n, s) => fmt(2 * s >= n ? T.trafikStopMest : T.trafikStop, { s: tal(s), o: tal(n - s) });
   const tekNavn = t => (t === 'andet' ? T.tekAndet : TEK[t] || String(t).split(' ').map(o => o.charAt(0).toUpperCase() + o.slice(1)).join(' '));
-  window.hmSprog = { lang, T, flertal, fmt, trafikStop, tekNavn, datoPar, get domaene() { return domaene; }, fejl, erNet, dato, datoLang, datoKort, maaned, datoTid, moensterTekst, maerkeNavn, get datoValg() { return datoValg; }, kl, tid, tal, stoerrelse, periode, saetDomaene, saetLand, titel, klar, rutineNavn, kortEgen, bog, ordliste, bogIds: Object.keys(BOG) };
+  window.hmSprog = { lang, T, anvend, flertal, fmt, trafikStop, tekNavn, datoPar, get domaene() { return domaene; }, fejl, erNet, dato, datoLang, datoKort, maaned, datoTid, moensterTekst, maerkeNavn, get datoValg() { return datoValg; }, kl, tid, tal, stoerrelse, periode, saetDomaene, saetLand, titel, klar, rutineNavn, kortEgen, bog, ordliste, bogIds: Object.keys(BOG) };
 })();
