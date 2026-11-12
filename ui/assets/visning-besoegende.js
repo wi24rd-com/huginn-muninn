@@ -101,7 +101,7 @@
       c.setAttribute('scope', 'row');
       return el('tr', {}, c, ...x.tal.map(t => el('td', { className: 'tal-kol', textContent: t })));
     });
-    return el('table', { className: 'vg-tabel ' + klasse }, el('thead', {}, el('tr', {}, th(hoved[0]), ...hoved.slice(1).map(t => th(t, 'tal-kol')))), el('tbody', {}, ...raekker));
+    return V.laeseTabel(klasse, [th(hoved[0]), ...hoved.slice(1).map(t => th(t, 'tal-kol'))], raekker);
   }
   /* De 10 største fremme, resten bag "Vis alle". */
   function tiFremme(klasse, hoved, rk, noegle, visAlle) {

@@ -119,7 +119,7 @@
   /* Teksten står i .hv-tekst, foldet til 3 linjer (foldHvorfor), og er ren tekst: et klik på den er et klik på rækken. Kun de små links går andre steder hen: "som du ikke bruger" og spørgsmålet åbner #teknologi, mærket trafik-dyk og "Hvad gør jeg?" guiden. */
   const tekMaal = r => ({ gaa: 'teknologi?' + new URLSearchParams({ zone: r.id, navn: r.navn }) });
   function hvorforCelle(r) {
-    const td = el('td', { className: 'hv' }), tekst = hvorfor(r), boks = el('div', { className: 'hv-tekst' });
+    const td = document.createDocumentFragment(), tekst = hvorfor(r), boks = el('div', { className: 'hv-tekst' });
     const dele = (r.ikke_brugt || []).length ? tekst.split(T.hvIkkeBrugtOrd) : [tekst];
     dele.forEach((del, i) => {
       if (i) boks.append(window.hmTegn.knap(T.hvIkkeBrugtOrd, tekMaal(r), 'link hv-tek', fmt(T.hvIkkeBrugtAabn, { navn: r.navn })));
@@ -138,7 +138,7 @@
       td.append(' ', m);
     }
     const top = r.status === 'graa' || r.gammel ? [] : r.angreb_i_gaar_top || [];
-    if (top.length) td.title = top.map(x => `${S.tal(x.n)} ${x.navn}`).join(', ');
+    if (top.length) boks.title = top.map(x => `${S.tal(x.n)} ${x.navn}`).join(', ');
     return td;
   }
   /* Hvorfor står på højst 3 linjer, og resten foldes ind bag "mere". Først efter tegningen ved vi, om teksten fylder mere. Et åbent felt bliver åbent, når tabellen tegnes om. */
@@ -282,10 +282,10 @@
   const aabn = r => R.gaaTil('vaernet', new URLSearchParams({ zone: r.id, navn: r.navn }));
   /* En talcelle: grå række "–", 0 som tekst (intet at åbne), ellers en knap til dyk. fokus: så fokus bliver på tallet, når tabellen tegnes om. daekning: [hentede døgn, døgn i perioden];
      uden hentede døgn er der intet tal, og en sum med huller siger det. */
-  function talCelle(r, n, label, x, fokus, klasse, indhold, daekning) {
-    const td = el('td', { className: 'tal-kol' + (klasse ? ' ' + klasse : '') });
-    if (r.status === 'graa' || (daekning && daekning[0] === 0)) td.textContent = '–';
-    else if (!n) td.textContent = S.tal(n);
+  function talCelle(r, n, label, x, fokus, indhold, daekning) {
+    const td = document.createDocumentFragment();
+    if (r.status === 'graa' || (daekning && daekning[0] === 0)) td.append('–');
+    else if (!n) td.append(S.tal(n));
     else {
       const b = window.hmTegn.knap(indhold || S.tal(n), dykQ(r, x), 'tal-knap', fmt(T.dykAabn, { navn: `${r.navn}, ${label}`, n: S.tal(n) }));
       b.dataset.fokus = fokus;
@@ -294,36 +294,47 @@
     if (daekning && r.status !== 'graa' && daekning[0] && daekning[0] < daekning[1]) td.append(el('small', { className: 'dag-med', textContent: fmt(T.dagMed, { m: S.tal(daekning[0]), n: S.tal(daekning[1]) }) }));
     return td;
   }
+  /* Tabellen er kittets (Kit.tabel): en række åbner domænets Angreb (raekkeHandling 'aabn': klik, Enter og mellemrum; et klik
+     på et tal eller et link i Hvorfor åbner ikke rækken), to hovedrækker, domænet som rækkehoved, og rammen ruller vandret med
+     domænet stående (Kit.tabelRul). Kittet bygger; her sættes kun de kendte id'er. */
+  const talKol = (t, gruppe) => ({ t, gruppe, tal: true, klasse: 'tal-kol', bredde: 's' });
+  const ovTabel = window.Kit.tabel({
+    raekkeHandling: 'aabn', layout: 'auto', fastFoerste: true, titelT: 'tabelTitel', raekker: [],
+    kolonnegrupper: [{ id: 'afvist', t: 'thAfvist', skille: true }, { id: 'angreb', t: 'thAngreb', skille: true }],
+    kolonner: [{ t: 'thDomaene', hoved: true }, { t: 'thStatus', klasse: 'st', bredde: 'm' }, { t: 'thHvorfor', klasse: 'hv' }, talKol('thIGaar', 'afvist'), talKol('th7', 'afvist'), talKol('th30', 'afvist'), talKol('thUgen', 'angreb'), talKol('thSidsteUge', 'angreb'), { tekst: '', klasse: 'chev', bredde: 'xs' }],
+    vedAabn: (tr, id) => { const r = st.raekker.find(x => x.id === id); if (r) aabn(r); },
+  });
+  {
+    ovTabel.id = 'overblik-tabel';
+    ovTabel.tBodies[0].id = 'overblik-raekker';
+    const aabnHoved = el('span', { className: 'sr-only' });
+    aabnHoved.dataset.t = 'thAabn';
+    ovTabel.tHead.rows[0].lastElementChild.append(aabnHoved);
+    const rul = window.Kit.tabelRul(ovTabel, { ariaT: 'tabelTitel' });
+    rul.rod.id = 'overblik-rul';
+    $('overblik-rul').replaceWith(rul.rod);
+    S.anvend(rul.rod);
+  }
+  const dele = (...n) => { const f = document.createDocumentFragment(); f.append(...n); return f; };
   function tegnTabel() {
     const tb = $('overblik-raekker'), koe = st.koe;
-    // Tegnes igen hvert 2. sekund, mens køen henter: fokus bliver på samme række (eller dens knap).
+    // Tegnes igen hvert 2. sekund, mens køen henter: kittet holder fokus på samme række; stod fokus på en knap i rækken, sættes det tilbage på den her.
     const aktiv = document.activeElement, fokusZone = aktiv && tb.contains(aktiv) ? aktiv.closest('tr').dataset.zone : null;
     const fokusKnap = fokusZone ? aktiv.dataset.fokus : null;
-    tb.replaceChildren();
-    for (const r of st.raekker) {
+    ovTabel.saetRaekker(st.raekker.map(r => {
       const graa = r.status === 'graa';
       const henterNu = koe && koe.zone === r.id && koe.tilstand === 'henter';
-      const navn = el('th', { scope: 'row' }, window.hmTegn.domaene(r.navn));
-      navn.setAttribute('aria-label', henterNu ? `${r.navn} ${T.henterKort}` : r.navn);
-      if (henterNu) navn.append(el('small', { className: 'raekke-henter', textContent: T.henterKort }));
-      const uge = talCelle(r, r.angreb_uge, T.ovUge, { fra: r.uge_fra, til: r.status_dag, slags: 'angreb' }, 'uge', 'sep', el('span', { className: ugeKlasse(r.angreb_uge, r.angreb_ugen_foer), textContent: S.tal(r.angreb_uge) }));
-      if (!graa && r.aendring != null) uge.title = fmt(T.ugeTitel, { p: `${r.aendring > 0 ? '+' : r.aendring < 0 ? '−' : '±'}${S.tal(Math.abs(r.aendring))} %` });
-      const chev = el('td', { className: 'chev' }, el('span', { className: 'sr-only', textContent: fmt(T.aabnFor, { navn: r.navn }) }));
-      chev.append(pil());
-      const tr = el('tr', { tabIndex: 0 },
-        navn, el('td', { className: 'st' }, chip(r), ...(r.moenster ? [' ', window.hmTegn.moensterChip(r)] : [])), hvorforCelle(r),
-        talCelle(r, r.i_gaar, T.ovIGaar, { dag: r.i_gaar_dag }, 'i-gaar', 'sep'), talCelle(r, r.hele7, T.ov7, { periode: '7' }, 'h7', '', null, [r.med7, 7]), talCelle(r, r.hele30, T.ov30, {}, 'h30', '', null, [r.med30, 30]),
-        uge, talCelle(r, r.angreb_ugen_foer, T.ovSidste, { fra: r.ugen_foer_fra, til: r.ugen_foer_til, slags: 'angreb' }, 'foer'), chev);
-      tr.title = henterNu ? T.henterKort : r.sidst_hentet ? fmt(T.hentetTitel, { t: S.kl(r.sidst_hentet) }) : '';
-      tr.dataset.zone = r.id;
-      tr.addEventListener('click', ev => { if (!ev.target.closest('[data-dyk], [data-gaa], .hv-guide, .hv-mere')) aabn(r); });
-      tr.addEventListener('keydown', ev => {
-        if (ev.target !== tr || (ev.key !== 'Enter' && ev.key !== ' ')) return;
-        ev.preventDefault();
-        aabn(r);
-      });
-      tb.append(tr);
-    }
+      const navn = dele(window.hmTegn.domaene(r.navn), ...(henterNu ? [el('small', { className: 'raekke-henter', textContent: T.henterKort })] : []));
+      let uge = talCelle(r, r.angreb_uge, T.ovUge, { fra: r.uge_fra, til: r.status_dag, slags: 'angreb' }, 'uge', el('span', { className: ugeKlasse(r.angreb_uge, r.angreb_ugen_foer), textContent: S.tal(r.angreb_uge) }));
+      if (!graa && r.aendring != null) { const s = el('span', { className: 'uge-celle', title: fmt(T.ugeTitel, { p: `${r.aendring > 0 ? '+' : r.aendring < 0 ? '−' : '±'}${S.tal(Math.abs(r.aendring))} %` }) }); s.append(uge); uge = s; }
+      return {
+        data: r.id, attr: { 'data-zone': r.id }, titel: henterNu ? T.henterKort : r.sidst_hentet ? fmt(T.hentetTitel, { t: S.kl(r.sidst_hentet) }) : '',
+        celler: [navn, dele(chip(r), ...(r.moenster ? [' ', window.hmTegn.moensterChip(r)] : [])), hvorforCelle(r),
+          talCelle(r, r.i_gaar, T.ovIGaar, { dag: r.i_gaar_dag }, 'i-gaar'), talCelle(r, r.hele7, T.ov7, { periode: '7' }, 'h7', null, [r.med7, 7]), talCelle(r, r.hele30, T.ov30, {}, 'h30', null, [r.med30, 30]),
+          uge, talCelle(r, r.angreb_ugen_foer, T.ovSidste, { fra: r.ugen_foer_fra, til: r.ugen_foer_til, slags: 'angreb' }, 'foer'),
+          dele(el('span', { className: 'sr-only', textContent: fmt(T.aabnFor, { navn: r.navn }) }), pil())],
+      };
+    }));
     foldHvorfor();
     if (fokusZone) { const tr = [...tb.children].find(x => x.dataset.zone === fokusZone); if (tr) ((fokusKnap && tr.querySelector(`[data-fokus="${fokusKnap}"]`)) || tr).focus(); }
     visAntal();

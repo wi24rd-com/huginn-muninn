@@ -271,9 +271,7 @@
       const dag = V.datoLang(d.dag), q = medPeriode('dag', d.dag), label = fmt(T.dykDag, { d: dag, n: tal(d.n) });
       return el('tr', {}, el('th', { scope: 'row' }, d.n ? knap(dag, q, 'link dyk-celle', label) : dag), el('td', { className: 'tal-kol' }, d.n ? knap(tal(d.n), q, 'link dyk-celle', label) : tal(d.n)), el('td', { className: 'tal-kol', textContent: tal(d.alle) }));
     });
-    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel' }, el('thead', {}, el('tr', {}, kol(L.dag), kol(ord() === T.dykAfvist ? L.antal : ord(), 'tal-kol'), kol(L.trafik, 'tal-kol'))), el('tbody', {}, ...raekker)));
-    rul.setAttribute('role', 'region');
-    rul.setAttribute('aria-label', L.vis);
+    const rul = V.tabelRul(V.laeseTabel('', [kol(L.dag), kol(ord() === T.dykAfvist ? L.antal : ord(), 'tal-kol'), kol(L.trafik, 'tal-kol')], raekker), L.vis);
     return rul;
   }
   /* Går perioden længere tilbage end sikkerhedshændelserne, står trafikken for hele perioden, og angrebene kun, hvor de findes. Én dag har ingen søjler. */
@@ -419,9 +417,7 @@
     if (!m.liste.length) return V.blok(T.emailH, intro, top);
     const th = (t, k) => { const e = el('th', { textContent: t, className: k || 'v' }); e.setAttribute('scope', 'col'); return e; };
     const rk = m.liste.map(x => el('tr', {}, el('td', { className: 'v', textContent: x.afsender || T.emailUkendt }), el('td', { className: 'v', textContent: x.land || '–' }), el('td', { className: 'tal-kol', textContent: tal(x.fejlet) }), el('td', { className: 'tal-kol', textContent: tal(x.mails) })));
-    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel email-tabel' }, el('thead', {}, el('tr', {}, th(T.emailAfsender), th(T.emailLand), th(T.emailFejlet, 'tal-kol'), th(T.emailMails, 'tal-kol'))), el('tbody', {}, ...rk)));
-    rul.setAttribute('role', 'region');
-    rul.setAttribute('aria-label', T.emailH);
+    const rul = V.tabelRul(V.laeseTabel('email-tabel', [th(T.emailAfsender), th(T.emailLand), th(T.emailFejlet, 'tal-kol'), th(T.emailMails, 'tal-kol')], rk), T.emailH);
     return V.blok(T.emailH, intro, top, rul, ...fod);
   }
   function emailBlok(d, g) {
@@ -445,9 +441,7 @@
       b.dataset.fokus = 'sti200:' + x.sti;
       return el('tr', { className: x.troevaerdig ? 'sti200-fil' : '' }, el('td', { className: 'v' }, b), el('td', { className: 'tal-kol', textContent: tal(x.n) }), el('td', { className: 'tal-kol', textContent: bytes(x.snit) }), el('td', { className: 'v', textContent: x.troevaerdig ? T.sti200Fil : T.sti200Side }));
     });
-    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel sti200-tabel' }, el('thead', {}, el('tr', {}, th(T.sti200ThSti), th(T.sti200ThN, 'tal-kol'), th(T.sti200ThSnit, 'tal-kol'), th(T.sti200ThVurd))), el('tbody', {}, ...rk)));
-    rul.setAttribute('role', 'region');
-    rul.setAttribute('aria-label', T.sti200H);
+    const rul = V.tabelRul(V.laeseTabel('sti200-tabel', [th(T.sti200ThSti), th(T.sti200ThN, 'tal-kol'), th(T.sti200ThSnit, 'tal-kol'), th(T.sti200ThVurd)], rk), T.sti200H);
     const fod = [el('p', { className: 'vg-note', textContent: fmt(T.sti200Note, { f: o.forside ? bytes(o.forside) : T.sti200UdenForside }) })];
     if (o.stier.some(x => x.troevaerdig)) { const b = S.bog('sti200'); fod.push(el('details', { className: 'dyk-guide' }, el('summary', { textContent: T.sti200Guide }), el('p', { textContent: b.alle }), el('ol', {}, ...b.ja.map(t => el('li', { textContent: t }))))); }
     return V.blok(T.sti200H, intro, rul, ...fod);

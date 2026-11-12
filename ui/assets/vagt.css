@@ -160,12 +160,7 @@ button.sflise.vg-hoved:hover { background: var(--color-accent-soft); }
 .vg-tal { margin-top: 8px; }
 .vg-tal summary { color: var(--color-accent-text); font-weight: 600; cursor: pointer; }
 .vg-tabel-rul { overflow-x: auto; margin-top: 8px; }
-.vg-tabel-rul:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
-.vg-tabel { width: 100%; border-collapse: collapse; }
-.vg-tabel caption { padding-bottom: 4px; text-align: left; color: var(--color-text-muted); font-weight: 600; }
-.vg-tabel th, .vg-tabel td { padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: var(--font-size-md); text-align: left; vertical-align: top; }
-.vg-tabel thead th { color: var(--color-text-muted); font-size: var(--font-size-sm); font-weight: 600; }
-.vg-tabel td { font-variant-numeric: tabular-nums; }
+/* Læsetabellerne er kittets tabel uden rækkevalg (hmTegn.laeseTabel). Her står kun programmets kolonner. */
 /* Talkolonner som i Overblik: fast, ens bredde og en svag streg, også i overskriften. */
 .vg-tabel .tal-kol { width: calc(var(--font-size-md) * 7); border-left: 1px solid var(--color-border); text-align: right; }
 .vg-tabel .tal-kol .dyk-celle { text-align: right; }
@@ -464,7 +459,7 @@ button.sflise.vg-hoved:hover { background: var(--color-accent-soft); }
 .dato-fejl { margin: 6px 0 0; }
 .hul-note { margin: 0 0 12px; }
 .dag-med { display: block; color: var(--color-text-muted); font-size: var(--font-size-xs); font-weight: 400; white-space: nowrap; }
-.hul-raekke th, .hul-raekke td { color: var(--color-text-muted); font-style: italic; }
+tr[data-raekke="hul-raekke"] > * { color: var(--color-text-muted); font-style: italic; }
 .hv-spoerg { font-size: var(--font-size-sm); }
 
 /* "Vurdering": foldet sammen som standard. Tegnene er tekst, så de også kan ses uden farve. */

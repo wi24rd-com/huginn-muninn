@@ -141,7 +141,7 @@
     if (d.laek.length) {
       const n = d.laek.reduce((s, x) => s + x.n, 0), kol = t => el('th', { scope: 'col', textContent: t });
       const rk = d.laek.map(x => el('tr', {}, el('td', {}, V.knap(V.dato(x.dag), { gaa: 'login?' + medPeriode('dag', x.dag) }, 'link dyk-celle', fmt(T.loginLaekDag, { d: V.datoLang(x.dag) }))), el('td', {}, V.knap(x.sti, gaa(p => p.set('sti', x.sti)), 'link dyk-celle', fmt(T.loginLaekAabn, { sti: x.sti }))), el('td', { className: 'tal-kol', textContent: tal(x.n) }), el('td', { className: 'tal-kol', textContent: tal(x.naaet) })));
-      dele.push(el('p', { className: 'vg-advarsel vg-gul login-laek-linje', textContent: fmt(T.loginLaekLinje, { n: tal(n) }) }), el('div', { className: 'vg-tabel-rul' }, el('table', { className: 'vg-tabel' }, el('thead', {}, el('tr', {}, kol(T.loginLaekThDag), kol(T.loginLaekThSti), kol(T.loginLaekThN), kol(T.loginLaekThNaaet))), el('tbody', {}, ...rk))));
+      dele.push(el('p', { className: 'vg-advarsel vg-gul login-laek-linje', textContent: fmt(T.loginLaekLinje, { n: tal(n) }) }), el('div', { className: 'vg-tabel-rul' }, V.laeseTabel('', [kol(T.loginLaekThDag), kol(T.loginLaekThSti), kol(T.loginLaekThN), kol(T.loginLaekThNaaet)], rk)));
     } else dele.push(el('p', { className: 'vg-status login-laek-ingen', textContent: d.laek_dage ? T.loginLaekIngen : T.loginLaekVenter }));
     /* `none` og tomme svar er ikke læk. En værdi, Cloudflare ikke har dokumenteret, står rå, så den kan slås op. */
     const svar = v => d.laek_andet.find(x => x.v === v), andre = d.laek_andet.filter(x => x.v !== 'none' && x.v !== 'ukendt');
@@ -167,9 +167,7 @@
       sti.setAttribute('scope', 'row');
       return el('tr', {}, sti, el('td', { className: 'v', textContent: r.metoder.join(', ') || '–' }), talCelle(r.tal.edge, r.sti, 'edge'), talCelle(r.tal.ikke_fundet, r.sti, 'ikke_fundet'), talCelle(r.tal.server, r.sti, 'server'), talCelle(r.tal.afvist, r.sti, 'afvist'), talCelle(r.tal.svar, r.sti, 'svar'), el('td', { className: 'forkl', textContent: forklaring(r) }));
     });
-    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, el('table', { className: 'vg-tabel' }, el('thead', {}, hoved), el('tbody', {}, ...rk)));
-    rul.setAttribute('role', 'region');
-    rul.setAttribute('aria-label', T.loginTabelH);
+    const rul = V.tabelRul(V.laeseTabel('', hoved, rk), T.loginTabelH);
     return [V.blok(T.loginTabelH, '', rul)];
   }
   function lister(d) {

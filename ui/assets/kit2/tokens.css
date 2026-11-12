@@ -1,4 +1,4 @@
-/* GENERERET fra wi24rd-ui-kit-2.tokens.json (Wi24rd UI Kit 2, pakke 2.3.0). Ret ikke i hånden: ret JSON-filen i
+/* GENERERET fra wi24rd-ui-kit-2.tokens.json (Wi24rd UI Kit 2, pakke 2.4.0). Ret ikke i hånden: ret JSON-filen i
    kittets kilde og byg igen (node design/build-tokens.mjs). Lyst tema er standard; <html data-tema="moerk"> vælger
    mørkt, og <html data-tema="system"> følger macOS/Windows (prefers-color-scheme). */
 :root {
@@ -64,6 +64,7 @@
   --border-strong: #7C8A99;
   --text: #17212B;
   --text-muted: #4F5E6D;
+  --text-disabled: #647182;
   --accent: #007864;
   --accent-hover: #006050;
   --on-accent: #FFFFFF;
@@ -81,6 +82,11 @@
   --danger-mark: #D93A30;
   --info-mark: #2F74E0;
   --none-mark: #7C8A99;
+  --ok-mark-hover: #108371;
+  --warn-mark-hover: #9C6309;
+  --danger-mark-hover: #AE352F;
+  --info-mark-hover: #2A62B8;
+  --none-mark-hover: #667381;
   --data-1: #2F74E0;
   --data-2: #B85C00;
   --data-3: #7A4FD1;
@@ -117,6 +123,7 @@
   --border-strong: #6B7C90;
   --text: #E8EEF4;
   --text-muted: #A6B4C3;
+  --text-disabled: #8091A5;
   --accent: #35D6B3;
   --accent-hover: #6BE5CA;
   --on-accent: #04231D;
@@ -134,6 +141,11 @@
   --danger-mark: #FF7A70;
   --info-mark: #6FA5FF;
   --none-mark: #7A8BA0;
+  --ok-mark-hover: #5CDBC1;
+  --warn-mark-hover: #FAC36F;
+  --danger-mark-hover: #FA948D;
+  --info-mark-hover: #8AB5FD;
+  --none-mark-hover: #92A1B2;
   --data-1: #6FA5FF;
   --data-2: #FFB066;
   --data-3: #B9A1FF;
@@ -171,6 +183,7 @@
     --border-strong: #6B7C90;
     --text: #E8EEF4;
     --text-muted: #A6B4C3;
+    --text-disabled: #8091A5;
     --accent: #35D6B3;
     --accent-hover: #6BE5CA;
     --on-accent: #04231D;
@@ -188,6 +201,11 @@
     --danger-mark: #FF7A70;
     --info-mark: #6FA5FF;
     --none-mark: #7A8BA0;
+    --ok-mark-hover: #5CDBC1;
+    --warn-mark-hover: #FAC36F;
+    --danger-mark-hover: #FA948D;
+    --info-mark-hover: #8AB5FD;
+    --none-mark-hover: #92A1B2;
     --data-1: #6FA5FF;
     --data-2: #FFB066;
     --data-3: #B9A1FF;

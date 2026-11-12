@@ -125,12 +125,12 @@ const hv = tr => tr.querySelector('.hv-tekst');
   const u0 = hv(rows[0]), u1 = hv(rows[1]);
   tjek('P3 årsag: top 3 uden CVE og "alle stoppet"', u0.textContent === '30 angreb i går (snit 12,4) – alle stoppet. Mest et kendt hul i React (20), angreb på WordPress (7) og din egen regel »min-regel« (2). Bed din webmand tjekke, at siden er opdateret.', u0.textContent);
   tjek('P3 årsag: blandet → "20 blokeret, 8 udfordret"', u1.textContent === '28 angreb i går (snit 23,1) – alle stoppet (20 blokeret, 8 udfordret). Mest et kendt hul i React (25) og browsertjekket (3).', u1.textContent);
-  tjek('P3 årsag: CVE-nummeret står i title', u0.closest('td').title === '20 React RCE (CVE-2025-55182), 7 Wordpress, 2 min-regel: max 100 kald pr. minut pr. IP (20 pr. 10 s)', u0.closest('td').title);
+  tjek('P3 årsag: CVE-nummeret står i title', u0.closest('td').querySelector('.hv-tekst').title === '20 React RCE (CVE-2025-55182), 7 Wordpress, 2 min-regel: max 100 kald pr. minut pr. IP (20 pr. 10 s)', u0.closest('td').querySelector('.hv-tekst').title);
   const c0 = celler(rows[0]).map(c => c.textContent);
   tjek('tal: i går, 7 og 30 dage med dansk tusindtalsskille', c0[2] === '1.260' && c0[3] === '3.408' && c0[4] === '8.200', c0.join(' | '));
   const uge0 = celler(rows[0])[5], uge1 = celler(rows[1])[5];
-  tjek('P4 "Angreb denne uge": 45 (neutral) mod 36, +25 % i title (angreb, ikke alt afvist)', uge0.textContent === '45' && !uge0.querySelector('.op, .ned') && celler(rows[0])[6].textContent === '36' && uge0.title === '+25 % mod ugen før', uge0.outerHTML);
-  tjek('P4 "Angreb denne uge": 140 (neutral) mod 210, −33 % i title', uge1.textContent === '140' && !uge1.querySelector('.op, .ned') && celler(rows[1])[6].textContent === '210' && uge1.title === '−33 % mod ugen før', uge1.outerHTML);
+  tjek('P4 "Angreb denne uge": 45 (neutral) mod 36, +25 % i title (angreb, ikke alt afvist)', uge0.textContent === '45' && !uge0.querySelector('.op, .ned') && celler(rows[0])[6].textContent === '36' && uge0.querySelector('.uge-celle').title === '+25 % mod ugen før', uge0.outerHTML);
+  tjek('P4 "Angreb denne uge": 140 (neutral) mod 210, −33 % i title', uge1.textContent === '140' && !uge1.querySelector('.op, .ned') && celler(rows[1])[6].textContent === '210' && uge1.querySelector('.uge-celle').title === '−33 % mod ugen før', uge1.outerHTML);
   const th = [...d.querySelectorAll('#overblik-tabel thead th')].map(x => x.textContent);
   tjek('Overblik-tabel: overskrift i to niveauer: Afvist over i går, 7 og 30 dage, Angreb over denne uge og sidste uge', th.slice(3, 5).join() === 'Afvist,Angreb' && th.slice(6).join() === 'i går,7 dage,30 dage,denne uge,sidste uge', th.join(','));
   tjek('grå række: streger og "Ingen tal endnu"', rows[2].querySelector('.chip .ord').textContent === 'Ukendt' && hv(rows[2]).textContent === 'Ingen tal endnu – henter.' && celler(rows[2]).slice(2, 7).every(c => c.textContent === '–'));
@@ -189,7 +189,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   const sm = [...s.d.querySelectorAll('#overblik-raekker .hv-tekst')].map(x => x.textContent);
   tjek('P5 natten: "i forgårs … Opdateres …", Handl', sm[0] === '40 angreb i forgårs (snit 2) – alle stoppet. Mest et kendt hul i React (40). Bed din webmand tjekke, at siden er opdateret. Opdateres …' && s.d.querySelector('.chip .ord').textContent === 'Handl', sm[0]);
   tjek('P3 nul angreb: ingen årsag, ingen "alle stoppet"', sm[1] === 'Ingen angreb i går.', sm[1]);
-  tjek('P3 gamle tal: kun "Tallene er gamle" (ingen årsag, ingen title)', sm[2] === 'Tallene er gamle – henter nye.' && !s.d.querySelectorAll('#overblik-raekker td.hv')[2].title, sm[2]);
+  tjek('P3 gamle tal: kun "Tallene er gamle" (ingen årsag, ingen title)', sm[2] === 'Tallene er gamle – henter nye.' && !s.d.querySelectorAll('#overblik-raekker td.hv .hv-tekst')[2].title, sm[2]);
   tjek('P3 labyrint og andet nævnes, når de findes', sm[3] === '12 angreb i går (snit 1) – 11 af 12 stoppet (2 blokeret, 0 udfordret, 9 i labyrinten, 1 andet). Mest Egen regel (12).', sm[3]);
   tjek('P3 regelnavn og domæne som tekst (ingen HTML)', !s.d.querySelector('#overblik-raekker img, #overblik-raekker b') && sm[4].includes('<img src=x>'), sm[4]);
   tjek('P3/P4 ingen style= i overblikket', !s.d.getElementById('overblik-raekker').outerHTML.includes('style='));
@@ -894,7 +894,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   await sov(60);
   const hv0 = s.d.querySelectorAll('#overblik-raekker .hv-tekst')[0], hv1 = s.d.querySelectorAll('#overblik-raekker .hv-tekst')[1];
   tjek('F2 Hvorfor: samme klarsprogstekst lægges sammen (WordPress 12 + 3 → 15), sorteret efter summen', hv0.textContent === '24 angreb i går (snit 5) – alle stoppet. Mest angreb på WordPress (15) og et kendt hul i React (9). Bed din webmand tjekke, at WordPress og plugins er opdateret.', hv0.textContent);
-  tjek('F2 Hvorfor: egen regel med kort navn, hele beskrivelsen kun i title', hv1.textContent.includes('din egen regel »min-regel« (2)') && !hv1.textContent.includes('max 60') && hv1.closest('td').title.includes('2 min-regel: max 100 kald pr. minut pr. IP (20 pr. 10 s)')
+  tjek('F2 Hvorfor: egen regel med kort navn, hele beskrivelsen kun i title', hv1.textContent.includes('din egen regel »min-regel« (2)') && !hv1.textContent.includes('max 60') && hv1.closest('td').querySelector('.hv-tekst').title.includes('2 min-regel: max 100 kald pr. minut pr. IP (20 pr. 10 s)')
     && s.w.hmSprog.kortEgen('En meget lang regel uden kolon og tankestreg') === 'En meget lang regel ude…' && s.w.hmSprog.kortEgen('Bloker admin – kun fra kontoret') === 'Bloker admin' && s.w.hmSprog.kortEgen('abcdefghijklmnopqrstuvwxyz') === 'abcdefghijklmnopqrstuvw…' && s.w.hmSprog.kortEgen('abcdefghijklmnopqrstuvwx') === 'abcdefghijklmnopqrstuvwx', hv1.textContent);
   tjek('F2 Hvorfor: "(første gang)" i stedet for "(snit 0)"', hv1.textContent.startsWith('3 angreb i går (første gang) – alle stoppet.') && !s.d.getElementById('overblik-raekker').textContent.includes('snit 0'), hv1.textContent);
   // Ordlisten i sprog.js og i notify.rs (notifikationerne) er den samme, post for post; handlingsbogen dækker hver kategori.
@@ -1106,7 +1106,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const forkert = tal.filter(([a, b, v]) => f(a, b) !== v).map(([a, b]) => `${a}/${b}=${f(a, b)}`);
   tjek('Ugetal, ren funktion: rød kun ved ≥ 2× og ≥ 20, grøn kun ved ≤ ½ og ≥ 20 (14 tal)', forkert.length === 0, forkert.join());
   const rows = [...d.querySelectorAll('#overblik-raekker tr')], uge = r => celler(r)[5];
-  tjek('Ugetal, tabellen: 412/28 rød, 102/68 neutral (procenten i title), 10/60 grøn', uge(rows[0]).querySelector('.op') && !uge(rows[1]).querySelector('.op, .ned') && uge(rows[1]).title === '+50 % mod ugen før' && uge(rows[2]).querySelector('.ned'), uge(rows[1]).outerHTML);
+  tjek('Ugetal, tabellen: 412/28 rød, 102/68 neutral (procenten i title), 10/60 grøn', uge(rows[0]).querySelector('.op') && !uge(rows[1]).querySelector('.op, .ned') && uge(rows[1]).querySelector('.uge-celle').title === '+50 % mod ugen før' && uge(rows[2]).querySelector('.ned'), uge(rows[1]).outerHTML);
 }
 // ── Domænevælgeren i båndet ──
 {
@@ -1309,9 +1309,10 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   const ix = ui('index.html');
   tjek('B2b index.html: knapper er .btn (20; dialogernes bygger kittet), kontakter .tilfra (3), radioer .afk-boks i .valgsaet (12), og hver <select> står i .vliste (4)', (ix.match(/<button class="btn( primary| danger)?"/g) || []).length === 20 && (ix.match(/<input class="tilfra" type="checkbox" role="switch"/g) || []).length === 3 && (ix.match(/<label class="afk"><input class="afk-boks" type="radio"/g) || []).length === 12 && (ix.match(/class="valgsaet/g) || []).length === 4 && (ix.match(/<select/g) || []).length === 4 && (ix.match(/<span class="vliste"><select/g) || []).length === 4);
   const kitKode = ui('assets/kit2/kit.css');
-  tjek('B2b kittets klasser findes i kit.css, og app.css tegner dem ikke om', ['.btn {', '.btn.primary', '.btn.danger', '.chip.ok', '.chip.warn', '.chip.danger', '.chip.none', '.tilfra {', '.afk-boks {', '.valgsaet {', '.vliste select {', '.seg {', '.seg-v {'].every(s => kitKode.includes(s)) && !/(^|\n)\.(chip|tilfra|afk|afk-boks|valgsaet|vliste|seg|seg-v)\b[^{\n]*\{/.test(appCss) && /\n\.btn \{ white-space: nowrap; \}/.test(appCss));
+  tjek('B2b kittets klasser findes i kit.css, og app.css tegner dem ikke om', ['.btn {', '.btn.primary', '.btn.danger', '.chip.ok', '.chip.warn', '.chip.danger', '.chip.none', '.tilfra {', '.afk-boks {', '.valgsaet {', '.vliste select {', '.seg {', '.seg-v {'].every(s => kitKode.includes(s)) && !/(^|\n)\.(chip|tilfra|afk|afk-boks|valgsaet|vliste|seg|seg-v)\b[^{\n]*\{/.test(appCss) && !/\.btn\b/.test(appCss) && /\.btn \{[^}]*white-space: nowrap/.test(kitKode));
   /* V-KIT2.1 B2d: sideskiftet og de små tomme tilstande er kittets. Tabellerne venter på kittet (K36). */
   tjek('B2d intet i ui/ bygger sit eget sideskift, og de tomme tilstande i afsnit er kittets', uiKode.every(([, k]) => !/dyk-side-knap|dyk-side-nr|dyk-sider|className: '(email-tom|cf-tom|tek-tomt)'/.test(k)) && /window\.Kit\.sideskift\(/.test(ui('assets/visning-vaernet.js')) && /window\.Kit\.tomTilstand\(\{ tekst, lille: true \}\)/.test(ui('assets/vg-tegn.js')));
+  tjek('B2d (pakke 2.4.0) ingen visning bygger selv en <table> til tal: Overblik og læsetabellerne er Kit.tabel', uiKode.every(([f, k]) => !/el\('table', \{ className: 'vg-tabel|<table class="tabel"|class="tabel-rul"/.test(k)) && /raekkeHandling: 'aabn', layout: 'auto', fastFoerste: true/.test(ui('assets/visning-overblik.js')) && /raekkeHandling: 'ingen', layout: 'auto'/.test(ui('assets/vg-tegn.js')) && ui('assets/kit2/VERSION').trim() === '2.4.0');
   /* V-KIT2.1 B2c: dialoger, kasser, fliser og filterchips er kittets. */
   const gamleC = /<dialog|class="kort"|'vg-flise\b|\.vg-flise\b(?!r)|class="dialog|\.dialog\b(?!\()|dialog-knapper|showModal/;
   tjek('B2c intet i ui/ bruger programmets gamle dialoger, kort eller fliser', uiKode.every(([, k]) => !gamleC.test(k)), uiKode.filter(([, k]) => gamleC.test(k)).map(([f, k]) => f + ': ' + gamleC.exec(k)[0]).join(' | '));
@@ -1339,8 +1340,8 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   const muted = regler(alCss).filter(([s, k]) => k.includes('--color-text-muted') && forbudt.test(s)).map(([s]) => s);
   tjek('P1 --color-text-muted bruges ikke til tal, "Hvorfor", guiden eller dialogerne', muted.length === 0, muted.join(' | '));
   tjek('P1 "Hvorfor" står i --color-text', /\.tabel td\.hv \{[^}]*color: var\(--color-text\);/.test(appCss) && /\.hm-siden small \{[^}]*color: var\(--color-text\);/.test(appCss) && /\.dom p \{[^}]*color: var\(--color-text\);/.test(appCss));
-  tjek('P1 tabeller og "Hvorfor" følger md; brødteksten følger lg', /\.tabel th, \.tabel td \{[^}]*font-size: var\(--font-size-md\)/.test(appCss) && /body \{[^}]*font-size: var\(--font-size-lg\)/.test(appCss));
-  tjek('P1 ved smalt vindue: tabellen ruller i sin ramme, og båndets navn kan forkortes', /\.tabel-rul \{[^}]*overflow-x: auto/.test(appCss) && /\.titel b \{[^}]*text-overflow: ellipsis/.test(appCss));
+  tjek('P1 tabellen er kittets, og brødteksten følger lg', /\.tabel td\.hv \{/.test(appCss) && /body \{[^}]*font-size: var\(--font-size-lg\)/.test(appCss));
+  tjek('P1 ved smalt vindue: tabellen ruller i sin ramme, og båndets navn kan forkortes', /\.tabel-rul \{[^}]*overflow-x: auto/.test(ui('assets/kit2/kit.css')) && /\.titel b \{[^}]*text-overflow: ellipsis/.test(appCss));
   const konf = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8'));
   tjek('P1 visningsskiftet er kittets (tæt ved syv visninger; navnet afkortes med … i kit.css), og programmet sætter ingen fast højde på det', /\.skift\.taet \.vs > span \{[^}]*text-overflow: ellipsis/.test(ui('assets/kit2/kit.css')) && !/\.vs \{[^}]*height/.test(appCss) && !/\.nav a \{/.test(appCss));
   tjek('P1 <code> kommer aldrig under skalaens mindste trin (.9em af 13 px ville give 11,7 px ved Lille)', !/font-size: *\.\d+em/.test(alCss) && (alCss.match(/font-size: max\(\.9em, var\(--font-size-xs\)\)/g) || []).length === 2);
@@ -1560,6 +1561,9 @@ const ROBOT_DYK = dykSvar({ regler: [], top: { regel: [], land: [], netvaerk: []
   tjek('D stien står renset som <code>', alle('code.vg-l-navn').some(e => e.textContent === '/wp-config%2ephp'));
   tjek('D andre domæner: overskrift og tal', alle('.vg-blok h2').some(h => h.textContent === 'Samme regel på dine andre domæner') && q('.dyk-andre .vg-l-n').textContent === '92');
   tjek('D de seneste: tabel uden regelkolonne ved regel-filter', [...q('#vg-seneste .vg-tabel thead').querySelectorAll('th')].map(t => t.textContent).join() === 'Tidspunkt (UTC, hel time),Land,Sti,Datacenter,Metode');
+  { const tb = q('#vg-seneste table'), rul = tb && tb.parentElement;
+    tjek('B2d De seneste: kittets tabel uden rækkevalg (ingen rolle, intet Tab-stop på rækkerne) i kittets rulleramme med navn', tb && tb.className === 'tabel uden-valg layout-auto vg-tabel' && !tb.hasAttribute('role') && [...tb.tBodies[0].rows].every(r => !r.hasAttribute('tabindex') && !r.hasAttribute('aria-selected')) && rul.className === 'tabel-rul vg-tabel-rul' && rul.getAttribute('aria-label') === 'De seneste, der blev afvist' && tb.tBodies[0].querySelector('td button[data-dyk]'), tb && tb.outerHTML.slice(0, 200));
+  }
   tjek('D ingen style= og ingen <text> i dyk', !d.getElementById('visning-vaernet').outerHTML.includes('style=') && !q('svg text'));
   const svgs = alle('svg');
   tjek('D tegninger: ét Tab-stop pr. tegning, role=group', svgs.length === 2 && svgs.every(x => x.querySelectorAll('[tabindex="0"]').length === 1 && x.getAttribute('role') === 'group'), svgs.map(x => x.querySelectorAll('[tabindex="0"]').length).join());
@@ -1864,10 +1868,10 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('Ét klikmål: Hvorfor-teksten som helhed er ikke et mål', !rows[0].querySelector('.hv-tekst [data-dyk]') && !rows[0].querySelector('.hv-knap'));
   tjek('Klik, Overblik: Hvorfor uden tal er tekst', !rows[2].querySelector('td.hv button'));
   tjek('Klik, Overblik: aria-label siger domæne, tal og handling', knapper(rows[0])[0].getAttribute('aria-label') === 'wi24rd.com, afvist i går: 1.260. Åbn.', knapper(rows[0])[0].getAttribute('aria-label'));
-  tjek('Overblik-tabel: streger: grupperne .sep, hver talkolonne .tal-kol, også i overskriften', [...d.querySelectorAll('#overblik-tabel thead tr:last-child th')].every(t => t.matches('.tal-kol')) && [...d.querySelectorAll('#overblik-tabel thead tr:last-child th.sep')].length === 2 && celler(rows[0]).slice(2, 7).every(c => c.matches('.tal-kol')) && celler(rows[0]).filter(c => c.matches('.sep')).length === 2);
-  tjek('Overblik-tabel: grupperne spænder over 3 og 2 kolonner', [...d.querySelectorAll('th.gruppe')].map(t => t.colSpan + t.getAttribute('scope')).join() === '3colgroup,2colgroup' && d.querySelectorAll('#overblik-tabel colgroup').length === 4);
+  tjek('Overblik-tabel: streger: en skillelinje før hver gruppe (kittets .kol-skille), hver talkolonne .tal-kol med fast bredde (.kol-s), også i overskriften', [...d.querySelectorAll('#overblik-tabel thead tr:last-child th')].every(t => t.matches('.tal-kol.kol-s.r')) && [...d.querySelectorAll('#overblik-tabel thead tr:last-child th.kol-skille')].length === 2 && celler(rows[0]).slice(2, 7).every(c => c.matches('.tal-kol.kol-s.r')) && celler(rows[0]).filter(c => c.matches('.kol-skille')).length === 2);
+  tjek('Overblik-tabel: grupperne spænder over 3 og 2 kolonner', [...d.querySelectorAll('#overblik-tabel th.kolgruppe')].map(t => t.colSpan + t.getAttribute('scope')).join() === '3colgroup,2colgroup' && d.querySelectorAll('#overblik-tabel colgroup').length === 6 && d.querySelectorAll('#overblik-tabel col.kol-s').length === 5);
   const css = udenKommentarer(ui('assets/app.css'));
-  tjek('Overblik-tabel: CSS: svag streg med --color-border, tydelig med --color-border-strong, fast bredde', /\.tabel \.tal-kol \{[^}]*width: calc[^}]*min-width: calc[^}]*border-left: 1px solid var\(--color-border\)/.test(css) && /\.tabel \.sep, \.tabel \.tal-kol\.sep \{ border-left: 2px solid var\(--color-border-strong\)/.test(css));
+  { const led = [() => d.getElementById('overblik-tabel').className === 'tabel layout-auto fast-foerste', () => d.getElementById('overblik-tabel').getAttribute('role') === 'grid', () => d.getElementById('overblik-rul').className === 'tabel-rul', () => d.querySelector('#overblik-tabel caption.skjult-tekst').textContent === 'Dine domæner med tal fra den lokale cache', () => rows.every(r => !r.hasAttribute('aria-selected')), () => rows.filter(r => r.tabIndex === 0).length === 1, () => !/\.tabel (th|td|thead th|\.sep)[ ,{]|\.tabel \{|\.tabel-rul/.test(css), () => /\.tabel \.kol-skille \{ border-left: 2px solid var\(--border-strong\)/.test(ui('assets/kit2/kit.css'))].map(f => { try { return Boolean(f()); } catch (e) { return false; } }); tjek('Overblik-tabel: er kittets (rækker, der åbner; layout auto; fast første kolonne; rulleramme), og app.css tegner ikke tabellen om', led.every(Boolean), led.map((x, i) => (x ? '' : i)).filter(x => x !== '').join()); }
   // Fokus bliver på tallet, når tabellen tegnes om.
   knapper(rows[0])[3].focus();
   w.hmRamme.udsend('raekker', rk);
@@ -2055,7 +2059,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('Q3.2 "Først set" over hele historikken for ét domæne og for det samlede', (lib.match(/ud\.lister\.med_historik\(&lager\.fw_datoer\(/g) || []).length === 2);
   tjek('Klik, menulinjen: statuslinjen åbner vinduet på Overblik', /agent::STATUS => \{\s*let _ = aabn_vindue\(app\);\s*let _ = app\.emit\("visning", "overblik"\);/.test(lib));
   const app = udenKommentarer(ui('assets/app.css'));
-  tjek('Klik, rækker og sidebjælke har pointer; et slået-fra punkt har ikke', /\.tabel tbody tr \{ cursor: pointer; \}/.test(app) && /\.vs\[aria-disabled="true"\] \{[^}]*cursor: default/.test(app));
+  tjek('Klik, rækker og sidebjælke har pointer; et slået-fra punkt har ikke', /\.tabel tbody tr:not\(\.gruppe\) \{ cursor: pointer; \}/.test(ui('assets/kit2/kit.css')) && /\.vs\[aria-disabled="true"\] \{[^}]*cursor: default/.test(app));
 }
 
 // Logoet.
@@ -2122,16 +2126,16 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   const svar = x => DYK({ overblik: rk, siden_sidst: { vis: false, nye: [], raekker: rk }, siden_sidst_set: null, zones_cache: { zoner: rk, hentet: NU_ISO }, ...x });
   const css = udenKommentarer(ui('assets/app.css'));
   tjek('F2 CSS: .domaene står på én linje og afskæres med …', /\.domaene \{[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap/.test(css));
-  tjek('F2 CSS: grænsen i Overblik er 24 tegn, og kolonnen har kun plads til navnet', /\.tabel \.domaene \{ max-width: 24ch; \}/.test(css) && /\.tabel tbody th \{ width: 1%;/.test(css));
+  tjek('F2 CSS: grænsen i Overblik er 24 tegn, og kolonnen har kun plads til navnet', /\.tabel \.domaene \{ max-width: 24ch; \}/.test(css) && /#overblik-tabel tbody th \{ width: 1%;/.test(css));
   tjek('F2 CSS: domænenavne må ikke brydes vilkårligt', !/\.tabel tbody th \{[^}]*overflow-wrap/.test(css) && !/\.hm-siden b \{[^}]*overflow-wrap/.test(css) && /\.dom-navn \{[^}]*white-space: nowrap/.test(css));
   const o = side('#overblik', svar());
   await sov(80);
   const th = [...o.d.querySelectorAll('#overblik-raekker th')], sp = th[1].querySelector('.domaene');
-  tjek('F2 Overblik: navnet har fuldt navn i title, og cellen i aria-label', sp.textContent === LANGT && sp.title === LANGT && th[1].getAttribute('aria-label') === LANGT, th[1].outerHTML.slice(0, 200));
+  tjek('F2 Overblik: navnet har fuldt navn i title og står i rækkehovedet', sp.textContent === LANGT && sp.title === LANGT && th[1].getAttribute('scope') === 'row' && th[1].textContent === LANGT, th[1].outerHTML.slice(0, 200));
   o.emit('hentekoe', { zone: 'z2', navn: LANGT, doegn_faerdige: 1, doegn_i_alt: 9, zoner_faerdige: 0, zoner_i_alt: 2, zoner_fejl: 0, tilstand: 'henter' });
   await sov(2100);
   const th2 = [...o.d.querySelectorAll('#overblik-raekker th')][1];
-  tjek('F2 Overblik: "henter …" står stadig ved navnet og i aria-label', th2.querySelector('.raekke-henter') && th2.getAttribute('aria-label') === `${LANGT} henter …`, th2.getAttribute('aria-label'));
+  tjek('F2 Overblik: "henter …" står stadig ved navnet i rækkehovedet', th2.querySelector('.raekke-henter') && th2.getAttribute('scope') === 'row' && th2.textContent === `${LANGT}henter …`, th2.textContent);
   const si = side('#siden-sidst', svar());
   await sov(100);
   const kort = [...si.d.querySelectorAll('.hm-siden-aabn')][1];
@@ -4106,7 +4110,7 @@ const DOMV = (fravalgte = [], x) => {
     await sov(120);
     tjek('Trafik og huller, Angreb: et hul er markeret og kan ikke åbnes, aldrig som 0', ah.d.querySelectorAll('#vagt .dyk-uhentet').length === 2 && !ah.d.querySelector('#vagt .dyk-uhentet[data-dyk]') && ah.d.querySelector('#vagt .dyk-uhentet title').textContent.endsWith('ingen data — Huginn var slukket'), ah.d.querySelector('#vagt .dyk-uhentet title')?.textContent);
     tjek('Trafik og huller, Angreb: fliserne siger "N af M dage"', ah.d.querySelector('#vagt').textContent.includes('6 af 7 dage') && ah.d.querySelector('#vagt').textContent.includes('28 af 30 dage'));
-    const hr = [...ah.d.querySelectorAll('#vagt .hul-raekke')];
+    const hr = [...ah.d.querySelectorAll('#vagt tr[data-raekke="hul-raekke"]')];
     tjek('Trafik og huller, Angreb: tabellen skriver "ingen data", ikke 0, og uden knapper', hr.length === 2 && hr[0].querySelectorAll('td')[0].textContent === 'ingen data' && !hr[0].querySelector('button'));
     const dS = dykSvar({ periode: { ...P, dage: 30, med: 27 }, noegletal: { i_gaar: 6, i_dag_hidtil: 2, hele7: 57, hele30: 198, alt: 240, med7: 6, med30: 27 } }), dh = side('#dyk?' + dykQ(), DYK({ dyk: () => dS }));
     await sov(90);
@@ -4802,8 +4806,8 @@ const DOMV = (fravalgte = [], x) => {
   tjek('V-TOKEN.1 B2: spørger om domænet og perioden', JSON.stringify(t1.kald.find(k => k[0] === 'sti200_oversigt')[1]) === JSON.stringify({ zone: 'z1', fra: t1.kald.find(k => k[0] === 'email_oversigt')[1].fra, til: t1.kald.find(k => k[0] === 'email_oversigt')[1].til }), JSON.stringify(t1.kald.find(k => k[0] === 'sti200_oversigt')));
   tjek('V-TOKEN.1 B2+B3: kun for ét domæne og uden filter (linjen nævner dem)', !s2p(t8) && !cfp(t8) && !t8.kald.some(k => k[0] === 'sti200_oversigt' || k[0] === 'sikkerhedsfund_oversigt') && !s2p(t9) && (t9.d.querySelector('.ang-skjult')?.textContent || '').includes('Følsomme filer, der svarede 200') && t9.d.querySelector('.ang-skjult').textContent.includes('Cloudflares egne fund'), t9.d.querySelector('.ang-skjult')?.textContent);
   const cfl = x => [...cfp(x).querySelectorAll('.cf-liste li')];
-  tjek('V-TOKEN.1 B3: fundene med alvor, titel og dato, højeste først', cfl(t1).map(li => li.textContent).join(';') === '?Kritisk Always Use HTTPS er ikke slået til · siden 24. april;–Lav ny klasse fra cloudflare · siden 24. april' && cfl(t1)[0].querySelector('.chip .ord').textContent === 'Kritisk' && cfl(t1)[0].querySelector('.chip.danger') && cfl(t1)[1].querySelector('.chip.none'), cfl(t1).map(li => li.textContent).join(';'));
-  tjek('V-TOKEN.1 B3: engelsk', cfl(t2)[0].textContent.startsWith('?Critical Always Use HTTPS is not turned on') && cfp(t2).querySelector('h2').textContent === 'Cloudflare’s own findings', cfl(t2)[0]?.textContent);
+  tjek('V-TOKEN.1 B3: fundene med alvor, titel og dato, højeste først', cfl(t1).map(li => li.textContent).join(';') === '×Kritisk Always Use HTTPS er ikke slået til · siden 24. april;–Lav ny klasse fra cloudflare · siden 24. april' && cfl(t1)[0].querySelector('.chip .ord').textContent === 'Kritisk' && cfl(t1)[0].querySelector('.chip.danger') && cfl(t1)[1].querySelector('.chip.none'), cfl(t1).map(li => li.textContent).join(';'));
+  tjek('V-TOKEN.1 B3: engelsk', cfl(t2)[0].textContent.startsWith('×Critical Always Use HTTPS is not turned on') && cfp(t2).querySelector('h2').textContent === 'Cloudflare’s own findings', cfl(t2)[0]?.textContent);
   const cfb = cfp(t1).querySelector('.cf-fund');
   tjek('V-TOKEN.1 B3: hvert fund er klikbart med aria-label', cfp(t1).querySelectorAll('.cf-fund').length === 2 && cfb.tagName === 'BUTTON' && cfb.classList.contains('link') && cfb.getAttribute('aria-label') === 'Åbn fundet hos Cloudflare: Always Use HTTPS er ikke slået til', cfb?.outerHTML);
   cfb.click();

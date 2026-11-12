@@ -90,8 +90,6 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .titelrad h1 { font-size: var(--font-size-title); }
 .titelrad .under { color: var(--color-text); }
 .titelrad .hoejre { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-/* Knapper er kittets (.btn, .primary, .danger). KIT-ØNSKE K29: en knaps tekst må ikke ombrydes (kittets .btn har fast højde). */
-.btn { white-space: nowrap; }
 .link { padding: 0; border: 0; background: none; color: var(--color-accent-text); font-weight: 600; cursor: pointer; min-height: 24px; }
 .luk { min-width: 24px; min-height: 24px; padding: 0 4px; border: 0; border-radius: var(--control-radius); background: none; color: var(--color-text-muted); font-size: var(--font-size-xl); line-height: 1; cursor: pointer; }
 .luk:hover { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
@@ -127,30 +125,17 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .dom-overskrift { display: block; margin-bottom: 2px; font-size: var(--font-size-xl); }
 .dom p { margin: 0; max-width: none; color: var(--color-text); }
 .dom-handling { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
-/* position: relative holder .sr-only inde i boksen: ellers ruller den hele siden vandret, når tabellen er bredere end vinduet. */
-.tabel-rul { position: relative; overflow-x: auto; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); }
-.tabel { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; font-variant-numeric: tabular-nums; }
-/* Programmets tabel deler navn med kittets (skifter til Kit.tabel i komponent-trinnet): her nulstilles det, kittets .tabel th ellers lægger på. */
-.tabel th { background: none; color: inherit; letter-spacing: normal; text-transform: none; }
-.tabel th, .tabel td { height: var(--row-height); padding: 0 12px; border-bottom: 1px solid var(--color-border); font-size: var(--font-size-md); text-align: right; white-space: nowrap; }
-.tabel thead th { height: 34px; padding-top: 4px; padding-bottom: 4px; background: var(--color-field); color: var(--color-text-muted); font-size: var(--font-size-sm); font-weight: 600; line-height: 1.25; white-space: normal; vertical-align: bottom; }
-/* To niveauer: Afvist over i går · 7 · 30, Angreb over denne uge · sidste uge. Svag streg mellem talkolonnerne, tydelig mellem grupperne. */
-.tabel thead th.gruppe { height: 26px; color: var(--color-text); text-align: center; }
-.tabel .tal-kol { width: calc(var(--font-size-md) * 4.6); min-width: calc(var(--font-size-md) * 4.6); padding-left: 8px; padding-right: 8px; border-left: 1px solid var(--color-border); }
-.tabel .v, .tabel tbody th { text-align: left; }
-.tabel tbody th { width: 1%; font-weight: 600; } /* kun plads til navnet; Hvorfor tager resten */
+/* Overblik er kittets tabel (Kit.tabel: rækker, der åbner; layout auto; domænet står fast i Kit.tabelRul). Her står kun programmets eget: rammen om tabellen og cellernes indhold. */
+#overblik-rul { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); }
+#overblik-tabel tbody th { width: 1%; white-space: nowrap; } /* kun plads til navnet; Hvorfor tager resten */
 .tabel .domaene { max-width: 24ch; }
-.tabel td.st { width: 100px; text-align: left; }
-.tabel td.hv { min-width: 200px; padding-top: 6px; padding-bottom: 6px; text-align: left; white-space: normal; color: var(--color-text); }
-.tabel .chev { width: 28px; padding: 0 8px 0 0; color: var(--color-text-disabled); }
+.tabel .tal-kol { white-space: nowrap; }
+.tabel th.tal-kol { white-space: normal; } /* "denne uge" på to linjer, så Hvorfor får pladsen */
+.tabel td.hv { min-width: 200px; padding-top: 6px; padding-bottom: 6px; white-space: normal; color: var(--color-text); }
+.tabel .chev { padding: 0 8px 0 0; color: var(--text-disabled); }
 .tabel .chev .ik { width: 15px; height: 15px; vertical-align: -3px; opacity: 0; }
-.tabel tbody tr { cursor: pointer; }
-.tabel tbody tr:hover > *, .tabel tbody tr:focus-visible > * { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
-.tabel tbody tr:active > * { box-shadow: var(--press-shadow); }
-.tabel tbody tr:focus-visible { outline-offset: -2px; }
 .tabel tbody tr:hover .chev .ik, .tabel tbody tr:focus-visible .chev .ik { opacity: 1; color: var(--color-accent-text); }
 .tabel tbody tr:last-child > * { border-bottom: 0; }
-.tabel .sep, .tabel .tal-kol.sep { border-left: 2px solid var(--color-border-strong); }
 .tal-knap { padding: 0; border: 0; background: none; color: inherit; font: inherit; min-height: 24px; text-align: right; }
 /* Teksten er blandet med små links, som line-clamp ikke kan folde: højden er 3 linjer. */
 .hv-tekst { max-height: 4.2em; overflow: hidden; line-height: 1.4; }
@@ -284,10 +269,7 @@ button.chip-knap:hover:not(:disabled) { box-shadow: inset 0 0 0 100vmax var(--co
 
 /* Smalt vindue: Overblikket ruller i sin boks, og domænet bliver stående. */
 @media (max-width: 1099px) {
-  .tabel-rul { scroll-padding-left: calc(24ch + 24px); }
-  .tabel thead th:first-child, .tabel tbody th { position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--color-border); }
-  .tabel tbody th { background-color: var(--color-surface); }
-  .tabel tbody tr:hover > th, .tabel tbody tr:focus-visible > th { background-color: var(--color-surface); background-image: linear-gradient(var(--color-hover), var(--color-hover)); }
+  #overblik-rul { scroll-padding-left: calc(24ch + 24px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

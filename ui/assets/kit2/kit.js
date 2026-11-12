@@ -82,7 +82,8 @@
   }
 
   /* ── StatusChip: symbolet følger varianten, så status aldrig hviler på farven alene. ── */
-  const SYMBOL = { ok: '✓', warn: '!', danger: '?', info: 'i', none: '–' };
+  /* Fra 2.4.0 er danger × (før ?, der læses som et spørgsmål eller "ukendt", ikke som en fejl). Banneret er uændret. */
+  const SYMBOL = { ok: '✓', warn: '!', danger: '×', info: 'i', none: '–' };
   function chip(variant, ord) {
     if (!(variant in SYMBOL)) throw new Error('ukendt chip-variant: ' + variant);
     const c = el('span', 'chip ' + variant);
@@ -157,20 +158,68 @@
      - To hovedrækker: kolonnegrupper: [{ id, t|tekst }] og gruppe: id på kolonnerne. Hver gruppe får en overskrift over
        sine kolonner (scope="colgroup", colspan, og en <colgroup>); en kolonne uden gruppe står i begge rækker (rowspan).
      - t.saetRaekker(raekker) bygger rækkerne om uden at røre hovedet (fokus på en sorteringsknap bliver), og
-       t.saetSortering(kolonne, retning) sætter sorteringen udefra uden at kalde vedSortering. */
+       t.saetSortering(kolonne, retning) sætter sorteringen udefra uden at kalde vedSortering.
+     Fra 2.4.0, kun med de nye indstillinger (uden dem er tabellen stadig præcis som i 2.0.0):
+     - raekkeHandling: 'vaelg' (standard, som før) | 'aabn' | 'ingen'. Navnet er ikke raekker, fordi raekker er listen.
+       'aabn': rækken er et mål, der åbner noget: vedAabn(række, data) ved klik, Enter og mellemrum; ingen aria-selected
+       og ingen .sel; piletasterne (op, ned, Home, End) flytter kun fokus. Tabellen er stadig role="grid": det er rollen
+       for en tabel, man bevæger sig rundt i med piletasterne, og den får skærmlæseren til at lade piletasterne gå til
+       tabellen i stedet for til sin egen læsemarkør. Et klik på et link, en knap eller et felt i en celle åbner ikke
+       rækken, og Enter på dem går til dem selv. saetRaekker beholder fokus på rækken med samme data (ellers samme plads).
+       'ingen': en almindelig <table> (ingen role, ingen tabindex på rækkerne, ingen markør og ingen hover; .uden-valg).
+     - Kolonner: hoved: true giver <th scope="row"> i rækkerne; klasse (på hoved- og kropscellerne); bredde: 'xs' | 's'
+       | 'm' | 'l' | 'xl' giver en <col class="kol-…"> og samme klasse på cellerne (faste bredder som klasser: kittet
+       sætter aldrig inline-stil; med layout: 'auto' holder kun cellernes min-width, når tabellen er for bred, målt i WebKit).
+       kolonnegrupper: [{ id, t, skille: true }] giver en skillelinje før gruppens første kolonne (.kol-skille).
+     - Rækker: attr: { 'data-…': værdi } (kun data-*; andet giver en fejl, fordi role, tabindex, aria-*, class og style er
+       kittets tilstand, og on* og style ville gå uden om kittets regler) og titel/titelT (rækkens title).
+     - titelT/titel: tabellens navn som <caption class="skjult-tekst"> (kun for skærmlæsere: tabellen står altid under en
+       synlig overskrift i en kasse eller et panel, og en synlig caption ville sige det samme to gange).
+     - layout: 'auto' (.layout-auto, table-layout: auto; standard er fast som før) og fastFoerste: true (.fast-foerste:
+       første kolonne står fast, når tabellen ruller vandret i Kit.tabelRul; den må ikke være i en kolonnegruppe). */
+  const RAEKKE_HANDLING = ['vaelg', 'aabn', 'ingen'];
+  const BREDDER = ['xs', 's', 'm', 'l', 'xl'];
+  const I_CELLEN = 'a[href],button,input,select,textarea,label,summary,[role="button"],[role="link"]';
+  const DATA_ATTR = /^data-[a-z0-9]+(?:-[a-z0-9]+)*$/;
   function tabel(o) {
+    const art = o.raekkeHandling == null ? 'vaelg' : o.raekkeHandling;
+    if (!RAEKKE_HANDLING.includes(art)) throw new Error('ukendt raekkeHandling: ' + art);
+    if (o.layout != null && o.layout !== 'fast' && o.layout !== 'auto') throw new Error('ukendt layout: ' + o.layout);
+    for (const k of o.kolonner) if (k.bredde != null && !BREDDER.includes(k.bredde)) throw new Error('ukendt bredde: ' + k.bredde);
+    if (o.fastFoerste && o.kolonner[0] && o.kolonner[0].gruppe != null) throw new Error('fastFoerste: første kolonne må ikke være i en kolonnegruppe');
     const t = el('table', 'tabel');
+    if (art === 'ingen') t.classList.add('uden-valg');
+    if (o.layout === 'auto') t.classList.add('layout-auto');
+    if (o.fastFoerste) t.classList.add('fast-foerste');
+    if (o.titelT || o.titel != null) t.appendChild(el('caption', 'skjult-tekst', o.titelT ? { t: o.titelT } : o.titel));
+    const grupperAf = new Map((o.kolonnegrupper || []).map(g => [g.id, g]));
+    const toRaekker = Boolean(o.kolonnegrupper) && o.kolonner.some(k => k.gruppe != null);
+    const skilleFoer = new Set();
+    if (toRaekker) o.kolonner.forEach((k, i) => {
+      const g = k.gruppe != null ? grupperAf.get(k.gruppe) : null;
+      if (g && g.skille && (i === 0 || o.kolonner[i - 1].gruppe !== k.gruppe)) skilleFoer.add(i);
+    });
+    const kolKlasse = (i, mono) => {
+      const k = o.kolonner[i] || {};
+      return [k.tal ? 'r' : '', mono ? 'mono' : '', k.klasse || '', k.bredde ? 'kol-' + k.bredde : '', skilleFoer.has(i) ? 'kol-skille' : ''].filter(Boolean).join(' ');
+    };
+    const medBredde = o.kolonner.some(k => k.bredde != null);
+    const kol = i => {
+      const c = document.createElement('col');
+      if (o.kolonner[i].bredde) c.className = 'kol-' + o.kolonner[i].bredde;
+      return c;
+    };
     const thead = document.createElement('thead');
     const sortHoveder = [];
     const retningAf = r => (r === 'faldende' ? 'faldende' : 'stigende');
     let sortering = o.sortering && o.sortering.kolonne != null ? { kolonne: o.sortering.kolonne, retning: retningAf(o.sortering.retning) } : null;
     function hoved(k, i) {
       if (!k.sort) {
-        const th = el('th', k.tal ? 'r' : null, tekstAf(k));
+        const th = el('th', kolKlasse(i) || null, tekstAf(k));
         th.scope = 'col';
         return th;
       }
-      const th = el('th', k.tal ? 'r' : null);
+      const th = el('th', kolKlasse(i) || null);
       th.scope = 'col';
       const b = el('button', 'sorter');
       b.type = 'button';
@@ -190,8 +239,8 @@
         s.pil.textContent = on ? (sortering.retning === 'faldende' ? '▼' : '▲') : '↕';
       }
     }
-    if (o.kolonnegrupper && o.kolonner.some(k => k.gruppe != null)) {
-      const navne = new Map(o.kolonnegrupper.map(g => [g.id, g]));
+    if (toRaekker) {
+      const navne = grupperAf;
       const loeb = [];
       o.kolonner.forEach((k, i) => {
         const sidste = loeb[loeb.length - 1];
@@ -201,14 +250,16 @@
       const r1 = document.createElement('tr'), r2 = document.createElement('tr');
       for (const l of loeb) {
         const cg = document.createElement('colgroup');
-        if (l.kol.length > 1) cg.span = l.kol.length;
+        if (medBredde) for (const i of l.kol) cg.appendChild(kol(i));
+        else if (l.kol.length > 1) cg.span = l.kol.length;
         t.appendChild(cg);
         if (l.gruppe == null) {
           const th = hoved(o.kolonner[l.kol[0]], l.kol[0]);
           th.rowSpan = 2;
           r1.appendChild(th);
         } else {
-          const th = el('th', 'kolgruppe', tekstAf(navne.get(l.gruppe) || { tekst: String(l.gruppe) }));
+          const g = navne.get(l.gruppe);
+          const th = el('th', 'kolgruppe' + (g && g.skille ? ' kol-skille' : ''), tekstAf(g || { tekst: String(l.gruppe) }));
           th.scope = 'colgroup';
           th.colSpan = l.kol.length;
           r1.appendChild(th);
@@ -217,13 +268,26 @@
       }
       thead.append(r1, r2);
     } else {
+      if (medBredde) {
+        const cg = document.createElement('colgroup');
+        o.kolonner.forEach((k, i) => cg.appendChild(kol(i)));
+        t.appendChild(cg);
+      }
       const hr = document.createElement('tr');
       o.kolonner.forEach((k, i) => hr.appendChild(hoved(k, i)));
       thead.appendChild(hr);
     }
     const tbody = document.createElement('tbody');
     const valgbare = [];
+    /* 'aabn': én række kan nås med Tab ad gangen (tabindex 0), de andre har -1. */
+    const saetStop = tr => { for (const x of valgbare) x.tabIndex = x === tr ? 0 : -1; };
     function bygRaekker(raekker) {
+      let foerData, foerPlads = -1, foerFokus = false;
+      if (art === 'aabn') {
+        const a = document.activeElement, tr = a && a.closest ? a.closest('tr') : null;
+        const fra = tr && valgbare.includes(tr) ? tr : valgbare.find(x => x.tabIndex === 0);
+        if (fra) { foerData = fra.__data; foerPlads = valgbare.indexOf(fra); foerFokus = fra === tr; }
+      }
       tbody.textContent = '';
       valgbare.length = 0;
       for (const r of raekker || []) {
@@ -240,19 +304,34 @@
           tr.appendChild(td);
         } else {
           r.celler.forEach((c, i) => {
-            const td = document.createElement('td');
-            const kl = [o.kolonner[i] && o.kolonner[i].tal ? 'r' : '', (r.mono || []).includes(i) ? 'mono' : ''].filter(Boolean).join(' ');
+            const erHoved = Boolean(o.kolonner[i] && o.kolonner[i].hoved);
+            const td = document.createElement(erHoved ? 'th' : 'td');
+            const kl = kolKlasse(i, (r.mono || []).includes(i));
             if (kl) td.className = kl;
+            if (erHoved) td.scope = 'row';
             if (c instanceof Node) td.appendChild(c);
             else td.textContent = c == null ? '' : String(c);
             tr.appendChild(td);
           });
-          tr.tabIndex = valgbare.length ? -1 : 0;
-          tr.setAttribute('aria-selected', 'false');
+          if (art !== 'ingen') tr.tabIndex = valgbare.length ? -1 : 0;
+          if (art === 'vaelg') tr.setAttribute('aria-selected', 'false');
+          if (r.attr) {
+            for (const [navn, v] of Object.entries(r.attr)) {
+              if (!DATA_ATTR.test(navn)) throw new Error('en række tager kun data-*-attributter: ' + navn);
+              tr.setAttribute(navn, String(v));
+            }
+          }
+          if (r.titelT) tr.setAttribute('data-t-title', r.titelT);
+          else if (r.titel != null) tr.title = String(r.titel);
           tr.__data = r.data;
           valgbare.push(tr);
         }
         tbody.appendChild(tr);
+      }
+      if (art === 'aabn' && foerPlads >= 0 && valgbare.length) {
+        const igen = valgbare.find(x => foerData !== undefined && Object.is(x.__data, foerData)) || valgbare[Math.min(foerPlads, valgbare.length - 1)];
+        saetStop(igen);
+        if (foerFokus) igen.focus();
       }
     }
     bygRaekker(o.raekker);
@@ -279,27 +358,86 @@
       if (fokus) tr.focus();
       if (o.vedValg) o.vedValg(tr, tr.__data);
     }
-    tbody.addEventListener('click', e => {
-      const tr = e.target.closest('tr');
-      if (tr && valgbare.includes(tr) && !e.target.closest('input,button,select,textarea')) vaelg(tr, true);
-    });
-    tbody.addEventListener('keydown', e => {
-      const i = valgbare.indexOf(e.target);
-      if (i < 0) return;
-      const ny = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: valgbare.length - 1 }[e.key];
-      if (ny == null) return;
-      e.preventDefault();
-      vaelg(valgbare[Math.max(0, Math.min(valgbare.length - 1, ny))], true);
-    });
-    t.setAttribute('role', 'grid');
+    if (art === 'vaelg') {
+      tbody.addEventListener('click', e => {
+        const tr = e.target.closest('tr');
+        if (tr && valgbare.includes(tr) && !e.target.closest('input,button,select,textarea')) vaelg(tr, true);
+      });
+      tbody.addEventListener('keydown', e => {
+        const i = valgbare.indexOf(e.target);
+        if (i < 0) return;
+        const ny = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: valgbare.length - 1 }[e.key];
+        if (ny == null) return;
+        e.preventDefault();
+        vaelg(valgbare[Math.max(0, Math.min(valgbare.length - 1, ny))], true);
+      });
+    } else if (art === 'aabn') {
+      const aabn = tr => {
+        saetStop(tr);
+        if (o.vedAabn) o.vedAabn(tr, tr.__data);
+      };
+      tbody.addEventListener('click', e => {
+        const tr = e.target.closest('tr');
+        if (!tr || !valgbare.includes(tr)) return;
+        const indre = e.target.closest(I_CELLEN);
+        if (indre && tr.contains(indre)) return;
+        aabn(tr);
+      });
+      tbody.addEventListener('keydown', e => {
+        const i = valgbare.indexOf(e.target);
+        if (i < 0) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          aabn(valgbare[i]);
+          return;
+        }
+        const ny = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: valgbare.length - 1 }[e.key];
+        if (ny == null) return;
+        e.preventDefault();
+        const tr = valgbare[Math.max(0, Math.min(valgbare.length - 1, ny))];
+        saetStop(tr);
+        tr.focus();
+      });
+    }
+    if (art !== 'ingen') t.setAttribute('role', 'grid');
     if (o.ariaT) t.setAttribute('data-t-aria', o.ariaT);
-    t.vaelg = i => vaelg(valgbare[i], false);
+    t.vaelg = i => { if (art === 'vaelg') vaelg(valgbare[i], false); };
     t.saetRaekker = raekker => bygRaekker(raekker);
     t.saetSortering = (kolonne, retning) => {
       sortering = kolonne == null ? null : { kolonne, retning: retningAf(retning) };
       tegnSortering();
     };
     return t;
+  }
+
+  /* ── Rulleramme (fra 2.4.0, hører til DataTable) ── En ramme om en tabel, der ruller vandret, når vinduet er for
+     smalt (.tabel-rul). Når den ruller, er den et område med navn (role="region", aria-label) og kan nås med Tab, så
+     den kan rulles med piletasterne; når den ikke ruller, er den hverken et område eller et Tab-stop. Det måles, når
+     rammen eller tabellen skifter størrelse (ResizeObserver), og når programmet kalder maal(). Navnet er påkrævet.
+     o: { ariaT|aria }. Returnerer { rod, tabel, maal } (maal() giver true, når rammen ruller). */
+  function tabelRul(tabelEl, o) {
+    o = o || {};
+    if (!o.ariaT && !o.aria) throw new Error('rullerammen skal have et navn (ariaT eller aria)');
+    const rod = el('div', 'tabel-rul');
+    aria(rod, o);
+    rod.appendChild(tabelEl);
+    function maal() {
+      const ruller = rod.scrollWidth > rod.clientWidth;
+      if (ruller) {
+        rod.setAttribute('role', 'region');
+        rod.tabIndex = 0;
+      } else {
+        rod.removeAttribute('role');
+        rod.removeAttribute('tabindex');
+      }
+      return ruller;
+    }
+    if (typeof ResizeObserver === 'function') {
+      const ro = new ResizeObserver(() => maal());
+      ro.observe(rod);
+      ro.observe(tabelEl);
+    }
+    return { rod, tabel: tabelEl, maal };
   }
 
   /* ── Sideskift (fra 2.3.0, hører til DataTable) ── Under en tabel, når programmet deler rækkerne i sider: forrige og
@@ -1604,5 +1742,5 @@
     return ul;
   }
 
-  window.Kit = Object.freeze({ IKONER, ikon, registrerIkoner, chip, knap, felt, banner, tabel, commandBar, navTrae, visningsskift, guide, fletbaand, SYMBOL, vaelger, sidepanel, segment, filterchip, filterchips, kasse, statusflise, statusfliser, tomTilstand, fremdrift, vaerktoejstip, afkrydsning, kontakt, radiogruppe, valgliste, dialog, bekraeft, sideskift });
+  window.Kit = Object.freeze({ IKONER, ikon, registrerIkoner, chip, knap, felt, banner, tabel, commandBar, navTrae, visningsskift, guide, fletbaand, SYMBOL, vaelger, sidepanel, segment, filterchip, filterchips, kasse, statusflise, statusfliser, tomTilstand, fremdrift, vaerktoejstip, afkrydsning, kontakt, radiogruppe, valgliste, dialog, bekraeft, sideskift, tabelRul });
 })();

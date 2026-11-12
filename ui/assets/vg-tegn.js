@@ -233,6 +233,34 @@
     if (klasse) t.classList.add(klasse);
     return t;
   }
+  /* En læsetabel er kittets tabel uden rækkevalg (Kit.tabel med raekkeHandling 'ingen' og layout 'auto'). Visningerne bygger
+     stadig hoveder (<th> eller tekst) og rækker (<tr>), og indholdet flyttes over i kittets celler: .tal-kol er en talkolonne, en
+     <th> i rækken er et rækkehoved, cellens øvrige klasser følger kolonnen, og rækkens klasse bliver data-raekke (kittet tager
+     kun data-* på en række). */
+  function laeseTabel(klasse, hoveder, rk) {
+    const hs = (hoveder.tagName ? [...hoveder.children] : hoveder).map(h => (typeof h === 'string' ? { tekst: h, kl: [] } : { tekst: h.textContent, kl: [...h.classList] }));
+    const model = rk.find(tr => tr.children.length === hs.length);
+    const kolonner = hs.map((h, i) => {
+      const c = model ? model.children[i] : null, kl = new Set([...h.kl, ...(c ? c.classList : [])]);
+      kl.delete('v');
+      return { tekst: h.tekst, tal: kl.has('tal-kol'), hoved: Boolean(c && c.tagName === 'TH'), klasse: [...kl].join(' ') || undefined };
+    });
+    const raekker = rk.map(tr => {
+      const attr = {};
+      if (tr.className) attr['data-raekke'] = tr.className;
+      for (const [k, v] of Object.entries(tr.dataset)) attr['data-' + k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())] = v;
+      return { attr, titel: tr.title || undefined, celler: [...tr.children].map(c => { const f = document.createDocumentFragment(); f.append(...c.childNodes); return f; }) };
+    });
+    const t = window.Kit.tabel({ raekkeHandling: 'ingen', layout: 'auto', kolonner, raekker });
+    t.classList.add('vg-tabel', ...(klasse ? klasse.split(' ').filter(Boolean) : []));
+    return t;
+  }
+  /* Kittets rulleramme (Kit.tabelRul) med navn: et område med Tab-stop, når tabellen er bredere end sin plads. */
+  function tabelRul(tabel, navn) {
+    const r = window.Kit.tabelRul(tabel, { aria: navn });
+    r.rod.classList.add('vg-tabel-rul');
+    return r.rod;
+  }
   /* Målet på et element, rammens lytter følger: et dyk (tekst), { gaa } eller { rul }. */
   function maalPaa(b, maal) {
     if (typeof maal === 'string') b.dataset.dyk = maal;
@@ -389,10 +417,8 @@
       tr.append(celle('land', s.land, land(s.land)), celle('sti', s.sti, sti(s.sti)), celle('colo', s.colo, s.colo, 'vg-mono'), celle('metode', s.metode, s.metode, 'vg-mono'));
       return tr;
     });
-    const tabel = el('table', { className: 'vg-tabel' }, el('thead', {}, el('tr', {}, ...hoved.map(h => { const th = el('th', { textContent: h }); th.setAttribute('scope', 'col'); return th; }))), el('tbody', {}, ...raekker));
-    const rul = el('div', { className: 'vg-tabel-rul', tabIndex: 0 }, tabel);
-    rul.setAttribute('role', 'region');
-    rul.setAttribute('aria-label', T.dykSenesteH);
+    const tabel = laeseTabel('', [...hoved.map(h => { const th = el('th', { textContent: h }); th.setAttribute('scope', 'col'); return th; })], raekker);
+    const rul = tabelRul(tabel, T.dykSenesteH);
     return rul;
   }
   /* Mærket "Ligner …": åbner dagen med netværket eller stierne som filter. Står i Overblik, Siden sidst og Angreb. */
@@ -650,5 +676,5 @@
   const paaKortet = p => Boolean(p) && iBilledet(p, VIEW.verden);
   const udenPlads = v => [...v.lande.filter(l => !paaKortet((verden.lande || {})[l.kode])).map(l => land(l.kode)), ...v.colos.filter(c => !paaKortet(xyColo(c.kode))).map(c => colo(c.kode))];
 
-  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, tomt, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
+  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, tomt, laeseTabel, tabelRul, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
 })();

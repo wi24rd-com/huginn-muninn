@@ -4,6 +4,13 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-12 23:30 — Wi24rd UI Kit 2: tabellerne (pakke 2.4.0)
+#### Ændret
+- **Overblik er kittets tabel:** et klik, Enter eller mellemrum på en række åbner domænets Angreb, piletasterne flytter mellem rækkerne, og domænet står fast, når tabellen ruller vandret, ved alle vinduesbredder.
+- **De øvrige tabeller** (De seneste, trafik pr. dag, DMARC, følsomme filer, Login, Besøgende) er kittets tabel uden rækkevalg.
+- **Røde statuschips viser ×** foran ordet (før ?).
+- Pakke 2.4.0 ligger uændret i `ui/assets/kit2/`.
+
 ### 2026-11-11 23:30 — Wi24rd UI Kit 2: sideskift og tom tilstand
 #### Ændret
 - **Sideskiftet i "De seneste"** på Angreb er kittets: Forrige og Næste står der altid og er slået fra på første og sidste side.
