@@ -496,8 +496,8 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   const forventet = [['siden-sidst', 'Siden sidst · Wi24rd Huginn and Muninn'], ['vaernet', 'Angreb · 2 domæner · Wi24rd Huginn and Muninn'], ['indstillinger', 'Indstillinger · Wi24rd Huginn and Muninn'], ['overblik', 'Overblik · Wi24rd Huginn and Muninn']];
   const ud = [];
   for (const [navn, titel] of forventet) {
-    d.querySelector(`a[data-visning="${navn}"]`).click(); await sov(40);
-    const aktuel = d.querySelector('a[aria-current="page"]');
+    d.querySelector(`:is(a, button)[data-visning="${navn}"]`).click(); await sov(40);
+    const aktuel = d.querySelector(':is(a, button)[aria-current="page"]');
     ud.push([navn, synlige(d).join(), aktuel && aktuel.getAttribute('data-visning'), d.title, [...d.querySelectorAll('#hjaelp .hjaelp-del')].filter(x => !x.hidden).map(x => x.getAttribute('data-hjaelp')).join()]);
     tjek(`S nav: klik på "${navn}" → kun den visning, aria-current, titel og hjælpens del`, synlige(d).join() === navn && aktuel && aktuel.getAttribute('data-visning') === navn && d.title === titel && ud.at(-1)[4] === navn, JSON.stringify(ud.at(-1)));
   }
@@ -650,7 +650,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   tjek('S vindue: Overlay, skjult titel, trafiklys, minWidth 900; CSP med style-src \'self\'', v.titleBarStyle === 'Overlay' && v.hiddenTitle === true && v.trafficLightPosition && v.minWidth === 900
     && csp === "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'", JSON.stringify(v));
   const html = ui('index.html');
-  tjek('S vindue: titellinjen er trækbar (data-tauri-drag-region="deep"), og dens knapper er <button> eller <a> (blokerer trækket)', /<header class="titel" data-tauri-drag-region="deep">/.test(html) && /<button class="rk" type="button" id="hist-tilbage"/.test(html) && /<button class="rk" type="button" id="hjaelp-knap"/.test(html) && /<a class="rk" href="#indstillinger"/.test(html));
+  tjek('S vindue: titellinjen er trækbar (data-tauri-drag-region="deep"), og dens knapper er <button> (blokerer trækket); Indstillinger står i båndet', /<header class="titel" data-tauri-drag-region="deep">/.test(html) && /<button class="rk" type="button" id="hist-tilbage"/.test(html) && /<button class="rk" type="button" id="hjaelp-knap"/.test(html) && !/<a class="rk" href="#indstillinger"/.test(html));
   const p = cap.permissions;
   tjek('S capabilities: + core:window:allow-start-dragging, + allow-hent-nu, − core:menu:default, − core:tray:default', p.includes('core:window:allow-start-dragging') && p.includes('allow-hent-nu') && !p.includes('core:menu:default') && !p.some(x => x.startsWith('core:tray') || x.startsWith('core:menu')) && tilladt('hent_nu'), p.join(','));
   tjek('S capabilities: + allow-data-status', p.includes('allow-data-status'));
@@ -1008,7 +1008,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   emit('hentekoe', { zone: 'z3', navn: 'abe.wi24rd.com', doegn_faerdige: 1, doegn_i_alt: 9, zoner_faerdige: 0, zoner_i_alt: 3, zoner_fejl: 0, tilstand: 'henter' }); await sov(30);
   emit('hentekoe', { zone: null, doegn_faerdige: 9, doegn_i_alt: 9, zoner_faerdige: 3, zoner_i_alt: 3, zoner_fejl: 0, tilstand: 'faerdig' }); await sov(30);
   tjek('Tilbage og frem, hentekøens opdateringer laver aldrig et trin', w.history.length === laengde + 1 && w.location.hash === '#vaernet?zone=z2&navn=xyz.wi24rd.com');
-  d.querySelector('a[data-visning=indstillinger]').click(); await sov(30);
+  d.querySelector('#indst-knap').click(); await sov(30);
   tjek('Domænetræ, står også i Indstillinger', !bånd.hidden);
   const html = ui('index.html'), css = udenKommentarer(ui('assets/app.css'));
   tjek('Domænevælger, flag pr. visning: domaener: true kun på Angreb', /R\.registrer\('vaernet', \{\s*domaener: true/.test(ui('assets/visning-vaernet.js')) && /\.domaener\)/.test(ui('assets/ramme.js')) && !/domaener: true/.test(ui('assets/visning-overblik.js') + ui('assets/visning-siden.js') + ui('assets/visning-indstillinger.js')));
@@ -1020,7 +1020,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   await sov(60);
   const q = x => d.querySelector(x);
   tjek('Skallen: titellinje, bånd, navigationsrude, arbejdsflade med fodlinje og sidepanel står som kittets AppShell; intet window.Sprog', Boolean(q('.vindue > header.titel') && q('.vindue > #baand.cmd.enkel') && q('.vindue > .midte > nav#side.nav') && q('.vindue > .midte > .arb > main#indhold.flade') && q('.vindue > .midte > .arb > footer.fodl') && q('.vindue > .midte > aside#hjaelp.sidepanel')) && !w.Sprog && Boolean(w.Kit));
-  tjek('Skallen: visningsskiftet har de syv visninger i fast rækkefølge og er tæt; Indstillinger er tandhjulet i titellinjen', [...d.querySelectorAll('#skift a.vs')].map(a => a.dataset.visning).join() === 'overblik,siden-sidst,vaernet,robotter,login,land,besoegende' && q('#skift').classList.contains('taet') && q('.titel .hoejre > a#indst-knap.rk[href="#indstillinger"]') !== null && q('#skift a.vs.on').dataset.visning === 'overblik', [...d.querySelectorAll('#skift a.vs')].map(a => a.dataset.visning).join());
+  tjek('Skallen: visningsskiftet har de syv visninger i fast rækkefølge og er tæt; Indstillinger er tandhjulet i båndet, efter vejledningen', [...d.querySelectorAll('#skift a.vs')].map(a => a.dataset.visning).join() === 'overblik,siden-sidst,vaernet,robotter,login,land,besoegende' && q('#skift').classList.contains('taet') && q('#baand button#indst-knap.cb') !== null && !q('.titel #indst-knap') && q('#skift a.vs.on').dataset.visning === 'overblik', [...d.querySelectorAll('#skift a.vs')].map(a => a.dataset.visning).join());
   tjek('Skallen: båndet er uden faner med Hent nu som eneste primære kommando; landegruppen er skjult uden for Land', !q('#baand .tabs') && d.querySelectorAll('#baand .cb.pri').length === 1 && q('#baand .cb.pri').id === 'hent-nu' && q('#band-land').hidden && q('#baand').getAttribute('role') === 'group' && q('#baand').getAttribute('aria-label') === 'Kommandoer', q('#baand').getAttribute('aria-label'));
   tjek('Skallen: nøglerne fra kit.js udfyldes (aria-label på træet, visningsskiftet og hjælpens lukkeknap, placeholder i landevælgerens søgefelt)', q('#trae').getAttribute('aria-label') === 'Vælg domæne' && q('#skift').getAttribute('aria-label') === 'Visninger' && q('#baand .vlg-soeg input').getAttribute('placeholder') === 'Søg' && q('#hjaelp-luk').getAttribute('aria-label') === 'Luk hjælpen');
   tjek('Skallen: træet har ét valg, og fodlinjen siger antal domæner og "Kun på denne maskine"', d.querySelectorAll('#trae .tr.on').length === 1 && q('#fod-antal').textContent === '3 domæner' && q('#fod-lokalt').textContent === 'Kun på denne maskine' && q('#fod-lokalt svg') !== null, q('#fod-antal').textContent);
@@ -1037,7 +1037,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   await sov(60);
   const hoved = d.getElementById('indhold'), tb = d.getElementById('hist-tilbage'), fr = d.getElementById('hist-frem'), rul = t => { hoved.scrollTop = t; };
   tjek('Tilbage og frem, ved start: ‹ og › er deaktiveret, tooltip med genvejen (Windows)', tb.disabled && fr.disabled && tb.title === 'Tilbage (Alt+←)' && fr.title === 'Frem (Alt+→)' && tb.getAttribute('aria-label') === 'Tilbage', tb.title);
-  tjek('Tilbage og frem, ‹ › står i titellinjen til højre som kittets .rk-knapper, før Hjælp og Indstillinger', tb.matches('.titel .hoejre > .rk') && fr.matches('.titel .hoejre > .rk') && tb.nextElementSibling === fr && fr.nextElementSibling.id === 'hjaelp-knap' && fr.nextElementSibling.nextElementSibling.id === 'indst-knap');
+  tjek('Tilbage og frem, ‹ › står i titellinjen til højre som kittets .rk-knapper, før Hjælp (Indstillinger står i båndet)', tb.matches('.titel .hoejre > .rk') && fr.matches('.titel .hoejre > .rk') && tb.nextElementSibling === fr && fr.nextElementSibling.id === 'hjaelp-knap' && fr.nextElementSibling.nextElementSibling === null);
   rul(300);
   d.querySelector('#overblik-raekker tr').click(); await sov(60);
   tjek('Tilbage og frem, nyt trin: Angreb for z1, ‹ aktiv, › deaktiveret, rullet til toppen', w.location.hash === '#vaernet?zone=z1&navn=wi24rd.com' && !tb.disabled && fr.disabled && hoved.scrollTop === 0, `${hoved.scrollTop}`);
@@ -1112,7 +1112,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const { d, w } = s;
   tjek('Tilbage og frem, genindlæsning: trinet, frem og rullepositionen er bevaret', w.history.state?.hmTrin === 2 && !d.getElementById('hist-tilbage').disabled && !d.getElementById('hist-frem').disabled && d.getElementById('indhold').scrollTop === 210, `${JSON.stringify(w.history.state)} ${d.getElementById('indhold').scrollTop}`);
   const a = side('#overblik', B2()); await sov(50);
-  a.d.querySelector('a[data-visning=indstillinger]').click(); await sov(30);
+  a.d.querySelector('#indst-knap').click(); await sov(30);
   a.d.getElementById('indhold').scrollTop = 77;
   a.w.dispatchEvent(new a.w.Event('pagehide'));
   const gemt = JSON.parse(a.w.sessionStorage.getItem('hm-historik'));
@@ -1150,7 +1150,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   await sov(60);
   const hoved = d.getElementById('indhold'), tb = d.getElementById('hist-tilbage'), fr = d.getElementById('hist-frem');
   hoved.scrollTop = 300;
-  d.querySelector('a[data-visning=indstillinger]').click(); await sov(30);
+  d.querySelector('#indst-knap').click(); await sov(30);
   tb.click(); await sov(30);
   hoved.scrollTop = 5;
   fr.click(); await sov(30);
@@ -3291,7 +3291,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek(`KS ingen rest i UI, menu, README og tests (${filer.length} filer)`, filer.length > 15 && fund.length === 0, fund.join());
   const s = side('', B2());
   await sov(30);
-  tjek('KS sidebjælken har de syv visninger og Indstillinger, og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('a[data-visning]').length === 8 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('a[data-visning]').length);
+  tjek('KS sidebjælken har de syv visninger og Indstillinger, og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('a[data-visning], button#indst-knap[data-visning]').length === 8 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('a[data-visning]').length);
 }
 
 // ── Angreb er én side: overskriften, chips og Nulstil ──

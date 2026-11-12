@@ -63,6 +63,9 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 /* ── skallen: det, Wi24rd UI Kit 2 lader programmet give selv ── */
 /* macOS: vinduesknapperne ligger oven på titellinjen (titleBarStyle Overlay). */
 [data-platform="macos"] .titel { padding-left: var(--titel-trafiklys); }
+/* KIT-ØNSKE K41: en knap i båndet, der åbner en visning, vises som valgt, mens visningen er åben (kittet har kun aria-pressed). */
+.cb[aria-current="page"] { background: var(--accent-soft); border-color: var(--accent-soft); font-weight: 600; }
+.cb[aria-current="page"] svg { stroke: var(--accent); }
 /* Mærket i titellinjen er kittets .mrk-maske; her står kun programmets billede og dets bredde. */
 .titel .hm-mrk { width: 26px; -webkit-mask-image: url(hm-ravne.png); mask-image: url(hm-ravne.png); }
 .titel b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

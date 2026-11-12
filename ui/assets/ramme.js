@@ -60,9 +60,12 @@
     { t: 'gData', knapper: [{ id: 'hent', t: 'hentNu', ikon: 'hm-hent', pri: true }] },
     { t: 'gLand', knapper: [{ id: 'land', element: landVaelger.rod }] },
     { t: 'gHjaelp', knapper: [{ id: 'vejledning', t: 'vejledningAabn', ikon: 'bog', ved: () => aabnVejledning() }] },
+    { t: 'gProgram', knapper: [{ id: 'indst', t: 'navIndst', ikon: 'tandhjul', ved: () => aabnGenvej('indstillinger') }] },
   ] }] });
   baand.knap('hent').id = 'hent-nu';
   baand.knap('vejledning').id = 'baand-vejledning';
+  baand.knap('indst').id = 'indst-knap';
+  baand.knap('indst').setAttribute('data-visning', 'indstillinger');
   const landGruppe = landVaelger.rod.closest('.grp');
   landGruppe.id = 'band-land';
   landGruppe.hidden = true;

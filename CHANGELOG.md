@@ -4,6 +4,12 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-12 23:30 — Indstillinger i båndet, og vinduesknapperne på plads
+#### Ændret
+- **Indstillinger** står nu i båndet ved siden af "Åbn vejledningen" (gruppen Program) i stedet for som tandhjul i titellinjen. Knappen er markeret, mens Indstillinger er åben.
+#### Rettet
+- **macOS:** de tre vinduesknapper (luk, minimér, zoom) sad for lavt og ragede ned over titellinjens kant. De står nu midt i titellinjen.
+
 ### 2026-11-12 23:30 — Wi24rd UI Kit 2: oprydning (Kit 1.0, Outfit og broen er væk)
 #### Ændret
 - **Farver og skrifter har én kilde:** Wi24rd UI Kit 2 i `ui/assets/kit2/`. Programmets egen CSS bruger kittets navne direkte (`--text`, `--surface`, `--accent`, `--danger-mark` …).
