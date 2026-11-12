@@ -514,7 +514,11 @@
      stadig kan nås med Tab og forklarer hvorfor i title); den forsvinder ikke. Returnerer { rod, vaelgFane, knap(id) }.
      Fra 2.2.0: udenFaner: true giver et bånd med præcis én fane og ingen fanerække (et program, man ser i). En post i
      knapper kan være { id, element } i stedet for en kommando; elementet (fx en vælger eller en segmentknap) står så i
-     gruppen som det er. Uden de to er båndet præcis som i 2.0.0. */
+     gruppen som det er. Uden de to er båndet præcis som i 2.0.0.
+     Fra 2.5.0 (G11): hvorforTip: true viser hvorfor i et værktøjstip (Kit.vaerktoejstip) i stedet for title, så det kan
+     læses med tastaturet og med en skærmlæser (aria-describedby). Uden indstillingen står hvorfor i title som før (et
+     tip ville ændre markup, som programmer og tests kender). saetDeaktiveret(id, fra, hvorfor) slår en kommando til og
+     fra udefra og flytter hvorfor med (tip eller title efter indstillingen); kald Sprog.anvend bagefter. */
   let cbNr = 0;
   function commandBar(rod, o) {
     const enkel = Boolean(o.udenFaner);
@@ -530,7 +534,7 @@
       rod.setAttribute('role', 'group');
       if (o.ariaT) rod.setAttribute('data-t-aria', o.ariaT);
     }
-    const knapper = {}, faner = [], paneler = [];
+    const knapper = {}, faner = [], paneler = [], tips = {};
     let grpNr = 0;
     for (const f of o.faner) {
       const tab = el('button', 'tab', tekstAf(f));
@@ -567,7 +571,7 @@
           b.appendChild(el('span', null, tekstAf(k)));
           if (k.deaktiveret) {
             b.setAttribute('aria-disabled', 'true');
-            if (k.hvorfor) b.setAttribute('data-t-title', k.hvorfor);
+            if (k.hvorfor && !o.hvorforTip) b.setAttribute('data-t-title', k.hvorfor);
           }
           if (k.trykket != null) b.setAttribute('aria-pressed', String(Boolean(k.trykket)));
           b.addEventListener('click', e => {
@@ -576,6 +580,7 @@
           });
           knapper[k.id] = b;
           kn.appendChild(b);
+          if (o.hvorforTip && k.deaktiveret && k.hvorfor) tips[k.id] = vaerktoejstip(b, { t: k.hvorfor });
         }
         const cap = el('span', 'cap', tekstAf(g));
         cap.id = `kit-cb${nr}-grp-${++grpNr}`;
@@ -611,17 +616,39 @@
       vaelgFane(faner[(ny + faner.length) % faner.length].dataset.fane, true);
     });
     vaelgFane(o.valgt || o.faner[0].id);
-    return { rod, vaelgFane, knap: id => knapper[id], paneler };
+    function saetDeaktiveret(id, fra, hvorfor) {
+      const b = knapper[id];
+      if (!b || !b.classList.contains('cb')) throw new Error('commandBar: ukendt kommando: ' + id);
+      if (fra) b.setAttribute('aria-disabled', 'true');
+      else b.removeAttribute('aria-disabled');
+      if (tips[id]) {
+        tips[id].fjern();
+        delete tips[id];
+      }
+      b.removeAttribute('data-t-title');
+      b.removeAttribute('title');
+      if (fra && hvorfor) {
+        if (o.hvorforTip) tips[id] = vaerktoejstip(b, { t: hvorfor });
+        else b.setAttribute('data-t-title', hvorfor);
+      }
+    }
+    return { rod, vaelgFane, knap: id => knapper[id], paneler, saetDeaktiveret };
   }
 
   /* ── NavPane: træet ── punkter: [{id, t, antal, boern: [...]}]. Et klik filtrerer arbejdsfladen; det skifter aldrig
-     visning. Piletaster flytter, højre/venstre folder ud og ind, Enter og mellemrum vælger. vedValg(id). */
+     visning. Piletaster flytter, højre/venstre folder ud og ind, Enter og mellemrum vælger. vedValg(id).
+     Fra 2.5.0: saetPunkter(punkter, valgt) bygger punkterne om i samme <ul> uden nye lyttere (et nyt kald af navTrae på
+     samme <ul> lægger stadig lyttere til, som før). Valget bliver (eller er valgt, hvis det er givet; findes det ikke,
+     det første), foldede punkter bliver foldede, og havde træet fokus, får punktet med samme id det igen (ellers det
+     valgte). saetPunkter kalder aldrig vedValg. kunBrugerValg: true gør, at vedValg kun kaldes for brugerens valg (klik,
+     Enter, mellemrum), ikke for valget ved start og ikke for vaelg(id) fra koden. Uden indstillingen kaldes vedValg også
+     for de to, som før (programmer bruger det til at filtrere fra koden). */
   function navTrae(ul, punkter, o = {}) {
     ul.classList.add('trae');
     ul.textContent = '';
     ul.setAttribute('role', 'tree');
     if (o.ariaT) ul.setAttribute('data-t-aria', o.ariaT);
-    const alle = [];
+    let alle = [];
     function byg(liste, foraelder, niveau) {
       for (const p of liste) {
         const li = document.createElement('li');
@@ -659,7 +686,8 @@
       const gammel = b.querySelector('svg');
       b.replaceChild(ikon(ud ? 'ned' : 'hoejre'), gammel);
     }
-    function vaelg(b, fokus) {
+    const fraKode = !o.kunBrugerValg;
+    function vaelg(b, fokus, meld) {
       for (const x of alle) {
         const on = x === b;
         x.classList.toggle('on', on);
@@ -669,13 +697,13 @@
         x.tabIndex = on ? 0 : -1;
       }
       if (fokus) b.focus();
-      if (o.vedValg) o.vedValg(b.dataset.punkt);
+      if (meld && o.vedValg) o.vedValg(b.dataset.punkt);
     }
     ul.addEventListener('click', e => {
       const b = e.target.closest('.tr');
       if (!b) return;
       if (b.hasAttribute('aria-expanded') && e.target.closest('svg')) fold(b, b.getAttribute('aria-expanded') !== 'true');
-      else vaelg(b, true);
+      else vaelg(b, true, true);
     });
     ul.addEventListener('keydown', e => {
       const s = synlige(), i = s.indexOf(e.target);
@@ -689,7 +717,7 @@
       else if (e.key === 'ArrowRight' && b.getAttribute('aria-expanded') === 'false') fold(b, true);
       else if (e.key === 'ArrowLeft' && b.getAttribute('aria-expanded') === 'true') fold(b, false);
       else if (e.key === 'ArrowLeft') ny = b.parentElement.parentElement.closest('li') && b.parentElement.parentElement.closest('li').querySelector(':scope > .tr');
-      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vaelg(b, true); return; }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vaelg(b, true, true); return; }
       else return;
       e.preventDefault();
       if (ny) {
@@ -698,8 +726,28 @@
       }
     });
     const start = alle.find(b => b.dataset.punkt === o.valgt) || alle[0];
-    if (start) vaelg(start, false);
-    return { vaelg: id => vaelg(alle.find(b => b.dataset.punkt === id), false), punkter: alle };
+    if (start) vaelg(start, false, fraKode);
+    function saetPunkter(nye, valgt) {
+      const foer = alle.find(b => b.classList.contains('on'));
+      const a = document.activeElement;
+      const fokusId = a && ul.contains(a) && a.classList.contains('tr') ? a.dataset.punkt : null;
+      const foldet = new Set(alle.filter(b => b.getAttribute('aria-expanded') === 'false').map(b => b.dataset.punkt));
+      ul.textContent = '';
+      alle = [];
+      byg(nye, ul, 1);
+      for (const b of alle) if (foldet.has(b.dataset.punkt)) fold(b, false);
+      const id = valgt !== undefined ? valgt : foer ? foer.dataset.punkt : null;
+      const ny = alle.find(b => b.dataset.punkt === id) || alle[0];
+      if (ny) vaelg(ny, false, false);
+      if (fokusId != null) {
+        const f = alle.find(b => b.dataset.punkt === fokusId && !b.closest('ul[hidden]')) || ny;
+        if (f) {
+          for (const x of alle) x.tabIndex = x === f ? 0 : -1;
+          f.focus();
+        }
+      }
+    }
+    return { vaelg: id => vaelg(alle.find(b => b.dataset.punkt === id), false, fraKode), get punkter() { return alle; }, saetPunkter };
   }
 
   /* ── NavPane: visningsskift ── visninger: [{id, t, ikon, genvej}] (højst otte, altid samme rækkefølge). Hver er et link
@@ -737,7 +785,52 @@
         else a.removeAttribute('aria-current');
       }
     }
-    return { markér, links };
+    /* Fra 2.5.0 (kun når en visning har dem; ellers er markup præcis som i 2.0.0): deaktiveret og hvorfor som i båndet
+       (aria-disabled, kan stadig nås med Tab, et klik gør intet), men hvorfor står i et værktøjstip (Kit.vaerktoejstip),
+       så det kan læses med tastaturet; antal som i træet (.ant), og kraever: true for "kræver handling": en fyldt pille
+       med fed skrift (ikke kun farven). antalAriaT|antalAria er det, en skærmlæser hører i stedet for tallet (tallet er
+       så aria-hidden), fx "3 kræver handling"; giv det altid ved kraever. saetPunkt(id, { … }) ændrer det udefra. */
+    const tilstand = {}, tips = {};
+    function saetPunkt(id, p) {
+      const a = links.find(x => x.dataset.visning === id);
+      if (!a) throw new Error('visningsskift: ukendt visning: ' + id);
+      const s = tilstand[id] = { ...(tilstand[id] || {}), ...p };
+      if ('deaktiveret' in p || 'hvorfor' in p) {
+        if (s.deaktiveret) a.setAttribute('aria-disabled', 'true');
+        else a.removeAttribute('aria-disabled');
+        if (tips[id]) {
+          tips[id].fjern();
+          delete tips[id];
+        }
+        if (s.deaktiveret && s.hvorfor) tips[id] = vaerktoejstip(a, typeof s.hvorfor === 'object' ? s.hvorfor : { t: s.hvorfor });
+      }
+      if (['antal', 'kraever', 'antalAriaT', 'antalAria'].some(k => k in p)) {
+        for (const x of a.querySelectorAll(':scope > [data-ant]')) x.remove();
+        if (s.antal != null) {
+          const ant = el('span', 'ant' + (s.kraever ? ' ant-kraever' : ''), String(s.antal));
+          ant.setAttribute('data-ant', '');
+          const plads = a.querySelector(':scope > kbd');
+          a.insertBefore(ant, plads);
+          if (s.antalAriaT || s.antalAria) {
+            ant.setAttribute('aria-hidden', 'true');
+            const sr = el('span', 'skjult-tekst', s.antalAriaT ? { t: s.antalAriaT } : s.antalAria);
+            sr.setAttribute('data-ant', '');
+            sr.setAttribute('data-v', String(s.antal));
+            a.insertBefore(sr, plads);
+          }
+        }
+      }
+    }
+    rod.addEventListener('click', e => {
+      const a = e.target.closest('.vs');
+      if (a && a.getAttribute('aria-disabled') === 'true') e.preventDefault();
+    });
+    for (const v of visninger) {
+      const p = {};
+      for (const k of ['deaktiveret', 'hvorfor', 'antal', 'kraever', 'antalAriaT', 'antalAria']) if (v[k] != null) p[k] = v[k];
+      if (Object.keys(p).length) saetPunkt(v.id, p);
+    }
+    return { markér, links, saetPunkt };
   }
 
   /* ── Wizard ── En guide ét trin ad gangen (design/ui-kit-2/components/Wizard). trin: [{t, h, p, indhold}], hvor t er
@@ -1179,7 +1272,11 @@
   /* ── Segmentknap (fra 2.2.0) ── To til fem valg, præcis ét valgt (fx 7 dage / 30 dage / År). role="radiogroup" med
      role="radio" og aria-checked. Tab går ind og ud som én kontrol (kun det valgte kan nås med Tab); pilene flytter og
      vælger, Home og End går til første og sidste. o: { ariaT|aria, valg: [{id, t|tekst}], valgt, vedValg(id) }.
-     vedValg kaldes, når valget ændres; vaelg(id) sætter valget udefra uden at kalde den. */
+     vedValg kaldes, når valget ændres; vaelg(id) sætter valget udefra uden at kalde den.
+     Fra 2.5.0: valgt: null giver en segmentknap uden valg (alle har aria-checked="false"; den første kan nås med Tab), fx
+     "7 dage / 30 dage" ved siden af en datovælger, når et eget interval er valgt. Et klik eller en pil vælger og kalder
+     vedValg (det viste valg ændres). vaelg(null) fjerner valget udefra. Uden valgt (eller med et ukendt id) er den første
+     valgt som før; før 2.5.0 gav null også den første. */
   function segment(o) {
     const n = o.valg.length;
     if (n < 2 || n > 5) throw new Error('segment: to til fem valg (fik ' + n + ')');
@@ -1196,14 +1293,14 @@
     });
     let valgt = null;
     function saet(id, fokus) {
-      const b = knapper.find(x => x.dataset.valg === id) || knapper[0];
-      valgt = b.dataset.valg;
+      const b = id === null ? null : knapper.find(x => x.dataset.valg === id) || knapper[0];
+      valgt = b ? b.dataset.valg : null;
       for (const x of knapper) {
         const on = x === b;
         x.setAttribute('aria-checked', String(on));
-        x.tabIndex = on ? 0 : -1;
+        x.tabIndex = (b ? on : x === knapper[0]) ? 0 : -1;
       }
-      if (fokus) b.focus();
+      if (fokus && b) b.focus();
     }
     function vaelg(b, fokus) {
       const foer = valgt;
@@ -1229,8 +1326,31 @@
   /* ── Filterchip (fra 2.3.0) ── En chip, der kan klikkes: en knap med aria-pressed, der slår et filter til og fra. Den
      almindelige chip (Kit.chip, .chip) er uændret og kan ikke klikkes. Valgt ses på flade, kant, fed skrift og et
      flueben, ikke kun på farven. o: { id, t|tekst, antal, valgt, deaktiveret, vedSkift(til, id) }. vedSkift kaldes, når
-     brugeren slår chippen til eller fra. */
+     brugeren slår chippen til eller fra.
+     Fra 2.5.0 (K34): vedFjern giver et aktivt filter, der kan fjernes: hele chippen er én knap med ordet og et × (ikonet
+     luk), uden aria-pressed, og navnet er programmets tekst (ariaT|aria, påkrævet; fx 'Fjern filter: {v}' med ariaV).
+     Et klik kalder vedFjern(id); programmet fjerner filtret og chippen. Havde chippen fokus, og er den væk bagefter, får
+     nabochippen i samme .fchips fokus (den næste, ellers den forrige); ellers sætter programmet fokus. */
   function filterchip(o) {
+    if (o.vedFjern) {
+      if (!(o.aria || o.ariaT)) throw new Error('filterchip: et filter, der kan fjernes, skal have et navn (aria eller ariaT, fx "Fjern filter: …")');
+      const f = el('button', 'fchip fchip-fjern');
+      f.type = 'button';
+      if (o.id != null) f.dataset.chip = o.id;
+      f.append(el('span', null, tekstAf(o)), ikon('luk', 'fchip-x'));
+      aria(f, o);
+      if (o.ariaV != null) f.setAttribute('data-v', String(o.ariaV));
+      if (o.deaktiveret) f.disabled = true;
+      f.addEventListener('click', () => {
+        const ramme = f.closest('.fchips');
+        const alle = ramme ? [...ramme.querySelectorAll('.fchip')] : [];
+        const i = alle.indexOf(f), havde = document.activeElement === f;
+        const nabo = alle[i + 1] || alle[i - 1] || null;
+        o.vedFjern(o.id);
+        if (havde && !f.isConnected && nabo && nabo.isConnected) nabo.focus();
+      });
+      return f;
+    }
     const b = el('button', 'fchip');
     b.type = 'button';
     if (o.id != null) b.dataset.chip = o.id;
@@ -1273,7 +1393,8 @@
      fodlinje. Klassen hedder .kasse, fordi .kort betyder noget andet i et af programmerne. En <section> med navn fra
      overskriften (aria-labelledby). o: { id, t|tekst, niveau (2–4; standard 2), handling: Node, indhold: Node, fod: Node,
      fyld }. fyld: true giver indholdet uden luft (fx en tabel helt ud til kanten). Returnerer { rod, overskrift, indhold,
-     fod }; fod er null uden en fodlinje. */
+     fod }; fod er null uden en fodlinje. Fra 2.5.0 (K32): ikon (et ikonnavn) står foran overskriften i accent (aria-hidden;
+     overskriften er stadig navnet). */
   let kasseNr = 0;
   function kasse(o) {
     const nr = ++kasseNr;
@@ -1284,6 +1405,7 @@
     const h = el('h' + niveau, null, tekstAf(o));
     h.id = (o.id || 'kit-kasse' + nr) + '-h';
     rod.setAttribute('aria-labelledby', h.id);
+    if (o.ikon) top.appendChild(ikon(o.ikon, 'kasse-ikon'));
     top.appendChild(h);
     if (o.handling) {
       const plads = el('div', 'kasse-handling');
@@ -1307,27 +1429,59 @@
      tæller; uden ved og href er den tekst og kan ikke klikkes. Status som StatusChip (symbol og ord) og en streg i
      statussens mærkefarve i venstre side, så status aldrig hviler på farven alene. o: { tal, t|tekst (etiketten),
      status: { variant, t|tekst }, under: t|tekst, udvikling: { retning: 'op' | 'ned' | 'flad', t|tekst }, ved, href,
-     ariaT|aria }. Udviklingen er en pil og en tekst; pilen alene siger ikke noget. */
+     ariaT|aria }. Udviklingen er en pil og en tekst; pilen alene siger ikke noget.
+     Fra 2.5.0 (hver kun med sin indstilling):
+     - valgt: true (eller en værdi til aria-current, fx 'date') markerer flisen for det viste (K33): aria-current på målet,
+       blød accentflade og en kant i accent, der er dobbelt så tyk (ikke kun farve). Programmet flytter selv aria-current.
+     - under: { t|tekst, ved, ariaT|aria } er undertekstens eget mål (K33): flisen er så en <div class="sflise sflise-to">
+       med to knapper ved siden af hinanden (aldrig knap i knap): .sflise-maal (navn, tal og status; dækker hele flisen
+       med ::after) og .sflise-under-maal (underteksten, lagt ovenpå). To Tab-stop i den rækkefølge.
+     - indhold: Node i stedet for tallet (K35, .sflise-indhold), fx to datoer med hvert sit link. Har indholdet sine egne
+       mål (links, knapper), kan flisen ikke selv være en knap eller et link (fejl). */
   const UDVIKLING = { op: '↑', ned: '↓', flad: '→' };
+  const INTERAKTIV = 'a[href], button, input, select, textarea, [tabindex]';
   function statusflise(o) {
     if (o.status && !(o.status.variant in SYMBOL)) throw new Error('ukendt status: ' + o.status.variant);
     if (o.udvikling && !(o.udvikling.retning in UDVIKLING)) throw new Error('ukendt udvikling: ' + o.udvikling.retning);
+    if (o.indhold && (o.ved || o.href) && (o.indhold.matches && o.indhold.matches(INTERAKTIV) || o.indhold.querySelector && o.indhold.querySelector(INTERAKTIV))) throw new Error('statusflise: indhold med egne mål (links, knapper) kan ikke stå i en flise, der selv er et mål');
+    const toMaal = Boolean(o.under && typeof o.under === 'object' && typeof o.under.ved === 'function');
     const tag = o.href ? 'a' : o.ved ? 'button' : 'div';
-    const f = el(tag, 'sflise' + (o.status ? ' ' + o.status.variant : ''));
+    const variant = o.status ? ' ' + o.status.variant : '';
+    let f, maal;
+    if (toMaal && tag !== 'div') {
+      f = el('div', 'sflise sflise-to' + variant);
+      maal = el(tag, 'sflise-maal');
+      f.appendChild(maal);
+    } else {
+      f = el(tag, 'sflise' + (toMaal ? ' sflise-to' : '') + variant);
+      maal = f;
+    }
     if (tag === 'button') {
-      f.type = 'button';
-      f.addEventListener('click', o.ved);
-    } else if (tag === 'a') f.href = o.href;
-    f.append(el('span', 'sflise-navn', tekstAf(o)), el('span', 'sflise-tal', o.tal == null ? '–' : String(o.tal)));
-    if (o.status) f.appendChild(chip(o.status.variant, tekstAf(o.status)));
+      maal.type = 'button';
+      maal.addEventListener('click', o.ved);
+    } else if (tag === 'a') maal.href = o.href;
+    let midt;
+    if (o.indhold) {
+      midt = el('div', 'sflise-indhold');
+      midt.appendChild(o.indhold);
+    } else midt = el('span', 'sflise-tal', o.tal == null ? '–' : String(o.tal));
+    maal.append(el('span', 'sflise-navn', tekstAf(o)), midt);
+    if (o.status) maal.appendChild(chip(o.status.variant, tekstAf(o.status)));
     if (o.udvikling) {
       const u = el('span', 'sflise-under');
       const pil = el('span', 'sflise-pil', UDVIKLING[o.udvikling.retning]);
       pil.setAttribute('aria-hidden', 'true');
       u.append(pil, el('span', null, tekstAf(o.udvikling)));
+      maal.appendChild(u);
+    } else if (toMaal) {
+      const u = el('button', 'sflise-under sflise-under-maal', tekstAf(o.under));
+      u.type = 'button';
+      aria(u, o.under);
+      u.addEventListener('click', o.under.ved);
       f.appendChild(u);
-    } else if (o.under) f.appendChild(el('span', 'sflise-under', tk(o.under)));
-    aria(f, o);
+    } else if (o.under) maal.appendChild(el('span', 'sflise-under', tk(o.under)));
+    aria(maal, o);
+    if (o.valgt) maal.setAttribute('aria-current', typeof o.valgt === 'string' ? o.valgt : 'true');
     return f;
   }
 
@@ -1347,16 +1501,45 @@
      handling. Til en tom visning, en tom tabel og "ingen træffere". o: { ikon, t|tekst (overskriften), p (sætningen),
      handling: { t|tekst, ved, variant, ikon }, lille, niveau (2–4; standard 2) }. lille: true er den lave udgave under en
      tabel eller en søgning; dens overskrift er et afsnit (ingen overskrift i sidens opbygning), og den har role="status",
-     så "ingen træffere" læses op, når teksten skifter. */
+     så "ingen træffere" læses op, når teksten skifter.
+     Fra 2.5.0 (G8, hver kun med sin indstilling):
+     - anden: { t|tekst, ved, ikon, variant } er en anden handling ved siden af den første (.tomt-handlinger), kun når den
+       hjælper videre ad en anden vej (fx Åbn fil ved siden af Indsæt). Den kan ikke være primær, og den kræver handling.
+     - modtager: { ariaT|aria, ariaV, vedIndsaet(tekst) } gør den store udgave til en flade, der tager imod: den kan få
+       fokus (tabindex 0), er et område (role="region") med et navn, der siger hvad den tager imod (fx "Indsæt tekst med
+       ⌘V"), og har kittets fokusring. vedIndsaet kaldes med teksten, når der indsættes, mens fladen har fokus. En fil, der
+       slippes, læser kittet ikke (intet fil-API i siden; et program kan forbyde det i sin webvisning, og i Tauri
+       tager styresystemet imod det sluppede): programmet lytter selv og sætter .tomt-slip på fladen, mens noget trækkes over. */
   function tomTilstand(o) {
     const lille = Boolean(o.lille);
+    if (o.anden && !o.handling) throw new Error('tomTilstand: en anden handling kræver den første');
+    if (o.anden && o.anden.variant === 'primary') throw new Error('tomTilstand: den anden handling kan ikke være primær');
+    if (o.modtager && lille) throw new Error('tomTilstand: den lille udgave kan ikke tage imod');
+    if (o.modtager && !(o.modtager.aria || o.modtager.ariaT)) throw new Error('tomTilstand: en modtager skal have et navn (aria eller ariaT)');
     const rod = el('div', 'tomt' + (lille ? ' lille' : ''));
     if (lille) rod.setAttribute('role', 'status');
     if (o.ikon) rod.appendChild(ikon(o.ikon, 'tomt-ikon'));
     const niveau = [2, 3, 4].includes(o.niveau) ? o.niveau : 2;
     rod.appendChild(el(lille ? 'p' : 'h' + niveau, 'tomt-h', tekstAf(o)));
     if (o.p != null) rod.appendChild(el('p', 'tomt-p', tk(o.p)));
-    if (o.handling) rod.appendChild(knap(o.handling));
+    if (o.handling && o.anden) {
+      const h = el('div', 'tomt-handlinger');
+      h.append(knap(o.handling), knap(o.anden));
+      rod.appendChild(h);
+    } else if (o.handling) rod.appendChild(knap(o.handling));
+    if (o.modtager) {
+      const m = o.modtager;
+      rod.classList.add('tomt-modtager');
+      rod.tabIndex = 0;
+      rod.setAttribute('role', 'region');
+      aria(rod, m);
+      if (m.ariaV != null) rod.setAttribute('data-v', String(m.ariaV));
+      if (m.vedIndsaet) rod.addEventListener('paste', e => {
+        const t = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
+        e.preventDefault();
+        m.vedIndsaet(t);
+      });
+    }
     return rod;
   }
 
@@ -1398,19 +1581,110 @@
     };
   }
 
+  /* ── Status i fodlinjen (fra 2.5.0, hører til StatusFooter) ── En statusdel til .fodl: et mærke (symbol eller ring;
+     aria-hidden), en kort tekst, en valgfri tynd fremdriftslinje (<progress>, bestemt eller ubestemt) og, når programmet
+     giver en handling, en knap. o: { status: 'ok' | 'warn' | 'danger' | 'info' | 'none' | 'henter', t|tekst (med v og w
+     ved en nøgle), fremdrift: { maks, vaerdi } | 'ubestemt' | null, handling: { t|tekst, ved } | null }. Returnerer
+     { rod, saet(ændringer), status, maal }; saet tager de samme felter, og kun dem, der er med, ændres (null fjerner
+     fremdrift og handling), så delen sættes om uden at fodlinjen bygges igen.
+     Hvad der læses op: teksten står også i en skjult <span role="status"> (høflig), og den skrives kun, når teksten
+     ændres; samme tekst igen og et nyt trin i fremdriften (kun vaerdi) skrives ikke, så skærmlæseren ikke afbrydes ved
+     hvert trin. Fremdriftslinjen er ikke et live-område; dens værdi kan læses, når man står på den. Den synlige tekst og
+     mærket er aria-hidden, så teksten ikke høres to gange. Med en handling er målet en <button>, hvis navn er teksten og
+     handlingens tekst (aria-labelledby); uden er det en <span>. */
+  const FS_STATUS = ['ok', 'warn', 'danger', 'info', 'none', 'henter'];
+  let fsNr = 0;
+  function fodstatus(o = {}) {
+    const nr = ++fsNr;
+    const rod = el('span', 'fodstatus');
+    const mrk = el('span', 'fodstatus-mrk');
+    mrk.setAttribute('aria-hidden', 'true');
+    const tekst = el('span', 'fodstatus-tekst');
+    tekst.setAttribute('aria-hidden', 'true');
+    const meld = el('span', 'fodstatus-meld skjult-tekst');
+    meld.id = 'kit-fs' + nr;
+    meld.setAttribute('role', 'status');
+    const bjaelke = document.createElement('progress');
+    bjaelke.className = 'fodstatus-bjaelke';
+    bjaelke.setAttribute('aria-labelledby', meld.id);
+    bjaelke.hidden = true;
+    const hNavn = el('span', 'skjult-tekst');
+    hNavn.id = 'kit-fs' + nr + '-h';
+    let maal = null, ved = null, status = null, sidst = null;
+    function bygMaal(knap) {
+      const ny = el(knap ? 'button' : 'span', 'fodstatus-maal');
+      if (knap) {
+        ny.type = 'button';
+        ny.setAttribute('aria-labelledby', meld.id + ' ' + hNavn.id);
+        ny.addEventListener('click', e => { if (ved) ved(e); });
+      }
+      const fik = maal && document.activeElement === maal;
+      ny.append(mrk, tekst, bjaelke);
+      if (knap) ny.appendChild(hNavn);
+      else hNavn.remove();
+      if (maal) rod.replaceChild(ny, maal);
+      else rod.prepend(ny);
+      maal = ny;
+      if (fik && knap) ny.focus();
+    }
+    const tekstNoegle = n => (n.t ? JSON.stringify([n.t, n.v, n.w]) : JSON.stringify([null, n.tekst]));
+    function saet(n) {
+      if ('status' in n) {
+        if (!FS_STATUS.includes(n.status)) throw new Error('fodstatus: ukendt status: ' + n.status);
+        status = n.status;
+        rod.setAttribute('data-status', status);
+        mrk.textContent = '';
+        mrk.classList.toggle('snurr', status === 'henter');
+        if (status !== 'henter') mrk.textContent = SYMBOL[status];
+      }
+      if ('t' in n || 'tekst' in n) {
+        const k = tekstNoegle(n);
+        const v = n.t ? { t: n.t, v: n.v, w: n.w } : n.tekst;
+        saetTekst(tekst, v);
+        if (k !== sidst) {
+          saetTekst(meld, v);
+          sidst = k;
+        }
+      }
+      if ('fremdrift' in n) {
+        const f = n.fremdrift;
+        bjaelke.hidden = f == null;
+        if (f === 'ubestemt') bjaelke.removeAttribute('value');
+        else if (f && typeof f === 'object') {
+          if (f.maks != null) bjaelke.max = f.maks;
+          bjaelke.value = f.vaerdi || 0;
+        } else if (f != null) throw new Error('fodstatus: fremdrift er { maks, vaerdi }, \'ubestemt\' eller null');
+      }
+      if ('handling' in n) {
+        const h = n.handling;
+        ved = h ? h.ved : null;
+        if (h) saetTekst(hNavn, h.t ? { t: h.t } : h.tekst);
+        if (Boolean(h) !== (maal && maal.tagName === 'BUTTON')) bygMaal(Boolean(h));
+      }
+    }
+    rod.appendChild(meld);
+    bygMaal(false);
+    saet({ status: o.status || 'none', ...(o.t != null || o.tekst != null ? { t: o.t, v: o.v, w: o.w, tekst: o.tekst } : {}), fremdrift: o.fremdrift == null ? null : o.fremdrift, handling: o.handling || null });
+    return { rod, saet, get status() { return status; }, get maal() { return maal; } };
+  }
+
   /* ── Værktøjstip (fra 2.3.0) ── En kort forklaring, der vises ved hover og ved tastaturfokus på maal, kan holdes åben
      med musen (man kan flytte musen op på tippet), og forsvinder ved Esc, når musen går væk, og når fokus går (WCAG
      1.4.13). role="tooltip"; maal får aria-describedby. Tippet står midt over maal, under det, hvis der ikke er plads
      over, og ved venstre eller højre kant, hvis det ellers går ud over vinduet: kun klasser (under, venstre-kant,
      hoejre-kant), ingen inline-stil. Kittet lægger maal i en <span class="tip-plads">, som tippet placeres ud fra (står
-     maal allerede i en, bruges den). o: { t|tekst }. Returnerer { tip, plads, vis(), skjul(), synlig }. */
+     maal allerede i en, bruges den). o: { t|tekst }. Returnerer { tip, plads, vis(), skjul(), synlig }. Fra 2.5.0 også
+     saetTekst(t|tekst) (ny tekst i samme tip) og fjern() (tippet, lytterne og aria-describedby fjernes, og en .tip-plads,
+     kittet selv lavede, pakkes ud igen), så et program (og kittet selv i visningsskiftet og båndet) kan slå et tip til og
+     fra uden at bygge elementet om. */
   let tipNr = 0;
   const TIP_VENT = 300, TIP_SLIP = 150, TIP_AFSTAND = 6, TIP_KANT = 8;
   function vaerktoejstip(maal, o) {
     const nr = ++tipNr;
-    let plads = maal.parentElement;
+    let plads = maal.parentElement, egenPlads = false;
     if (!plads || !plads.classList.contains('tip-plads')) {
       plads = el('span', 'tip-plads');
+      egenPlads = true;
       if (maal.parentNode) maal.parentNode.insertBefore(plads, maal);
       plads.appendChild(maal);
     }
@@ -1453,25 +1727,45 @@
       document.removeEventListener('keydown', esc, true);
     }
     const tastatur = () => { try { return maal.matches(':focus-visible'); } catch (e) { return true; } };
-    plads.addEventListener('mouseenter', () => {
+    const ind = () => {
       mus = true;
       clearTimeout(slipUr);
       if (tip.hidden) visUr = setTimeout(vis, TIP_VENT);
-    });
-    plads.addEventListener('mouseleave', () => {
+    };
+    const ud = () => {
       mus = false;
       clearTimeout(visUr);
       if (!fokus) slipUr = setTimeout(skjul, TIP_SLIP);
-    });
-    maal.addEventListener('focus', () => {
+    };
+    const paa = () => {
       fokus = true;
       if (tastatur()) vis();
-    });
-    maal.addEventListener('blur', () => {
+    };
+    const af = () => {
       fokus = false;
       if (!mus) skjul();
-    });
-    return { tip, plads, vis, skjul, get synlig() { return !tip.hidden; } };
+    };
+    plads.addEventListener('mouseenter', ind);
+    plads.addEventListener('mouseleave', ud);
+    maal.addEventListener('focus', paa);
+    maal.addEventListener('blur', af);
+    function fjern() {
+      skjul();
+      plads.removeEventListener('mouseenter', ind);
+      plads.removeEventListener('mouseleave', ud);
+      maal.removeEventListener('focus', paa);
+      maal.removeEventListener('blur', af);
+      tip.remove();
+      const rest = (maal.getAttribute('aria-describedby') || '').split(/\s+/).filter(x => x && x !== tip.id);
+      if (rest.length) maal.setAttribute('aria-describedby', rest.join(' '));
+      else maal.removeAttribute('aria-describedby');
+      if (egenPlads && plads.parentNode) {
+        const fik = document.activeElement === maal;
+        plads.parentNode.replaceChild(maal, plads);
+        if (fik) maal.focus();
+      }
+    }
+    return { tip, plads, vis, skjul, get synlig() { return !tip.hidden; }, saetTekst: v => saetTekst(tip, v), fjern };
   }
 
   /* ── Afkrydsning, kontakt, radiogruppe og valgliste (fra 2.3.0) ── Formularens valg på browserens egne <input> og
@@ -1507,8 +1801,32 @@
 
   /* Afkrydsning: <input type="checkbox">. o: { id, t|tekst, valgt, delvis, deaktiveret, navn, vaerdi, hjaelp, fejl,
      vedSkift(valgt) }. delvis: true er "delvis valgt" (indeterminate), fx en "Vælg alle" over en liste, hvor nogle er
-     valgt; et klik gør den hel. Returnerer { rod, input, valgt, saetValgt(v), saetDelvis() }. */
+     valgt; et klik gør den hel. Returnerer { rod, input, valgt, saetValgt(v), saetDelvis() }.
+     Fra 2.5.0 (G7): aria|ariaT (med ariaV til data-v) uden t og tekst giver boksen alene (16 px), uden synlig tekst og
+     uden .afk-felt, fx i en tabelrække, hvor rækken er det synlige navn. rod er så selve <input>. Hjælp og fejl hører
+     til en afkrydsning med tekst. */
   function afkrydsning(o) {
+    if ((o.aria || o.ariaT) && o.t == null && o.tekst == null) {
+      if (o.hjaelp != null || o.fejl != null) throw new Error('afkrydsning: hjælp og fejl kræver en synlig tekst');
+      const inp = document.createElement('input');
+      inp.type = 'checkbox';
+      if (o.id) inp.id = o.id;
+      inp.className = 'afk-boks';
+      aria(inp, o);
+      if (o.ariaV != null) inp.setAttribute('data-v', String(o.ariaV));
+      if (o.navn) inp.name = o.navn;
+      if (o.vaerdi != null) inp.value = String(o.vaerdi);
+      if (o.deaktiveret) inp.disabled = true;
+      inp.checked = Boolean(o.valgt);
+      if (o.delvis) inp.indeterminate = true;
+      if (o.vedSkift) inp.addEventListener('change', () => o.vedSkift(inp.checked));
+      return {
+        rod: inp, input: inp,
+        get valgt() { return inp.checked; },
+        saetValgt(v) { inp.checked = Boolean(v); inp.indeterminate = false; },
+        saetDelvis() { inp.indeterminate = true; },
+      };
+    }
     const { rod, inp } = boksRaekke('checkbox', o, o.id || 'kit-afk-' + ++valgNr);
     inp.checked = Boolean(o.valgt);
     if (o.delvis) inp.indeterminate = true;
@@ -1527,9 +1845,13 @@
      ord ved siden af (aria-hidden; kontakten siger selv sin tilstand). Begge ord står i markup, og kit.css viser det, der
      passer (:checked), så et sprogskift aldrig skal bygge kontakten om. En kontakt virker straks; noget, der først gælder
      efter Gem, er en afkrydsning. o: { id, t|tekst, til, deaktiveret, navn, hjaelp, fejl, ord: { til, fra },
-     vedSkift(til) }. Returnerer { rod, input, til, saet(v) }. */
+     vedSkift(til) }. Returnerer { rod, input, til, saet(v) }.
+     Fra 2.5.0 (K31): ariaLabelledby eller etiket: null med aria|ariaT giver kontakten uden synlig tekst (navnet står i
+     rækken). Ordene for til og fra kan stadig stå ved siden af. */
   function kontakt(o) {
     const id = o.id || 'kit-tf-' + ++valgNr;
+    const tekst = tekstAf(o);
+    const udefra = navnUdefra('kontakt', o, tekst == null ? null : tekst);
     const rod = el('div', 'afk-felt');
     const lab = el('label', 'afk');
     const inp = document.createElement('input');
@@ -1540,7 +1862,10 @@
     if (o.navn) inp.name = o.navn;
     if (o.deaktiveret) inp.disabled = true;
     inp.checked = Boolean(o.til);
-    lab.append(inp, el('span', 'afk-tekst', tekstAf(o)));
+    if (udefra) {
+      navngiv(inp, o);
+      lab.appendChild(inp);
+    } else lab.append(inp, el('span', 'afk-tekst', tekst));
     if (o.ord) {
       const ord = el('span', 'tilfra-ord');
       ord.setAttribute('aria-hidden', 'true');
@@ -1560,11 +1885,30 @@
   /* Radiogruppe: <fieldset> med <legend> og én <input type="radio"> pr. valg (samme name). Pilene flytter og vælger, og
      Tab går ind og ud som ét stop: browserens egen opførsel. o: { etiket, navn, valg: [{ id, t|tekst, hjaelp,
      deaktiveret }], valgt, vandret, hjaelp, fejl, vedValg(id) }. Returnerer { rod, inputs, valgt, vaelg(id) }; vaelg kalder
-     ikke vedValg. */
+     ikke vedValg.
+     Fra 2.5.0 (K31): ariaLabelledby (id på rækkens egen etiket) eller etiket: null med aria|ariaT giver gruppen uden
+     <legend>: en <div class="valgsaet" role="radiogroup"> navngivet udefra, så den kan stå i en række med rækkens etiket.
+     Uden noget navn (etiket: null uden ariaLabelledby og aria) og med både etiket og ariaLabelledby: en fejl. */
+  /* Navn uden for komponenten (K31): fælles kontrol for radiogruppe, valgliste og kontakt. Giver true, når navnet kommer
+     udefra (ariaLabelledby eller aria), og kaster en fejl, hvis der intet navn er, eller hvis der er to. */
+  function navnUdefra(hvad, o, synlig) {
+    const udefra = o.ariaLabelledby != null;
+    if (udefra && synlig != null) throw new Error(hvad + ': etiket (tekst) eller ariaLabelledby, ikke begge');
+    if (o.etiket === null && !udefra && !(o.aria || o.ariaT)) throw new Error(hvad + ': skal have et navn (ariaLabelledby, aria eller ariaT, når etiket er null)');
+    return udefra || o.etiket === null;
+  }
+  function navngiv(e, o) {
+    if (o.ariaLabelledby != null) e.setAttribute('aria-labelledby', o.ariaLabelledby);
+    else aria(e, o);
+  }
   function radiogruppe(o) {
     const nr = ++valgNr, navn = o.navn || 'kit-radio-' + nr;
-    const rod = el('fieldset', 'valgsaet' + (o.vandret ? ' vandret' : ''));
-    rod.appendChild(el('legend', 'label', tk(o.etiket)));
+    const udefra = navnUdefra('radiogruppe', o, o.etiket);
+    const rod = el(udefra ? 'div' : 'fieldset', 'valgsaet' + (o.vandret ? ' vandret' : ''));
+    if (udefra) {
+      rod.setAttribute('role', 'radiogroup');
+      navngiv(rod, o);
+    } else rod.appendChild(el('legend', 'label', tk(o.etiket)));
     const inputs = o.valg.map((v, i) => {
       const { rod: r, inp } = boksRaekke('radio', { ...v, navn, vaerdi: v.id }, `kit-radio-${nr}-${i + 1}`);
       inp.checked = v.id === o.valgt;
@@ -1587,14 +1931,17 @@
      pil. Til ét valg blandt mange i en formular; listen åbner som styresystemets. o: { id, etiket, valg: [{ id, t|tekst,
      deaktiveret }], valgt, deaktiveret, hjaelp, fejl, vedValg(id) }. Returnerer { rod, select, valgt, vaelg(id) }; vaelg
      kalder ikke vedValg. */
+  /* Fra 2.5.0 (K31): ariaLabelledby eller etiket: null med aria|ariaT giver listen uden sin egen <label>. */
   function valgliste(o) {
     const id = o.id || 'kit-vl-' + ++valgNr;
+    const udefra = navnUdefra('valgliste', o, o.etiket);
     const rod = el('div', 'felt');
-    const lab = el('label', 'label', tk(o.etiket));
-    lab.htmlFor = id;
+    const lab = udefra ? null : el('label', 'label', tk(o.etiket));
+    if (lab) lab.htmlFor = id;
     const ramme = el('span', 'vliste');
     const sel = document.createElement('select');
     sel.id = id;
+    if (udefra) navngiv(sel, o);
     for (const v of o.valg) {
       const op = document.createElement('option');
       op.value = v.id;
@@ -1606,7 +1953,8 @@
     if (o.valgt != null) sel.value = o.valgt;
     if (o.deaktiveret) sel.disabled = true;
     ramme.append(sel, ikon('ned'));
-    rod.append(lab, ramme);
+    if (lab) rod.append(lab, ramme);
+    else rod.appendChild(ramme);
     hjaelpUnder(rod, sel, id, o, 'hj');
     if (o.vedValg) sel.addEventListener('change', () => o.vedValg(sel.value));
     return { rod, select: sel, get valgt() { return sel.value; }, vaelg(v) { sel.value = v; } };
@@ -1624,50 +1972,112 @@
      Esc giver svaret 'esc', lukkeknappen 'luk' og luk() fra koden 'kode'. Returnerer { rod, aabn(fokus), luk(svar),
      aaben, indhold, overskrift, knap(id) }. */
   let dlgNr = 0;
+  /* Fra 2.5.0 (hver kun med sin indstilling; uden dem er dialogen præcis som i 2.3.0):
+     - id: dialogens id; overskrift, sætning og fejlfelt får id'erne <id>-h, <id>-p og <id>-fejl (som Kit.kasse). knapId
+       på en knap giver knappen et id (knappens id er stadig dens svar).
+     - foer: Node over overskriften (fx et fletbånd); overskriften navngiver stadig dialogen (aria-labelledby).
+     - fejl: true giver et felt med role="alert" over fodlinjen (.modal-fejl, skjult, når det er tomt); d.fejl(t|tekst)
+       sætter teksten, d.fejl(null) rydder den, og aabn() rydder den. En fejl som nøgle udfyldes af udfyld(element), hvis
+       den er givet (fx el => Sprog.anvend(el)).
+     - En knaps ved må give et løfte: knappen får aria-busy="true" og aria-disabled="true" og kan ikke trykkes igen, mens
+       det venter. Giver løftet true, lukker dialogen med knappens svar; ellers bliver den åben. Afvises det, bliver den
+       åben, og fejlen (en tekst, { t } eller en Error) står i fejlfeltet. Et svar, der ikke er et løfte, virker som før.
+     - guide: true er den brede udgave til en guide (.modal-guide, 820 px, ingen luft): ingen overskrift, sætning eller
+       fodlinje fra dialogen; indholdet er guiden (Kit.guide), og dialogen navngives af guidens overskrift (ariaLabelledby,
+       påkrævet). Fokus går ved åbning til den overskrift. Esc ('esc') og luk() ('kode') meldes i vedLuk som i de andre. */
   function dialog(o) {
-    const nr = ++dlgNr;
-    const rod = el('dialog', 'modal' + (o.bred ? ' bred' : ''));
-    const top = el('div', 'modal-top');
-    const h = el('h2', null, tekstAf(o));
-    h.id = 'kit-dlg' + nr + '-h';
-    h.tabIndex = -1;
-    rod.setAttribute('aria-labelledby', h.id);
-    top.appendChild(h);
-    let lukKnap = null;
-    if (o.luk) {
-      if (typeof o.luk !== 'object' || !(o.luk.ariaT || o.luk.aria)) throw new Error('dialog: lukkeknappen skal have et navn (luk: { ariaT } eller { aria })');
-      lukKnap = el('button', 'modal-luk');
-      lukKnap.type = 'button';
-      lukKnap.appendChild(ikon('luk'));
-      aria(lukKnap, o.luk);
-      lukKnap.addEventListener('click', () => luk('luk'));
-      top.appendChild(lukKnap);
+    const nr = ++dlgNr, guide = Boolean(o.guide);
+    const base = o.id || 'kit-dlg' + nr;
+    if (guide && !o.ariaLabelledby) throw new Error('dialog: en guide skal navngives af guidens overskrift (ariaLabelledby)');
+    if (guide && (o.knapper && o.knapper.length || o.luk || o.p != null)) throw new Error('dialog: en guide har sine egne knapper og ingen sætning eller lukkeknap');
+    const rod = el('dialog', 'modal' + (o.bred ? ' bred' : '') + (guide ? ' modal-guide' : ''));
+    if (o.id) rod.id = o.id;
+    if (o.foer) {
+      const foer = el('div', 'modal-foer');
+      foer.appendChild(o.foer);
+      rod.appendChild(foer);
     }
-    rod.appendChild(top);
+    let h = null, lukKnap = null;
+    if (guide) rod.setAttribute('aria-labelledby', o.ariaLabelledby);
+    else {
+      const top = el('div', 'modal-top');
+      h = el('h2', null, tekstAf(o));
+      h.id = base + '-h';
+      h.tabIndex = -1;
+      rod.setAttribute('aria-labelledby', h.id);
+      top.appendChild(h);
+      if (o.luk) {
+        if (typeof o.luk !== 'object' || !(o.luk.ariaT || o.luk.aria)) throw new Error('dialog: lukkeknappen skal have et navn (luk: { ariaT } eller { aria })');
+        lukKnap = el('button', 'modal-luk');
+        lukKnap.type = 'button';
+        lukKnap.appendChild(ikon('luk'));
+        aria(lukKnap, o.luk);
+        lukKnap.addEventListener('click', () => luk('luk'));
+        top.appendChild(lukKnap);
+      }
+      rod.appendChild(top);
+    }
     if (o.p != null) {
       const p = el('p', 'modal-tekst', tk(o.p));
-      p.id = 'kit-dlg' + nr + '-p';
+      p.id = base + '-p';
       rod.setAttribute('aria-describedby', p.id);
       rod.appendChild(p);
     }
     const indhold = el('div', 'modal-indhold');
     if (o.indhold) indhold.appendChild(o.indhold);
     rod.appendChild(indhold);
+    let fejlEl = null;
+    if (o.fejl) {
+      fejlEl = el('p', 'modal-fejl');
+      fejlEl.id = base + '-fejl';
+      fejlEl.setAttribute('role', 'alert');
+      rod.appendChild(fejlEl);
+    }
+    function visFejl(v) {
+      if (!fejlEl) throw new Error('dialog: fejl kræver fejl: true');
+      const t = v == null ? null : v instanceof Error ? v.message : typeof v === 'object' && !v.t && v.tekst == null && v.message ? v.message : v;
+      saetTekst(fejlEl, t);
+      if (t && typeof t === 'object' && t.t && o.udfyld) o.udfyld(fejlEl);
+    }
     const knapper = {};
     const fod = el('div', 'modal-fod');
     const liste = (o.knapper || []).slice();
     const pri = liste.findIndex(k => k.variant === 'primary');
     if (pri >= 0) liste.push(liste.splice(pri, 1)[0]);
     let api = null;
+    function venter(b, ja) {
+      if (ja) {
+        b.setAttribute('aria-busy', 'true');
+        b.setAttribute('aria-disabled', 'true');
+      } else {
+        b.removeAttribute('aria-busy');
+        b.removeAttribute('aria-disabled');
+      }
+    }
     for (const k of liste) {
+      const svarAf = k.svar != null ? k.svar : k.id;
       const b = knap({ t: k.t, tekst: k.tekst, variant: k.variant, ikon: k.ikon, ved: () => {
-        if (k.ved && k.ved(api) === false) return;
-        luk(k.svar != null ? k.svar : k.id);
+        if (b.getAttribute('aria-busy') === 'true') return;
+        const r = k.ved ? k.ved(api) : undefined;
+        if (r && typeof r.then === 'function') {
+          venter(b, true);
+          r.then(v => {
+            venter(b, false);
+            if (v === true) luk(svarAf);
+          }, e => {
+            venter(b, false);
+            if (fejlEl) visFejl(e == null ? null : e);
+          });
+          return;
+        }
+        if (r === false) return;
+        luk(svarAf);
       } });
       if (k.id != null) {
         b.dataset.svar = k.id;
         knapper[k.id] = b;
       }
+      if (k.knapId) b.id = k.knapId;
       fod.appendChild(b);
     }
     if (liste.length) rod.appendChild(fod);
@@ -1675,6 +2085,7 @@
     function foersteFokus(f) {
       if (f && typeof f === 'object') return f;
       if (f != null) return knapper[f] || document.getElementById(f);
+      if (guide) return document.getElementById(o.ariaLabelledby) || rod;
       const felt = indhold.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
       if (felt) return felt;
       const alle = [...fod.querySelectorAll('button:not([disabled])')];
@@ -1687,6 +2098,7 @@
       const a = document.activeElement;
       fra = a && a !== document.body ? a : null;
       svar = 'kode';
+      if (fejlEl) saetTekst(fejlEl, null);
       rod.showModal();
       const maal = foersteFokus(fokus !== undefined ? fokus : o.fokus);
       if (maal) maal.focus();
@@ -1705,6 +2117,7 @@
       if (o.vedLuk) o.vedLuk(s);
     });
     api = { rod, aabn, luk: s => luk(s == null ? 'kode' : s), indhold, overskrift: h, knap: id => knapper[id], get aaben() { return rod.open; } };
+    if (fejlEl) api.fejl = visFejl;
     return api;
   }
 
@@ -1712,13 +2125,20 @@
      o: { t|tekst, p, ja, nej, farlig, udfyld(rod) }, hvor ja og nej er { t } eller { tekst }. Returnerer et løfte: true
      ved ja, false ved nej, Esc og luk. farlig: true gør ja til en farlig knap og giver nej fokus; ellers er ja primær og
      har fokus. udfyld kaldes med dialogen, lige før den åbner (fx rod => Sprog.anvend(rod), når teksterne er nøgler).
-     Dialogen fjernes fra siden igen, når den er lukket. */
+     Dialogen fjernes fra siden igen, når den er lukket.
+     Fra 2.5.0: ved (en handling, der giver et løfte) gør bekræftelsen til en, der kan fejle: ja venter på løftet (knappen
+     er aria-busy); opfyldes det, lukker dialogen, og bekraeft giver true; afvises det, bliver dialogen åben med fejlen i
+     et felt med role="alert" (en tekst, { t } eller en Error; en nøgle udfyldes af udfyld), og ja kan trykkes igen. Uden
+     ved: som før. */
   function bekraeft(o) {
     const spec = v => (v && typeof v === 'object' ? { t: v.t, tekst: v.tekst } : { tekst: v });
     return new Promise(svar => {
+      const ja = { id: 'ja', ...spec(o.ja), variant: o.farlig ? 'danger' : 'primary' };
+      if (o.ved) ja.ved = () => Promise.resolve().then(o.ved).then(() => true);
       const d = dialog({
         t: o.t, tekst: o.tekst, p: o.p, fokus: o.farlig ? 'nej' : 'ja',
-        knapper: [{ id: 'nej', ...spec(o.nej) }, { id: 'ja', ...spec(o.ja), variant: o.farlig ? 'danger' : 'primary' }],
+        ...(o.ved ? { fejl: true, udfyld: o.udfyld } : {}),
+        knapper: [{ id: 'nej', ...spec(o.nej) }, ja],
         vedLuk: s => {
           d.rod.remove();
           svar(s === 'ja');
@@ -1742,5 +2162,5 @@
     return ul;
   }
 
-  window.Kit = Object.freeze({ IKONER, ikon, registrerIkoner, chip, knap, felt, banner, tabel, commandBar, navTrae, visningsskift, guide, fletbaand, SYMBOL, vaelger, sidepanel, segment, filterchip, filterchips, kasse, statusflise, statusfliser, tomTilstand, fremdrift, vaerktoejstip, afkrydsning, kontakt, radiogruppe, valgliste, dialog, bekraeft, sideskift, tabelRul });
+  window.Kit = Object.freeze({ IKONER, ikon, registrerIkoner, chip, knap, felt, banner, tabel, commandBar, navTrae, visningsskift, guide, fletbaand, SYMBOL, vaelger, sidepanel, segment, filterchip, filterchips, kasse, statusflise, statusfliser, tomTilstand, fremdrift, vaerktoejstip, afkrydsning, kontakt, radiogruppe, valgliste, dialog, bekraeft, sideskift, tabelRul, fodstatus });
 })();

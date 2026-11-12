@@ -105,9 +105,9 @@
     const aktive = FILTRE.filter(har);
     if (!aktive.length && !har('dag') && !har('fra')) return [];
     const bar = el('div', { className: 'login-stier' }, el('span', { className: 'note', textContent: T.loginFiltre }));
-    for (const k of aktive) bar.append(V.knap(`${navn[k](params.get(k))} ×`, uden(k), 'sti-chip', fmt(T.dykFjern, { navn: navn[k](params.get(k)) })));
-    if (har('dag')) bar.append(V.knap(`${V.datoLang(params.get('dag'))} ×`, { gaa: 'login?' + medPeriode() }, 'sti-chip', fmt(T.dykFjern, { navn: V.datoLang(params.get('dag')) })));
-    if (har('fra') && har('til')) { const n = V.interval(params.get('fra'), params.get('til')); bar.append(V.knap(`${n} ×`, { gaa: 'login?' + medPeriode() }, 'sti-chip', fmt(T.dykFjern, { navn: n }))); }
+    for (const k of aktive) bar.append(V.fjernChip(navn[k](params.get(k)), uden(k)));
+    if (har('dag')) bar.append(V.fjernChip(V.datoLang(params.get('dag')), { gaa: 'login?' + medPeriode() }));
+    if (har('fra') && har('til')) { const n = V.interval(params.get('fra'), params.get('til')); bar.append(V.fjernChip(n, { gaa: 'login?' + medPeriode() })); }
     return [bar];
   }
   function fliser(d) {

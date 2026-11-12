@@ -4,6 +4,14 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-12 23:30 — Wi24rd UI Kit 2: fodlinjen, filtrene og fliserne (pakke 2.5.0)
+#### Ændret
+- **Hentningens status i fodlinjen** er kittets: mærke eller ring, kort tekst og en tynd fremdriftslinje; et klik åbner Overblik.
+- **Aktive filtre** (fx "Polen", "3. november") er kittets filterchips med ×; teksten streges over, når musen står på dem.
+- **Den valgte flise**, flisen med to mål ("Afvist i går" og "i dag hidtil") og datoflisen er kittets.
+- **Tallet ved Siden sidst** og visninger, der er slået fra uden API Token, er kittets.
+- Pakke 2.5.0 ligger uændret i `ui/assets/kit2/`.
+
 ### 2026-11-12 23:30 — Wi24rd UI Kit 2: tabellerne (pakke 2.4.0)
 #### Ændret
 - **Overblik er kittets tabel:** et klik, Enter eller mellemrum på en række åbner domænets Angreb, piletasterne flytter mellem rækkerne, og domænet står fast, når tabellen ruller vandret, ved alle vinduesbredder.

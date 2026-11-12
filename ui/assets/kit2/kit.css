@@ -7,8 +7,13 @@
    Filterchip (.fchip), Kasse (.kasse), StatusTile (.sflise), Tom tilstand (.tomt), Fremdrift (.frem), Værktøjstip (.tip),
    Afkrydsning (.afk), Radiogruppe (.valgsaet), Kontakt (.tilfra), Valgliste (.vliste), Dialog (.modal), tabellens sortering
    og sideskift (.sorter, .sideskift) og Tekststørrelse (<html data-tekst>). Fra 2.4.0 også tabellens rulleramme, faste
-   bredder og skillelinjer (.tabel-rul, .kol-*, .kol-skille, .layout-auto, .fast-foerste, .uden-valg). Kittet sætter
-   aldrig inline-stil. */
+   bredder og skillelinjer (.tabel-rul, .kol-*, .kol-skille, .layout-auto, .fast-foerste, .uden-valg). Fra 2.5.0 også
+   statusdelen i fodlinjen (.fodstatus), mærket med programmets billede (.mrk-billede, .mrk-maske), titellinjeknappernes
+   tilstande, visningsskiftets tal og punkter slået fra, dialogens fejlfelt, indhold over overskriften og guide-udgaven
+   (.modal-fejl, .modal-foer, .modal-guide), kassens ikon (.kasse-ikon), flisens valg, to mål og frie indhold
+   (.sflise-to, .sflise-maal, .sflise-under-maal, .sflise-indhold), filteret, der kan fjernes (.fchip-fjern, .fchip-x), den
+   tomme tilstand, der tager imod, og to handlinger (.tomt-modtager, .tomt-slip, .tomt-handlinger) og --tekst-zoom.
+   Kittet sætter aldrig inline-stil. */
 
 /* ── Skrifter (pakket med, OFL; intet hentes) ── */
 @font-face { font-family: "Inter"; font-style: normal; font-display: swap; font-weight: 100 900; src: url(fonts/inter-latin-wght-normal.woff2) format("woff2-variations"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
@@ -205,6 +210,24 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .titel .rk:hover { background: var(--rail-active); color: var(--rail-strong); }
 .titel :focus-visible { outline-color: var(--rail-strong); outline-offset: 0; }
+/* Fra 2.5.0 (K22): mærket med programmets eget billede. .mrk-billede er et <img> eller en <svg> (fill/stroke
+   currentColor) på 20 px højde med sin egen bredde; .mrk-maske er en flade i titellinjens mærkefarve, som programmet
+   giver form med mask-image og bredde i sin egen CSS (standard 20 px). Kittet henter intet. Vælgerne er en enkelt klasse
+   (uden .titel foran), så programmets egen klasse i dets CSS (indlæst efter kittets) kan sætte bredden (målt i WebKit). */
+.mrk-billede { display: block; flex: none; height: 20px; width: auto; color: var(--accent-on-rail); }
+.mrk-maske {
+  display: block; flex: none; width: 20px; height: 20px; background: var(--accent-on-rail);
+  -webkit-mask-position: left center; -webkit-mask-size: contain; -webkit-mask-repeat: no-repeat;
+  mask-position: left center; mask-size: contain; mask-repeat: no-repeat;
+}
+/* Fra 2.5.0 (K23): titellinjeknap slået fra (nedtonet, ingen hover), siden, den peger på, er vist (aria-current: flade
+   og en streg forneden i mærkefarven) og panelet, den styrer, er åbent (aria-expanded: flade og en ring). Ikke kun farve:
+   stregen og ringen er form. Et link med .rk har ingen understregning. */
+.titel a.rk { text-decoration: none; }
+.titel .rk:disabled, .titel .rk[aria-disabled="true"] { opacity: .6; cursor: default; }
+.titel .rk:disabled:hover, .titel .rk[aria-disabled="true"]:hover { background: var(--rail); color: var(--rail-text); }
+.titel .rk[aria-current]:not([aria-current="false"]) { background: var(--rail-active); color: var(--rail-strong); box-shadow: inset 0 -2px 0 var(--accent-on-rail); }
+.titel .rk[aria-expanded="true"] { background: var(--rail-active); color: var(--rail-strong); box-shadow: inset 0 0 0 1px var(--rail-text); }
 .midte { display: flex; flex: 1; min-height: 0; }
 .arb { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--surface); }
 .vl {
@@ -294,6 +317,19 @@ button, input, select, textarea { font: inherit; color: inherit; }
    der er for langt, afkortes med … i stedet for at løbe ud af punktet (navnet bør højst være 17 tegn). */
 .skift.taet .vs { height: 30px; }
 .skift.taet .vs > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Fra 2.5.0 (K24): et punkt slået fra (aria-disabled: nedtonet, ingen hover; hvorfor i et værktøjstip, hvis plads fylder
+   bredden), et tal ved punktet (.ant) og et tal, der kræver handling (.ant-kraever: fyldt pille med kant og fed skrift,
+   ikke kun farve). */
+.skift > .tip-plads { display: flex; }
+.skift > .tip-plads > .vs { flex: 1; min-width: 0; }
+.vs[aria-disabled="true"] { opacity: .5; cursor: default; }
+.vs[aria-disabled="true"]:hover { background: none; }
+.vs .ant { margin-left: auto; font-size: var(--small-size); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.vs .ant + kbd { margin-left: 0; }
+.vs .ant-kraever {
+  min-width: 20px; height: 18px; padding: 0 6px; border: 1px solid var(--danger); border-radius: var(--radius-pill);
+  background: var(--danger-soft); color: var(--danger); font-weight: 700; text-align: center; line-height: 16px;
+}
 
 /* ── StatusFooter ── */
 .fodl {
@@ -303,6 +339,41 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .fodl .h { margin-left: auto; display: flex; gap: var(--space-4); align-items: center; }
 .fodl svg { width: 12px; height: 12px; fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -1px; margin-right: 4px; }
+/* Fra 2.5.0 (K25): statusdelen. Mærket er symbolet i statussens tekstfarve (✓ ! × i –) eller en lille ring, der snurrer
+   (henter); teksten siger altid det samme, så status ikke hviler på farven. Fremdriften er en tynd linje (4 px); den
+   ubestemte glider og står stille ved prefers-reduced-motion. Med en handling er delen en knap med hover og en
+   fokusring inden for fodlinjen (som klipper). */
+.fodstatus { display: inline-flex; align-items: center; min-width: 0; }
+.fodstatus-maal {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; height: 22px; padding: 0 var(--space-2);
+  border: 0; border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--text-muted); font: inherit;
+}
+button.fodstatus-maal { color: var(--text); cursor: pointer; }
+button.fodstatus-maal:hover { background: var(--surface); }
+button.fodstatus-maal:focus-visible { outline-offset: -2px; }
+.fodstatus-mrk { flex: none; font-weight: 700; }
+.fodstatus[data-status="ok"] .fodstatus-mrk { color: var(--ok); }
+.fodstatus[data-status="warn"] .fodstatus-mrk { color: var(--warn); }
+.fodstatus[data-status="danger"] .fodstatus-mrk { color: var(--danger); }
+.fodstatus[data-status="info"] .fodstatus-mrk { color: var(--info); }
+.fodstatus[data-status="none"] .fodstatus-mrk { color: var(--text-muted); }
+.fodstatus-mrk.snurr { width: 10px; height: 10px; }
+.fodstatus-tekst { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.fodstatus-bjaelke {
+  -webkit-appearance: none; appearance: none; display: block; flex: none; width: 64px; height: 4px;
+  border: 0; border-radius: var(--radius-pill); background: var(--border); color: var(--accent); overflow: hidden;
+}
+.fodstatus-bjaelke::-webkit-progress-bar { background: var(--border); }
+.fodstatus-bjaelke::-webkit-progress-value { background: var(--accent); }
+.fodstatus-bjaelke::-moz-progress-bar { background: var(--accent); }
+.fodstatus-bjaelke:indeterminate,
+.fodstatus-bjaelke:indeterminate::-webkit-progress-bar {
+  background: linear-gradient(90deg, var(--border) 0 35%, var(--accent) 35% 65%, var(--border) 65% 100%) 0 0 / 300% 100%;
+  animation: kit-glid 1.4s linear infinite;
+}
+.fodstatus-bjaelke:indeterminate::-moz-progress-bar { background: transparent; }
+@keyframes kit-glid { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .fodstatus-bjaelke:indeterminate, .fodstatus-bjaelke:indeterminate::-webkit-progress-bar { animation: none; background-position: 50% 0; } }
 
 /* ── Wizard ── Trinlisten til venstre, det aktuelle trin til højre, fodlinjen med samme knapper hele vejen. */
 .wiz {
@@ -435,6 +506,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .fchip[aria-pressed="true"] .ant { color: var(--text); }
 .fchip[disabled] { opacity: .55; cursor: default; }
 .fchip[disabled]:hover { background: var(--surface); }
+/* Fra 2.5.0 (K34): et aktivt filter, der kan fjernes: blød accentflade, kant i accent, fed skrift og et × til højre;
+   under musen streges ordet over (det, der sker ved klik), ikke kun en ny farve. */
+.fchip-fjern { gap: var(--space-1); padding: 0 var(--space-2) 0 var(--space-3); background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+.fchip-fjern:hover { background: var(--accent-soft); }
+.fchip-fjern:hover > span { text-decoration: line-through; }
+.fchip-x { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── Kasse ── Kittets kort (card) fra 2.3.0: flade med kant, hoved (overskrift og valgfri handling), indhold og valgfri
    fodlinje. Ingen overflow, så en vælger i hovedet ikke klippes; hovedet og fodlinjen har selv de runde hjørner. */
@@ -444,6 +521,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--border); border-radius: var(--radius-md) var(--radius-md) 0 0; background: var(--surface-raised);
 }
 .kasse-top > h2, .kasse-top > h3, .kasse-top > h4 { flex: 1; min-width: 0; margin: 0; font-size: var(--h3-size); line-height: var(--h3-line); font-weight: var(--h3-weight); }
+.kasse-ikon { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } /* fra 2.5.0 (K32) */
 .kasse-handling { display: flex; align-items: center; gap: var(--space-2); flex: none; }
 .kasse-handling .btn.ghost { height: 30px; background: var(--surface-raised); border-color: var(--surface-raised); }
 .kasse-handling .btn.ghost:hover { background: var(--surface); }
@@ -476,6 +554,31 @@ button.sflise:hover, a.sflise:hover { background: var(--surface-raised); }
 .sflise-tal { font-size: var(--h1-size); line-height: var(--h1-line); font-weight: 600; letter-spacing: var(--h1-tracking); font-variant-numeric: tabular-nums; }
 .sflise-under { display: inline-flex; align-items: baseline; gap: var(--space-1); font-size: var(--small-size); line-height: var(--small-line); color: var(--text-muted); }
 .sflise-pil { font-weight: 700; }
+/* Fra 2.5.0 (K33): flisen for det viste (aria-current på målet): blød accentflade og en kant i accent, der er to px tyk
+   (kanten plus en indre streg), mens stregen til venstre beholder statussens farve. En flise med to mål (.sflise-to):
+   .sflise-maal dækker hele flisen med ::after (og har fokusringen dér), .sflise-under-maal ligger ovenpå som et link.
+   (K35) .sflise-indhold står, hvor tallet ellers står. */
+.sflise[aria-current]:not([aria-current="false"]),
+.sflise:has(> .sflise-maal[aria-current]:not([aria-current="false"])) {
+  background: var(--accent-soft); border-top-color: var(--accent); border-right-color: var(--accent); border-bottom-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+button.sflise[aria-current]:not([aria-current="false"]):hover, a.sflise[aria-current]:not([aria-current="false"]):hover { background: var(--accent-soft); }
+.sflise-to { position: relative; }
+.sflise-maal {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); align-self: stretch; min-width: 0;
+  margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; text-decoration: none; cursor: pointer;
+}
+.sflise-maal::after { content: ""; position: absolute; inset: 0; border-radius: var(--radius-md); }
+.sflise-maal:focus-visible { outline: none; }
+.sflise-maal:focus-visible::after { outline: 2px solid var(--info); outline-offset: 2px; }
+.sflise-to:has(> .sflise-maal:hover):not(:has(> .sflise-maal[aria-current]:not([aria-current="false"]))) { background: var(--surface-raised); }
+.sflise-under-maal {
+  position: relative; z-index: 1; margin: 0; padding: 0; border: 0; background: none;
+  color: var(--info); text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.sflise-under-maal:hover { text-decoration-thickness: 2px; }
+.sflise-indhold { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); min-width: 0; }
 
 /* ── Tom tilstand ── Fra 2.3.0: ikon, overskrift, én sætning og højst én handling, midt på fladen. .lille er den lave udgave
    under en tabel eller en søgning. Målene er dem, det første program brugte til sin egen tomme tilstand. */
@@ -487,6 +590,11 @@ button.sflise:hover, a.sflise:hover { background: var(--surface-raised); }
 .tomt.lille { max-width: none; gap: var(--space-1); padding: var(--space-6) var(--space-4); }
 .tomt.lille .tomt-ikon { width: 24px; height: 24px; }
 .tomt.lille .tomt-h { margin: 0; font-size: var(--h3-size); line-height: var(--h3-line); font-weight: var(--h3-weight); }
+/* Fra 2.5.0 (G8): to handlinger side om side, og en tom flade, der tager imod (fokusring med runde hjørner; en stiplet
+   kant i accent og en blød flade, mens filer trækkes over, så det ikke kun er farve). */
+.tomt-handlinger { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); margin-top: var(--space-2); }
+.tomt-modtager { border-radius: var(--radius-md); }
+.tomt-modtager.tomt-slip { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-soft); }
 
 /* ── Fremdrift ── Fra 2.3.0: en bestemt bjælke (<progress>) under teksten, eller en ring, der snurrer, foran teksten.
    Ringen står stille, når brugeren har bedt om mindre bevægelse. */
@@ -536,6 +644,9 @@ button.sflise:hover, a.sflise:hover { background: var(--surface-raised); }
 .afk-boks[aria-invalid="true"] { border-color: var(--danger); }
 .afk-boks:disabled { cursor: default; }
 .afk-tekst { min-width: 0; }
+/* Fra 2.5.0 (G7): en boks alene i en tabelcelle beholder sine 16 px (.tabel td input giver ellers felter fuld bredde og 30 px;
+   målt i WebKit). Løftet fra det første programs egen regel. */
+.tabel td input.afk-boks { width: 16px; height: 16px; padding: 0; margin: 0; }
 .afk-hj { margin-left: 24px; font-size: var(--small-size); line-height: var(--small-line); color: var(--text-muted); }
 .afk-hj.fejltekst { color: var(--danger); }
 
@@ -601,6 +712,14 @@ button.sflise:hover, a.sflise:hover { background: var(--surface-raised); }
 .modal-indhold { margin: 0 0 var(--space-4); }
 .modal-indhold:empty { display: none; }
 .modal-fod { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+/* Fra 2.5.0 (G1, G5, G6): fejlfeltet over fodlinjen (skjult, når det er tomt), indhold over overskriften og guide-udgaven
+   (820 px, ingen luft; guiden har selv sin luft). En knap, der venter, har aria-busy og står nedtonet. */
+.modal-fejl { margin: 0 0 var(--space-3); color: var(--danger); font-size: var(--small-size); line-height: var(--small-line); }
+.modal-fejl:empty { display: none; }
+.modal-foer { margin: 0 0 var(--space-3); }
+.modal.modal-guide { width: min(820px, calc(100vw - 2 * var(--space-6))); padding: 0; }
+.modal-guide .modal-indhold { margin: 0; }
+.modal .btn[aria-busy="true"] { cursor: progress; }
 
 /* ── Tekststørrelse ── Fra 2.3.0: tre trin som én fælles skala for hele fladen (tema.js sætter <html data-tekst>; normal
    har ingen attribut og er præcis som før). zoom på roden skalerer tekst, luft, ikoner og mål sammen. */
@@ -617,3 +736,12 @@ button.sflise:hover, a.sflise:hover { background: var(--surface-raised); }
 :root[data-tekst="stor"] .modal { width: min(480px, calc(100vw / 1.125 - 48px)); max-height: calc(100vh / 1.125 - 48px); }
 :root[data-tekst="lille"] .modal.bred { width: min(620px, calc(100vw / .9 - 48px)); }
 :root[data-tekst="stor"] .modal.bred { width: min(620px, calc(100vw / 1.125 - 48px)); }
+:root[data-tekst="lille"] .modal.modal-guide { width: min(820px, calc(100vw / .9 - 48px)); }
+:root[data-tekst="stor"] .modal.modal-guide { width: min(820px, calc(100vw / 1.125 - 48px)); }
+/* Fra 2.5.0 (G10): trinnet som tal, sat sammen med zoom, så programmets egne mål kan dele med det i stedet for at have
+   hver sin variabel: fx calc(100vh / var(--tekst-zoom)). @media og @container måler vinduet og følger ikke zoom (målt i
+   WebKit), så en grænse på 1200 px slår til ved 1200 px vindue i alle trin; se KOMPONENTER.md (Tekststørrelse). Uden et
+   valg er --tekst-zoom 1, og intet andet ændres. */
+:root { --tekst-zoom: 1; }
+:root[data-tekst="lille"] { --tekst-zoom: .9; }
+:root[data-tekst="stor"] { --tekst-zoom: 1.125; }

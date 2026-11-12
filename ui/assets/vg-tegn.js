@@ -91,18 +91,13 @@
     s.append(...indhold);
     return s;
   }
-  /* Kittets segmentknap (Kit.segment); et valg er ét trin i tilbage/frem. Fokus bliver på valget, når siden tegnes om.
-     KIT-ØNSKE K28: kittet har altid ét valgt. Her kan intet være valgt (et eget interval gælder): så står alle som ikke
-     valgt, og et klik på det første valg, som kittet tror er valgt og derfor ikke melder, går videre herfra. */
+  /* Kittets segmentknap (Kit.segment); et valg er ét trin i tilbage/frem. Fokus bliver på valget, når siden tegnes om. Intet er
+     valgt (valgt: null), når et eget interval gælder. */
   function segment(navn, etiket, valg, visning) {
     const valgt = valg.findIndex(v => v[2]);
-    const s = window.Kit.segment({ aria: etiket, valg: valg.map(([tekst], i) => ({ id: String(i), tekst })), valgt: String(Math.max(valgt, 0)), vedValg: id => R.gaaTil(visning, valg[Number(id)][1]) });
+    const s = window.Kit.segment({ aria: etiket, valg: valg.map(([tekst], i) => ({ id: String(i), tekst })), valgt: valgt < 0 ? null : String(valgt), vedValg: id => R.gaaTil(visning, valg[Number(id)][1]) });
     s.knapper.forEach((b, i) => { b.dataset.fokus = `${navn}:${valg[i][0]}`; });
     s.rod.dataset.navn = navn;
-    if (valgt < 0) {
-      s.knapper[0].setAttribute('aria-checked', 'false');
-      s.knapper[0].addEventListener('click', () => R.gaaTil(visning, valg[0][1]));
-    }
     return s.rod;
   }
   /* Status som kittets StatusChip (Kit.chip): roed, gul, groen og graa er programmets ord for kittets danger, warn, ok og
@@ -227,6 +222,12 @@
     return c;
   }
   /* En knap med data bag: query til dyk, ellers mål { gaa } eller { rul }. Altid med aria-label: hvor den fører hen. */
+  /* Et aktivt filter, der kan fjernes, er kittets filterchip med vedFjern (× til højre). Målet er rammens (data-dyk, data-gaa). */
+  function fjernChip(navn, maal, klasse) {
+    const b = maalPaa(window.Kit.filterchip({ tekst: navn, vedFjern: () => { }, aria: fmt(T.dykFjern, { navn }) }), maal);
+    if (klasse) b.classList.add(...klasse.split(' ').filter(Boolean));
+    return b;
+  }
   /* En tom tilstand i et afsnit er kittets lave udgave (Kit.tomTilstand med lille): én sætning, som læses op, når den skifter. */
   function tomt(tekst, klasse) {
     const t = window.Kit.tomTilstand({ tekst, lille: true });
@@ -274,24 +275,20 @@
     return b;
   }
   /* En flise er kittets StatusTile (Kit.statusflise): navn, tal og undertekst. Et tal med data bag åbner sit mål; 0 fører
-     ingen steder hen. opt: aktiv, klasse, label og ekstra = { n, dyk } for en undertekst med sit eget mål ("i dag hidtil").
-     KIT-ØNSKE K33: kittets flise har hverken en valgt tilstand (aktiv: .vg-hoved og aria-current) eller to mål i én flise
-     (ekstra: flisen er ikke selv en knap, men har en strakt knap, og underteksten ligger ovenpå). */
+     ingen steder hen. opt: aktiv (flisen for det viste: kittets valgt, aria-current), klasse, label og ekstra = { n, dyk } for
+     en undertekst med sit eget mål ("i dag hidtil": kittets flise med to mål). Målene er rammens (data-dyk, data-gaa, data-rul),
+     så kittets ved er tom. */
+  const intet = () => { };
   function fliseTekst(n, tekst, sub) { return window.Kit.statusflise({ tal: n, tekst, under: sub || undefined }); }
   function flise(n, tekst, sub, maal, opt = {}) {
     const klik = Boolean(n && maal), label = opt.label || fmt(T.dykAabn, { navn: tekst, n: tal(n) });
-    const f = window.Kit.statusflise({ tal: tal(n), tekst, under: !opt.ekstra && sub ? sub : undefined, ved: klik && !opt.ekstra ? () => { } : undefined });
-    if (opt.klasse) f.classList.add(...opt.klasse.split(' '));
-    if (opt.ekstra) {
-      f.classList.add('dyk-flise-to');
-      if (klik) { const b = knap('', maal, 'dyk-flise-aabn', label); b.append(...f.childNodes); f.append(b); }
-      const under = el('span', { className: 'sflise-under' });
-      under.append(opt.ekstra.n ? knap(sub, opt.ekstra.dyk) : sub);
-      f.append(under);
-      return f;
-    }
-    if (klik) { maalPaa(f, maal).classList.add('dyk-flise'); f.setAttribute('aria-label', label); }
-    if (opt.aktiv) { f.classList.add('vg-hoved'); f.setAttribute('aria-current', 'true'); }
+    const klasser = (opt.klasse || '').split(' ').filter(Boolean), aktiv = Boolean(opt.aktiv);
+    const toMaal = Boolean(opt.ekstra && opt.ekstra.n);
+    const under = toMaal ? { tekst: sub, ved: intet, aria: fmt(T.dykAabnTekst, { navn: sub }) } : sub || undefined;
+    const f = window.Kit.statusflise({ tal: tal(n), tekst, under, ved: klik ? intet : undefined, aria: klik ? label : undefined, valgt: aktiv || undefined });
+    f.classList.add(...klasser);
+    if (klik) maalPaa(f.matches('button') ? f : f.querySelector('.sflise-maal'), maal).classList.add('dyk-flise');
+    if (toMaal) maalPaa(f.querySelector('.sflise-under-maal'), opt.ekstra.dyk);
     return f;
   }
   function cveKnap(id, tekst) {
@@ -676,5 +673,5 @@
   const paaKortet = p => Boolean(p) && iBilledet(p, VIEW.verden);
   const udenPlads = v => [...v.lande.filter(l => !paaKortet((verden.lande || {})[l.kode])).map(l => land(l.kode)), ...v.colos.filter(c => !paaKortet(xyColo(c.kode))).map(c => colo(c.kode))];
 
-  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, tomt, laeseTabel, tabelRul, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
+  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, fjernChip, tomt, laeseTabel, tabelRul, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
 })();

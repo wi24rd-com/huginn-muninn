@@ -25,7 +25,7 @@
 
   function fliser(d) {
     const i = d.crawlere.iAlt, boks = el('div', { className: 'sfliser vg-fliser' }), p = periodeNavn();
-    boks.append(V.flise(i.bots7, T.robotBesoeg, p, dyk({ robot: 'alle' }), { klasse: 'vg-hoved' }));
+    boks.append(V.flise(i.bots7, T.robotBesoeg, p, dyk({ robot: 'alle' }), { aktiv: true }));
     /* En andel har ingen rækker bag sig: den er ikke klikbar. */
     const andel = i.alle7 ? (100 * i.bots7 / i.alle7).toLocaleString(S.lang === 'da' ? 'da-DK' : 'en-GB', { maximumFractionDigits: 1 }) + ' %' : '–';
     boks.append(V.fliseTekst(andel, T.robotAndel, p));
@@ -65,7 +65,7 @@
     const p = periodeArg();
     $('robotter-periode').replaceChildren(V.segment('robotter-periode', T.dykPeriode, [[T.dykP7, medPeriode(), p === 'd7'], [T.dykP30, medPeriode('30'), p === 'd30']], 'robotter'));
     const genaabn = V.husk(rod), dele = [V.datoVaelger({ visning: 'robotter', periode: d.periode, nulstil: medPeriode('alt'), gaa: (a, b) => R.gaaTil('robotter', medInterval(a, b)) })];
-    if (interval()) { const n = periodeNavn(); dele.push(el('div', { className: 'login-stier' }, V.knap(`${n} ×`, { gaa: 'robotter?' + medPeriode() }, 'sti-chip', fmt(T.dykFjern, { navn: n })))); }
+    if (interval()) { const n = periodeNavn(); dele.push(el('div', { className: 'login-stier' }, V.fjernChip(n, { gaa: 'robotter?' + medPeriode() }))); }
     dele.push(fliser(d), ...V.daekning(d.periode));
     if (d.stoppet.ikke_tilgaengelig.length) dele.push(el('p', { className: 'vg-advarsel vg-gul', textContent: fmt(T.robotIkkeTilg, { d: d.stoppet.ikke_tilgaengelig.map(V.dato).join(', ') }) }));
     else if (d.stoppet.mangler_dage) dele.push(el('p', { className: 'vg-note', textContent: fmt(T.ekstraMangler, { n: tal(d.stoppet.mangler_dage) }) }));

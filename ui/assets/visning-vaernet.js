@@ -88,11 +88,9 @@
     if (erTrafik()) led.push({ navn: L.trafikChip, fjern: kopi(p => p.delete('trafik')) });
     if (har('dag')) led.push({ navn: V.datoLang(params.get('dag')), fjern: kopi(p => { PERIODE.forEach(x => p.delete(x)); p.delete('trafik'); }) });
     if (har('fra') && har('til')) led.push({ navn: V.interval(params.get('fra'), params.get('til')), fjern: kopi(p => { PERIODE.forEach(x => p.delete(x)); p.delete('trafik'); }) });
-    const ul = el('ul');
-    for (const l of led) {
-      const indhold = el('span', { className: 'dyk-filter-tekst' }, el('span', { textContent: l.navn }), el('span', { className: 'dyk-filter-x', textContent: '×' }));
-      ul.append(el('li', {}, V.knap(indhold, led.length === 1 ? { gaa: oversigt(l.fjern) } : l.fjern, 'dyk-filter', fmt(T.dykFjern, { navn: l.navn }))));
-    }
+    /* Hvert aktivt filter er kittets filterchip, der kan fjernes (× og gennemstregning ved hover). */
+    const ul = el('ul', { className: 'fchips' });
+    for (const l of led) ul.append(el('li', {}, V.fjernChip(l.navn, led.length === 1 ? { gaa: oversigt(l.fjern) } : l.fjern, 'dyk-filter')));
     const nav = $('dyk-filtre'), noget = led.length || har('slags');
     nav.setAttribute('aria-label', T.dykFiltre);
     nav.hidden = !noget;
@@ -138,7 +136,7 @@
     boks.append(V.flise(k.i_gaar, fmt(T.dykFIGaar, { o }), iDag, medPeriode('dag', d.i_gaar), { ekstra: { n: k.i_dag_hidtil, dyk: medPeriode('dag', d.i_dag) } }));
     boks.append(flise(k.hele7, fmt(T.dykF7, { o }), [andel, med(k.med7, 7, '')].filter(Boolean).join(' · '), medPeriode('periode', '7'), fast && p !== '30'), flise(k.hele30, fmt(T.dykF30, { o }), med(k.med30, 30, T.dykF30Sub), medPeriode('periode', '30'), fast && p === '30'));
     const dato = (h, dag) => el('div', { className: 'dyk-dato' }, el('span', { textContent: h }), knap(V.datoLang(dag), medPeriode('dag', dag), 'link', fmt(T.dykAabn, { navn: h, n: V.datoLang(dag) })));
-    if (d.foerst) boks.append(el('div', { className: 'sflise dyk-datoer' }, dato(T.dykFoerst, d.foerst), dato(T.dykSidst, d.sidst)));
+    if (d.foerst) boks.append(window.Kit.statusflise({ tekst: '', indhold: el('div', { className: 'dyk-datoer' }, dato(T.dykFoerst, d.foerst), dato(T.dykSidst, d.sidst)) }));
     boks.append(...forespoergsler(d));
     if (visForsoeg(d)) { const navn = fmt(L.forsoeg, { p: periodeTekst() }); boks.append(V.flise(d.forsoeg.n, navn, L.forsoegSub, { rul: 'vg-forsoeg' }, { klasse: 'vg-graa', label: fmt(T.dykRul, { navn, n: tal(d.forsoeg.n) }) })); }
     return boks;

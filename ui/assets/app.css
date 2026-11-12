@@ -46,42 +46,19 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 /* ── skallen: det, Wi24rd UI Kit 2 lader programmet give selv ── */
 /* macOS: vinduesknapperne ligger oven på titellinjen (titleBarStyle Overlay). */
 [data-platform="macos"] .titel { padding-left: var(--band-traffic-light-reserve); }
-/* KIT-ØNSKE K22: et mærke med programmets eget billede i titellinjen (kittets .mrk er et bogstav). */
-.titel .hm-mrk { width: 26px; height: 20px; flex: none; background: var(--accent-on-rail); -webkit-mask: url(hm-ravne.png) center / contain no-repeat; mask: url(hm-ravne.png) center / contain no-repeat; }
+/* Mærket i titellinjen er kittets .mrk-maske; her står kun programmets billede og dets bredde. */
+.titel .hm-mrk { width: 26px; -webkit-mask-image: url(hm-ravne.png); mask-image: url(hm-ravne.png); }
 .titel b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .titel small { flex: none; color: var(--rail-text); font-size: var(--small-size); }
-.titel a.rk { text-decoration: none; }
 .titel .rk .ik { width: 15px; height: 15px; }
-/* KIT-ØNSKE K23: en knap på titellinjen, der er slået fra (tilbage/frem) eller viser den aktive visning (Indstillinger). */
-.titel .rk:disabled { opacity: .45; cursor: default; }
-.titel .rk:disabled:hover { background: var(--rail); color: var(--rail-text); }
-.titel .rk[aria-current="page"], .titel .rk[aria-expanded="true"] { background: var(--rail-active); color: var(--rail-strong); }
 /* Navigationsruden: træet tager pladsen over visningsskiftet og ruller selv. */
 .nav { min-height: 0; }
 .nav .trae { flex: 1 1 auto; min-height: 0; }
 .trae-tom { margin: 0; padding: 0 var(--space-3) var(--space-3); }
-/* KIT-ØNSKE K24: et punkt i visningsskiftet, der er slået fra (uden API Token), og et tal ved et punkt (Siden sidst). */
-.vs[aria-disabled="true"] { color: var(--color-text-disabled); cursor: default; }
-.vs[aria-disabled="true"]:hover { background: none; }
-.vs[aria-disabled="true"] svg { stroke: var(--color-text-disabled); }
-.tal { flex: none; margin-left: auto; min-width: 1.7em; height: 1.5em; padding: 0 .5em; border-radius: .75em; background: var(--color-danger-strong); color: var(--color-on-accent); font: 600 var(--font-size-xs)/1.5 var(--font-body); text-align: center; }
-.tal:not([hidden]) + kbd { margin-left: 6px; }
 /* Båndet: spinneren i Hent nu. */
 .cb.henter svg { animation: hent-drej 1s linear infinite; }
 /* Arbejdsfladen: position: relative holder .sr-only inde i den rullende flade, ellers gør den hele dokumentet højere. */
 .hovedomr { position: relative; min-width: 0; padding: 16px 20px 24px; outline: none; }
-/* KIT-ØNSKE K25: status med fremdrift i fodlinjen (køen). Et klik går til Overblik. */
-.fodl .pille { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 6px; border: 0; border-radius: var(--control-radius); background: none; color: inherit; font: inherit; white-space: nowrap; cursor: pointer; }
-.fodl .pille:hover { background: var(--surface); color: var(--text); }
-.pille-ikon { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--status-none-dot); }
-.pille.henter .pille-ikon { width: 10px; height: 10px; background: none; border: 2px solid currentColor; border-right-color: transparent; animation: snurr 1s linear infinite; }
-.pille.ok .pille-ikon { background: var(--status-ok-dot); }
-.pille.gul .pille-ikon { background: var(--status-warn-dot); }
-.pille.roed .pille-ikon { background: var(--status-danger-dot); }
-.pille-bar { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 2px; border: 0; background: none; -webkit-appearance: none; appearance: none; }
-.pille-bar::-webkit-progress-bar { background: none; }
-.pille-bar::-webkit-progress-value { background: currentColor; }
-.pille:not(.henter) .pille-bar { display: none; }
 @keyframes snurr { to { transform: rotate(360deg); } }
 .fodl .hent-status { font-size: inherit; }
 
@@ -178,10 +155,8 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 /* ── Indstillinger (mockup 3, skærm 2) og opsætningen ── */
 .indst { max-width: 700px; }
 #indst-status { position: sticky; top: 0; z-index: 2; max-width: 700px; } /* synlig, også når man har rullet ned til Data */
-/* Hver gruppe er kittets kasse (.kasse); rækkerne går helt ud til kanten (.kasse-indhold.fyld). KIT-ØNSKE K32: et ikon i kassens overskrift. */
+/* Hver gruppe er kittets kasse (.kasse) med ikon i overskriften; rækkerne går helt ud til kanten (.kasse-indhold.fyld). */
 .indst .kasse { margin-bottom: 16px; }
-.indst .kasse-top h2 { display: flex; align-items: center; gap: 8px; }
-.indst h2 .ik { color: var(--color-accent); }
 .mini { width: 100%; border-collapse: collapse; }
 .mini th, .mini td { padding: 6px 16px; border-top: 1px solid var(--color-border); font-size: var(--font-size-md); font-weight: 400; text-align: left; overflow-wrap: anywhere; }
 .mini td:last-child { text-align: right; }

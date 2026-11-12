@@ -53,7 +53,6 @@
     const navn = a.querySelector('span'), k = a.querySelector('kbd'), v = a.dataset.visning;
     if (k) k.dataset.genvej = SKIFT.find(x => x[1] === v)[0];
     if (v === 'land') navn.id = 'nav-land';
-    if (v === 'siden-sidst') a.insertBefore(el('span', { className: 'tal', id: 'siden-tal', hidden: true }), k);
   }
   /* Landevælgeren står i båndet og vises kun på visninger med land: true; visningen fylder den og lytter på 'landValg'. */
   const landVaelger = Kit.vaelger({ etiket: { t: 'landVaelg' }, soeg: { ph: 'landSoegPh', ariaT: 'landSoeg' }, ingen: { t: 'landIngen' }, punkter: [], vedValg: id => udsend('landValg', id) });
@@ -147,10 +146,8 @@
   /* En visning kan låne en anden visnings titel (titel()): Angreb med robotfilter hedder Robotter. */
   function opdaterTitel() { const v = visninger[tilstand.visning]; document.title = S.titel((v && v.titel && v.titel()) || tilstand.visning); }
   function navTilstand() {
-    document.querySelectorAll('a[data-visning]').forEach(a => {
-      const fri = tilstand.sat || a.getAttribute('data-visning') === 'indstillinger';
-      if (fri) a.removeAttribute('aria-disabled'); else a.setAttribute('aria-disabled', 'true');
-    });
+    /* Uden API Token er de syv visninger slået fra (kittets visningsskift); Indstillinger i titellinjen er altid fri. */
+    for (const a of skift.links) skift.saetPunkt(a.dataset.visning, { deaktiveret: !tilstand.sat });
   }
   // Altid gennem gaaTil: et klik på den adresse, der allerede står, ville ellers rydde history.state (trinets nummer).
   document.querySelectorAll('a[data-visning]').forEach(a => a.addEventListener('click', ev => {
@@ -211,7 +208,10 @@
      domaener: true siger, hvad den viser (hvad), og hvad et skift betyder (skift); på de andre visninger åbner et valg Angreb
      for domænet. Træet bygges i et nyt <ul> hver gang, så kittets lyttere ikke lægger sig oven på hinanden; kittet melder
      også det valg, det selv sætter, så stille er sat imens. ── */
-  let traeStille = false;
+  /* Træet bygges én gang; kittet bygger punkterne om i samme <ul> (saetPunkter) og kalder kun vedValg for brugerens valg. */
+  let traeNavne = {};
+  const trae = Kit.navTrae($('trae'), [], { ariaT: 'traeAria', kunBrugerValg: true, vedValg: id => traeValg(id, traeNavne[id]) });
+  S.anvend($('trae'));
   function traeValg(id, navn) {
     const v = visninger[tilstand.visning], q = id === 'samlet' ? 'samlet=1' : new URLSearchParams({ zone: id, navn });
     if (v && v.domaener) { v.skift(q); return; }
@@ -221,11 +221,10 @@
   }
   function visVaelger() {
     const v = visninger[tilstand.visning], zoner = [...tilstand.raekker].sort((a, b) => a.navn.localeCompare(b.navn));
-    const ny = el('ul', { id: 'trae' }), hadeFokus = $('trae').contains(document.activeElement);
-    $('trae').replaceWith(ny);
     /* Er intet domæne valgt, er der intet at vælge imellem: ingen "Alle domæner (0)". */
     $('trae-tom').hidden = zoner.length > 0;
-    if (!zoner.length) return;
+    $('trae').hidden = !zoner.length; // et tomt træ må ikke tage pladsen fra teksten
+    if (!zoner.length) { trae.saetPunkter([]); return; }
     const boern = zoner.map(r => ({ id: r.id, tekst: r.navn }));
     let valgt = zoner.some(r => r.id === tilstand.domaeneValg) ? tilstand.domaeneValg : 'samlet';
     if (v && v.domaener) {
@@ -233,12 +232,8 @@
       if (!samlet && zone && !zoner.some(r => r.id === zone)) boern.push({ id: zone, tekst: navn });
       valgt = samlet ? 'samlet' : zone;
     }
-    const navne = Object.fromEntries(boern.map(b => [b.id, b.tekst]));
-    traeStille = true;
-    Kit.navTrae(ny, [{ id: 'samlet', tekst: T.traeAlle, antal: zoner.length, boern }], { ariaT: 'traeAria', valgt, vedValg: id => { if (!traeStille) traeValg(id, navne[id]); } });
-    traeStille = false;
-    S.anvend(ny);
-    if (hadeFokus) { const b = ny.querySelector('.tr.on'); if (b) b.focus(); }
+    traeNavne = Object.fromEntries(boern.map(b => [b.id, b.tekst]));
+    trae.saetPunkter([{ id: 'samlet', tekst: T.traeAlle, antal: zoner.length, boern }], valgt);
   }
   paa('raekker', visVaelger);
 
@@ -403,16 +398,20 @@
   $('hjaelp-luk').addEventListener('click', () => hjaelp(false));
   $('skip').addEventListener('click', ev => { ev.preventDefault(); $('indhold').focus(); });
 
-  /* ── køen: pillen i båndet og en linje i indholdet, når noget kræver opmærksomhed ── */
+  /* ── køen: kittets status i fodlinjen (Kit.fodstatus: mærke, kort tekst, fremdrift og et klik til Overblik) og en linje i
+     indholdet, når noget kræver opmærksomhed. Den lange tekst står i title; kittet læser den korte op, når den ændres. ── */
+  const koeStatus = window.Kit.fodstatus({ status: 'none', tekst: '', handling: { tekst: fmt(T.pilleAabn, { t: '' }).trim(), ved: () => gaaTil('overblik') } });
+  koeStatus.rod.id = 'koe';
+  koeStatus.rod.hidden = true;
+  $('koe').replaceWith(koeStatus.rod);
+  const KOE_STATUS = { henter: 'henter', gul: 'warn', roed: 'danger', ok: 'ok' };
   function visKoe(k) {
     tilstand.koe = k;
     hentKoe(k);
-    const pille = $('koe'), kort = $('koe-kort'), tekst = $('koe-tekst'), bar = $('koe-fremskridt'), besked = $('koe-besked');
+    const pille = koeStatus.rod, besked = $('koe-besked');
     if (!k || !k.zoner_i_alt) { pille.hidden = true; status(besked, ''); udsend('koe', k); return; }
     pille.hidden = false;
-    bar.max = Math.max(1, k.doegn_i_alt);
-    bar.value = Math.min(k.doegn_faerdige, bar.max);
-    bar.setAttribute('aria-label', T.koeFremskridt);
+    const maks = Math.max(1, k.doegn_i_alt);
     let t, klasse = 'henter', k1;
     if (k.tilstand === 'venter_kvote') { t = fmt(T.koeKvote, { kl: S.tid(k.fortsaetter_kl) }); klasse = 'gul'; k1 = T.pilleVenter; }
     else if (k.tilstand === 'pause') { t = fmt(k.fejl && k.fejl.kode === 'forbindelse' ? T.koePauseNet : T.koePause, { kl: S.tid(k.fortsaetter_kl) }); klasse = 'gul'; k1 = fmt(T.pillePause, { kl: S.tid(k.fortsaetter_kl) }); }
@@ -425,17 +424,13 @@
         : k.zoner_fejl ? fmt(T.koeFaerdigFejl, { t: S.kl(sidst), n: T.domaener(k.zoner_fejl), f: S.fejl(k.fejl) }) : fmt(T.koeFaerdig, { t: S.kl(sidst) });
       klasse = k.zoner_fejl ? 'gul' : 'ok';
       k1 = net ? T.pilleNet : fmt(k.zoner_fejl ? T.pilleOpdateretFejl : T.pilleOpdateret, { t: S.tid(sidst || new Date().toISOString()), n: k.zoner_fejl });
-      bar.value = bar.max;
     } else {
       t = fmt(T.koeHenter, { z: k.zoner_faerdige, Z: k.zoner_i_alt, d: S.tal(k.doegn_faerdige), D: S.tal(k.doegn_i_alt) });
       if (k.navn) t += ' · ' + fmt(T.koeNu, { navn: k.navn });
       k1 = fmt(T.pilleHenter, { z: k.zoner_faerdige, Z: k.zoner_i_alt });
     }
-    pille.className = 'pille ' + klasse;
+    koeStatus.saet({ status: KOE_STATUS[klasse], tekst: k1, fremdrift: klasse === 'henter' ? { maks, vaerdi: Math.min(k.doegn_faerdige, maks) } : null });
     pille.title = t;
-    pille.setAttribute('aria-label', fmt(T.pilleAabn, { t }));
-    kort.textContent = k1;
-    tekst.textContent = t;
     status(besked, klasse === 'gul' || klasse === 'roed' ? t : '', klasse);
     udsend('koe', k);
   }
@@ -515,10 +510,9 @@
   paa('raekker', fodAntal);
   if (window.__TAURI__ && window.__TAURI__.app) window.__TAURI__.app.getVersion().then(v => { $('fod-version').textContent = fmt(T.omVersion, { v }); }).catch(() => { });
   function sidenTal() {
-    const n = tilstand.raekker.filter(r => r.status === 'roed' && !r.gammel).length, b = $('siden-tal');
-    b.hidden = !n;
-    b.textContent = n ? String(n) : '';
-    b.title = n ? T.sidenTal(n) : '';
+    /* Tallet ved Siden sidst: domæner, der kræver handling (kittets tal med kraever; skærmlæseren hører sætningen). */
+    const n = tilstand.raekker.filter(r => r.status === 'roed' && !r.gammel).length;
+    skift.saetPunkt('siden-sidst', { antal: n || null, kraever: true, antalAria: n ? T.sidenTal(n) : null });
   }
   async function hentOverblik() {
     try { tilstand.raekker = await invoke('overblik'); } catch (e) { tilstand.raekker = []; status($('zone-status'), S.fejl(e), 'fejl'); }

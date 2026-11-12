@@ -176,8 +176,8 @@
     const vaelger = el('div', { className: 'besoeg-valg' }, segment, V.datoVaelger({ visning: 'besoegende', periode: d.periode, nulstil: medPeriode('aar'), gaa: (a, b) => R.gaaTil('besoegende', medInterval(a, b)) }));
     const valgt = el('h2', { className: 'besoeg-valgt-h', textContent: fmt(B.valgtPeriode, { p: V.interval(d.periode.fra, d.periode.til) }) });
     const genaabn = V.husk(rod), dele = [fliser(d), vaelger, valgt];
-    const chips = [], chip = (n, klasse) => chips.push(V.knap(`${n} ×`, gaa(medFilter()), 'sti-chip ' + klasse, fmt(T.dykFjern, { navn: n })));
-    if (interval()) { const n = periodeNavn(); chips.push(V.knap(`${n} ×`, gaa(medPeriode()), 'sti-chip', fmt(T.dykFjern, { navn: n }))); }
+    const chips = [], chip = (n, klasse) => chips.push(V.fjernChip(n, gaa(medFilter()), klasse));
+    if (interval()) { const n = periodeNavn(); chips.push(V.fjernChip(n, gaa(medPeriode()))); }
     if (land()) chip(V.land(land()), 'besoeg-land-chip');
     if (sti()) chip(sti(), 'besoeg-sti-chip');
     if (robot()) chip(gruppeNavn(robot()), 'besoeg-robot-chip');

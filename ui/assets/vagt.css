@@ -87,11 +87,8 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .moenster-linje .moenster-maerke { background: var(--color-surface); color: var(--color-text); }
 .vg-advarsel.vg-roed { border-left-color: var(--status-danger-dot); background: var(--status-danger-bg); }
 
-/* Fliserne er kittets StatusTile (.sflise i en række .sfliser). KIT-ØNSKE K33: den valgte flise (.vg-hoved, aria-current). */
+/* Fliserne er kittets StatusTile (.sflise i en række .sfliser), også den valgte flise og flisen med to mål. */
 .vg-fliser { margin: 0 0 14px; }
-.sflise.vg-hoved { border-color: var(--color-accent); background: var(--color-accent-soft); }
-.sflise.vg-hoved .sflise-tal { color: var(--color-accent-text); }
-button.sflise.vg-hoved:hover { background: var(--color-accent-soft); }
 .vg-fordeling { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 2px; color: var(--color-text-muted); }
 .vg-fordeling b { color: var(--color-text); font-weight: 600; }
 .vg-fordeling + .vg-note { margin-bottom: 22px; }
@@ -203,10 +200,6 @@ button.sflise.vg-hoved:hover { background: var(--color-accent-soft); }
 .dyk-raekke { align-items: flex-start; }
 .dyk-filtre { flex: 1 1 16rem; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .dyk-filtre ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
-.dyk-filter { max-width: 100%; min-height: 28px; padding: 2px 10px; border: 1px solid var(--color-border-strong); border-radius: 14px; background: var(--color-surface); color: var(--color-text); font-size: var(--font-size-sm); font-weight: 600; overflow-wrap: anywhere; text-align: left; cursor: pointer; }
-.dyk-filter:hover { border-color: var(--color-accent); background-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
-.dyk-filter-tekst { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; }
-.dyk-filter-x { flex: none; color: var(--color-text-muted); }
 .dyk-hoved { display: grid; gap: 6px; margin: 0 0 14px; padding: 12px 14px; background: var(--color-surface); border: 1px solid var(--color-border); border-top: 3px solid var(--status-danger-dot); border-radius: var(--card-radius); }
 .dyk-hoved.dyk-rutine { border-top-color: var(--status-none-dot); }
 .dyk-hoved-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
@@ -219,15 +212,8 @@ button.sflise.vg-hoved:hover { background: var(--color-accent-soft); }
 .dyk-guide p { margin: 0 0 6px; }
 .dyk-slags { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 12px; }
 /* En flise med to mål: tallet åbner sin periode (knappen strækkes over flisen), og underteksten har sit eget mål ovenpå. */
-.dyk-flise-to { position: relative; }
-.dyk-flise-aabn { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
-.dyk-flise-aabn::after { content: ""; position: absolute; inset: 0; border-radius: var(--card-radius); }
-.dyk-flise-aabn:focus-visible { outline: none; }
-.dyk-flise-aabn:focus-visible::after { outline: var(--focus-ring-width) solid var(--color-focus-ring); outline-offset: var(--focus-ring-offset); }
-.dyk-flise-to:has(.dyk-flise-aabn:hover) { background-color: var(--hover-bg); box-shadow: var(--hover-shadow); border-color: var(--color-accent); }
-.dyk-flise-to .sflise-under .dyk-celle { position: relative; z-index: 1; color: inherit; }
 /* Først og sidst set: datoen ombrydes aldrig midt i; er der ikke plads ved siden af overskriften, står den under den. */
-.dyk-datoer { justify-content: center; gap: 4px; }
+.dyk-datoer { display: flex; flex-direction: column; gap: 4px; }
 .dyk-dato { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; }
 .dyk-dato span { min-width: 5.2em; color: var(--color-text-muted); font-size: var(--font-size-sm); }
 .dyk-dato .link { min-height: 0; white-space: nowrap; text-align: left; }
