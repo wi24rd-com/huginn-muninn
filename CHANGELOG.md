@@ -4,6 +4,20 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-12 23:30 — Visningerne står i båndet
+#### Ændret
+- **De syv visninger** (Overblik, Siden sidst, Angreb, Robotter, Login, Danmark lige nu, Besøgende) står nu som store knapper først i båndet, på samme række som "Hent nu" og "Åbn vejledningen". Den åbne visning er markeret.
+- **Sidebjælken** har kun domænerne og bruger hele højden til dem.
+- **Genvejene** (⌘1–⌘7, Ctrl+1–7) virker som før og står nu i knappens tip.
+- **Uden API Token** siger knappens tip, hvorfor den er slået fra.
+- **Mindste vindue** er nu 1100 px bredt (før 900), så båndet kan stå på én række.
+
+### Ændret
+- **De syv visninger** (Overblik, Siden sidst, Angreb, Robotter, Login, Danmark lige nu, Besøgende) står nu som faner under titellinjen, som i Wi24rd Grimnir. Båndet står under fanerne.
+- **Sidebjælken** har kun domænerne og bruger hele højden til dem.
+- **Genvejene** (⌘1–⌘7, Ctrl+1–7) virker som før og står nu i fanens tip i stedet for ved siden af navnet.
+- **Uden API Token** siger fanens tip, hvorfor den er slået fra.
+
 ### 2026-11-12 23:30 — Wi24rd UI Kit 2, pakke 2.6.0
 #### Ændret
 - Pakke 2.6.0 ligger uændret i `ui/assets/kit2/`. Programmet bruger ikke den nye mulighed (visningerne som faner øverst) og ser ud som før.

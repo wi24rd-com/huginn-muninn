@@ -21,7 +21,7 @@ const CHROME = [process.env.HM_CHROME, '/Applications/Google Chrome.app/Contents
 if (!CHROME) { console.log('Chrome findes ikke (sæt HM_CHROME)'); process.exit(1); }
 const MINDST = 5 * 1024, VENT = 4500, TID = 120000;
 const lille = process.env.HM_FOTO_MATRIX === 'lille';
-const TEMAER = lille ? ['light'] : ['light', 'dark'], SPROG = lille ? ['da'] : ['da', 'en'], STOERRELSER = lille ? [[1200, 860]] : [[1200, 860], [900, 560]];
+const TEMAER = lille ? ['light'] : ['light', 'dark'], SPROG = lille ? ['da'] : ['da', 'en'], STOERRELSER = lille ? [[1200, 860]] : [[1200, 860], [1100, 560]];
 
 /* Mappen hedder efter kørslens rigtige dato, ikke testens ur: billederne skal kunne findes igen. */
 const nu = new Date(), to = n => String(n).padStart(2, '0'), dato = `${nu.getFullYear()}-${to(nu.getMonth() + 1)}-${to(nu.getDate())}`;

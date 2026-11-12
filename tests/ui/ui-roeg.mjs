@@ -57,7 +57,7 @@ const zoneVaelger = d => {
 /* Træet står altid i navigationsruden; "skjult" betyder nu, at der ikke er nogen domæner at vælge imellem. */
 /* Køen står i kittets Kit.fodstatus (#koe): den lange tekst er title, den korte den synlige tekst. */
 const koeTekst = d => ({ get textContent() { return d.getElementById('koe').title; } });
-const sidenTal = d => d.querySelector('a[data-visning="siden-sidst"] > .ant');
+const sidenTal = d => d.querySelector('button[data-visning="siden-sidst"] > .ant');
 const bandZone = d => ({ get hidden() { return !d.querySelector('#trae .tr'); } });
 const landValg = d => {
   const v = () => d.defaultView.hmRamme.landVaelger, punkter = () => [...v().liste.querySelectorAll('.vlg-p')], o = oensker.get(d) || oensker.set(d, {}).get(d);
@@ -492,17 +492,17 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   const s = side('', MED_SIDEN);
   await sov(60);
   const { d, w } = s;
-  tjek('S nav: start på Overblik (tom adresse), aria-current og titel', synlige(d).join() === 'overblik' && d.querySelector('a[href="#overblik"]').getAttribute('aria-current') === 'page' && d.title === 'Overblik · Wi24rd Huginn and Muninn', d.title);
+  tjek('S nav: start på Overblik (tom adresse), aria-current og titel', synlige(d).join() === 'overblik' && d.querySelector('#vis-overblik').getAttribute('aria-current') === 'page' && d.title === 'Overblik · Wi24rd Huginn and Muninn', d.title);
   const forventet = [['siden-sidst', 'Siden sidst · Wi24rd Huginn and Muninn'], ['vaernet', 'Angreb · 2 domæner · Wi24rd Huginn and Muninn'], ['indstillinger', 'Indstillinger · Wi24rd Huginn and Muninn'], ['overblik', 'Overblik · Wi24rd Huginn and Muninn']];
   const ud = [];
   for (const [navn, titel] of forventet) {
-    d.querySelector(`:is(a, button)[data-visning="${navn}"]`).click(); await sov(40);
-    const aktuel = d.querySelector(':is(a, button)[aria-current="page"]');
+    d.querySelector(`button[data-visning="${navn}"]`).click(); await sov(40);
+    const aktuel = d.querySelector('#baand button[aria-current="page"]');
     ud.push([navn, synlige(d).join(), aktuel && aktuel.getAttribute('data-visning'), d.title, [...d.querySelectorAll('#hjaelp .hjaelp-del')].filter(x => !x.hidden).map(x => x.getAttribute('data-hjaelp')).join()]);
     tjek(`S nav: klik på "${navn}" → kun den visning, aria-current, titel og hjælpens del`, synlige(d).join() === navn && aktuel && aktuel.getAttribute('data-visning') === navn && d.title === titel && ud.at(-1)[4] === navn, JSON.stringify(ud.at(-1)));
   }
   tjek('S nav: "Angreb" uden parametre åbner det samlede (#vaernet?samlet=1) første gang', ud[1][1] === 'vaernet' && s.kald.some(k => k[0] === 'vaern_samlet_cache'));
-  tjek('S navne: sidebjælken bruger klarsprog (Angreb, ikke Værnet)', d.querySelector('a[data-visning="vaernet"]').textContent.startsWith('Angreb') && !d.getElementById('side').textContent.includes('Værn') && !d.querySelector('.titel').textContent.includes('Værn') && !d.getElementById('baand').textContent.includes('Værn'));
+  tjek('S navne: sidebjælken bruger klarsprog (Angreb, ikke Værnet)', d.querySelector('button[data-visning="vaernet"]').textContent.startsWith('Angreb') && !d.getElementById('side').textContent.includes('Værn') && !d.querySelector('.titel').textContent.includes('Værn') && !d.getElementById('baand').textContent.includes('Værn'));
 }
 // ── Genveje (Windows: keydown; macOS: programmenuen) og hændelsen "visning" ──
 {
@@ -514,7 +514,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   tjek('S genveje Windows: Ctrl+2/3/,/1 skifter visning', spor.join() === 'siden-sidst,vaernet,indstillinger,overblik', spor.join());
   tast('r', { ctrlKey: true }); await sov(20); tast('F5'); await sov(20);
   tjek('S genveje Windows: Ctrl+R og F5 = Hent nu (hent_nu), ikke genindlæsning', kald.filter(k => k[0] === 'hent_nu').length === 2);
-  tjek('S genveje: sidebjælken og hjælpen viser "Ctrl+1" på Windows', d.querySelector('#side kbd[data-genvej="1"]').textContent === 'Ctrl+1' && d.querySelector('#genveje').textContent.includes('Ctrl+R'));
+  tjek('S genveje: sidebjælken og hjælpen viser "Ctrl+1" på Windows', d.querySelector('#baand button[data-visning="overblik"]').getAttribute('aria-keyshortcuts') === 'Control+1' && d.querySelector('#genveje').textContent.includes('Ctrl+R'));
   emit('visning', 'indstillinger'); await sov(30);
   const a = synlige(d).join();
   emit('visning', 'vaernet'); await sov(30);
@@ -525,7 +525,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   const m = side('', MED_SIDEN, 'da', 'macos');
   await sov(60);
   m.tast('2', { ctrlKey: true }); m.tast('2', { metaKey: true }); m.tast('r', { metaKey: true }); await sov(30);
-  tjek('S genveje macOS: keydown gør intet (programmenuen har ⌘1–3, ⌘, og ⌘R), sidebjælken viser ⌘1', synlige(m.d).join() === 'overblik' && !m.kald.some(k => k[0] === 'hent_nu') && m.d.querySelector('#side kbd[data-genvej="1"]').textContent === '⌘1' && m.d.documentElement.getAttribute('data-platform') === 'macos');
+  tjek('S genveje macOS: keydown gør intet (programmenuen har ⌘1–3, ⌘, og ⌘R), sidebjælken viser ⌘1', synlige(m.d).join() === 'overblik' && !m.kald.some(k => k[0] === 'hent_nu') && m.d.querySelector('#baand button[data-visning="overblik"]').getAttribute('aria-keyshortcuts') === 'Meta+1' && m.d.documentElement.getAttribute('data-platform') === 'macos');
 }
 // ── Lyttere: én pr. hændelse, også efter 10 skift frem og tilbage ──
 {
@@ -602,8 +602,8 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   const s = side('#vaernet?samlet=1', { token_status: { sat: false }, autostart_hent: true });
   await sov(60);
   const { d, w, tast } = s;
-  const fra = ['overblik', 'siden-sidst', 'vaernet'].every(v => d.querySelector(`a[data-visning="${v}"]`).getAttribute('aria-disabled') === 'true');
-  d.querySelector('a[data-visning="overblik"]').click(); tast('1', { ctrlKey: true }); await sov(30);
+  const fra = ['overblik', 'siden-sidst', 'vaernet'].every(v => d.querySelector(`button[data-visning="${v}"]`).getAttribute('aria-disabled') === 'true');
+  d.querySelector('button[data-visning="overblik"]').click(); tast('1', { ctrlKey: true }); await sov(30);
   tjek('S uden token: Overblik/Siden sidst/Angreb er slået fra, opsætningen står (titel "Forbind med Cloudflare")', fra && synlige(d).join() === 'opsaetning' && d.title === 'Forbind med Cloudflare · Wi24rd Huginn and Muninn' && !s.kald.some(k => k[0] === 'vaern_samlet_cache'), synlige(d).join() + ' ' + d.title);
   tast(',', { ctrlKey: true }); await sov(30);
   tjek('S uden token: Ctrl+, åbner stadig Indstillinger, og "Hent nu" er skjult', synlige(d).join() === 'indstillinger' && w.location.hash === '#indstillinger' && d.getElementById('hent-nu').hidden);
@@ -647,7 +647,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
 {
   const konf = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8')), v = konf.app.windows[0];
   const csp = konf.app.security.csp;
-  tjek('S vindue: Overlay, skjult titel, trafiklys, minWidth 900; CSP med style-src \'self\'', v.titleBarStyle === 'Overlay' && v.hiddenTitle === true && v.trafficLightPosition && v.minWidth === 900
+  tjek('S vindue: Overlay, skjult titel, trafiklys, minWidth 1100 (visningerne står i båndet); CSP med style-src \'self\'', v.titleBarStyle === 'Overlay' && v.hiddenTitle === true && v.trafficLightPosition && v.minWidth === 1100
     && csp === "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'", JSON.stringify(v));
   const html = ui('index.html');
   tjek('S vindue: titellinjen er trækbar (data-tauri-drag-region="deep"), og dens knapper er <button> (blokerer trækket); Indstillinger står i båndet', /<header class="titel" data-tauri-drag-region="deep">/.test(html) && /<button class="rk" type="button" id="hist-tilbage"/.test(html) && /<button class="rk" type="button" id="hjaelp-knap"/.test(html) && !/<a class="rk" href="#indstillinger"/.test(html));
@@ -973,7 +973,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   d.getElementById('indst-om').scrollIntoView = o => sc.push(o);
   emit('visning', 'om'); await sov(30);
   tjek('Indstillinger, Om i programmenuen: åbner Indstillinger og ruller til Om', w.location.hash === '#indstillinger?afsnit=om' && synlige(d).join() === 'indstillinger' && sc.length === 1 && sc[0].block === 'start', w.location.hash + ' ' + sc.length);
-  d.querySelector('a[data-visning=overblik]').click(); await sov(30);
+  d.querySelector('button[data-visning=overblik]').click(); await sov(30);
   emit('historik', 'tilbage'); await sov(40);
   tjek('Indstillinger, tilbage til Om ruller ikke igen (rullepositionen gendannes)', w.location.hash === '#indstillinger?afsnit=om' && sc.length === 1, w.location.hash + ' ' + sc.length);
   const u = side('', B2({ token_status: { sat: false } }), 'da', 'macos');
@@ -997,7 +997,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const s = side('#overblik', B2()), { d, w, emit } = s;
   await sov(60);
   const vaelger = zoneVaelger(d), bånd = bandZone(d);
-  tjek('Domænetræ, står i navigationsruden over visningsskiftet, ikke i titellinjen, båndet eller titelrækken', Boolean(d.getElementById('trae').closest('nav#side')) && Boolean(d.getElementById('trae').compareDocumentPosition(d.getElementById('skift')) & w.Node.DOCUMENT_POSITION_FOLLOWING) && !d.querySelector('.titel #trae, #baand #trae, .titelrad #trae') && !d.getElementById('vg-zone'));
+  tjek('Domænetræ, står alene i navigationsruden (visningerne står i båndet), ikke i titellinjen, båndet eller titelrækken', Boolean(d.getElementById('trae').closest('nav#side')) && !d.querySelector('nav#side [data-visning]') && !d.querySelector('.titel #trae, #baand #trae, .titelrad #trae') && !d.getElementById('vg-zone'));
   tjek('Domænetræ, står også på Overblik (træet er en del af skallen)', !bånd.hidden && d.querySelectorAll('#trae .tr').length === 4);
   d.querySelector('#overblik-raekker tr').click(); await sov(60);
   tjek('Domænevælger, synlig i Angreb; titlen viser domænet', !bånd.hidden && d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com' && vaelger.value === 'z1', d.getElementById('vaernet-h').textContent);
@@ -1020,12 +1020,12 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   await sov(60);
   const q = x => d.querySelector(x);
   tjek('Skallen: titellinje, bånd, navigationsrude, arbejdsflade med fodlinje og sidepanel står som kittets AppShell; intet window.Sprog', Boolean(q('.vindue > header.titel') && q('.vindue > #baand.cmd.enkel') && q('.vindue > .midte > nav#side.nav') && q('.vindue > .midte > .arb > main#indhold.flade') && q('.vindue > .midte > .arb > footer.fodl') && q('.vindue > .midte > aside#hjaelp.sidepanel')) && !w.Sprog && Boolean(w.Kit));
-  tjek('Skallen: visningsskiftet har de syv visninger i fast rækkefølge og er tæt; Indstillinger er tandhjulet i båndet, efter vejledningen', [...d.querySelectorAll('#skift a.vs')].map(a => a.dataset.visning).join() === 'overblik,siden-sidst,vaernet,robotter,login,land,besoegende' && q('#skift').classList.contains('taet') && q('#baand button#indst-knap.cb') !== null && !q('.titel #indst-knap') && q('#skift a.vs.on').dataset.visning === 'overblik', [...d.querySelectorAll('#skift a.vs')].map(a => a.dataset.visning).join());
+  tjek('Skallen: de syv visninger er store knapper i båndets første gruppe (Visninger) i fast rækkefølge, ikke faner og ikke i navigationsruden; Indstillinger er tandhjulet i båndet, efter vejledningen', [...d.querySelectorAll('#baand button[data-visning]:not(#indst-knap)')].map(a => a.dataset.visning).join() === 'overblik,siden-sidst,vaernet,robotter,login,land,besoegende' && q('#baand .grp:first-child .cap').textContent === 'Visninger' && q('#baand .grp:first-child').querySelectorAll('button.cb[data-visning]').length === 7 && !q('#skift') && !q('.vfaner, .skift') && q('header.titel').nextElementSibling.id === 'baand' && q('#baand button#indst-knap.cb') !== null && !q('.titel #indst-knap') && q('#baand button[data-visning][aria-current="page"]').dataset.visning === 'overblik', [...d.querySelectorAll('#baand button[data-visning]:not(#indst-knap)')].map(a => a.dataset.visning).join());
   tjek('Skallen: båndet er uden faner med Hent nu som eneste primære kommando; landegruppen er skjult uden for Land', !q('#baand .tabs') && d.querySelectorAll('#baand .cb.pri').length === 1 && q('#baand .cb.pri').id === 'hent-nu' && q('#band-land').hidden && q('#baand').getAttribute('role') === 'group' && q('#baand').getAttribute('aria-label') === 'Kommandoer', q('#baand').getAttribute('aria-label'));
-  tjek('Skallen: nøglerne fra kit.js udfyldes (aria-label på træet, visningsskiftet og hjælpens lukkeknap, placeholder i landevælgerens søgefelt)', q('#trae').getAttribute('aria-label') === 'Vælg domæne' && q('#skift').getAttribute('aria-label') === 'Visninger' && q('#baand .vlg-soeg input').getAttribute('placeholder') === 'Søg' && q('#hjaelp-luk').getAttribute('aria-label') === 'Luk hjælpen');
+  tjek('Skallen: nøglerne fra kit.js udfyldes (aria-label på træet, visningsskiftet og hjælpens lukkeknap, placeholder i landevælgerens søgefelt)', q('#trae').getAttribute('aria-label') === 'Vælg domæne' && q('#baand').getAttribute('aria-label') === 'Kommandoer' && q('#baand .vlg-soeg input').getAttribute('placeholder') === 'Søg' && q('#hjaelp-luk').getAttribute('aria-label') === 'Luk hjælpen');
   tjek('Skallen: træet har ét valg, og fodlinjen siger antal domæner og "Kun på denne maskine"', d.querySelectorAll('#trae .tr.on').length === 1 && q('#fod-antal').textContent === '3 domæner' && q('#fod-lokalt').textContent === 'Kun på denne maskine' && q('#fod-lokalt svg') !== null, q('#fod-antal').textContent);
   [...d.querySelectorAll('#trae .tr')].find(b => b.dataset.punkt === 'z2').click(); await sov(60);
-  tjek('Skallen: et domæne i træet på Overblik åbner domænets Angreb, og træet følger adressen', w.location.hash.startsWith('#vaernet?') && new URLSearchParams(w.location.hash.split('?')[1]).get('zone') === 'z2' && q('#trae .tr.on').dataset.punkt === 'z2' && d.querySelectorAll('#trae .tr.on').length === 1 && q('#skift a.vs.on').dataset.visning === 'vaernet', w.location.hash);
+  tjek('Skallen: et domæne i træet på Overblik åbner domænets Angreb, og træet følger adressen', w.location.hash.startsWith('#vaernet?') && new URLSearchParams(w.location.hash.split('?')[1]).get('zone') === 'z2' && q('#trae .tr.on').dataset.punkt === 'z2' && d.querySelectorAll('#trae .tr.on').length === 1 && q('#baand button[data-visning][aria-current="page"]').dataset.visning === 'vaernet', w.location.hash);
   q('#hjaelp-knap').click(); await sov(30);
   tjek('Skallen: hjælpen er kittets sidepanel og ligger over arbejdsfladen (overlaeg), så arbejdsfladen ikke bliver smallere', !q('#hjaelp').hidden && q('#hjaelp').classList.contains('over') && q('#hjaelp').getAttribute('role') === 'complementary' && q('#hjaelp-knap').getAttribute('aria-expanded') === 'true' && q('#hjaelp .sp-indhold #hjaelp-generelt') !== null);
   const land = side('#land', B2()); await sov(90);
@@ -1057,12 +1057,12 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   tast('ArrowLeft', { altKey: true }); await sov(60);
   tjek('Tilbage og frem, Alt+←: tilbage', v.value === 'z1', v.value);
   tb.click(); await sov(60); // trin 0 af 2: frem kan nå to trin
-  d.querySelector('a[data-visning=siden-sidst]').click(); await sov(60);
+  d.querySelector('button[data-visning=siden-sidst]').click(); await sov(60);
   tjek('Tilbage og frem, et nyt skift to trin før enden rydder frem', synlige(d).join() === 'siden-sidst' && w.history.state?.hmTrin === 1 && fr.disabled && !tb.disabled && hoved.scrollTop === 0, JSON.stringify(w.history.state));
-  d.querySelector('a[data-visning=siden-sidst]').click(); await sov(30);
+  d.querySelector('button[data-visning=siden-sidst]').click(); await sov(30);
   tjek('Tilbage og frem, et klik på den aktuelle visning er intet trin (trinets nummer står)', w.history.state?.hmTrin === 1 && fr.disabled, JSON.stringify(w.history.state));
   // Filter som trin
-  d.querySelector('a[data-visning=overblik]').click(); await sov(30);
+  d.querySelector('button[data-visning=overblik]').click(); await sov(30);
   w.hmRamme.gaaTil('vaernet', new URLSearchParams({ zone: 'z1', navn: 'wi24rd.com', vis: 'angreb-i-gaar' })); await sov(60);
   w.hmRamme.gaaTil('vaernet', new URLSearchParams({ zone: 'z1', navn: 'wi24rd.com' })); await sov(60);
   tb.click(); await sov(60);
@@ -1128,7 +1128,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   d.getElementById('token').value = 'x';
   d.getElementById('token-form').dispatchEvent(new w.Event('submit', { cancelable: true, bubbles: true })); await sov(60);
   tjek('Tilbage og frem, opsætning → Overblik er intet trin', synlige(d).join() === 'overblik' && w.history.length === laengde && d.getElementById('hist-tilbage').disabled, synlige(d).join());
-  d.querySelector('a[data-visning=overblik]').click(); await sov(30);
+  d.querySelector('button[data-visning=overblik]').click(); await sov(30);
   tjek('Tilbage og frem, klik på Overblik ved start er intet trin', w.history.length === laengde && d.getElementById('hist-tilbage').disabled);
 }
 {
@@ -1225,7 +1225,7 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   tjek('P1 tabellen er kittets, og brødteksten følger lg', /\.tabel td\.hv \{/.test(appCss) && /body \{[^}]*font-size: var\(--font-size-lg\)/.test(appCss));
   tjek('P1 ved smalt vindue: tabellen ruller i sin ramme, og båndets navn kan forkortes', /\.tabel-rul \{[^}]*overflow-x: auto/.test(ui('assets/kit2/kit.css')) && /\.titel b \{[^}]*text-overflow: ellipsis/.test(appCss));
   const konf = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8'));
-  tjek('P1 visningsskiftet er kittets (tæt ved syv visninger; navnet afkortes med … i kit.css), og programmet sætter ingen fast højde på det', /\.skift\.taet \.vs > span \{[^}]*text-overflow: ellipsis/.test(ui('assets/kit2/kit.css')) && !/\.vs \{[^}]*height/.test(appCss) && !/\.nav a \{/.test(appCss));
+  tjek('P1 visningernes knapper er kittets båndknapper (.cb), og programmet sætter ingen fast højde på dem', /\.cb \{[^}]*height: 54px/.test(ui('assets/kit2/kit.css')) && !/\.cb \{[^}]*height/.test(appCss) && !/\.nav a \{/.test(appCss));
   tjek('P1 <code> kommer aldrig under skalaens mindste trin (.9em af 13 px ville give 11,7 px ved Lille)', !/font-size: *\.\d+em/.test(alCss) && (alCss.match(/font-size: max\(\.9em, var\(--font-size-xs\)\)/g) || []).length === 2);
   tjek('P1 ingen WebView-zoom', !JSON.stringify(konf).includes('zoomHotkeysEnabled'));
 }
@@ -1333,7 +1333,7 @@ const dagFor = n => new Date(urNu() - n * 864e5).toISOString().slice(0, 10);
   tjek('P3 Nulstil kalder nulstil_historik én gang, lukker og melder det', !dialog.hasAttribute('open') && kald.filter(k => k[0] === 'nulstil_historik').length === 1 && d.getElementById('indst-status').textContent === 'Historikken er nulstillet. Programmet henter tallene forfra.' && d.getElementById('indst-status').classList.contains('ok'), d.getElementById('indst-status').textContent);
   tjek('P3 overblikket og Data tegnes igen', kald.filter(k => k[0] === 'overblik').length === foerOverblik + 1 && d.getElementById('data-historik').textContent === 'Ingen endnu', d.getElementById('data-historik').textContent);
   knap.click(); await sov(10);
-  d.querySelector('a[data-visning=overblik]').click(); await sov(30);
+  d.querySelector('button[data-visning=overblik]').click(); await sov(30);
   tjek('P3 et skift af visning lukker dialogen', !dialog.hasAttribute('open'));
 }
 {
@@ -1427,7 +1427,7 @@ const ROBOT_DYK = dykSvar({ regler: [], top: { regel: [], land: [], netvaerk: []
   const { d, w, kald } = s, q = sel => d.querySelector('#visning-vaernet ' + sel), alle = sel => [...d.querySelectorAll('#visning-vaernet ' + sel)];
   tjek('D regel: dyk kaldes med omfang, filter og 30 dage', JSON.stringify(sidsteDyk(s)) === JSON.stringify({ omfang: { zone: 'z1' }, filtre: [{ dim: 'regel', vaerdi: REACT }], periode: 'd30', slags: null }), JSON.stringify(sidsteDyk(s)));
   tjek('D regel: overskriften er Angreb med domænet, og reglen står i klarsprog som chip', d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com' && d.querySelector('#dyk-filtre .dyk-filter').textContent === 'Et kendt hul i React' && d.title.startsWith('Angreb · wi24rd.com'), d.title);
-  tjek('D regel: sidebjælken markerer Angreb', d.querySelector('a[data-visning="vaernet"]').getAttribute('aria-current') === 'page');
+  tjek('D regel: sidebjælken markerer Angreb', d.querySelector('button[data-visning="vaernet"]').getAttribute('aria-current') === 'page');
   tjek('D regel: hovedet har mærke, CVE-knap, typetekst, Cloudflares navn og guiden', q('.dyk-hoved .vg-produkt').textContent === 'React' && q('.dyk-hoved .vg-cve-knap').textContent === 'CVE-2025-55182 ↗' && q('.dyk-type').textContent.startsWith('Fjernkørsel af kode') && q('.dyk-navn code').textContent === REACT && q('.dyk-guide .g-spoerg').textContent.includes('React eller Next.js'));
   q('.dyk-hoved .vg-cve-knap').click(); await sov(10);
   tjek('D regel: CVE-knappen kalder aabn_cve og bliver i visningen', JSON.stringify(kald.filter(k => k[0] === 'aabn_cve').pop()) === '["aabn_cve",{"id":"CVE-2025-55182"}]' && w.location.hash.startsWith('#vaernet?'));
@@ -1941,7 +1941,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('Q3.2 "Først set" over hele historikken for ét domæne og for det samlede', (lib.match(/ud\.lister\.med_historik\(&lager\.fw_datoer\(/g) || []).length === 2);
   tjek('Klik, menulinjen: statuslinjen åbner vinduet på Overblik', /agent::STATUS => \{\s*let _ = aabn_vindue\(app\);\s*let _ = app\.emit\("visning", "overblik"\);/.test(lib));
   const app = udenKommentarer(ui('assets/app.css'));
-  tjek('Klik, rækker og sidebjælke har pointer; et slået-fra punkt har ikke', /\.tabel tbody tr:not\(\.gruppe\) \{ cursor: pointer; \}/.test(ui('assets/kit2/kit.css')) && /\.vs\[aria-disabled="true"\] \{[^}]*cursor: default/.test(ui('assets/kit2/kit.css')));
+  tjek('Klik, rækker og sidebjælke har pointer; et slået-fra punkt har ikke', /\.tabel tbody tr:not\(\.gruppe\) \{ cursor: pointer; \}/.test(ui('assets/kit2/kit.css')) && /\.cb\[disabled\], \.cb\[aria-disabled="true"\] \{[^}]*cursor: default/.test(ui('assets/kit2/kit.css')));
 }
 
 // Logoet.
@@ -2156,7 +2156,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   await sov(80);
   const a = sidsteDyk(s), rod = d.getElementById('vagt');
   tjek('V dyk: robot sendes som filter', a.filtre.length === 1 && a.filtre[0].dim === 'robot' && a.filtre[0].vaerdi === 'alle', JSON.stringify(a));
-  tjek('V dyk: overskriften og sidebjælken er Robotter', d.getElementById('vaernet-h').textContent === 'Robotter · wi24rd.com' && d.querySelector('a[aria-current]').getAttribute('data-visning') === 'robotter' && d.querySelector('#dyk-filtre .dyk-filter').dataset.gaa === 'robotter?zone=z1&navn=wi24rd.com', d.getElementById('vaernet-h').textContent);
+  tjek('V dyk: overskriften og sidebjælken er Robotter', d.getElementById('vaernet-h').textContent === 'Robotter · wi24rd.com' && d.querySelector('#baand button[data-visning][aria-current="page"]').getAttribute('data-visning') === 'robotter' && d.querySelector('#dyk-filtre .dyk-filter').dataset.gaa === 'robotter?zone=z1&navn=wi24rd.com', d.getElementById('vaernet-h').textContent);
   tjek('V dyk: ingen vælger for slags, ingen fordeling og ordet er besøg', !rod.querySelector('.dyk-slags') && !rod.querySelector('.vg-fordeling') && rod.querySelector('.vg-fliser').textContent.includes('Besøg'), rod.querySelector('.vg-fliser').textContent.slice(0, 120));
   const robotter = [...rod.querySelectorAll('.dyk-lister .dyk-l')].map(b => new URLSearchParams(b.dataset.dyk));
   tjek('V dyk: listen over robotter erstatter "alle"', robotter.some(p => p.get('robot') === 'GPTBot') && robotter.some(p => p.get('robot') === 'alle' && p.get('sti') === '/'));
@@ -2202,7 +2202,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   await sov(70);
   const genvej = async n => { s.tast(n, { ctrlKey: true }); await sov(50); return w.location.hash; };
   tjek('V genveje: Ctrl+4 og Ctrl+5 på Windows', (await genvej('4')).startsWith('#robotter') && (await genvej('5')).startsWith('#login'), w.location.hash);
-  tjek('V sidebjælken: Robotter og Login står med genvej', ['robotter', 'login'].every(v => d.querySelector(`a[data-visning="${v}"] kbd`).textContent.startsWith('Ctrl+')));
+  tjek('V sidebjælken: Robotter og Login står med genvej', ['robotter', 'login'].every(v => d.querySelector(`button[data-visning="${v}"]`).getAttribute('aria-keyshortcuts').startsWith('Control+')));
   s.emit('visning', 'robotter');
   await sov(50);
   tjek('V programmenuen: hændelsen visning åbner Robotter', w.location.hash.startsWith('#robotter'), w.location.hash);
@@ -2239,8 +2239,8 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   const { d } = s, q = x => d.querySelector('#visning-besoegende ' + x), qa = x => [...d.querySelectorAll('#visning-besoegende ' + x)];
   const sidst = (x, c) => x.kald.filter(k => k[0] === c).pop();
   tjek('BES visningen står, og kaldet har zonen, 7 dage og intet land', synlige(d).join() === 'besoegende' && sidst(s, 'besoegende')[1].omfang.zone === 'z1' && sidst(s, 'besoegende')[1].periode === 'd7' && sidst(s, 'besoegende')[1].land === null, JSON.stringify(sidst(s, 'besoegende')));
-  const punkt = x => x.d.querySelector('a[data-visning="besoegende"]');
-  tjek('BES menupunktet efter Land lige nu med Ctrl+7 (dansk, Windows) og ⌘7 (engelsk, macOS), og det er det aktuelle', punkt(s).previousElementSibling.dataset.visning === 'land' && punkt(s).textContent === 'BesøgendeCtrl+7' && punkt(en).textContent === 'Visitors⌘7' && punkt(s).getAttribute('aria-current') === 'page' && punkt(s).querySelector('svg[aria-hidden="true"]'), punkt(s).textContent + ' / ' + punkt(en).textContent);
+  const punkt = x => x.d.querySelector('button[data-visning="besoegende"]');
+  tjek('BES menupunktet efter Land lige nu med Ctrl+7 (dansk, Windows) og ⌘7 (engelsk, macOS), og det er det aktuelle', [...s.d.querySelectorAll('#baand button[data-visning]:not(#indst-knap)')].at(-2).dataset.visning === 'land' && [...s.d.querySelectorAll('#baand button[data-visning]:not(#indst-knap)')].at(-1) === punkt(s) && punkt(s).textContent === 'Besøgende' && punkt(s).getAttribute('aria-keyshortcuts') === 'Control+7' && punkt(en).textContent === 'Visitors' && punkt(en).getAttribute('aria-keyshortcuts') === 'Meta+7' && punkt(s).getAttribute('aria-current') === 'page' && punkt(s).querySelector('svg[aria-hidden="true"]'), punkt(s).textContent + ' / ' + punkt(en).textContent);
   tjek('BES titel og hjælp følger visningen, og Genveje i hjælpen har ⌘7/Ctrl+7', d.title.startsWith('Besøgende · wi24rd.com') && en.d.title.startsWith('Visitors · wi24rd.com') && !d.querySelector('.hjaelp-del[data-hjaelp=besoegende]').hidden && d.querySelector('[data-t=hjBesoeg]').textContent.startsWith('Her ser du') && d.getElementById('genveje').textContent.includes('Ctrl+7Besøgende') && en.d.getElementById('genveje').textContent.includes('⌘7Visitors'), d.title + ' / ' + en.d.getElementById('genveje').textContent);
   const fl = qa('.besoeg-fliser > *'), flise = t => fl.find(x => x.textContent.includes(t));
   tjek('BES fem fliser med tallene og "N af M dage"', fl.length === 5 && flise('i går').querySelector('.sflise-tal').textContent === '412' && flise('på 7 dage').textContent === 'Unikke besøgende på 7 dage2.3806 af 7 dage' && flise('på 30 dage').querySelector('.sflise-under') === null && flise('på et år').textContent === 'Unikke besøgende på et år131.900340 af 365 dage' && flise('Besøg på 30 dage').querySelector('.sflise-tal').textContent === '4.210', fl.map(x => x.textContent).join(' | '));
@@ -2482,7 +2482,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('L navnet følger landet i titlen og sidebjælken', d.title.startsWith('Danmark lige nu · ') && d.getElementById('nav-land').textContent === 'Danmark lige nu', d.title);
   tjek('L visningen beder om nye tal, når den åbnes', s.kald.some(k => k[0] === 'radar_opdater' && k[1].kode === 'DK'));
   tjek('L landevælgeren står i båndet, og domænevælgeren gør ikke', !d.getElementById('band-land').hidden && d.getElementById('band-land').closest('#baand') && landValg(d).value === 'DK');
-  tjek('L to faner, og sidebjælken har ⌘6', [...d.querySelectorAll('#land-faner .seg-v')].length === 2 && d.querySelector('#land-faner').textContent === 'DanmarkVerden' && d.querySelector('a[data-visning="land"] kbd').textContent === 'Ctrl+6');
+  tjek('L to faner, og sidebjælken har ⌘6', [...d.querySelectorAll('#land-faner .seg-v')].length === 2 && d.querySelector('#land-faner').textContent === 'DanmarkVerden' && d.querySelector('button[data-visning="land"]').getAttribute('aria-keyshortcuts') === 'Control+6');
   const kurver = [...rod.querySelectorAll('polyline')].map(p => p.getAttribute('class'));
   tjek('L to kurver på én akse, mine og verden', new Set(kurver).size === 2 && kurver.every(k => /vg-k-(mit|verden)/.test(k)) && !rod.textContent.includes('beregnet'), kurver.join());
   tjek('L et hul bryder min kurve', kurver.filter(k => k.includes('vg-k-mit')).length === 2, String(kurver.length));
@@ -2865,7 +2865,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('W ingen tekst i et billede: ravnene er en tom maske uden <img>', !v.querySelector('img') && v.querySelector('.tom-ravn').textContent === '' && v.querySelector('.tom-ravn').getAttribute('aria-hidden') === 'true');
   tjek('W sloganet og overskriften', v.querySelector('.slogan').textContent === w.hmSprog.T.slogan && v.querySelector('.velkomst-h').textContent === 'Det her kan du forvente');
   const form = e => e.querySelector('path, rect, circle').outerHTML;
-  const kilder = ['a[data-visning="vaernet"] svg', '#visning-indstillinger h2:has(span[data-t="niveauH"]) svg', 'a[data-visning="overblik"] svg', 'a[data-visning="siden-sidst"] svg', 'a[data-visning="login"] svg'];
+  const kilder = ['button[data-visning="vaernet"] svg', '#visning-indstillinger h2:has(span[data-t="niveauH"]) svg', 'button[data-visning="overblik"] svg', 'button[data-visning="siden-sidst"] svg', 'button[data-visning="login"] svg'];
   const klokke = [...d.querySelectorAll('#visning-indstillinger h2')].find(h => h.textContent === 'Notifikationer').previousElementSibling;
   const ikoner = kilder.map((q, i) => (i === 1 ? klokke : d.querySelector(q)));
   tjek('W fem punkter med skjold, klokke, gitter, ur og lås fra sidebjælken og Indstillinger', punkter.length === 5 && punkter.every((p, i) => p.querySelector('svg.ik') && form(p.querySelector('svg')) === form(ikoner[i])), String(punkter.length));
@@ -2952,19 +2952,19 @@ const DOMV = (fravalgte = [], x) => {
       const m = /MAALT:(.*):SLUT/s.exec(p.stdout || '');
       return m ? JSON.parse(m[1].replace(/&amp;/g, '&')) : null;
     };
-    for (const [bredde, tekst] of [[1200, 'normal'], [900, 'large']]) {
+    for (const [bredde, tekst] of [[1200, 'normal'], [1100, 'large']]) {
       const r = koer(bredde, tekst);
       tjek(`M Indstillinger ved ${bredde} px, ${tekst}: siden er målt, og Login-stierne og Domæner er med`, r && r.n > 50 && r.login && r.domaener === 2, JSON.stringify(r).slice(0, 200));
       tjek(`M Indstillinger ved ${bredde} px, ${tekst}: intet i et kort står nærmere end 16 px fra kanten (tabeller undtaget)`, r && !r.ud.length, r && r.ud.slice(0, 5).join(' | '));
       tjek(`M Indstillinger ved ${bredde} px, ${tekst}: ingen vandret rullebjælke`, r && !r.vandret);
     }
-    /* Velkomsten de tre steder, i lys og mørk og ved 900 px med Stor tekst. */
+    /* Velkomsten de tre steder, i lys og mørk og ved 1100 px med Stor tekst. */
     const rgb = c => c.match(/[\d.]+/g).map(Number).slice(0, 3), lys = c => { const [r, g, b] = rgb(c).map(v => { const x = v / 255; return x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
     const kontrastTal = (a, b) => { const [x, y] = [lys(a), lys(b)].sort((m, n) => n - m); return (x + .05) / (y + .05); };
     const alleFra = { domaener_hent: zoner.map(z => ({ ...z, til: false })), overblik: [], valg_hent: [] }, udenNoegle = { token_status: { sat: false } };
     const kontraster = [], hoejder = {};
     for (const [sted, hash, ekstra] of [['Om', '#indstillinger', {}], ['alle slået fra', '#overblik', alleFra], ['opsætningen', '#overblik', udenNoegle]]) {
-      for (const [bredde, tekst, tema] of [[1200, 'normal', 'light'], [1200, 'normal', 'dark'], [900, 'large', 'dark']]) {
+      for (const [bredde, tekst, tema] of [[1200, 'normal', 'light'], [1200, 'normal', 'dark'], [1100, 'large', 'dark']]) {
         const r = koer(bredde, tekst, tema, hash, ekstra), v = r && r.velkomst, nav = `${sted}, ${bredde} px, ${tekst}, ${tema}`;
         tjek(`W ${nav}: navnet er størst, og "for Cloudflare®" er mindre`, v && v.hm > v.cf && v.hm > v.wi && v.cf < v.hm * .75, JSON.stringify(v));
         (hoejder[`${bredde}-${tekst}`] ||= new Set()).add(v && v.h);
@@ -2983,7 +2983,7 @@ const DOMV = (fravalgte = [], x) => {
       tjek(`F feltet til API Tokenet er synligt uden rul ved ${bredde} × ${hoejde}, ${tema}, ${sprog}`, f && f.synlig && f.vindue <= hoejde && f.rul === 0 && f.bund < f.vindue && f.top > 0, JSON.stringify(f));
     }
     const grupper = [];
-    for (const [sprog, tekst, bredde] of [['da', 'normal', 1200], ['en', 'normal', 1200], ['da', 'large', 1200], ['en', 'large', 1200], ['en', 'large', 900], ['da', 'compact', 900]]) {
+    for (const [sprog, tekst, bredde] of [['da', 'normal', 1200], ['en', 'normal', 1200], ['da', 'large', 1200], ['en', 'large', 1200], ['en', 'large', 1100], ['da', 'compact', 1100]]) {
       const r = koer(bredde, tekst, 'light', '#indstillinger', {}, { sprog }), g = r ? r.segmenter : [], [a, b] = g, nav2 = `${sprog}, ${tekst}, ${bredde} px`;
       grupper.push(a && `${nav2}: ${Math.round(a.b)} og ${Math.round(b.b)} px`);
       tjek(`F Udseende og Tekststørrelse er kittets radiogrupper: de tre valg står på én linje, intet afkortet, og grupperne slutter samme sted: ${nav2}`, g.length === 2 && g.every(x => x.knapper.length === 3 && x.linjer === 1 && !x.afkortet) && Math.abs(a.h - b.h) <= 1, JSON.stringify(g));
@@ -2994,33 +2994,33 @@ const DOMV = (fravalgte = [], x) => {
     const dk = koer(1200, 'normal', 'light', '#indstillinger', landeSvar('DK'), { sprog: 'da' }).nav;
     tjek('F sidebjælken: "Danmark lige nu" er uændret og på én linje', dk.tekst === 'Danmark lige nu' && dk.linjer && !dk.afskaaret, JSON.stringify(dk));
     const langt = koer(1200, 'normal', 'light', '#indstillinger', landeSvar('VC'), { sprog: 'en' }).nav;
-    tjek('F sidebjælken: et langt landenavn afkortes med … og fuldt navn i tooltip', langt.tekst === 'St. Vincent & Grenadines now' && langt.title === langt.tekst && langt.linjer && langt.afskaaret && langt.ellipse === 'ellipsis', JSON.stringify(langt));
-    const stor = koer(900, 'large', 'light', '#indstillinger', landeSvar('DK'), { sprog: 'da' }).nav;
-    tjek('F sidebjælken: ingen ombrydning ved Stor tekst og 900 px', stor.linjer, JSON.stringify(stor));
+    tjek('F båndet: et langt landenavn afkortes med … og har det fulde navn i tooltip', langt.tekst === 'St. Vincent & Grenadines now' && langt.title === langt.tekst && langt.linjer && langt.afskaaret && langt.ellipse === 'ellipsis', JSON.stringify(langt));
+    const stor = koer(1100, 'large', 'light', '#indstillinger', landeSvar('DK'), { sprog: 'da' }).nav;
+    tjek('F sidebjælken: ingen ombrydning ved Stor tekst og 1100 px', stor.linjer, JSON.stringify(stor));
     for (const [hash, ekstra, navn] of [['#login?samlet=1', { login: LOGIN_UD, login_stier: LOGIN_STIER, valg_hent: ['z1'] }, 'Login'], ['#robotter?samlet=1', { robotter: ROBOT_UD, valg_hent: ['z1'] }, 'Robotter']]) {
-      const r = koer(900, 'large', 'light', hash, ekstra), g = r ? r.segmenter : [];
-      tjek(`F ${navn} ved 900 px, Stor: segmentknappen står på én linje, intet afkortet, ingen vandret rullebjælke`, g.length >= 1 && g.every(x => x.linjer === 1 && !x.afkortet) && !r.vandret, JSON.stringify(g));
+      const r = koer(1100, 'large', 'light', hash, ekstra), g = r ? r.segmenter : [];
+      tjek(`F ${navn} ved 1100 px, Stor: segmentknappen står på én linje, intet afkortet, ingen vandret rullebjælke`, g.length >= 1 && g.every(x => x.linjer === 1 && !x.afkortet) && !r.vandret, JSON.stringify(g));
     }
     const nyLang = { domaener_hent: [{ id: 'z1', navn: 'eksempel.wi24rd.com', til: true, ny: false }, { id: 'z2', navn: 'et-meget-langt-domaenenavn-som-skal-kunne-staa-her-uden-at-bryde-noget.wi24rd.com', til: false, ny: true }] };
-    for (const [bredde, tekst] of [[1200, 'normal'], [900, 'large']]) {
+    for (const [bredde, tekst] of [[1200, 'normal'], [1100, 'large']]) {
       const r = koer(bredde, tekst, 'light', '#overblik', nyLang);
       tjek(`T3 linjen med et langt domænenavn ved ${bredde} px, ${tekst}: intet stikker ud`, r && r.nyLinje && !r.nyLinje.over.length && r.nyLinje.h <= r.nyLinje.plads + 1, JSON.stringify(r && r.nyLinje));
     }
-    const dykLang = koer(900, 'large', 'light', `#dyk?zone=z1&navn=${zoner[1].navn}&regel=${encodeURIComponent(REACT)}&sti=${encodeURIComponent('/en/meget/lang/sti/til/noget/der/ligner/et/login/og/fylder/hele/raekken/og/lidt/til.php')}&dag=2026-11-03`, { dyk: dykSvar({ regel: REGEL_HOVED }) });
-    tjek('DK ved 900 px, Stor: lang overskrift, knap og chips giver ingen vandret rullebjælke', dykLang && !dykLang.velkomst && !dykLang.vandret, JSON.stringify(dykLang).slice(0, 200));
-    /* Hvorfor foldes til 3 linjer, og kalenderen holder sig inden for vinduet ved 900 px og Stor tekst. */
+    const dykLang = koer(1100, 'large', 'light', `#dyk?zone=z1&navn=${zoner[1].navn}&regel=${encodeURIComponent(REACT)}&sti=${encodeURIComponent('/en/meget/lang/sti/til/noget/der/ligner/et/login/og/fylder/hele/raekken/og/lidt/til.php')}&dag=2026-11-03`, { dyk: dykSvar({ regel: REGEL_HOVED }) });
+    tjek('DK ved 1100 px, Stor: lang overskrift, knap og chips giver ingen vandret rullebjælke', dykLang && !dykLang.velkomst && !dykLang.vandret, JSON.stringify(dykLang).slice(0, 200));
+    /* Hvorfor foldes til 3 linjer, og kalenderen holder sig inden for vinduet ved 1100 px og Stor tekst. */
     const langHv = [{ ...OVERBLIK[0], moenster: { slags: 'maalrettet', dag: '2026-11-02', stier: 0, normalt: 0, scanner: false, ny: true, netvaerk: 'Mal AS', procent: 75, verden: true, tek: 'wordpress', foreloebig: true } }, { ...OVERBLIK[1], angreb_i_gaar_top: [] , angreb_i_gaar: 0 }];
     const hvr = koer(1200, 'normal', 'light', '#overblik', { overblik: langHv });
     tjek('Hvorfor: højst 3 linjer ved Normal, og "mere" står kun ved den lange', hvr && hvr.hv.length === 2 && hvr.hv.every(x => x.linjer <= 3) && hvr.hv[0].mere && !hvr.hv[1].mere, JSON.stringify(hvr && hvr.hv));
-    const kal = koer(900, 'large', 'light', '#dyk?zone=z1&navn=eksempel.wi24rd.com&kal=1', { dyk: dykSvar({ periode: { fra: '2026-10-05', til: '2026-11-03', dage: 30, med: 30, data_fra: '2026-10-04', data_til: '2026-11-04', i_dag: '2026-11-05' } }) });
-    tjek('Kalender ved 900 px, Stor: åben, inden for vinduet og uden vandret rullebjælke', kal && kal.kal && kal.kal.dage >= 28 && kal.kal.h <= kal.kal.vindue && kal.kal.v >= 0 && !kal.kal.vandret, JSON.stringify(kal && kal.kal));
+    const kal = koer(1100, 'large', 'light', '#dyk?zone=z1&navn=eksempel.wi24rd.com&kal=1', { dyk: dykSvar({ periode: { fra: '2026-10-05', til: '2026-11-03', dage: 30, med: 30, data_fra: '2026-10-04', data_til: '2026-11-04', i_dag: '2026-11-05' } }) });
+    tjek('Kalender ved 1100 px, Stor: åben, inden for vinduet og uden vandret rullebjælke', kal && kal.kal && kal.kal.dage >= 28 && kal.kal.h <= kal.kal.vindue && kal.kal.v >= 0 && !kal.kal.vandret, JSON.stringify(kal && kal.kal));
     /* Betingede noter står kun, når de er slået til: Start ved login skal være fra, før målingen ser dem. */
-    for (const [bredde, tekst] of [[1200, 'normal'], [900, 'large']]) {
+    for (const [bredde, tekst] of [[1200, 'normal'], [1100, 'large']]) {
       const r = koer(bredde, tekst, 'light', '#indstillinger', { autostart_hent: false });
       tjek(`Margen ved ${bredde} px, ${tekst}: Start ved login fra: noten og banneret står med margen`, r && !r.ud.length && !r.vandret, r && r.ud.slice(0, 5).join(' | '));
     }
     const langtUdfald = { ...LAND_UD, udfald: [{ ...LAND_UD.udfald[0], netvaerk: Array.from({ length: 12 }, (_, i) => `ET-MEGET-LANGT-NETVAERKSNAVN-FRA-RADAR-${i}`) }] };
-    for (const [bredde, tekst] of [[1200, 'normal'], [900, 'large']]) {
+    for (const [bredde, tekst] of [[1200, 'normal'], [1100, 'large']]) {
       for (const [navn, hash, ekstra] of [['Land', '#land', { land_visning: langtUdfald }], ['Verden', '#land?fane=verden', { land_visning: LAND_UD }], ['dyk med regelkort', '#dyk?zone=z1&navn=eksempel.wi24rd.com&land=PL', { dyk: dykSvar() }], ['Overblik med server', '#overblik', { overblik: B2B_OVERBLIK }], ['trafik-dyk', '#dyk?zone=z1&navn=eksempel.wi24rd.com&dag=2026-11-02&trafik=1', { trafik_dag: B2C_TRAFIK }], ['Angreb med teknologi', '#vaernet?zone=z1&navn=eksempel.wi24rd.com', { teknologi_hent: B2C_TEK }], ['Robotter med datovælger', '#robotter?zone=z1&navn=eksempel.wi24rd.com', {}], ['Login med datovælger', '#login?zone=z1&navn=eksempel.wi24rd.com', {}]]) {
         const r = koer(bredde, tekst, 'light', hash, ekstra);
         if (navn === 'Overblik med server') tjek(`Land og site, linjen "Din server svarer ikke" ved ${bredde} px, ${tekst}: stikker ikke ud`, r && r.serverOver === false, JSON.stringify(r).slice(0, 160));
@@ -3034,26 +3034,26 @@ const DOMV = (fravalgte = [], x) => {
         tjek(`F9 Besøgende ${periode === 'aar' ? 'Et år (uger)' : '30 dage'} ved 1200 px, ${tema}, ${sprog}: hele grafen ses uden vandret rulning (scrollWidth ≤ clientWidth)`, b && b.soejler === n && b.indhold <= b.boks && b.hovedIndhold <= b.hovedBoks && b.diagram <= b.boks && !r.vandret, JSON.stringify(b));
       }
     }
-    /* Overblik ved 900 px og Stor tekst: tabellen ruller i sin boks, og domænet bliver stående. */
-    for (const [bredde, tekst, sprog] of [[900, 'large', 'da'], [900, 'large', 'en'], [900, 'normal', 'da'], [1200, 'normal', 'da']]) {
+    /* Overblik ved 1100 px og Stor tekst: tabellen ruller i sin boks, og domænet bliver stående. */
+    for (const [bredde, tekst, sprog] of [[1100, 'large', 'da'], [1100, 'large', 'en'], [1100, 'normal', 'da'], [1200, 'normal', 'da']]) {
       const r = koer(bredde, tekst, 'light', '#overblik', { valg_hent: ['z1', 'z2', 'z3'] }, { sprog }), o = r && r.overblik, nav2 = `${bredde} px, ${tekst}, ${sprog}`;
       tjek(`Overblik ${nav2}: siden ruller ikke vandret, heller ikke hovedfladen`, r && o && !r.vandret && o.fladen, JSON.stringify(o));
-      if (bredde === 900) tjek(`Overblik ${nav2}: tabellen ruller i boksen med fastlåst domæne`, o && o.indhold > o.boks && o.foerste === 'sticky' && o.fast, JSON.stringify(o));
+      if (bredde === 1100) tjek(`Overblik ${nav2}: tabellen ruller i boksen med fastlåst domæne`, o && o.indhold > o.boks && o.foerste === 'sticky' && o.fast, JSON.stringify(o));
     }
     /* Knapgruppen står ens i alle rækker, med og uden "Nulstil" og uanset navn og tal. */
     const TEK3 = { linjer: [{ tek: 'php', angreb30: 3, forsoeg30: 40, foerst: '2026-10-05', sidst: '2026-11-02', valg: 'ved_ikke', besked: false, forslag: false }, { tek: 'wordpress', angreb30: 1240, forsoeg30: 3, foerst: '2026-10-05', sidst: '2026-11-02', valg: 'bruger_ikke', besked: false, forslag: false }, { tek: 'react', angreb30: 0, forsoeg30: 0, foerst: null, sidst: null, valg: 'bruger', besked: true, forslag: false }], generiske: [] };
-    /* Tabellen ved 1200 og 900 px, Stor tekst, lys og mørk. */
+    /* Tabellen ved 1200 og 1100 px, Stor tekst, lys og mørk. */
     const V3 = vaernUd(), alleTil = { domaener_hent: zoner.map(z => ({ ...z, til: true })) };
     const SIDE6 = { domaener: [{ zone: 'z1', navn: 'et-meget-langt-domaenenavn-som-skal-kunne-staa-her.wi24rd.com', valg: { php: ['bruger', true] }, antal: { php: 204 } }, { zone: 'z2', navn: 'b.wi24rd.com', valg: {}, antal: {} }], katalog: ['php', 'wordpress', 'react', 'drupal', 'joomla', 'laravel', 'nextjs', 'magento', 'fortinet', 'ivanti'].map(t => ({ tek: t, navn: t.toUpperCase(), gruppe: 'cms', angreb: 4, set: true, vis: true, ny: false })) };
-    for (const [bredde, tekst, tema, sprog] of [[1200, 'normal', 'light', 'da'], [900, 'large', 'dark', 'en'], [900, 'large', 'light', 'da']]) {
+    for (const [bredde, tekst, tema, sprog] of [[1200, 'normal', 'light', 'da'], [1100, 'large', 'dark', 'en'], [1100, 'large', 'light', 'da']]) {
       const r = koer(bredde, tekst, tema, '#teknologi', { ...alleTil, teknologi_side: SIDE6 }, { sprog }), t = r && r.tabel, nav2 = `${bredde} px, ${tekst}, ${tema}, ${sprog}`;
       tjek(`Teknologi ${nav2}: siden ruller ikke, boksen holder sig inde, og margen`, r && t && !r.vandret && !t.ude && !r.ud.length, JSON.stringify(t) + r?.ud?.slice(0, 3).join(' | '));
       tjek(`Teknologi ${nav2}: fastlåst domæne og overskrift, og klikfladen er mindst 24 px`, t && t.foerste === 'sticky' && t.top === 'sticky' && t.radio >= 24, JSON.stringify(t));
-      if (bredde === 900) tjek(`Teknologi ${nav2}: tabellen ruller i boksen med domænet stående`, t && t.indhold > t.boks && t.rul > 0 && t.fast, JSON.stringify(t));
+      if (bredde === 1100) tjek(`Teknologi ${nav2}: tabellen ruller i boksen med domænet stående`, t && t.indhold > t.boks && t.rul > 0 && t.fast, JSON.stringify(t));
     }
-    /* Vurdering, læk og året ved 900 px og Stor tekst. */
+    /* Vurdering, læk og året ved 1100 px og Stor tekst. */
     const VURD9 = { dag: '2026-11-02', maal_ja: false, foreloebig: false, rekog_ja: false, maal: [{ id: 'netvaerk', ok: true, n: 100, m: 60, navn: 'ET-MEGET-LANGT-NETVAERKSNAVN-FRA-CLOUDFLARE-SOM-SKAL-KUNNE-BRYDES', domaener: [] }, { id: 'net_andre', ok: false, n: 9, m: 30, navn: 'X', domaener: [{ zone: 'z2', navn: 'et-meget-langt-domaenenavn-som-skal-kunne-staa-her.wi24rd.com', n: 9 }] }], rekog: [] };
-    for (const [bredde, tekst] of [[1200, 'normal'], [900, 'large']]) {
+    for (const [bredde, tekst] of [[1200, 'normal'], [1100, 'large']]) {
       for (const [navn, hash, ekstra] of [['Angreb med Vurdering', '#vaernet?zone=z1&navn=eksempel.wi24rd.com', { vaern_cache: V3, vaern_oversigt: V3, koe_prioritet: null, teknologi_hent: TEK3, vurdering: VURD9 }], ['Login med læk', '#login?zone=z1&navn=eksempel.wi24rd.com', { login: { ...LOGIN_UD, laek: [{ dag: '2026-11-02', sti: '/en/meget/lang/sti/til/noget/der/ligner/et/login/og/fylder/hele/raekken/og/lidt/til.php', n: 3, naaet: 1 }], laek_andet: [], laek_dage: 30 }, login_stier: LOGIN_STIER }]]) {
         const r = koer(bredde, tekst, 'light', hash, ekstra);
         tjek(`Vurdering og læk ${navn} ved ${bredde} px, ${tekst}: ingen vandret rullebjælke`, r && !r.vandret, JSON.stringify(r).slice(0, 160));
@@ -3102,7 +3102,7 @@ const DOMV = (fravalgte = [], x) => {
   const { d, w } = a, sektioner = [...d.querySelectorAll('section[data-visning]')].map(x => x.getAttribute('data-visning'));
   tjek('A1 standarden er 7 dage, og 7 dage er valgt', sidsteDyk(a).periode === 'd7' && d.querySelector('#dyk-periode .seg-v[aria-checked="true"]')?.textContent === '7 dage' && d.querySelector('.sflise[aria-current]')?.textContent.includes('Afvist på 7 dage'), JSON.stringify(sidsteDyk(a)));
   tjek('A1 siden har altid datovælger, 7/30 dage og Vis', d.querySelector('#vagt .dato-vaelger') && d.querySelectorAll('#dyk-periode .seg-v').length === 2 && [...d.querySelectorAll('.dyk-slags .seg-v')].length === 3);
-  tjek('A1 ingen #visning-dyk og intet data-visning="dyk"', !sektioner.includes('dyk') && !d.querySelector('a[data-visning="dyk"]') && !w.hmRamme.tilstand.visning.includes('dyk'), sektioner.join());
+  tjek('A1 ingen #visning-dyk og intet data-visning="dyk"', !sektioner.includes('dyk') && !d.querySelector('button[data-visning="dyk"]') && !w.hmRamme.tilstand.visning.includes('dyk'), sektioner.join());
   tjek('A1 uden filtre hentes nye tal, og alle afsnit står', a.kald.some(k => k[0] === 'vaern_oversigt') && ['vg-kort', 'vg-dage', 'vg-regler', 'vg-teknologi', 'vg-forsoeg', 'vg-seneste'].every(id => d.getElementById(id)) && d.querySelector('[data-plads="email"] .email-linje') && !d.querySelector('.ang-skjult'), ['vg-kort', 'vg-dage', 'vg-regler', 'vg-teknologi', 'vg-forsoeg', 'vg-seneste'].filter(id => !d.getElementById(id)).join());
   tjek('A1 mails og "Hvad de ledte efter" følger perioden', JSON.stringify(a.kald.filter(k => k[0] === 'email_oversigt').at(-1)[1]) === '{"zone":"z1","fra":"2026-10-05","til":"2026-11-03"}' && [...d.querySelectorAll('.sflise')].some(f => f.textContent.startsWith('Snusere, der intet fandt (7 dage)120')) && d.querySelector('[data-plads="email"]').textContent.includes('7 dage, fra de rapporter'), JSON.stringify(a.kald.filter(k => k[0] === 'email_oversigt').at(-1)));
   const foerHent = a.kald.filter(k => k[0] === 'vaern_oversigt').length, trin = w.history.length, land = d.querySelector('#vagt .dyk-lister .dyk-l');
@@ -3147,7 +3147,7 @@ const DOMV = (fravalgte = [], x) => {
   const v = zoneVaelger(vz.d);
   v.value = 'z2'; v.dispatchEvent(new vz.w.Event('change', { bubbles: true })); await sov(100);
   tjek('A5 domænevælgeren beholder filter og periode', vz.w.location.hash === '#vaernet?zone=z2&navn=xyz.wi24rd.com&land=PL&periode=30', vz.w.location.hash);
-  vz.d.querySelector('a[data-visning=vaernet]').click(); await sov(100);
+  vz.d.querySelector('button[data-visning=vaernet]').click(); await sov(100);
   tjek('A5 sidebjælken åbner Angreb uden filtre, men med domænet og perioden', vz.w.location.hash === '#vaernet?periode=30&zone=z2&navn=xyz.wi24rd.com', vz.w.location.hash);
   tjek('A6 Rust har ingen liste over manualens sider', !/VEJLEDNING_SIDER|side: Option<String>\) -> Svar/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'lib.rs'), 'utf8')));
 }
@@ -3291,7 +3291,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek(`KS ingen rest i UI, menu, README og tests (${filer.length} filer)`, filer.length > 15 && fund.length === 0, fund.join());
   const s = side('', B2());
   await sov(30);
-  tjek('KS sidebjælken har de syv visninger og Indstillinger, og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('a[data-visning], button#indst-knap[data-visning]').length === 8 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('a[data-visning]').length);
+  tjek('KS sidebjælken har de syv visninger og Indstillinger, og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('#baand button[data-visning]').length === 8 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('button[data-visning]').length);
 }
 
 // ── Angreb er én side: overskriften, chips og Nulstil ──
@@ -3326,7 +3326,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('DK Nulstil: en rigtig knap ved chippene med navn og fast mål', nulstil()?.tagName === 'BUTTON' && nulstil().textContent === 'Nulstil' && nulstil().getAttribute('aria-label') === 'Nulstil alle filtre og perioden' && nulstil().dataset.gaa === 'vaernet?zone=z1&navn=wi24rd.com' && nulstil().closest('#dyk-filtre'), nulstil()?.outerHTML);
   tjek('DK chippen er en knap med egen hover og markør', chips().every(c => c.tagName === 'BUTTON') && chips().every(c => c.matches('.fchip.fchip-fjern') && c.querySelector('svg.fchip-x') && c.getAttribute('aria-label').startsWith('Fjern')) && /\.fchip-fjern:hover > span \{ text-decoration: line-through; \}/.test(ui('assets/kit2/kit.css')) && !/\.dyk-filter\b/.test(ui('assets/vagt.css')));
   tjek('DK Tab-rækkefølge: fokus på overskriften, så chips og vælgere', d.activeElement === h && foer(h, chips()[0]) && foer(chips().at(-1), d.querySelector('#dyk-periode .seg-v')) && h.getAttribute('tabindex') === '-1', d.activeElement && d.activeElement.outerHTML.slice(0, 80));
-  tjek('DK sidebjælken bliver ved Angreb', d.querySelector('a[aria-current]').getAttribute('data-visning') === 'vaernet');
+  tjek('DK sidebjælken bliver ved Angreb', d.querySelector('#baand button[data-visning][aria-current="page"]').getAttribute('data-visning') === 'vaernet');
   chips()[1].click(); await sov(60);
   tjek('DK × ét filter: sidste forespørgsel har kun det andet filter', JSON.stringify(sidsteDyk(s).filtre) === JSON.stringify([{ dim: 'land', vaerdi: 'FR' }]) && JSON.stringify(sidsteDyk(s).periode) === '{"dag":"2026-11-03"}' && sidsteDyk(s).slags === 'angreb', JSON.stringify(sidsteDyk(s)));
   const antal = w.history.length;
@@ -4132,14 +4132,14 @@ const DOMV = (fravalgte = [], x) => {
       const REK7 = { slags: 'rekognoscering', dag: '2026-11-02', stier: 240, normalt: 12, scanner: true, ny: true, netvaerk: null, procent: 0, verden: false, tek: null }, MAAL7 = { ...REK7, slags: 'maalrettet', netvaerk: 'Mal AS', procent: 75, verden: true };
       const B3RK = [{ ...OVERBLIK[0], moenster: MAAL7 }, { ...OVERBLIK[1], moenster: REK7 }];
       const B3 = koer('b3', tema, { autostart_hent: false, overblik: B3RK, siden_sidst: { vis: false, nye: [], raekker: B3RK, nye_robotter: [] }, dyk: dykSvar({ trafik: { i_alt: 809000, dage: [{ dag: '2026-10-28', n: 410000, median: 1500, stoppet: 19 }, { dag: '2026-10-29', n: 399000, median: 1500, stoppet: 26 }] }, kun_i_dag: { stier: [{ v: '/x', n: 1 }], lande: [], t: null } }) }, [{ navn: 'Overblik med mærker', hash: 'overblik' }, { navn: 'Siden sidst med mærker', hash: 'siden-sidst' }, { navn: 'Angreb med mærke', hash: 'vaernet?' + dom }, { navn: 'Start ved login fra', hash: 'indstillinger' }, { navn: 'dyk med gul linje, boks og kalender', hash: 'dyk?' + dom, aabn: ['.dato-knap'] }]);
-      const KAL = koer('kal900', tema, {}, [{ navn: 'kalenderen ved 900 px og Stor tekst', hash: 'dyk?' + dom, aabn: ['.dato-knap'] }], 900, 'large');
+      const KAL = koer('kal900', tema, {}, [{ navn: 'kalenderen ved 1100 px og Stor tekst', hash: 'dyk?' + dom, aabn: ['.dato-knap'] }], 1100, 'large');
       const FIX3 = koer('fix3', tema, { overblik: [{ ...OVERBLIK[0], tilstand: [{ slags: 'pause', status: null, kl: null }], laek: { dag: '2026-11-02', n: 3, naaet: 1 } }, OVERBLIK[1]], vurdering: VURD7, login: { ...LOGIN_UD, laek: [{ dag: '2026-11-02', sti: '/login', n: 3, naaet: 1 }], laek_andet: [{ v: 'username_leaked', n: 2 }], laek_dage: 30 }, dyk: dykSvar({ periode: { fra: '2026-01-01', til: '2026-11-02', dage: 306, med: 30, data_fra: '2026-01-01', data_til: '2026-11-02', i_dag: '2026-11-03', sikkerhed_fra: '2026-10-04', trafik_fra: '2026-01-01' }, trafik_serie: [{ dag: '2026-01-01', n: 40, hentet: true }, { dag: '2026-01-02', n: 0, hentet: false }] }) }, [{ navn: 'Overblik med tilstand og læk', hash: 'overblik' }, { navn: 'Angreb med Vurdering', hash: 'vaernet?' + dom, aabn: ['details.vurdering summary'] }, { navn: 'Login med læk', hash: 'login?' + dom }, { navn: 'dyk med året', hash: 'dyk?' + dom + '&periode=alt' }]);
       /* DMARC-afsnittet og den åbne kolonnemenu. */
       const TEK5 = { domaener: [{ zone: 'z1', navn: 'eksempel.wi24rd.com', valg: { react: ['bruger', false] }, antal: { react: 4 } }], katalog: [{ tek: 'react', navn: 'React', gruppe: 'ramme', angreb: 4, set: true, vis: true, ny: false }] };
       const FIX5 = koer('fix5', tema, { email_oversigt: { mails: 1200, fejlet: 41, afsendere: 2, hentede_dage: 30, fejl: null, liste: [{ afsender: 'Ond Afsender', land: 'RU', mails: 40, fejlet: 40 }, { afsender: '', land: '', mails: 9, fejlet: 1 }] }, teknologi_side: TEK5 }, [{ navn: 'Angreb med DMARC', hash: 'vaernet?' + dom }, { navn: '#teknologi med åben kolonnemenu', hash: 'teknologi', aabn: ['.tek-kol-knap'] }]);
       const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [{ ...OPS, aabn: ['.hm-hjaelp summary'] }]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST])];
       /* Gradienten er lysest længst mod højre, så båndet måles også i det smalleste vindue og i standardvinduet. */
-      const smalle = [900, 1200].map(b => koer('baand' + b, tema, {}, [{ navn: `skallen ved ${b} px`, hash: 'vaernet?samlet=1' }], b));
+      const smalle = [1100, 1200].map(b => koer('baand' + b, tema, {}, [{ navn: `skallen ved ${b} px`, hash: 'vaernet?samlet=1' }], b));
       const sider = r.flatMap(x => (x ? x.sider : [])), ud = [...r, ...smalle].flatMap(x => (x ? x.ud : [])), klasser = new Set(sider.flatMap(s => s.klasser));
       console.log(`     kontrast ${tema}: ` + sider.map(s => `${s.hvad} ${s.n}`).join(' · ') + ` · undtaget ${sider.reduce((a, s) => a + s.undtaget, 0)}`);
       tjek(`K7 ${tema}: alle ${SIDER.length + 14} visninger er målt, hver med tekst`, sider.length === SIDER.length + 14 && sider.every(s => s.n >= 3), sider.map(s => `${s.hvad} ${s.n}`).join(' · '));
@@ -4147,7 +4147,7 @@ const DOMV = (fravalgte = [], x) => {
       tjek(`K7 ${tema}: kontrolprøven: 3,69:1 fejler som lille tekst og består som stor`, r[0] && r[0].kontrol.join() === 'lille', r[0] && r[0].kontrol.join());
       const baand = [r[0], ...smalle].flatMap(x => (x ? x.baand : [])), navne = baand.filter(b => b.e !== 'SMALL'), lille = baand.filter(b => b.e === 'SMALL'), lav = l => Math.min(...l.map(b => b.k));
       console.log(`     titellinje ${tema}: navnet og knapperne ${lav(navne)}:1 (${navne[0]?.px}), "for Cloudflare®" ${lav(lille)}:1 (${lille[0]?.px})`);
-      tjek(`K7 ${tema}: titellinjens navn og knapper har mindst 4,5:1 mod kittets mørke titellinje (ved 900 og 1200 px)`, navne.length > 0 && lav(navne) >= 4.5, JSON.stringify(navne.slice(0, 3)));
+      tjek(`K7 ${tema}: titellinjens navn og knapper har mindst 4,5:1 mod kittets mørke titellinje (ved 1100 og 1200 px)`, navne.length > 0 && lav(navne) >= 4.5, JSON.stringify(navne.slice(0, 3)));
       tjek(`K7 ${tema}: "for Cloudflare®" i titellinjen er lille tekst og har mindst 4,5:1`, lille.length > 0 && lille.every(b => !b.stor) && lav(lille) >= 4.5, JSON.stringify(lille.slice(0, 3)));
       const set = new Map(); for (const f of ud) { const k = `${f.e} ${f.fg}/${f.bg}`; if (!set.has(k) || set.get(k).k > f.k) set.set(k, f); }
       tjek(`K7 ${tema}: al tekst undtagen --text-disabled har mindst 4,5:1 mod sin faktiske baggrund (stor tekst 3:1)`, ud.length === 0, [...set.values()].sort((a, b) => a.k - b.k).slice(0, 60).map(f => `${f.hvad}: ${f.e} ${f.fg}/${f.bg} ${f.k} »${f.t}«`).join('\n  '));

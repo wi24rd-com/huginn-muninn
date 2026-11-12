@@ -46,17 +46,13 @@
     'hm-besoeg': [['circle', { cx: 9, cy: 8, r: 3.5 }], ['path', { d: 'M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5' }], ['path', { d: 'M15.5 4.8a3.5 3.5 0 0 1 0 6.4M17.5 14c2.4.8 4 3.1 4 6' }]],
     'hm-hent': [['path', { d: 'M20 11a8 8 0 1 0-2.3 5.7' }], ['path', { d: 'M20 4v7h-7' }]],
   });
-  /* De syv visninger i navigationsruden: tast, visning, tekstnøgle, ikon. Indstillinger står i titellinjen (tandhjulet). */
+  /* De syv visninger er store knapper i båndet (gruppen Visninger, før Hent nu): tast, visning, tekstnøgle, ikon. Jans valg
+     2026-11-12: det, man bruger mest, skal stå fremme, ikke i en fanerække. Navigationsruden har kun træet. */
   const SKIFT = [['1', 'overblik', 'navOverblik', 'hm-overblik'], ['2', 'siden-sidst', 'navSiden', 'hm-siden'], ['3', 'vaernet', 'navVaernet', 'skjold'], ['4', 'robotter', 'navRobotter', 'hm-robot'], ['5', 'login', 'navLogin', 'laas'], ['6', 'land', 'navLand', 'hm-klode'], ['7', 'besoegende', 'navBesoeg', 'hm-besoeg']];
-  const skift = Kit.visningsskift($('skift'), SKIFT.map(([tast, id, t, ikon]) => ({ id, t, ikon, genvej: (mac ? '⌘' : 'Ctrl+') + tast, genvejAria: (mac ? 'Meta+' : 'Control+') + tast })), { ariaT: 'navH' });
-  for (const a of skift.links) {
-    const navn = a.querySelector('span'), k = a.querySelector('kbd'), v = a.dataset.visning;
-    if (k) k.dataset.genvej = SKIFT.find(x => x[1] === v)[0];
-    if (v === 'land') navn.id = 'nav-land';
-  }
   /* Landevælgeren står i båndet og vises kun på visninger med land: true; visningen fylder den og lytter på 'landValg'. */
   const landVaelger = Kit.vaelger({ etiket: { t: 'landVaelg' }, soeg: { ph: 'landSoegPh', ariaT: 'landSoeg' }, ingen: { t: 'landIngen' }, punkter: [], vedValg: id => udsend('landValg', id) });
   const baand = Kit.commandBar($('baand'), { ariaT: 'baandAria', udenFaner: true, faner: [{ id: 'start', t: 'baandAria', grupper: [
+    { t: 'navH', knapper: SKIFT.map(([, id, t, ikon]) => ({ id: 'vis-' + id, t, ikon, ved: () => aabnGenvej(id) })) },
     { t: 'gData', knapper: [{ id: 'hent', t: 'hentNu', ikon: 'hm-hent', pri: true }] },
     { t: 'gLand', knapper: [{ id: 'land', element: landVaelger.rod }] },
     { t: 'gHjaelp', knapper: [{ id: 'vejledning', t: 'vejledningAabn', ikon: 'bog', ved: () => aabnVejledning() }] },
@@ -66,6 +62,40 @@
   baand.knap('vejledning').id = 'baand-vejledning';
   baand.knap('indst').id = 'indst-knap';
   baand.knap('indst').setAttribute('data-visning', 'indstillinger');
+  /* Visningsskiftet: samme greb som kittets visningsskift (links, markér, saetPunkt), bygget på båndets knapper.
+     KIT-ØNSKE K41 (knappen viser "du er her") og K42 (et tal på en båndknap). */
+  const skift = (() => {
+    const links = SKIFT.map(([tast, id]) => {
+      const b = baand.knap('vis-' + id);
+      b.id = 'vis-' + id;
+      b.dataset.visning = id;
+      b.dataset.genvej = (mac ? '⌘' : 'Ctrl+') + tast;
+      b.setAttribute('aria-keyshortcuts', (mac ? 'Meta+' : 'Control+') + tast);
+      if (id === 'land') b.querySelector('span').id = 'nav-land';
+      return b;
+    });
+    const knap = id => links.find(b => b.dataset.visning === id);
+    return {
+      links,
+      markér(id) { for (const b of links) { if (b.dataset.visning === id) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); } },
+      saetPunkt(id, p) {
+        const b = knap(id);
+        if ('deaktiveret' in p) {
+          baand.saetDeaktiveret('vis-' + id, Boolean(p.deaktiveret), p.deaktiveret ? p.hvorfor : null);
+          if (p.deaktiveret) S.anvend(b); else b.title = b.dataset.genvej; // slået til: tippet er genvejen
+        }
+        if ('antal' in p) {
+          for (const x of b.querySelectorAll('[data-ant]')) x.remove();
+          if (p.antal != null) {
+            const ant = el('span', { className: 'ant' + (p.kraever ? ' ant-kraever' : ''), textContent: String(p.antal) });
+            ant.setAttribute('data-ant', '');
+            b.appendChild(ant);
+            if (p.antalAria) { ant.setAttribute('aria-hidden', 'true'); const sr = el('span', { className: 'skjult-tekst', textContent: p.antalAria }); sr.setAttribute('data-ant', ''); b.appendChild(sr); }
+          }
+        }
+      },
+    };
+  })();
   const landGruppe = landVaelger.rod.closest('.grp');
   landGruppe.id = 'band-land';
   landGruppe.hidden = true;
@@ -149,8 +179,8 @@
   /* En visning kan låne en anden visnings titel (titel()): Angreb med robotfilter hedder Robotter. */
   function opdaterTitel() { const v = visninger[tilstand.visning]; document.title = S.titel((v && v.titel && v.titel()) || tilstand.visning); }
   function navTilstand() {
-    /* Uden API Token er de syv visninger slået fra (kittets visningsskift); Indstillinger i titellinjen er altid fri. */
-    for (const a of skift.links) skift.saetPunkt(a.dataset.visning, { deaktiveret: !tilstand.sat });
+    /* Uden API Token er de syv visninger slået fra (kittets visningsskift), og fanens tip siger hvorfor; Indstillinger i båndet er altid fri. */
+    for (const a of skift.links) skift.saetPunkt(a.dataset.visning, { deaktiveret: !tilstand.sat, hvorfor: tilstand.sat ? null : 'navUdenToken' });
   }
   // Altid gennem gaaTil: et klik på den adresse, der allerede står, ville ellers rydde history.state (trinets nummer).
   document.querySelectorAll('a[data-visning]').forEach(a => a.addEventListener('click', ev => {

@@ -16,7 +16,7 @@
         "url": "index.html",
         "width": 1200,
         "height": 860,
-        "minWidth": 900,
+        "minWidth": 1100,
         "minHeight": 560,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
