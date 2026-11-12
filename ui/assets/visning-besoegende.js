@@ -5,7 +5,7 @@
    gemt. Perioder over 90 dage vises pr. uge (mandag–søndag, UTC); et klik på en uge viser ugen. Et klik på en dag åbner "Trafik den …" på Angreb, et klik på et
    land, en robotgruppe eller en sti lægger det som filter her (chip med ×), og fliserne sætter perioden. Fliserne er faste og står øverst, over vælgeren;
    under vælgeren står "Valgt periode: …" over alt, der følger perioden. Stier, der svarede med sidens almindelige side, står i en egen liste. Dage uden tal er huller, ikke 0. Intet uden data bag er
-   klikbart. Søjlerne er blå (--board-visitors), så de ikke læses som angreb. Tegnes igen, når køen eller de ekstra tal melder nyt, højst hvert 3. sekund; svar,
+   klikbart. Søjlerne er blå (--info-mark), så de ikke læses som angreb. Tegnes igen, når køen eller de ekstra tal melder nyt, højst hvert 3. sekund; svar,
    der kommer for sent, kasseres (gen). Bygges med createElement. */
 (function () {
   'use strict';

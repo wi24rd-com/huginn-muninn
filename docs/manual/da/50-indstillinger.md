@@ -76,4 +76,4 @@ Nederst står: "Du kan også slå notifikationerne helt fra i Systemindstillinge
 
 ## Om
 
-Version, linjen "Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd", skrifter og kortdata (Outfit og JetBrains Mono under SIL Open Font License 1.1; world-countries under ODbL og Natural Earth, public domain), varemærkelinjen om Cloudflare og et link til kildekoden.
+Version, linjen "Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd", skrifter og kortdata (Inter og JetBrains Mono under SIL Open Font License 1.1; world-countries under ODbL og Natural Earth, public domain), varemærkelinjen om Cloudflare og et link til kildekoden.

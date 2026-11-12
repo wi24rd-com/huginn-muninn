@@ -21,7 +21,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - **Technology by domain** (under **Settings → Domains**, or **Edit technologies** in Attacks) is a table with a choice per domain and technology: Uses, Does not use or Don't know. Each column and each domain has its actions behind one **⋯** button. You can search, and under **All technologies** you choose what is shown and add technologies in advance.
 - **Shortcuts:** macOS ⌘1 Overview · ⌘2 Since last time · ⌘3 Attacks · ⌘4 Robots · ⌘5 Login · ⌘6 Denmark now · ⌘7 Visitors · ⌘, Settings · ⌘R Fetch now (also in the **View** menu). Windows: the same with Ctrl, and F5 = Fetch now.
 - **CVE numbers** (e.g. CVE-2025-55182 in Attacks and in "What do I do?") can be clicked: they open the CVE's page on cve.org in your browser. The app itself fetches nothing from there.
-- **Light and dark** follow the system, or you choose under **Settings → General**. The colours come from the Wi24rd UI kit (`design/wi24rd-tokens.json`).
+- **Light and dark** follow the system, or you choose under **Settings → General**. The colours and fonts come from Wi24rd UI Kit 2 (`ui/assets/kit2/`).
 - **Text size:** Small, Normal or Large under **Settings → General**, or ⌘+ ⌘− ⌘0 (Windows: Ctrl). The choice is remembered.
 - **Reset history** under **Settings → Data** deletes all figures on your computer and fetches them again. Cloudflare only has security events for the last month and traffic figures for the last year — anything older is gone for good; the dialog tells you which dates, and how many days are lost.
 
@@ -80,7 +80,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 npm install
 npm run tauri dev
 npm run test:ui              # the UI smoke test (jsdom)
-node design/build-tokens.mjs # tokens.css (and XAML) from design/wi24rd-tokens.json
+npm run kit:tjek             # the copies in ui/assets/kit2/ match the Wi24rd UI Kit 2 package
 ```
 Requires Rust (rustup) and Node 20+.
 

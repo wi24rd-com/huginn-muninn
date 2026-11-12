@@ -634,7 +634,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   const inline = /\bstyle\s*=|setAttribute\(\s*['"`]style|\.style\b|cssText|<style/;
   tjek(`S CSP: ingen inline-style i ${alleUi.length} filer i ui/`, alleUi.length >= 15 && alleUi.every(([, k]) => !inline.test(k)), alleUi.filter(([, k]) => inline.test(k)).map(([f]) => f).join());
   const css = ['app.css', 'vagt.css'].map(f => [f, ui('assets/' + f)]);
-  tjek('S CSS: kun CSS-variabler, ingen farvekoder uden for tokens.css', css.every(([, k]) => !/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i.test(k.replace(/\/\*[\s\S]*?\*\//g, ''))), css.map(([f, k]) => f + ':' + (k.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9a-f]{3,8}\b|rgba?\([^)]*\)/gi) || []).slice(0, 3).join(',')).join(' '));
+  tjek('S CSS: kun CSS-variabler, ingen farvekoder uden for kittets tokens', css.every(([, k]) => !/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i.test(k.replace(/\/\*[\s\S]*?\*\//g, ''))), css.map(([f, k]) => f + ':' + (k.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9a-f]{3,8}\b|rgba?\([^)]*\)/gi) || []).slice(0, 3).join(',')).join(' '));
   const alleCss = css.map(([, k]) => udenKommentarer(k)).join('\n');
   const rester = ['.side-hoved', '.etiket', '.sek ', '.sek-in', '.hm-top', '.hm-logo', '.hm-sprog', '.hm-tilbage', '.hm-ravne-baggrund', '.hm-om', '.vg-eksempel', '.r12-', '.hero', '.gutter', '.praemis'];
   tjek('S CSS: resterne fra Q1 er væk (site.css, maskinrum.css, .side-hoved*, .etiket, .sek, .hm-top …, .vg-eksempel)', !fs.existsSync(path.join(repo, 'ui', 'assets', 'site.css')) && !fs.existsSync(path.join(repo, 'ui', 'assets', 'maskinrum.css')) && !fs.existsSync(path.join(repo, 'ui', 'vaernet.html')) && rester.every(r => !alleCss.includes(r)), rester.filter(r => alleCss.includes(r)).join());
@@ -657,196 +657,77 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   tjek('S build.rs: data_status er med i kommandolisten', /"data_status",/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8')));
   tjek('S capabilities: ingen fs, shell, http, opener eller autostart:*', !p.some(x => /^(fs|shell|http|opener|autostart|dialog|clipboard)/.test(x)));
 }
-// ── Tokens: én kilde, genereret = committet; kontrast fra JSON'en ──
+// ── Tokens: Wi24rd UI Kit 2 er eneste kilde (V-KIT2.1 B2e); kontrasten måles på kittets værdier ──
 {
-  const bt = await import(pathToFileURL(path.join(repo, 'design', 'build-tokens.mjs')).href);
-  const tokens = bt.laesTokens(path.join(repo, 'design', 'wi24rd-tokens.json'));
-  const ud = bt.byg(tokens);
-  const forskel = Object.entries(ud).filter(([fil, indhold]) => !fs.existsSync(path.join(repo, fil)) || fs.readFileSync(path.join(repo, fil), 'utf8') !== indhold).map(([fil]) => fil);
-  tjek('S tokens: genereret tokens.css og Wi24rdTokens.xaml = committet', forskel.length === 0 && Object.keys(ud).join() === 'ui/assets/tokens.css,design/out/Wi24rdTokens.xaml', forskel.join());
-  const lag = Object.keys(tokens).filter(k => k !== 'meta').join();
-  const d = tokens.component.density;
-  tjek('S tokens: tre lag (raw, semantic, component), lys + mørk, to tætheder (comfortable 38/14 til XAML; normal 36/15 til CSS; tekststørrelsen er kittets)', lag === 'raw,semantic,component' && Object.keys(tokens.semantic).join() === 'light,dark'
-    && Object.keys(d).join() === 'comfortable,normal' && d.comfortable.control.height === 38 && d.comfortable.font.size === 14 && d.normal.control.height === 36 && d.normal.font.size.lg === 15 && tokens.meta.targets.css.density === 'normal' && !('densities' in tokens.meta.targets.css), lag);
-  const cssUd = ud['ui/assets/tokens.css'];
-  tjek('S tokens: CSS har lyst standard, mørk efter prefers-color-scheme ved data-tema="system" og ved data-tema="moerk" (Kit 2), intet data-theme', /@media \(prefers-color-scheme: dark\) \{\n {2}:root\[data-tema="system"\]/.test(cssUd) && /\n:root\[data-tema="moerk"\]/.test(cssUd) && !/data-theme/.test(cssUd) && /--band-height: 60px;/.test(cssUd) && /--sidebar-width: 212px;/.test(cssUd));
-  // Kontrast (WCAG 2.x): tekst ≥ 7:1 (AAA), --color-text-disabled ≥ 4,5:1, UI ≥ 3:1. Gennemsigtige farver lægges oven på den flade, de står på.
   const rgba = c => { if (c.startsWith('#')) return [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)).concat(1); const m = c.match(/rgba?\(([^)]+)\)/)[1].split(',').map(Number); return [m[0], m[1], m[2], m[3] ?? 1]; };
   const over = (f, b) => [0, 1, 2].map(i => f[i] * f[3] + b[i] * (1 - f[3])).concat(1);
   const lum = c => { const [r, g, b] = c.slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
-  const kontrast = (fg, bg, under) => { let B = rgba(bg); if (B[3] < 1) B = over(B, rgba(under)); let F = rgba(fg); if (F[3] < 1) F = over(F, B); const a = lum(F), b = lum(B); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
-  const hex = c => '#' + rgba(c).slice(0, 3).map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
-  const iGradient = (g, t) => { const s = g.stops; for (let i = 1; i < s.length; i++) { const [c0, p0] = s[i - 1], [c1, p1] = s[i]; if (t * 100 <= p1) { const k = (t * 100 - p0) / (p1 - p0), a = rgba(c0), b = rgba(c1); return hex('#' + [0, 1, 2].map(j => Math.round(a[j] + (b[j] - a[j]) * k).toString(16).padStart(2, '0')).join('')); } } return s.at(-1)[0]; };
-  const LOGO = [0, 0.1, 0.2, 0.3, 0.42, 0.52], HELE = [0, 0.25, 0.5, 0.75, 1];
-  const fejlPar = [], antalPar = { light: 0, dark: 0 };
-  for (const tema of ['light', 'dark']) {
-    const v = bt.loesTema(tokens, tema), c = k => v[k];
-    const par = [
-      ...['color.text', 'color.text-muted', 'color.accent-text'].flatMap(f => ['color.bg', 'color.surface', 'color.field', 'color.sidebar', 'color.hover', 'color.accent-soft', 'status.danger.bg', 'status.warn.bg', 'status.ok.bg', 'status.none.bg'].map(b => [f, b, 7])),
-      ['color.text-disabled', 'color.surface', 4.5], ['color.text-disabled', 'color.sidebar', 4.5],
-      ['color.on-accent', 'color.accent-fill', 7], ['color.on-accent', 'color.danger-strong', 7],
-      ...['danger', 'warn', 'ok', 'none'].flatMap(s => [`status.${s}.bg`, 'color.surface', 'color.field', 'color.bg'].map(b => [`status.${s}.fg`, b, 7])), ['nav.selected-text', 'nav.selected-bg', 7, 'color.sidebar'],
-      ['color.focus-ring', 'color.bg', 3], ['color.focus-ring', 'color.surface', 3], ['color.switch-off', 'color.surface', 3], ['color.danger-fill', 'color.surface', 3], ['color.control-on', 'color.surface', 3], ['color.accent', 'color.surface', 3],
-    ];
-    for (const [fg, bg, min, under] of par) {
-      const k = kontrast(c(fg), c(bg), c(under || 'color.surface'));
-      antalPar[tema]++;
-      if (!(k >= min)) fejlPar.push(`${tema} ${fg}/${bg} ${k.toFixed(2)} < ${min}`);
-    }
-    for (const t of c('primary.fill').stops.map(([x]) => x)) { antalPar[tema]++; const k = kontrast(c('color.on-accent'), t); if (k < 7) fejlPar.push(`${tema} on-accent/primary ${t} ${k.toFixed(2)}`); }
-    for (const fg of ['band.text', 'band.text-accent']) for (const t of LOGO) { antalPar[tema]++; const b = iGradient(c('band.fill'), t), k = kontrast(c(fg), b); if (k < 4.5) fejlPar.push(`${tema} ${fg}/bånd@${t} ${b} ${k.toFixed(2)}`); }
-    for (const t of HELE) {
-      const b = iGradient(c('band.fill'), t);
-      antalPar[tema] += 2;
-      const k = kontrast(c('band.pill-fg'), c('band.pill-bg'), b); if (k < 7) fejlPar.push(`${tema} pille/bånd@${t} ${k.toFixed(2)}`);
-      const f = kontrast(c('band.text'), b); if (f < 3) fejlPar.push(`${tema} fokusring (band.text)/bånd@${t} ${f.toFixed(2)}`);
-    }
-    for (const t of LOGO) { antalPar[tema]++; const b = iGradient(c('band.fill'), t), k = kontrast(c('band.text'), c('band.subtitle-bg'), b); if (k < 7) fejlPar.push(`${tema} "for Cloudflare®"/bånd@${t} ${k.toFixed(2)}`); }
+  /* Kopierne er som pakken, app.css og vagt.css bruger kittets navne direkte (broen og Kit 1.0 er væk), og kontrasten måles
+     på det, der vises. Kittets krav: tekst ≥ 4,5:1; mærker, serier og UI ≥ 3:1; nabotrin på skalaen ≥ 1,3:1. */
+  const kt = await import(pathToFileURL(path.join(repo, 'tools', 'kit2-tjek.mjs')).href), kr = kt.tjek();
+  tjek(`Kit 2: kopierne i ui/assets/kit2 er byte for byte som pakken (${kr.version}, ${kr.antal} filer)`, kr.fejl.length === 0 && /^2\.\d+\.\d+$/.test(kr.version || '') && kr.antal >= 14, kr.fejl.join(' · '));
+  const kitCss = ui('assets/kit2/tokens.css'), html = ui('index.html'), appCss = ui('assets/app.css'), vagtCss = ui('assets/vagt.css');
+  const vars = t => Object.fromEntries([...t.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map(m => [m[1], m[2].trim()]));
+  const blokke = re => [...kitCss.matchAll(re)].map(m => m[1]).join('\n');
+  const kitLys = vars(blokke(/(?:^|\n):root \{([^}]*)\}/g)), kit = { lys: kitLys, moerk: { ...kitLys, ...vars(blokke(/(?:^|\n):root\[data-tema="moerk"\] \{([^}]*)\}/g)) } };
+  const systemMoerk = vars((kitCss.match(/@media \(prefers-color-scheme: dark\) \{\s*:root\[data-tema="system"\] \{([^}]*)\}/) || [, ''])[1]);
+  tjek('Kit 2 tokens: mørk ved data-tema="moerk" og ved data-tema="system" har de samme værdier, og 2.1.0-farverne er med', Object.keys(systemMoerk).length > 20 && Object.entries(systemMoerk).every(([k, v]) => kit.moerk[k] === v) && ['--ok', '--ok-soft', '--ok-mark', '--warn-mark', '--danger-mark', '--info-mark', '--none-mark', '--data-1', '--data-axis', '--data-grid', '--data-label', '--seq-1', '--seq-5', '--map-sea', '--map-land', '--map-border', '--map-ring', '--map-arc'].every(n => kit.lys[n] && kit.moerk[n]));
+  tjek('Kit 2 indlæsning: kit2/tokens.css → kit2/kit.css → app.css → vagt.css; kit.js efter sprog.js og før ramme.js; sprogmotor.js indlæses ikke', /<link rel="stylesheet" href="assets\/kit2\/tokens\.css">\s*<link rel="stylesheet" href="assets\/kit2\/kit\.css">\s*<link rel="stylesheet" href="assets\/app\.css">\s*<link rel="stylesheet" href="assets\/vagt\.css">/.test(html) && (html.match(/rel="stylesheet"/g) || []).length === 4 && /<script src="assets\/sprog\.js" defer><\/script>\s*<script src="assets\/kit2\/kit\.js" defer><\/script>[\s\S]*<script src="assets\/ramme\.js" defer>/.test(html) && !/sprogmotor/.test(html));
+  // B2e: Kit 1.0, broen og Outfit er væk, og ingen af de gamle navne står tilbage i ui/.
+  const vaek = ['ui/assets/tokens.css', 'ui/assets/kit2-bro.css', 'ui/assets/fonts', 'design/wi24rd-tokens.json', 'design/build-tokens.mjs', 'design/out'].filter(f => fs.existsSync(path.join(repo, f)));
+  const uiFiler = ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f)).map(f => 'assets/' + f)];
+  const GAMLE = /--(?:color-(?!overlay-)|status-|board-|kort-|chart-http-|band-|sidebar-|nav-selected-|primary-fill|help-width|font-body|font-display|control-radius|raw-)[a-z0-9-]*/g;
+  const gamle = uiFiler.flatMap(f => (udenKommentarer(ui(f)).match(GAMLE) || []).map(n => f + ':' + n));
+  tjek('B2e: Kit 1.0 er væk (tokens.css, broen, Outfit, design/wi24rd-tokens.json, build-tokens.mjs, XAML), og ingen af dets variabelnavne bruges i ui/', vaek.length === 0 && gamle.length === 0, [...vaek, ...new Set(gamle)].slice(0, 12).join(' '));
+  tjek('B2e: skrifterne er kittets (Inter, JetBrains Mono); ingen @font-face og ingen Outfit i programmets egen CSS', !/@font-face|Outfit/i.test(appCss + vagtCss) && /font-family: var\(--font-sans\)/.test(appCss) && /@font-face \{ font-family: "Inter"/.test(ui('assets/kit2/kit.css')) && /@font-face \{ font-family: "JetBrains Mono"/.test(ui('assets/kit2/kit.css')));
+  const egne = vars((udenKommentarer(appCss).match(/(?:^|\n):root \{([^}]*)\}/) || [, ''])[1]);
+  tjek('B2e: programmets egne mål står ét sted (app.css :root), uden farvekoder: kontrolhøjde 36, tekst 12–28 px, fokusring 2 px', egne['--control-height'] === '36px' && egne['--font-size-xs'] === '12px' && egne['--font-size-lg'] === '15px' && egne['--font-size-display'] === '28px' && egne['--focus-ring-width'] === '2px' && egne['--titel-trafiklys'] === '86px' && Object.keys(egne).every(n => !kit.lys[n]) && !/#[0-9a-f]{3,8}\b|rgba?\(/i.test(Object.values(egne).join()), Object.keys(egne).filter(n => kit.lys[n]).join());
+  const lokale = new Set([...(appCss + vagtCss).matchAll(/(--[a-z0-9-]+)\s*:/g)].map(m => m[1]));
+  const brugt = [...new Set([...(udenKommentarer(appCss) + udenKommentarer(vagtCss)).matchAll(/var\((--[a-z0-9-]+)/g)].map(m => m[1]))];
+  /* --w og --f (vagt.css, .vg-kat/.vg-prik/.vg-gaest) har aldrig været defineret noget sted; kendt rest fra før Kit 2. */
+  const udef = brugt.filter(n => !kit.lys[n] && !lokale.has(n) && !['--w', '--f'].includes(n));
+  tjek(`Kit 2: hver variabel, app.css og vagt.css bruger, er kittets eller programmets egen (${brugt.length} brugt)`, udef.length === 0 && brugt.length >= 40, udef.join());
+  const farve = (tema, u) => {
+    u = u.trim();
+    let m = u.match(/^var\((--[a-z0-9-]+)\)$/);
+    if (m) return farve(tema, kit[tema][m[1]]);
+    m = u.match(/^color-mix\(in srgb, (.+?) (\d+)%, (.+)\)$/);
+    if (m) { const a = farve(tema, m[1]), p = m[2] / 100; if (m[3] === 'transparent') return [a[0], a[1], a[2], a[3] * p]; const b = farve(tema, m[3]); return [0, 1, 2].map(i => a[i] * p + b[i] * (1 - p)).concat(1); }
+    return rgba(u);
+  };
+  const v = n => n.startsWith('--') ? `var(${n})` : n;
+  const k2 = (tema, fg, bg, under = '--surface') => { let B = farve(tema, v(bg)); if (B[3] < 1) B = over(B, farve(tema, v(under))); let F = farve(tema, v(fg)); if (F[3] < 1) F = over(F, B); const a = lum(F), b = lum(B); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
+  const BESOEG_HOVER = 'color-mix(in srgb, var(--info-mark) 78%, var(--text))';
+  const FLADER = ['--bg', '--surface', '--surface-raised'], STATUS = ['danger', 'warn', 'ok'];
+  const par = [
+    ...['--text', '--text-muted', '--accent'].flatMap(f => [...FLADER, '--accent-soft'].map(b => [f, b, 4.5])),
+    ...['--text', '--text-muted'].flatMap(f => STATUS.map(st => [f, `--${st}-soft`, 4.5])),
+    ['--text-disabled', '--surface', 4.5],
+    ['--on-accent', '--accent', 4.5], ['--on-accent', '--danger', 4.5],
+    ...STATUS.flatMap(st => [`--${st}-soft`, ...FLADER].map(b => [`--${st}`, b, 4.5])),
+    ...['--info', '--accent', '--danger', '--border-strong'].map(f => [f, '--surface', 3]), ['--info', '--bg', 3],
+    ...['danger', 'warn', 'ok', 'none', 'info'].flatMap(st => FLADER.map(b => [`--${st}-mark`, b, 3])),
+    ['--data-label', '--surface', 4.5], ['--data-label', '--surface-raised', 4.5], ['--surface', '--info', 4.5],
+    ...[BESOEG_HOVER, '--data-axis'].flatMap(f => ['--surface', '--surface-raised'].map(b => [f, b, 3])),
+    ...['--map-ring', '--danger-mark'].flatMap(f => ['--map-land', '--map-sea'].map(b => [f, b, 3])),
+    ...[1, 2, 3, 4].map(n => [`--seq-${n + 1}`, `--seq-${n}`, 1.3]),
+  ];
+  const kitFejl = [], under7 = [], antal = { lys: 0, moerk: 0 };
+  for (const tema of ['lys', 'moerk']) for (const [fg, bg, min] of par) {
+    const k = k2(tema, fg, bg);
+    antal[tema]++;
+    if (!(k >= min)) kitFejl.push(`${tema} ${fg}/${bg} ${k.toFixed(2)} < ${min}`);
+    else if (min === 4.5 && k < 7) under7.push(`${tema} ${fg}/${bg} ${k.toFixed(1)}`);
   }
-  tjek(`S kontrast: alle semantiske par i lys og mørk (${antalPar.light}+${antalPar.dark} par; tekst ≥ 7:1, deaktiveret ≥ 4,5:1, UI ≥ 3:1)`, fejlPar.length === 0 && antalPar.light >= 40 && antalPar.dark >= 40, fejlPar.join(' · '));
-  // Tavlen (kort, søjler) følger temaet; dens par måles i begge temaer.
-  const tavleFejl = [], tavleTal = [];
-  for (const tema of ['light', 'dark']) {
-    const v = bt.loesTema(tokens, tema), c = k => v['board.' + k];
-    for (const [fg, bg, min, navn] of [['text', 'bg', 7], ['text-2', 'bg', 7], ['text-2', 'bg-2', 7, 'legende'], ['label', 'land', 4.5], ['label', 'bg', 7], ['attack', 'bg', 3], ['attack', 'land', 3], ['colo', 'bg', 3], ['colo', 'land', 3], ['net', 'land', 1.5], ['text-2', 'bg', 7, 'akse-tekst'], ['on-colo', 'colo', 7, 'zoom-knap']]) {
-      const k = kontrast(c(fg), c(bg), c('bg'));
-      tavleTal.push(`${tema} ${navn || fg + '/' + bg} ${k.toFixed(2)}`);
-      if (!(k >= min)) tavleFejl.push(`${tema} board.${fg}/board.${bg} ${k.toFixed(2)} < ${min}`);
-    }
-  }
-  console.log('     tavle: ' + tavleTal.join(' · '));
-  tjek('S kontrast tavle: tekst, akse, legende, landenavne, angreb, datacentre og net (også mod land) i lys og mørk (24 par)', tavleFejl.length === 0 && tavleTal.length === 24, tavleFejl.join(' · '));
-  /* V-BESOEG.2 F1: Besøgendes søjler er båndets blå, ≥ 3:1 mod tavlen og fladen i begge temaer, og hover er en anden blå (K7 for grafik). */
-  const blaaFejl = [], blaaTal = [];
-  for (const tema of ['light', 'dark']) {
-    const v = bt.loesTema(tokens, tema), b = n => v['board.' + n], blaa = b('visitors'), hover = b('visitors-hover');
-    if (!blaa || !hover) { blaaFejl.push(`${tema} board.visitors mangler`); continue; }
-    const [r, , bl] = rgba(blaa);
-    if (!(bl > r + 100)) blaaFejl.push(`${tema} ${blaa} er ikke blå`);
-    if (blaa === b('attack') || hover === blaa) blaaFejl.push(`${tema} ${blaa} er angrebets farve eller samme som hover`);
-    for (const [navn, flade] of [['bg', b('bg')], ['bg-2', b('bg-2')], ['surface', v['color.surface']]]) for (const [n, f] of [['søjle', blaa], ['hover', hover]]) {
-      const k = kontrast(f, flade, flade);
-      blaaTal.push(`${tema} ${n}/${navn} ${k.toFixed(2)}`);
-      if (!(k >= 3)) blaaFejl.push(`${tema} ${n}/${navn} ${k.toFixed(2)} < 3`);
-    }
-  }
-  console.log('     besøgende: ' + blaaTal.join(' · '));
-  tjek('S kontrast Besøgende: søjlerne er blå (board.visitors), ikke angrebets rød, og ≥ 3:1 mod tavle og flade i lys og mørk (12 par)', blaaFejl.length === 0 && blaaTal.length === 12, blaaFejl.join(' · '));
-  /* V-KIT2.1 B1: Wi24rd UI Kit 2. Kopierne er som pakken, broen (kit2-bro.css) sætter programmets variabler til kittets, og
-     kontrasten måles på det, der faktisk vises (kit2/tokens.css gennem broen). Kittets krav: tekst ≥ 4,5:1; mærker, serier og
-     UI ≥ 3:1; nabotrin på skalaen ≥ 1,3:1. Parrene ovenfor måler stadig Kit 1.0's JSON, til den ryddes ud (flytteplanens trin 8). */
-  {
-    const kt = await import(pathToFileURL(path.join(repo, 'tools', 'kit2-tjek.mjs')).href), kr = kt.tjek();
-    tjek(`Kit 2: kopierne i ui/assets/kit2 er byte for byte som pakken (${kr.version}, ${kr.antal} filer)`, kr.fejl.length === 0 && /^2\.\d+\.\d+$/.test(kr.version || '') && kr.antal >= 14, kr.fejl.join(' · '));
-    const kitCss = ui('assets/kit2/tokens.css'), broRaa = udenKommentarer(ui('assets/kit2-bro.css')), html = ui('index.html');
-    const vars = t => Object.fromEntries([...t.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map(m => [m[1], m[2].trim()]));
-    const blokke = re => [...kitCss.matchAll(re)].map(m => m[1]).join('\n');
-    const kitLys = vars(blokke(/(?:^|\n):root \{([^}]*)\}/g)), kit = { lys: kitLys, moerk: { ...kitLys, ...vars(blokke(/(?:^|\n):root\[data-tema="moerk"\] \{([^}]*)\}/g)) } };
-    const systemMoerk = vars((kitCss.match(/@media \(prefers-color-scheme: dark\) \{\s*:root\[data-tema="system"\] \{([^}]*)\}/) || [, ''])[1]);
-    tjek('Kit 2 tokens: mørk ved data-tema="moerk" og ved data-tema="system" har de samme værdier, og 2.1.0-farverne er med', Object.keys(systemMoerk).length > 20 && Object.entries(systemMoerk).every(([k, v]) => kit.moerk[k] === v) && ['--ok', '--ok-soft', '--ok-mark', '--warn-mark', '--danger-mark', '--info-mark', '--none-mark', '--data-1', '--data-axis', '--data-grid', '--data-label', '--seq-1', '--seq-5', '--map-sea', '--map-land', '--map-border', '--map-ring', '--map-arc'].every(n => kit.lys[n] && kit.moerk[n]));
-    const regler = [...broRaa.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim(), m[2]]);
-    const bro = vars(regler.map(r => r[1]).join('\n'));
-    const led = /^(?:var\(--[a-z0-9-]+\)|color-mix\(in srgb, var\(--[a-z0-9-]+\) \d+%, (?:var\(--[a-z0-9-]+\)|transparent)\))$/;
-    const peger = Object.values(bro).flatMap(v => [...v.matchAll(/var\((--[a-z0-9-]+)\)/g)].map(m => m[1]));
-    tjek(`Kit 2 broen: én regel på :root[data-tema], kun var(--…) og color-mix af dem, ingen farvekoder (${Object.keys(bro).length} variabler)`, regler.length === 1 && regler[0][0] === ':root[data-tema]' && Object.keys(bro).length >= 60 && Object.values(bro).every(v => led.test(v)) && !/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i.test(broRaa), Object.entries(bro).filter(([, v]) => !led.test(v)).map(([k]) => k).join());
-    tjek('Kit 2 broen: hvert mål findes i kittets tokens (lys og mørk), og hvert navn er en variabel fra programmets tokens.css', peger.every(n => kit.lys[n] && kit.moerk[n]) && Object.keys(bro).every(n => cssUd.includes(`\n  ${n}: `)), [...peger.filter(n => !kit.lys[n]), ...Object.keys(bro).filter(n => !cssUd.includes(`\n  ${n}: `))].join());
-    tjek('Kit 2 broen: status er ok/warn/danger (ikke accent), angreb er danger-mark, besøg info-mark, kortets trin er skalaen', bro['--status-ok-fg'] === 'var(--ok)' && bro['--status-ok-bg'] === 'var(--ok-soft)' && bro['--status-ok-dot'] === 'var(--ok-mark)' && bro['--board-attack'] === 'var(--danger-mark)' && bro['--board-visitors'] === 'var(--info-mark)' && [1, 2, 3, 4, 5].every(n => bro[`--kort-angreb-${n}`] === `var(--seq-${n})`) && !Object.keys(bro).some(n => /^--(band|control|chip|pill|sidebar)-/.test(n)) && Object.keys(bro).filter(n => n.startsWith('--font-')).join() === '--font-body,--font-display' && bro['--font-body'] === 'var(--font-sans)');
-    tjek('Kit 2 indlæsning: tokens.css → kit2/tokens.css → kit2/kit.css → kit2-bro.css → app.css → vagt.css; kit.js efter sprog.js og før ramme.js; sprogmotor.js indlæses ikke', /assets\/tokens\.css">\s*<link rel="stylesheet" href="assets\/kit2\/tokens\.css">\s*<link rel="stylesheet" href="assets\/kit2\/kit\.css">\s*<link rel="stylesheet" href="assets\/kit2-bro\.css">\s*<link rel="stylesheet" href="assets\/app\.css">\s*<link rel="stylesheet" href="assets\/vagt\.css">/.test(html) && /<script src="assets\/sprog\.js" defer><\/script>\s*<script src="assets\/kit2\/kit\.js" defer><\/script>[\s\S]*<script src="assets\/ramme\.js" defer>/.test(html) && !/sprogmotor/.test(html));
-    const egne = new Set([...(ui('assets/app.css') + ui('assets/vagt.css')).matchAll(/(--[a-z0-9-]+)\s*:/g)].map(m => m[1]));
-    const brugt = [...new Set([...(udenKommentarer(ui('assets/app.css')) + udenKommentarer(ui('assets/vagt.css'))).matchAll(/var\((--[a-z0-9-]+)/g)].map(m => m[1]))];
-    /* --w og --f (vagt.css, .vg-kat/.vg-prik/.vg-gaest) har aldrig været defineret noget sted; kendt rest fra før Kit 2. */
-    const udef = brugt.filter(n => !cssUd.includes(`\n  ${n}: `) && !kit.lys[n] && !egne.has(n) && !['--w', '--f'].includes(n));
-    tjek(`Kit 2: hver variabel, app.css og vagt.css bruger, er defineret (${brugt.length} brugt)`, udef.length === 0 && brugt.length >= 90, udef.join());
-    // Det, der vises: programmets navn → broen → kittets værdi i temaet. Ikke-broede navne tager programmets egen værdi.
-    const egen = { lys: bt.loesTema(tokens, 'light'), moerk: bt.loesTema(tokens, 'dark') };
-    const farve = (tema, u) => {
-      u = u.trim();
-      let m = u.match(/^var\((--[a-z0-9-]+)\)$/);
-      if (m) return farve(tema, bro[m[1]] ?? kit[tema][m[1]] ?? egen[tema][m[1].slice(2).replace('-', '.')]);
-      m = u.match(/^color-mix\(in srgb, (.+?) (\d+)%, (.+)\)$/);
-      if (m) { const a = farve(tema, m[1]), p = m[2] / 100; if (m[3] === 'transparent') return [a[0], a[1], a[2], a[3] * p]; const b = farve(tema, m[3]); return [0, 1, 2].map(i => a[i] * p + b[i] * (1 - p)).concat(1); }
-      return rgba(u);
-    };
-    const k2 = (tema, fg, bg, under = '--color-surface') => { let B = farve(tema, `var(${bg})`); if (B[3] < 1) B = over(B, farve(tema, `var(${under})`)); let F = farve(tema, `var(${fg})`); if (F[3] < 1) F = over(F, B); const a = lum(F), b = lum(B); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
-    const FLADER = ['--color-bg', '--color-surface', '--color-field', '--color-hover'], STATUS = ['danger', 'warn', 'ok', 'none'];
-    const par = [
-      ...['--color-text', '--color-text-muted', '--color-accent-text'].flatMap(f => [...FLADER, '--color-sidebar', '--color-accent-soft'].map(b => [f, b, 4.5])),
-      ...['--color-text', '--color-text-muted'].flatMap(f => STATUS.map(st => [f, `--status-${st}-bg`, 4.5])),
-      ['--color-text-disabled', '--color-surface', 4.5],
-      ['--color-on-accent', '--color-accent-fill', 4.5], ['--color-on-accent', '--color-danger-strong', 4.5], ['--color-on-accent', '--color-control-on', 4.5],
-      ...STATUS.flatMap(st => [`--status-${st}-bg`, '--color-surface', '--color-field', '--color-bg'].map(b => [`--status-${st}-fg`, b, 4.5])),
-      ['--nav-selected-text', '--nav-selected-bg', 4.5],
-      ...['--color-focus-ring', '--color-accent', '--color-control-on', '--color-danger-fill', '--color-switch-off'].map(f => [f, '--color-surface', 3]), ['--color-focus-ring', '--color-bg', 3],
-      ...STATUS.flatMap(st => ['--color-surface', '--color-field', '--color-bg'].map(b => [`--status-${st}-dot`, b, 3])),
-      ...['2xx', '3xx', '4xx', '5xx'].map(n => [`--chart-http-${n}`, '--board-bg', 3]),
-      ['--board-text', '--board-bg', 4.5], ['--board-text-2', '--board-bg', 4.5], ['--board-text-2', '--board-bg-2', 4.5], ['--board-label', '--board-bg', 4.5], ['--board-on-colo', '--board-colo', 4.5],
-      ...['--board-attack', '--board-visitors', '--board-visitors-hover', '--board-colo', '--board-axis'].flatMap(f => ['--board-bg', '--board-bg-2'].map(b => [f, b, 3])),
-      ...['--kort-ring', '--kort-bue'].flatMap(f => ['--kort-land', '--kort-hav'].map(b => [f, b, 3])),
-      ...[1, 2, 3, 4].map(n => [`--kort-angreb-${n + 1}`, `--kort-angreb-${n}`, 1.3]),
-    ];
-    const kitFejl = [], under7 = [], antal = { lys: 0, moerk: 0 };
-    for (const tema of ['lys', 'moerk']) for (const [fg, bg, min] of par) {
-      const k = k2(tema, fg, bg);
-      antal[tema]++;
-      if (!(k >= min)) kitFejl.push(`${tema} ${fg}/${bg} ${k.toFixed(2)} < ${min}`);
-      else if (min === 4.5 && k < 7) under7.push(`${tema} ${fg}/${bg} ${k.toFixed(1)}`);
-    }
-    console.log(`     Kit 2, tekstpar under 7:1 (${under7.length}): ` + under7.join(' · '));
-    tjek(`Kit 2 kontrast: det, der vises gennem broen, i lys og mørk (${antal.lys}+${antal.moerk} par; tekst ≥ 4,5:1, mærker og UI ≥ 3:1, skalaens nabotrin ≥ 1,3:1)`, kitFejl.length === 0 && antal.lys >= 90 && antal.moerk >= 90, kitFejl.join(' · '));
-    const [r, , b] = farve('lys', 'var(--board-visitors)'), [r2, , b2] = farve('moerk', 'var(--board-visitors)');
-    tjek('Kit 2: Besøgendes søjler er blå (info-mark) og ikke angrebets farve i begge temaer', b > r + 100 && b2 > r2 + 100 && bro['--board-visitors'] !== bro['--board-attack']);
-  }
-  tjek('S Besøgende: tokens.css har --board-visitors med båndets blå (lys 720, mørk 400)', /--board-visitors: var\(--raw-color-blue-720\);/.test(cssUd) && /--board-visitors: var\(--raw-color-blue-400\);/.test(cssUd) && /\.vg-soejle\.besoeg-soejle \{ fill: var\(--board-visitors\); \}/.test(ui('assets/vagt.css')));
-  /* Verdenskortet: grafik ≥ 3:1 mod både hav og land i begge temaer. */
-  const KORT_NOEGLER = ['hav', 'land', 'graense', 'gitter', 'dc', 'halo', 'bue', 'ring', 'ring-fyld', 'hover', 'angreb-1', 'angreb-2', 'angreb-3', 'angreb-4', 'angreb-5'], kortFejl = [], kortTal = [], kortEkstra = [];
-  for (const tema of ['light', 'dark']) {
-    const v = bt.loesTema(tokens, tema), k = n => v['kort.' + n], b = n => v['board.' + n];
-    for (const n of KORT_NOEGLER) if (!k(n)) kortFejl.push(`${tema} kort.${n} mangler`);
-    for (const [navn, farve] of [...[1, 2, 3, 4, 5].map(i => [`angreb-${i}`, k(`angreb-${i}`)]), ['ring', k('ring')], ['bue', k('bue')], ['datacenter', b('colo')]]) for (const flade of ['hav', 'land']) {
-      const t = kontrast(farve, k(flade), k(flade));
-      kortTal.push(`${tema} ${navn}/${flade} ${t.toFixed(2)}`);
-      if (!(t >= 3)) kortFejl.push(`${tema} ${navn}/${flade} ${t.toFixed(2)} < 3`);
-    }
-    const ring = kontrast(k('ring'), k('halo')), dc = kontrast(k('dc'), k('land')), dcHav = kontrast(k('dc'), k('hav')), colo = kontrast(b('colo'), k('land')), graense = kontrast(k('graense'), k('land')), etiket = kontrast(b('label'), b('bg'));
-    kortTal.push(`${tema} ring/glorie ${ring.toFixed(2)}`, `${tema} prikker/land ${dc.toFixed(2)}`, `${tema} prikker/hav ${dcHav.toFixed(2)}`, `${tema} grænse/land ${graense.toFixed(2)}`, `${tema} etiket/baggrund ${etiket.toFixed(2)}`);
-    if (!(ring >= 3)) kortFejl.push(`${tema} ring/glorie`);
-    const ringTrin = kontrast(k('ring'), k('angreb-1'));
-    kortEkstra.push(`${tema} ring/angreb-1 ${ringTrin.toFixed(2)}`);
-    if (!(ringTrin >= 1.3) || k('ring') === b('attack')) kortFejl.push(`${tema} ringen falder sammen med trin 1: ${ringTrin.toFixed(2)}`);
-    const havLand = kontrast(k('hav'), k('land'));
-    kortTal.push(`${tema} hav/land ${havLand.toFixed(2)}`);
-    if (tema === 'dark' && !(havLand >= 1.6)) kortFejl.push(`${tema} hav/land ${havLand.toFixed(2)} < 1,6`);
-    for (const i of [1, 2, 3, 4, 5]) {
-      const fyld = kontrast(k(`angreb-${i}`), k('halo'));
-      kortTal.push(`${tema} glorie/angreb-${i} ${fyld.toFixed(2)}`);
-      if (!(fyld >= 3)) kortFejl.push(`${tema} glorie/angreb-${i} ${fyld.toFixed(2)} < 3`);
-      const hover = kontrast(k('hover'), k(`angreb-${i}`));
-      kortEkstra.push(`${tema} hover/angreb-${i} ${hover.toFixed(2)}`);
-      if (!(hover >= 1.5)) kortFejl.push(`${tema} hover/angreb-${i} ${hover.toFixed(2)} < 1,5`);
-      if (i === 5) continue;
-      const nabo = kontrast(k(`angreb-${i}`), k(`angreb-${i + 1}`));
-      kortTal.push(`${tema} angreb-${i}/angreb-${i + 1} ${nabo.toFixed(2)}`);
-      if (!(nabo >= 1.3)) kortFejl.push(`${tema} angreb-${i}/angreb-${i + 1} ${nabo.toFixed(2)} < 1,3`);
-    }
-    if (!(dc >= 1.5 && dcHav >= 1.5 && dc < colo / 2)) kortFejl.push(`${tema} prikkerne skal ses, men være tydeligt svagere end datacentret: ${dc.toFixed(2)} mod ${colo.toFixed(2)}`);
-    if (!(graense >= 1.2)) kortFejl.push(`${tema} grænsen ses ikke`);
-    if (!(etiket >= 7)) kortFejl.push(`${tema} etiket`);
-    const lyshed = [1, 2, 3, 4, 5].map(i => lum(rgba(k(`angreb-${i}`))));
-    if (!lyshed.every((x, i) => !i || (tema === 'light' ? x < lyshed[i - 1] : x > lyshed[i - 1]))) kortFejl.push(`${tema}: trinene følger ikke lysheden`);
-  }
-  console.log('     kort: ' + kortTal.concat(kortEkstra).join(' · '));
-  tjek('V-BUNDT P4 kortet har egen ringfarve, nabotrin ≥ 1,3 og hover ≥ 1,5 mod alle trin, i lys og mørk', kortEkstra.length === 12 && !kortFejl.some(f => /ringen falder|hover\/|angreb-\d\/angreb/.test(f)), kortFejl.join(' · '));
-  tjek('V-BUNDT P4 ringen, forklaringen og hover bruger kortets egne farver', /\.vg-land \{ fill: var\(--kort-ring-fyld\); stroke: var\(--kort-ring\); \}/.test(ui('assets/vagt.css')) && /\.vg-leg-land \{[^}]*var\(--kort-ring\)/.test(ui('assets/vagt.css')) && /\.vg-fyld\[data-dyk\]:hover[^{]*\{ stroke: var\(--kort-hover\)/.test(ui('assets/vagt.css')));
-  tjek('S kontrast kort: fyld, ringe, buer og datacentre mod hav og land, hav mod land, nabotrin, glorien mod fyldet, prikker, grænser og etiketter i lys og mørk', kortFejl.length === 0 && kortTal.length === 62, kortFejl.join(' · '));
-  const kortCss = ui('assets/vagt.css');
-  tjek('S tokens: kortets farver findes i begge temaer og bruges', KORT_NOEGLER.every(n => (cssUd.match(new RegExp(`--kort-${n}: var\\(--raw-color-kort-(light|dark)-${n}\\)`, 'g')) || []).length === 3 && kortCss.includes(`var(--kort-${n})`)), KORT_NOEGLER.filter(n => !kortCss.includes(`var(--kort-${n})`)).join());
-  const medFarve = fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f) && f !== 'tokens.css').filter(f => /#[0-9a-fA-F]{3,8}\b(?![\w-])|\brgba?\(|\bhsla?\(/.test(ui('assets/' + f).replace(/&#\d+;/g, '')));
-  tjek('S tokens: ingen farvekoder i JS og CSS uden for tokens', medFarve.length === 0, medFarve.join());
-  const lys = bt.loesTema(tokens, 'light'), moerk = bt.loesTema(tokens, 'dark');
-  const stop = t => tokens.semantic[t].band.fill.stops.map(([c, p]) => `${c} ${p}`).join();
-  tjek('S båndet: gradienten er den rigtige i begge temaer, og der er ingen bølgemaske', stop('light') === '{raw.color.blue.800} 0,{raw.color.blue.720} 55,{raw.color.blue.550} 100' && stop('dark') === '{raw.color.blue.900} 0,{raw.color.blue.820} 55,{raw.color.blue.750} 100' && !/wave|boelge|bølge/i.test(udenKommentarer(ui('assets/app.css'))), stop('light'));
-  tjek('S tavle følger temaet: board.* ligger pr. tema (lys flade i lys, mørk i mørk), ingen fast color-scheme i vagt.css', !tokens.component.shared.board && lum(rgba(lys['board.bg'])) > 0.8 && lum(rgba(moerk['board.bg'])) < 0.05
-    && !/color-scheme/.test(udenKommentarer(ui('assets/vagt.css'))) && /:root \{[\s\S]*--board-bg: var\(--raw-color-board-light-bg\)/.test(cssUd) && /:root\[data-tema="moerk"\] \{[\s\S]*--board-bg: var\(--raw-color-board-dark-bg\)/.test(cssUd), `${lys['board.bg']} / ${moerk['board.bg']}`);
+  console.log(`     Kit 2, tekstpar under 7:1 (${under7.length}): ` + under7.join(' · '));
+  tjek(`Kit 2 kontrast: det, der vises, i lys og mørk (${antal.lys}+${antal.moerk} par; tekst ≥ 4,5:1, mærker og UI ≥ 3:1, skalaens nabotrin ≥ 1,3:1)`, kitFejl.length === 0 && antal.lys >= 60 && antal.moerk >= 60, kitFejl.join(' · '));
+  const [r, , b] = farve('lys', 'var(--info-mark)'), [r2, , b2] = farve('moerk', 'var(--info-mark)');
+  tjek('Kit 2: Besøgendes søjler er blå (info-mark), angreb er danger-mark, og hover er en anden blå, i begge temaer', b > r + 100 && b2 > r2 + 100 && /\.vg-soejle\.besoeg-soejle \{ fill: var\(--info-mark\); \}/.test(vagtCss) && vagtCss.includes(`.besoeg-soejle { fill: ${BESOEG_HOVER};`) && /\.vg-soejle \{[^}]*fill: var\(--danger-mark\)/.test(vagtCss), (vagtCss.match(/\.vg-soejle \{[^}]*\}/) || [''])[0]);
+  tjek('V-BUNDT P4 ringen, forklaringen og hover bruger kortets egne farver (kittets --map-ring; hover er fladen)', /\.vg-land \{ fill: color-mix\(in srgb, var\(--map-ring\) 18%, transparent\); stroke: var\(--map-ring\); \}/.test(vagtCss) && /\.vg-leg-land \{[^}]*var\(--map-ring\)/.test(vagtCss) && /\.vg-fyld\[data-dyk\]:hover[^{]*\{ stroke: var\(--surface\)/.test(vagtCss));
+  tjek('Kit 2 kortet: hav, land, grænse og de fem trin er kittets (--map-*, --seq-1 … 5), og buerne er angreb (danger-mark)', ['--map-sea', '--map-land', '--map-border', '--seq-1', '--seq-2', '--seq-3', '--seq-4', '--seq-5'].every(n => vagtCss.includes(`var(${n})`)), ['--map-sea', '--map-land', '--map-border', '--seq-1', '--seq-5'].filter(n => !vagtCss.includes(`var(${n})`)).join());
+  const medFarve = fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f)).filter(f => /#[0-9a-fA-F]{3,8}\b(?![\w-])|\brgba?\(|\bhsla?\(/.test(ui('assets/' + f).replace(/&#\d+;/g, '')));
+  tjek('S tokens: ingen farvekoder i JS og CSS uden for kittet', medFarve.length === 0, medFarve.join());
+  tjek('S tavle følger temaet: ingen fast color-scheme i vagt.css, ingen bølgemaske i app.css', !/color-scheme/.test(udenKommentarer(vagtCss)) && !/wave|boelge|bølge/i.test(udenKommentarer(appCss)));
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1057,7 +938,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const om = d.querySelector('.om');
   tjek('Indstillinger, Om: version fra getVersion, ingen eksterne links', d.getElementById('om-version').textContent === 'Version 9.8.7' && !om.querySelector('a, [href]:not(use)') && !/https?:/.test(om.textContent), om.textContent);
   tjek('Indstillinger, Om: navn, "for Cloudflare®" for sig, linjen, skrifter/kortdata og varemærket på ét sprog', d.querySelector('#visning-indstillinger .velkomst-navn').textContent === 'Wi24rdHuginn and Muninnfor Cloudflare®' && d.querySelector('#visning-indstillinger .velkomst-wi em').textContent === '24' && d.querySelector('#visning-indstillinger .velkomst-cf').textContent === 'for Cloudflare®'
-    && om.textContent.includes('Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd') && om.textContent.includes('Outfit og JetBrains Mono') && om.textContent.includes('Natural Earth') && om.textContent.includes('Cloudflare® er et registreret varemærke tilhørende Cloudflare, Inc. Wi24rd Huginn and Muninn er ikke tilknyttet Cloudflare, Inc.') && !/registered trademark/.test(om.textContent), om.textContent);
+    && om.textContent.includes('Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd') && om.textContent.includes('Inter og JetBrains Mono') && om.textContent.includes('Natural Earth') && om.textContent.includes('Cloudflare® er et registreret varemærke tilhørende Cloudflare, Inc. Wi24rd Huginn and Muninn er ikke tilknyttet Cloudflare, Inc.') && !/registered trademark/.test(om.textContent), om.textContent);
   tjek('Indstillinger, ingen style= i Indstillinger', !d.getElementById('visning-indstillinger').outerHTML.includes('style='));
   d.getElementById('glem').click(); d.getElementById('glem-ja').click(); await sov(30);
   tjek('Indstillinger, Glem nøglen: Glem kalder token_delete, dialogen lukker', !dialog.hasAttribute('open') && kald.filter(k => k[0] === 'token_delete').length === 1);
@@ -1278,11 +1159,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
 }
 // ── Kortets farver ──
 {
-  const bt = await import(pathToFileURL(path.join(repo, 'design', 'build-tokens.mjs')).href);
-  const tokens = bt.laesTokens(path.join(repo, 'design', 'wi24rd-tokens.json')), l = tokens.raw.color['board-light'], m = tokens.raw.color['board-dark'];
-  tjek('Kortfarver, lys tavle: land #C9D6E6, kant #A9BBD1, angreb #CC333A (bue og fyld samme farve)', l.land === '#C9D6E6' && l['land-edge'] === '#A9BBD1' && l.attack === '#CC333A' && l['attack-arc'].startsWith('rgba(204,51,58,') && l['attack-fill'].startsWith('rgba(204,51,58,'), JSON.stringify(l));
-  tjek('Kortfarver, mørk tavle er uændret', m.land === '#1B2731' && m['land-edge'] === '#2D3D49' && m.attack === '#FF7A6B' && m.net === '#4F6270');
-  tjek('Kortfarver, søjlerne bruger samme angrebsfarve', /\.vg-soejle \{ fill: var\(--board-attack\); \}/.test(ui('assets/vagt.css')));
+  tjek('Kortfarver, søjlerne bruger samme angrebsfarve som kortet (kittets danger-mark)', /\.vg-soejle \{ fill: var\(--danger-mark\); \}/.test(ui('assets/vagt.css')));
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1294,13 +1171,13 @@ const appCss = fjernCssKommentarer(ui('assets/app.css')), vagtCss = fjernCssKomm
 const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim(), m[2]]);
 // ── P1: tekstskalaen ──
 {
-  const bt = await import(pathToFileURL(path.join(repo, 'design', 'build-tokens.mjs')).href);
-  const tokens = bt.laesTokens(path.join(repo, 'design', 'wi24rd-tokens.json')), d = tokens.component.density, css = ui('assets/tokens.css');
-  const n = d.normal;
-  tjek('P1 Normal: 15 brødtekst, 14 tabeller, 13 noter, 12 chips, 16 overskrifter, 22 sidetitel, 36 kontroller og rækker, linjehøjde 1,5', n.font.size.lg === 15 && n.font.size.md === 14 && n.font.size.sm === 13 && n.font.size.xs === 12 && n.font.size.xl === 16 && n.font.size.title === 22 && n.control.height === 36 && n.row.height === 36 && n.font['line-height'] === 1.5, JSON.stringify(n));
+  const css = (udenKommentarer(ui('assets/app.css')).match(/(?:^|\n):root \{([^}]*)\}/) || [, ''])[1];
+  const px = k => parseFloat((css.match(new RegExp(`--${k}: ([\\d.]+)`)) || [])[1]);
+  const n = { font: { size: Object.fromEntries(['xs', 'sm', 'md', 'lg', 'xl', 'title', 'display'].map(k => [k, px('font-size-' + k)])), 'line-height': px('font-line-height') }, control: { height: px('control-height') } };
+  tjek('P1 Normal: 15 brødtekst, 14 tabeller, 13 noter, 12 chips, 16 overskrifter, 22 sidetitel, 36 kontroller, linjehøjde 1,5', n.font.size.lg === 15 && n.font.size.md === 14 && n.font.size.sm === 13 && n.font.size.xs === 12 && n.font.size.xl === 16 && n.font.size.title === 22 && n.control.height === 36 && n.font['line-height'] === 1.5, JSON.stringify(n));
   const trin = ['xs', 'sm', 'md', 'lg', 'xl', 'title', 'display'], kitCss = ui('assets/kit2/kit.css');
   tjek('P1 én skala i CSS (Normal): hele skalaen i stigende orden og aldrig under 12 px', trin.every((k, i) => n.font.size[k] >= 12 && (i === 0 || n.font.size[k] >= n.font.size[trin[i - 1]])), JSON.stringify(n.font.size));
-  tjek('P1 tokens.css: målene er faste (Normal på :root), intet data-density, comfortable kun til XAML', /\n:root \{\n {2}--control-height: 36px;[^}]*--font-size-lg: 15px;/.test(css) && !css.includes('data-density') && (css.match(/--font-size-lg:/g) || []).length === 1 && !css.includes('comfortable') && tokens.meta.targets.xaml.density === 'comfortable');
+  tjek('P1 målene er faste (app.css :root), intet data-density', (ui('assets/app.css').match(/--font-size-lg:/g) || []).length === 1 && !/data-density|comfortable/.test(ui('assets/app.css') + ui('assets/vagt.css')));
   tjek('P1 tekststørrelsen er kittets: zoom på roden ved data-tekst (lille .9, stor 1.125), og kittet deler vinduets mål med trinnet', /:root\[data-tekst="lille"\] \{ zoom: \.9; \}/.test(kitCss) && /:root\[data-tekst="stor"\] \{ zoom: 1\.125; \}/.test(kitCss) && /:root\[data-tekst="stor"\] \.vindue \{ height: calc\(100vh \/ 1\.125\)/.test(kitCss));
   const vMaal = regler(alCss).filter(([s, k]) => /\d(vh|vw)\b/.test(k)), uden = vMaal.filter(([s]) => !s.includes('data-tekst')).map(([s]) => s);
   tjek('P1 hvert mål i vh/vw i app.css/vagt.css har en regel pr. trin, der deler med kittets zoom', uden.length === 2 && uden.every(s => [['lille', '.9'], ['stor', '1.125']].every(([t, z]) => vMaal.some(([s2, k]) => s2 === `:root[data-tekst="${t}"] ${s}` && k.includes(`/ ${z})`)))), uden.join(' | '));
@@ -1340,12 +1217,11 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   const faste = alCss.match(/font-size:\s*[\d.]+px|\bfont:[^;}]*?[\d.]+px/g) || [];
   tjek('P1 ingen faste px-skriftstørrelser i app.css/vagt.css (font-size og font:)', faste.length === 0, faste.join(' | '));
   const brugte = [...new Set(alCss.match(/--font-size[\w-]*|--title-size/g))], mangler = brugte.filter(v => !css.includes(v + ':'));
-  tjek('P1 alle tekstvariabler i CSS findes i tokens.css (ingen rester af --font-size og --title-size)', mangler.length === 0 && brugte.length >= 7, mangler.join());
-  tjek('P1 båndets undertitel er også mindst 12 px', tokens.raw.font.size[tokens.component.shared.band['subtitle-size'].match(/(\d+)\}$/)[1]] >= 12);
+  tjek('P1 alle tekstvariabler i CSS er programmets egne mål i app.css (ingen rester af --title-size)', mangler.length === 0 && brugte.length >= 7, mangler.join());
   const forbudt = /td\.hv|\.hm-siden small|\.dom p|\.dialog p|\.hjaelp |\.g-|\.guide|\.vg-metode|\.vg-flise b|\.vg-graa b|\.vg-tom b|\.vg-regel-n b|\.vg-l-n|\.felt-mono|\.tabel td|\.titelrad \.under/;
-  const muted = regler(alCss).filter(([s, k]) => k.includes('--color-text-muted') && forbudt.test(s)).map(([s]) => s);
-  tjek('P1 --color-text-muted bruges ikke til tal, "Hvorfor", guiden eller dialogerne', muted.length === 0, muted.join(' | '));
-  tjek('P1 "Hvorfor" står i --color-text', /\.tabel td\.hv \{[^}]*color: var\(--color-text\);/.test(appCss) && /\.hm-siden small \{[^}]*color: var\(--color-text\);/.test(appCss) && /\.dom p \{[^}]*color: var\(--color-text\);/.test(appCss));
+  const muted = regler(alCss).filter(([s, k]) => k.includes('--text-muted') && forbudt.test(s)).map(([s]) => s);
+  tjek('P1 --text-muted bruges ikke til tal, "Hvorfor", guiden eller dialogerne', muted.length === 0, muted.join(' | '));
+  tjek('P1 "Hvorfor" står i --text', /\.tabel td\.hv \{[^}]*color: var\(--text\);/.test(appCss) && /\.hm-siden small \{[^}]*color: var\(--text\);/.test(appCss) && /\.dom p \{[^}]*color: var\(--text\);/.test(appCss));
   tjek('P1 tabellen er kittets, og brødteksten følger lg', /\.tabel td\.hv \{/.test(appCss) && /body \{[^}]*font-size: var\(--font-size-lg\)/.test(appCss));
   tjek('P1 ved smalt vindue: tabellen ruller i sin ramme, og båndets navn kan forkortes', /\.tabel-rul \{[^}]*overflow-x: auto/.test(ui('assets/kit2/kit.css')) && /\.titel b \{[^}]*text-overflow: ellipsis/.test(appCss));
   const konf = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8'));
@@ -1989,7 +1865,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('Klik, "i alt" er perioden selv og fører ingen steder hen, "flest" åbner den travleste dag', top.length === 1 && qs(top[0]).get('dag') === dage[29].dag && !q('.vg-tavle-top b').closest('[data-dyk]'), top.map(e => e.getAttribute('data-dyk')).join(' | '));
   const tabel = q('.vg-tal table'), rk = [...tabel.querySelectorAll('tbody tr')];
   tjek('Klik, "Vis tallene": dag og tal åbner dagen, 0 er tekst, trafik er tekst', rk.length === 30 && qs(rk[0].querySelector('th [data-dyk]')).get('dag') === dage[29].dag && qs(rk[0].querySelector('td [data-dyk]')).get('dag') === dage[29].dag && !rk[26].querySelector('[data-dyk]') && !rk[0].children[2].querySelector('button'), rk[26].innerHTML.slice(0, 120));
-  tjek('Søjler: "Vis tallene": talkolonnerne har streg og fast bredde, også i overskriften', [...tabel.querySelectorAll('thead th.tal-kol')].length === 2 && rk[0].querySelectorAll('td.tal-kol').length === 2 && /\.vg-tabel \.tal-kol \{[^}]*width: calc[^}]*border-left: 1px solid var\(--color-border\)/.test(udenKommentarer(ui('assets/vagt.css'))));
+  tjek('Søjler: "Vis tallene": talkolonnerne har streg og fast bredde, også i overskriften', [...tabel.querySelectorAll('thead th.tal-kol')].length === 2 && rk[0].querySelectorAll('td.tal-kol').length === 2 && /\.vg-tabel \.tal-kol \{[^}]*width: calc[^}]*border-left: 1px solid var\(--border\)/.test(udenKommentarer(ui('assets/vagt.css'))));
   const regel = alle('.vg-regel')[0], sti = regel.querySelector('code').closest('[data-dyk]');
   tjek('Klik, regelkortet: stien åbner regel + sti (rå værdi overlever adressen)', qs(sti).get('regel') === REACT && qs(sti).get('sti') === '/wp-config%2ephp', sti.getAttribute('data-dyk'));
   const lk = [...regel.querySelectorAll('.vg-regel-l')][1].querySelectorAll('[data-dyk]');
@@ -2079,7 +1955,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('L titellinjen: ravnemærket er programmets eget (maske af hm-ravne.png i kittets accent på titellinjen), ingen <img> i titellinjen', /<span class="mrk-maske hm-mrk" aria-hidden="true"><\/span>/.test(html) && !/<header class="titel"[\s\S]*?<img[\s\S]*?<\/header>/.test(html) && /\.titel \.hm-mrk \{[^}]*mask-image: url\(hm-ravne\.png\)/.test(app) && /\.mrk-maske \{[^}]*background: var\(--accent-on-rail\)/.test(ui('assets/kit2/kit.css')));
   const m = png('ui/assets/hm-ravne.png');
   tjek('L masken: gråtone + alfa og lille', m.farve === 4 && m.n < 30000, `${m.farve} ${m.n} B`);
-  tjek('L opsætningen: masken med token, både lys og mørk', /\.tom-ravn \{[^}]*background: var\(--color-text\);[^}]*-webkit-mask: url\(hm-ravne\.png\)[^}]*mask: url\(hm-ravne\.png\)/.test(app) && (ui('assets/tokens.css').match(/--color-logo: var\(--raw-color-white\)/g) || []).length === 2 && /--color-logo: var\(--raw-color-blue-500\)/.test(ui('assets/tokens.css')));
+  tjek('L opsætningen: masken med token, både lys og mørk', /\.tom-ravn \{[^}]*background: var\(--text\);[^}]*-webkit-mask: url\(hm-ravne\.png\)[^}]*mask: url\(hm-ravne\.png\)/.test(app));
   const ikon = png('design/brand/hm-app-ikon.png'), m1 = png('src-tauri/icons/menulinje.png'), i512 = png('src-tauri/icons/icon.png');
   tjek('L app-ikonet: 1024-kilde og ikonsæt fra den', ikon.w === 1024 && ikon.h === 1024 && i512.w === 512 && png('src-tauri/icons/32x32.png').w === 32 && png('src-tauri/icons/128x128@2x.png').w === 256);
   tjek('L menulinjen: RGBA (include_image!), 36 px høj, beskåret tæt', m1.h === 36 && m1.w <= 50 && m1.farve === 6, `${m1.w}×${m1.h}`);
@@ -2457,7 +2333,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   await sov(80);
   const { d } = s, q = x => d.querySelector('#visning-besoegende ' + x), qa = x => [...d.querySelectorAll('#visning-besoegende ' + x)];
   const bars = qa('#besoeg-graf rect.vg-soejle');
-  tjek('B2 F1 Besøgendes søjler har den blå klasse (board-visitors), og hover er blå uden angrebets lysning', bars.length === 5 && bars.every(b => b.getAttribute('class') === 'vg-soejle besoeg-soejle') && /\.dyk-soejle\[data-gaa\]:hover \.besoeg-soejle, \.dyk-soejle\[data-gaa\]:focus-visible \.besoeg-soejle \{ fill: var\(--board-visitors-hover\); filter: none; \}/.test(ui('assets/vagt.css')), bars.map(b => b.getAttribute('class')).join());
+  tjek('B2 F1 Besøgendes søjler har den blå klasse (info-mark), og hover er blå uden angrebets lysning', bars.length === 5 && bars.every(b => b.getAttribute('class') === 'vg-soejle besoeg-soejle') && /\.dyk-soejle\[data-gaa\]:hover \.besoeg-soejle, \.dyk-soejle\[data-gaa\]:focus-visible \.besoeg-soejle \{ fill: color-mix\(in srgb, var\(--info-mark\) 78%, var\(--text\)\); filter: none; \}/.test(ui('assets/vagt.css')), bars.map(b => b.getAttribute('class')).join());
   const ang = side('#vaernet?' + DOM + '&periode=30', DYK());
   await sov(80);
   tjek('B2 F1 Angrebs søjler er uændret røde (ingen besoeg-soejle)', ang.d.querySelectorAll('rect.vg-soejle').length > 0 && !ang.d.querySelector('rect.besoeg-soejle'));
@@ -3024,7 +2900,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('W engelsk: intet valgt', en.d.querySelector('#overblik-tom .velkomst-situation').textContent.includes("You haven't chosen any domains yet") && en.d.querySelector('#overblik-tom .velkomst-situation').textContent.includes('Choose the domains Huginn should watch. Only those are fetched and shown.') && en.d.querySelector('#overblik-tom button').textContent === 'Choose domains');
   tjek('W filosofien ordret på engelsk', [...en.d.querySelector('.filosofi').children].map(e => e.textContent).join('|') === "Wi24rd — our philosophy|Security isn't something you buy. It's something you understand.|We believe cybersecurity should be accessible to everyone — not just enterprises with expensive tools and dedicated security teams.|No false promises. No unnecessary complexity. Just practical tools, clear insights, and the knowledge to make better security decisions.|Built to empower. Not to create dependency.", en.d.querySelector('.filosofi').textContent);
   tjek('W engelsk: "for Cloudflare®" med lille f', ev.querySelector('.velkomst-cf').textContent === 'for Cloudflare®');
-  tjek('W tokens: 24 og navnet bruger --color-accent-text, intet nyt farvetoken', /\.velkomst-wi em \{[^}]*color: var\(--color-accent-text\)/.test(ui('assets/app.css')) && /\.velkomst-hm \{[^}]*color: var\(--color-accent-text\)/.test(ui('assets/app.css')) && !/cyan/i.test(ui('assets/tokens.css')));
+  tjek('W tokens: 24 og navnet bruger --accent, intet nyt farvetoken', /\.velkomst-wi em \{[^}]*color: var\(--accent\)/.test(ui('assets/app.css')) && /\.velkomst-hm \{[^}]*color: var\(--accent\)/.test(ui('assets/app.css')) && !/cyan/i.test(udenKommentarer(ui('assets/app.css'))));
   tjek('W velkomst.js: ingen innerHTML og ingen style=', !/innerHTML|\.style\b|style=/.test(udenKommentarer(ui('assets/velkomst.js'))));
   tjek('W ravnene i målbilledet er kilden, og ingen ny billedfil', fs.existsSync(path.join(repo, 'design/brand/hm-logo-transparent.png')) && !fs.readdirSync(path.join(repo, 'ui/assets')).some(f => /logo/i.test(f)));
 }
@@ -3811,7 +3687,7 @@ const DOMV = (fravalgte = [], x) => {
   const ban = au.d.getElementById('autostart-banner'), st = au.d.getElementById('indst-status');
   tjek('Start ved login: banneret med knappen står, så snart det er slået fra', !ban.hidden && ban.querySelector('button').textContent === 'Slå Start ved login til');
   const css = ui('assets/app.css');
-  tjek('Start ved login: markeringen er rød', /\.autostart-banner \{[^}]*--status-danger-dot[^}]*--status-danger-bg/.test(css) && /\.autostart-banner p::before \{[^}]*--status-danger-dot/.test(css) && !/\.autostart-banner[^{]*\{[^}]*--status-ok/.test(css));
+  tjek('Start ved login: markeringen er rød', /\.autostart-banner \{[^}]*--danger-mark[^}]*--danger-soft/.test(css) && /\.autostart-banner p::before \{[^}]*--danger-mark/.test(css) && !/\.autostart-banner[^{]*\{[^}]*--status-ok/.test(css));
   tjek('Start ved login: noten er kort og står med margen', au.d.getElementById('autostart-hul').textContent === 'Slået fra: der kan komme huller i historikken.' && au.d.getElementById('autostart-hul').classList.contains('kort-note'));
   ban.querySelector('button').click(); await sov(40);
   tjek('Start ved login: knappen slår det til', til && ban.hidden && au.d.getElementById('autostart').checked && au.d.getElementById('autostart-hul').hidden && st.textContent === 'Programmet starter ved login.', st.textContent);
@@ -3959,7 +3835,7 @@ const DOMV = (fravalgte = [], x) => {
     const at = side('#vaernet?zone=z1&navn=wi24rd.com', DYK({ vaern_cache: { ...B_VAERN, trafik: B2B_TRAFIK }, vaern_oversigt: { ...B_VAERN, trafik: B2B_TRAFIK }, koe_prioritet: null }));
     await sov(90);
     const rk = id => ov.d.querySelector(`tr[data-zone="${id}"]`), linje = ov.d.getElementById('server-linje');
-    tjek('Land og site, egen gul linje med domænerne', !linje.hidden && /--status-warn-bg/.test(ui('assets/vagt.css').match(/\.server-linje \{[^}]*\}/)[0]) && linje.textContent === 'Din server svarer ikke: roed.wi24rd.com, nede.wi24rd.com', linje.textContent);
+    tjek('Land og site, egen gul linje med domænerne', !linje.hidden && /--warn-soft/.test(ui('assets/vagt.css').match(/\.server-linje \{[^}]*\}/)[0]) && linje.textContent === 'Din server svarer ikke: roed.wi24rd.com, nede.wi24rd.com', linje.textContent);
     tjek('Land og site, uden 52x står linjen ikke', ingen.d.getElementById('server-linje').hidden);
     const hv = rk('s1').querySelector('.hv-tekst').textContent;
     tjek('Land og site, Hvorfor er ordret den samme som notify::aarsag, plus forstyrrelsen', hv === 'Ingen angreb i går. Din server svarer ikke: 33 % af 120 svar i går var fejl 520–527, så Cloudflare kunne ikke få svar fra din server. Se »Hvad gør jeg?«. Samme dag var der en forstyrrelse hos Fjord Net i Danmark.', hv);
@@ -4056,7 +3932,7 @@ const DOMV = (fravalgte = [], x) => {
     tjek('Datovælger, interval: Robotter og Login sender intervallet og har en chip', [[ri, 'robotter'], [li2, 'login']].every(([x, c]) => JSON.stringify(x.kald.find(k => k[0] === c)[1].periode) === '{"spaend":{"fra":"2026-11-01","til":"2026-11-04"}}' && [...x.d.querySelectorAll('.fchip-fjern')].some(b => b.textContent === '1.–4. november')));
     const rq = new URLSearchParams(ri.d.querySelector('#robotter-rod [data-dyk]').dataset.dyk);
     tjek('Datovælger, interval: et klik i Robotter tager intervallet med til dyk', rq.get('fra') === '2026-11-01' && rq.get('til') === '2026-11-04', rq.toString());
-    tjek('Trafik og huller, sorte ravne: --color-text, som følger temaet; båndet og mærker er uændrede', /\.tom-ravn \{[^}]*background: var\(--color-text\)/.test(ui('assets/app.css')) && !/\.tom-ravn \{[^}]*--color-logo/.test(ui('assets/app.css')) && /--color-logo/.test(ui('assets/tokens.css')));
+    tjek('Trafik og huller, sorte ravne: --text, som følger temaet; båndet og mærker er uændrede', /\.tom-ravn \{[^}]*background: var\(--text\)/.test(ui('assets/app.css')) && !/\.tom-ravn \{[^}]*--color-logo/.test(ui('assets/app.css')));
 
     /* Dit sites teknologi */
     const TEK = { linjer: [
@@ -4147,7 +4023,7 @@ const DOMV = (fravalgte = [], x) => {
     const mappe = fs.mkdtempSync(path.join(os.tmpdir(), 'hm-kontrast-'));
     fs.cpSync(path.join(repo, 'ui'), path.join(mappe, 'ui'), { recursive: true });
     /* Lagene under hvert tekststykke lægges sammen bagfra (farve, gradient, gennemsigtighed), i tre punkter, og det værste tæller.
-       Undtaget: --color-text-disabled og deaktiverede kontroller. Tekst står aldrig i SVG (vg-tegn.js), så color er altid tekstens farve. */
+       Undtaget: --text-disabled og deaktiverede kontroller. Tekst står aldrig i SVG (vg-tegn.js), så color er altid tekstens farve. */
     /* WCAG AA, som Wi24rd UI Kit 2 kræver (Jan 2026-11-11: vi følger kittet): stor tekst (mindst 24 px, eller 18,66 px fed) skal have
        3:1; al anden tekst 4,5:1. Før Kit 2 var kravet AAA (4,5:1 og 7:1). Båndets egne par herunder har stadig deres gamle krav. */
     const stor = (px, vaegt) => px >= 24 || (px >= 18.66 && vaegt >= 700);
@@ -4186,7 +4062,7 @@ const DOMV = (fravalgte = [], x) => {
         }
         return lag.reverse().reduce((b, f) => over(f, b), [255, 255, 255, 1]);
       }
-      const prove = document.createElement('span'); prove.style.color = 'var(--color-text-disabled)'; document.body.append(prove); const graa = getComputedStyle(prove).color; prove.remove();
+      const prove = document.createElement('span'); prove.style.color = 'var(--text-disabled)'; document.body.append(prove); const graa = getComputedStyle(prove).color; prove.remove();
       const hex = c => '#' + c.slice(0, 3).map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
       const navn = e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : '');
       function mal(rod, hvad, ud) {
@@ -4274,7 +4150,7 @@ const DOMV = (fravalgte = [], x) => {
       tjek(`K7 ${tema}: titellinjens navn og knapper har mindst 4,5:1 mod kittets mørke titellinje (ved 900 og 1200 px)`, navne.length > 0 && lav(navne) >= 4.5, JSON.stringify(navne.slice(0, 3)));
       tjek(`K7 ${tema}: "for Cloudflare®" i titellinjen er lille tekst og har mindst 4,5:1`, lille.length > 0 && lille.every(b => !b.stor) && lav(lille) >= 4.5, JSON.stringify(lille.slice(0, 3)));
       const set = new Map(); for (const f of ud) { const k = `${f.e} ${f.fg}/${f.bg}`; if (!set.has(k) || set.get(k).k > f.k) set.set(k, f); }
-      tjek(`K7 ${tema}: al tekst undtagen --color-text-disabled har mindst 4,5:1 mod sin faktiske baggrund (stor tekst 3:1)`, ud.length === 0, [...set.values()].sort((a, b) => a.k - b.k).slice(0, 60).map(f => `${f.hvad}: ${f.e} ${f.fg}/${f.bg} ${f.k} »${f.t}«`).join('\n  '));
+      tjek(`K7 ${tema}: al tekst undtagen --text-disabled har mindst 4,5:1 mod sin faktiske baggrund (stor tekst 3:1)`, ud.length === 0, [...set.values()].sort((a, b) => a.k - b.k).slice(0, 60).map(f => `${f.hvad}: ${f.e} ${f.fg}/${f.bg} ${f.k} »${f.t}«`).join('\n  '));
     }
     /* ── Alle visninger med appens egen CSP som rigtig header, og ingen inline-script i testsiden. En kontrolprøve viser, at lytteren virker. ── */
     const CSP = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8')).app.security.csp;
@@ -4717,7 +4593,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Kort: fladen er ikke et ekstra Tab-stop, og ringen er stadig mærket', flDK && !flDK.hasAttribute('tabindex') && flDK.getAttribute('aria-hidden') === 'true' && ringDK.getAttribute('tabindex') === '0' && k1.querySelectorAll('[tabindex="0"]').length === 1);
   tjek('Kort: hver ring har en glorie, der ikke tager klik', k1.querySelectorAll('circle.vg-land-halo').length === k1.querySelectorAll('circle.vg-land').length && /\.vg-land-halo \{[^}]*pointer-events: none/.test(ui('assets/vagt.css')));
   const kortStil = ui('assets/vagt.css'), haloRegel = kortStil.match(/\.vg-land-halo \{([^}]*)\}/)?.[1] || '', haloEl = k1.querySelector('.vg-land-halo');
-  tjek('Kort: glorien er en smal streg uden fyld, også når kortet skaleres', /fill: none/.test(haloRegel) && /stroke: var\(--kort-halo\)/.test(haloRegel) && /stroke-width: (1\.5|1\.75|2)px/.test(haloRegel) && /vector-effect: non-scaling-stroke/.test(haloRegel) && !haloEl.hasAttribute('fill') && !haloEl.hasAttribute('stroke-width'), haloRegel);
+  tjek('Kort: glorien er en smal streg uden fyld, også når kortet skaleres', /fill: none/.test(haloRegel) && /stroke: var\(--surface\)/.test(haloRegel) && /stroke-width: (1\.5|1\.75|2)px/.test(haloRegel) && /vector-effect: non-scaling-stroke/.test(haloRegel) && !haloEl.hasAttribute('fill') && !haloEl.hasAttribute('stroke-width'), haloRegel);
   tjek('Kort: ingen regel for hover eller fokus ændrer glorien', !/\.vg-land-halo[^{,]*:(hover|focus)/.test(kortStil));
   tjek('Kort: musen maler ikke klikfladen', !/\.dyk-hit[^{]*:hover/.test(kortStil) && /\.vg-fyld\[data-dyk\]:hover/.test(kortStil), kortStil.match(/\.dyk-hit[^{]*:hover[^}]*\}/)?.[0]);
   const dcKode = Object.keys(KORT.verden.colo)[0], kM = KV.kort({ lande: [{ kode: 'DK', n: 5 }], colos: [{ kode: dcKode, n: 2 }], buer: [{ land: 'DK', colo: dcKode, n: 2 }] }, 'verden', { titel: 'Kort', tal: n => String(n), dyk: DYKK }).querySelector('svg');
@@ -4730,7 +4606,7 @@ const DOMV = (fravalgte = [], x) => {
     if (f) mus(f, 'pointerleave');
     tjek(`Kort: musen på klikfladen lyser ${navn} op og slipper igen`, f && m && !foer && under && !m.classList.contains('vg-over') && new RegExp(`\\.${m.classList[0]}\\.vg-over[^{]*\\{|\\.${m.classList[0]}\\.vg-over`).test(kortStil), `${f?.outerHTML.slice(0, 80)} ${m?.getAttribute('class')}`);
   }
-  tjek('Kort: musen over et land giver kun landet en kontur', /\.vg-fyld\[data-dyk\]:hover[^{]*\{[^}]*stroke: var\(--kort-hover\)/.test(kortStil));
+  tjek('Kort: musen over et land giver kun landet en kontur', /\.vg-fyld\[data-dyk\]:hover[^{]*\{[^}]*stroke: var\(--surface\)/.test(kortStil));
   tjek('Kort: et land uden flade beholder ringen', [...k1.querySelectorAll('circle.vg-land')].some(c => c.querySelector('title')?.textContent.endsWith(': 7')));
   tjek('Kort: fladerne ligger under grænserne, og prikkerne over', (b => b.indexOf(fy(k1)[0].parentNode) < b.indexOf(k1.querySelector('.vg-graense')) && b.indexOf(k1.querySelector('.vg-graense')) < b.indexOf(k1.querySelector('.vg-net').parentNode))([...k1.children]));
   const kE = tegnKort([{ kode: 'RU', n: 40 }, { kode: 'DK', n: 3 }], 'europa'), ruE = fy(kE).find(e => e.getAttribute('d') === KORT.verden.flader.RU);

@@ -21,7 +21,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - **Teknologi pr. domæne** (under **Indstillinger → Domæner** eller **Ret teknologier** i Angreb) er en tabel med et valg pr. domæne og teknologi: Bruger, Bruger ikke eller Ved ikke. Hver kolonne og hvert domæne har sine handlinger bag én knap **⋯**. Du kan søge, og under **Alle teknologier** vælger du, hvad der vises, og tilføjer teknologier på forhånd.
 - **Genveje:** macOS ⌘1 Overblik · ⌘2 Siden sidst · ⌘3 Angreb · ⌘4 Robotter · ⌘5 Login · ⌘6 Danmark lige nu · ⌘7 Besøgende · ⌘, Indstillinger · ⌘R Hent nu (også i menuen **Vis**). Windows: de samme med Ctrl, og F5 = Hent nu.
 - **CVE-numre** (fx CVE-2025-55182 i Angreb og i "Hvad gør jeg?") kan klikkes: de åbner CVE'ens side på cve.org i din browser. Programmet selv henter intet derfra.
-- **Lys og mørk** følger systemet, eller du vælger under **Indstillinger → Generelt**. Farverne kommer fra Wi24rds UI-kit (`design/wi24rd-tokens.json`).
+- **Lys og mørk** følger systemet, eller du vælger under **Indstillinger → Generelt**. Farver og skrifter kommer fra Wi24rd UI Kit 2 (`ui/assets/kit2/`).
 - **Tekststørrelse:** Lille, Normal eller Stor under **Indstillinger → Generelt**, eller ⌘+ ⌘− ⌘0 (Windows: Ctrl). Valget huskes.
 - **Nulstil historik** under **Indstillinger → Data** sletter alle tal på din computer og henter dem forfra. Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år — alt ældre er væk for altid; dialogen siger hvilke datoer, og hvor mange dage der forsvinder.
 
@@ -80,7 +80,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 npm install
 npm run tauri dev
 npm run test:ui              # UI-røgtesten (jsdom)
-node design/build-tokens.mjs # tokens.css (og XAML) fra design/wi24rd-tokens.json
+npm run kit:tjek             # kopierne i ui/assets/kit2/ er som pakken Wi24rd UI Kit 2
 ```
 Kræver Rust (rustup) og Node 20+.
 

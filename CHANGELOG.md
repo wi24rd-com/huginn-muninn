@@ -4,6 +4,16 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-12 23:30 — Wi24rd UI Kit 2: oprydning (Kit 1.0, Outfit og broen er væk)
+#### Ændret
+- **Farver og skrifter har én kilde:** Wi24rd UI Kit 2 i `ui/assets/kit2/`. Programmets egen CSS bruger kittets navne direkte (`--text`, `--surface`, `--accent`, `--danger-mark` …).
+- **"Om" i Indstillinger** nævner nu Inter og JetBrains Mono.
+- Programmets egne mål (kontrolhøjde, tekststørrelser, fokusring) står ét sted øverst i `ui/assets/app.css`.
+#### Fjernet
+- Wi24rd UI kit 1.0: `design/wi24rd-tokens.json`, `design/build-tokens.mjs`, `design/out/Wi24rdTokens.xaml` og den genererede `ui/assets/tokens.css`, med deres tests.
+- Broen `ui/assets/kit2-bro.css`.
+- Skriften Outfit og programmets egen kopi af JetBrains Mono (`ui/assets/fonts/`); kittet har JetBrains Mono med.
+
 ### 2026-11-12 23:30 — Wi24rd UI Kit 2: fodlinjen, filtrene og fliserne (pakke 2.5.0)
 #### Ændret
 - **Hentningens status i fodlinjen** er kittets: mærke eller ring, kort tekst og en tynd fremdriftslinje; et klik åbner Overblik.

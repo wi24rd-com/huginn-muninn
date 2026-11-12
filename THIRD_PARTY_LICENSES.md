@@ -2,15 +2,6 @@
 
 Programmets egen kode er under Apache-2.0-licensen (se `LICENSE` og `NOTICE`). Det følgende er ikke skrevet til programmet.
 
-## Skrifter (`ui/assets/fonts/`)
-
-| Skrift | Filer | Licens | Ophav |
-|---|---|---|---|
-| Outfit (variabel) | `outfit-latin-wght-normal.woff2`, `outfit-latin-ext-wght-normal.woff2` | SIL Open Font License 1.1 — fuld tekst i `ui/assets/fonts/OFL-Outfit.txt` | Copyright 2021 The Outfit Project Authors (https://github.com/Outfitio/Outfit-Fonts) |
-| JetBrains Mono (variabel) | `jetbrains-mono-latin-wght-normal.woff2`, `jetbrains-mono-latin-ext-wght-normal.woff2` | SIL Open Font License 1.1 — fuld tekst i `ui/assets/fonts/OFL-JetBrainsMono.txt` | Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono) |
-
-Filerne er byte-identiske (SHA-256) med filerne i npm-pakkerne `@fontsource-variable/outfit@5.3.0` og `@fontsource-variable/jetbrains-mono@5.3.0` (Fontsource, kilde: Google Fonts). Licensteksterne er kopieret uændret fra de samme pakker.
-
 ## Wi24rd UI Kit 2 (`ui/assets/kit2/`)
 
 Kopieret uændret fra pakken Wi24rd UI Kit 2 (versionen står i `ui/assets/kit2/VERSION`; filernes SHA-256 i `PAKKE.json`, tjekket af `npm run kit:tjek`).

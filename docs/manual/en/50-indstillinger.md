@@ -76,4 +76,4 @@ At the bottom it says: "You can also turn notifications off completely in System
 
 ## About
 
-The version, the line "Apache-2.0 licence · No telemetry · Nothing is sent to Wi24rd", fonts and map data (Outfit and JetBrains Mono under the SIL Open Font License 1.1; world-countries under ODbL and Natural Earth, public domain), the trademark line about Cloudflare and a link to the source code.
+The version, the line "Apache-2.0 licence · No telemetry · Nothing is sent to Wi24rd", fonts and map data (Inter and JetBrains Mono under the SIL Open Font License 1.1; world-countries under ODbL and Natural Earth, public domain), the trademark line about Cloudflare and a link to the source code.
