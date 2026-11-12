@@ -12,7 +12,8 @@
    tilstande, visningsskiftets tal og punkter slået fra, dialogens fejlfelt, indhold over overskriften og guide-udgaven
    (.modal-fejl, .modal-foer, .modal-guide), kassens ikon (.kasse-ikon), flisens valg, to mål og frie indhold
    (.sflise-to, .sflise-maal, .sflise-under-maal, .sflise-indhold), filteret, der kan fjernes (.fchip-fjern, .fchip-x), den
-   tomme tilstand, der tager imod, og to handlinger (.tomt-modtager, .tomt-slip, .tomt-handlinger) og --tekst-zoom.
+   tomme tilstand, der tager imod, og to handlinger (.tomt-modtager, .tomt-slip, .tomt-handlinger) og --tekst-zoom. Fra
+   2.6.0 også visningerne som faner øverst (.vfaner, .vf, .vf-navn) og NavPane uden visningsskift.
    Kittet sætter aldrig inline-stil. */
 
 /* ── Skrifter (pakket med, OFL; intet hentes) ── */
@@ -130,6 +131,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tabel tbody tr:not(.gruppe) { cursor: pointer; }
 .tabel tbody tr:not(.gruppe):hover td { background: var(--surface-raised); }
 .tabel tr.sel td, .tabel tr.sel:hover td { background: var(--accent-soft); }
+/* Fra 2.6.0: en valgt række under musen viser valget, ikke hover-fladen (før vandt hover-reglen ovenfor på vægt). */
+.tabel tbody tr.sel:not(.gruppe):hover > * { background: var(--accent-soft); }
 .tabel tbody tr:focus-visible { outline-offset: -2px; }
 .tabel td input {
   width: 100%; height: 30px; padding: 0 8px;
@@ -187,6 +190,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tabel.fast-foerste tbody tr:not(.gruppe) > :first-child { background: var(--surface); }
 .tabel.fast-foerste tbody tr.sel > :first-child { background: var(--accent-soft); }
 .tabel.fast-foerste:not(.uden-valg) tbody tr:not(.gruppe):hover > :first-child { background: var(--surface-raised); }
+.tabel.fast-foerste:not(.uden-valg) tbody tr.sel:not(.gruppe):hover > :first-child { background: var(--accent-soft); }
 
 /* ── AppShell ── */
 .vindue { display: flex; flex-direction: column; height: 100vh; min-width: 900px; min-height: 560px; background: var(--bg); overflow: hidden; }
@@ -330,6 +334,42 @@ button, input, select, textarea { font: inherit; color: inherit; }
   min-width: 20px; height: 18px; padding: 0 6px; border: 1px solid var(--danger); border-radius: var(--radius-pill);
   background: var(--danger-soft); color: var(--danger); font-weight: 700; text-align: center; line-height: 16px;
 }
+/* Fra 2.6.0: visningerne som faner øverst (Kit.visningsskift med faner: true), i en række under titellinjen og over båndet
+   (der så er udenFaner). Rækken er 29 px høj (fane 28 px og kant 1 px): båndet uden faner har 4 px mere luft forneden end
+   båndet med faner (.cmd.enkel), så skallen bliver præcis så høj som med båndets fanerække på 33 px (målt i WebKit). Den valgte er markeret med en streg på 2 px forneden i accent, fed skrift og ikonet i accent:
+   stregen og vægten er form, ikke kun farve. Fanerne krymper med rækken (flex), og et navn, der ikke kan være der, afkortes
+   med … (ikon, tal og fanens luft bliver), så rækken aldrig bliver bredere end vinduet og intet skubbes ud. Ved syv og otte
+   (.taet) er luften i fanen mindre. Tippet (genvejen, eller hvorfor ved en fane slået fra) står under fanen. */
+.vfaner {
+  display: flex; flex: none; align-items: stretch; gap: var(--space-1); min-width: 0; padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border); background: var(--surface);
+}
+.vfaner > .tip-plads { flex: 0 1 auto; min-width: 0; }
+.vfaner > .tip-plads > .vf { flex: 1 1 auto; }
+.vf {
+  display: flex; align-items: center; gap: var(--space-2); flex: 0 1 auto; min-width: 0; height: 28px; padding: 0 var(--space-3);
+  border-bottom: 2px solid var(--surface); color: var(--text-muted); text-decoration: none; font-size: 13px; white-space: nowrap; cursor: pointer;
+}
+.vf:hover { color: var(--text); }
+.vf.on { border-bottom-color: var(--accent); color: var(--text); font-weight: 600; }
+.vf svg { width: 16px; height: 16px; fill: none; stroke: var(--text-muted); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.vf.on svg { stroke: var(--accent); }
+.vf-navn { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.vf:focus-visible { outline: 2px solid var(--info); outline-offset: -2px; }
+/* En fane slået fra: brødtekstens farve nedtonet til det halve (som et punkt i visningsskiftet: 3:1 mod fladen i begge
+   temaer; den sekundære tekst nedtonet ville give under 3:1), ingen hover. */
+.vf[aria-disabled="true"] { color: var(--text); opacity: .5; cursor: default; }
+.vf[aria-disabled="true"]:hover { color: var(--text); }
+.vf .ant { flex: none; font-size: var(--small-size); color: var(--text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.vf .ant-kraever {
+  min-width: 20px; height: 18px; padding: 0 6px; border: 1px solid var(--danger); border-radius: var(--radius-pill);
+  background: var(--danger-soft); color: var(--danger); font-weight: 700; text-align: center; line-height: 16px;
+}
+.vfaner.taet { gap: 2px; padding: 0 var(--space-2); }
+.vfaner.taet .vf { gap: 6px; padding: 0 var(--space-2); }
+/* Fra 2.6.0: NavPane uden visningsskift (visningerne står som faner øverst): træet fylder hele ruden og ruller selv helt
+   ned til fodlinjen; der står ingen tom flade nederst, hvor skiftet var. Med et visningsskift er alt som før. */
+.nav:not(:has(> .skift)) > .trae { flex: 1 1 auto; min-height: 0; }
 
 /* ── StatusFooter ── */
 .fodl {

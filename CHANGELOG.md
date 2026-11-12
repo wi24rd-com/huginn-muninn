@@ -4,6 +4,11 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-12 23:30 — Wi24rd UI Kit 2, pakke 2.6.0
+#### Ændret
+- Pakke 2.6.0 ligger uændret i `ui/assets/kit2/`. Programmet bruger ikke den nye mulighed (visningerne som faner øverst) og ser ud som før.
+- En valgt række i en tabel viser nu valget, også når musen står på den.
+
 ### 2026-11-12 23:30 — Indstillinger i båndet, og vinduesknapperne på plads
 #### Ændret
 - **Indstillinger** står nu i båndet ved siden af "Åbn vejledningen" (gruppen Program) i stedet for som tandhjul i titellinjen. Knappen er markeret, mens Indstillinger er åben.

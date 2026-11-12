@@ -753,25 +753,46 @@
   /* ── NavPane: visningsskift ── visninger: [{id, t, ikon, genvej}] (højst otte, altid samme rækkefølge). Hver er et link
      til #id; den aktive har aria-current="page". markér(id) sætter den aktive (programmet ejer skiftet). Fra 2.2.0: ved
      syv og otte får skiftet klassen taet (punkter på 30 px, så otte kan stå i det mindste vindue); seks eller færre er
-     præcis som i 2.0.0. Ni eller flere afvises med en fejl, som et ukendt ikon. */
+     præcis som i 2.0.0. Ni eller flere afvises med en fejl, som et ukendt ikon.
+     Fra 2.6.0: faner: true stiller visningerne som faner øverst (under titellinjen, over båndet; programmet vælger det, og
+     båndet under bruges så udenFaner). rod får klassen vfaner og rollen tablist; hver visning er stadig et link til #id,
+     men med rollen tab (.vf, id kit-vf<nr>-<id>), aria-selected på den valgte og tabindex 0 på den valgte og -1 på de
+     andre (én plads i Tab-rækkefølgen). Venstre og højre pil, Home og End flytter fokus og vælger (et klik på linket:
+     programmet skifter som før, via adressen eller sin egen klik-lytter); mellemrum vælger som Enter. Genvejen står ikke
+     som tekst i fanen men i et værktøjstip (hjælpetekst; aria-keyshortcuts som før); for et punkt slået fra står hvorfor i
+     tippet i stedet. panel: '<id>' på en visning giver aria-controls (programmet giver selv panelet role="tabpanel").
+     Navnet afkortes med …, når der ikke er plads; ved syv og otte er fanerne tættere (.vfaner.taet). Uden faner er alt
+     som før. */
   const MAKS_VISNINGER = 8;
+  let vfNr = 0;
   function visningsskift(rod, visninger, o = {}) {
     if (visninger.length > MAKS_VISNINGER) throw new Error('visningsskift: højst otte visninger (fik ' + visninger.length + ')');
-    rod.classList.add('skift');
+    const faner = Boolean(o.faner);
+    const nr = faner ? ++vfNr : 0;
+    rod.classList.add(faner ? 'vfaner' : 'skift');
     rod.classList.toggle('taet', visninger.length > 6);
     rod.textContent = '';
-    rod.setAttribute('role', 'group');
+    rod.setAttribute('role', faner ? 'tablist' : 'group');
     if (o.ariaT) rod.setAttribute('data-t-aria', o.ariaT);
     const links = visninger.map(v => {
-      const a = el('a', 'vs');
+      const a = el('a', faner ? 'vf' : 'vs');
       a.href = '#' + v.id;
       a.dataset.visning = v.id;
+      if (faner) {
+        a.id = `kit-vf${nr}-${v.id}`;
+        a.setAttribute('role', 'tab');
+        a.setAttribute('aria-selected', 'false');
+        a.tabIndex = -1;
+        if (v.panel) a.setAttribute('aria-controls', v.panel);
+      }
       if (v.ikon) a.appendChild(ikon(v.ikon));
-      a.appendChild(el('span', null, tekstAf(v)));
+      a.appendChild(el('span', faner ? 'vf-navn' : null, tekstAf(v)));
       if (v.genvej) {
-        const k = el('kbd', null, v.genvej);
-        k.setAttribute('aria-hidden', 'true');
-        a.appendChild(k);
+        if (!faner) {
+          const k = el('kbd', null, v.genvej);
+          k.setAttribute('aria-hidden', 'true');
+          a.appendChild(k);
+        }
         if (v.genvejAria) a.setAttribute('aria-keyshortcuts', v.genvejAria);
       }
       rod.appendChild(a);
@@ -781,9 +802,25 @@
       for (const a of links) {
         const on = a.dataset.visning === id;
         a.classList.toggle('on', on);
-        if (on) a.setAttribute('aria-current', 'page');
+        if (faner) {
+          a.setAttribute('aria-selected', String(on));
+          a.tabIndex = on ? 0 : -1;
+        } else if (on) a.setAttribute('aria-current', 'page');
         else a.removeAttribute('aria-current');
       }
+      // En fanerække uden valgt fane skal stadig kunne nås med Tab.
+      if (faner && links.length && !links.some(a => a.tabIndex === 0)) links[0].tabIndex = 0;
+    }
+    /* Fanernes værktøjstip (kun med faner): hvorfor, når punktet er slået fra og har en forklaring, ellers genvejen. */
+    const genveje = Object.fromEntries(visninger.map(v => [v.id, v.genvej || null]));
+    function fanetip(id, s) {
+      const a = links.find(x => x.dataset.visning === id);
+      const tekst = s && s.deaktiveret && s.hvorfor ? (typeof s.hvorfor === 'object' ? s.hvorfor : { t: s.hvorfor }) : genveje[id] ? { tekst: genveje[id] } : null;
+      if (tips[id]) {
+        tips[id].fjern();
+        delete tips[id];
+      }
+      if (tekst) tips[id] = vaerktoejstip(a, tekst);
     }
     /* Fra 2.5.0 (kun når en visning har dem; ellers er markup præcis som i 2.0.0): deaktiveret og hvorfor som i båndet
        (aria-disabled, kan stadig nås med Tab, et klik gør intet), men hvorfor står i et værktøjstip (Kit.vaerktoejstip),
@@ -798,11 +835,14 @@
       if ('deaktiveret' in p || 'hvorfor' in p) {
         if (s.deaktiveret) a.setAttribute('aria-disabled', 'true');
         else a.removeAttribute('aria-disabled');
-        if (tips[id]) {
-          tips[id].fjern();
-          delete tips[id];
+        if (faner) fanetip(id, s);
+        else {
+          if (tips[id]) {
+            tips[id].fjern();
+            delete tips[id];
+          }
+          if (s.deaktiveret && s.hvorfor) tips[id] = vaerktoejstip(a, typeof s.hvorfor === 'object' ? s.hvorfor : { t: s.hvorfor });
         }
-        if (s.deaktiveret && s.hvorfor) tips[id] = vaerktoejstip(a, typeof s.hvorfor === 'object' ? s.hvorfor : { t: s.hvorfor });
       }
       if (['antal', 'kraever', 'antalAriaT', 'antalAria'].some(k => k in p)) {
         for (const x of a.querySelectorAll(':scope > [data-ant]')) x.remove();
@@ -822,13 +862,32 @@
       }
     }
     rod.addEventListener('click', e => {
-      const a = e.target.closest('.vs');
+      const a = e.target.closest(faner ? '.vf' : '.vs');
       if (a && a.getAttribute('aria-disabled') === 'true') e.preventDefault();
     });
+    if (faner) {
+      rod.addEventListener('keydown', e => {
+        const i = links.indexOf(e.target);
+        if (i < 0 || e.altKey || e.ctrlKey || e.metaKey) return;
+        if (e.key === ' ') {
+          e.preventDefault();
+          links[i].click();
+          return;
+        }
+        const ny = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: links.length - 1 }[e.key];
+        if (ny == null) return;
+        e.preventDefault();
+        const a = links[(ny + links.length) % links.length];
+        a.focus();
+        a.click();
+      });
+      markér(null);
+    }
     for (const v of visninger) {
       const p = {};
       for (const k of ['deaktiveret', 'hvorfor', 'antal', 'kraever', 'antalAriaT', 'antalAria']) if (v[k] != null) p[k] = v[k];
       if (Object.keys(p).length) saetPunkt(v.id, p);
+      if (faner && !tips[v.id]) fanetip(v.id, tilstand[v.id]);
     }
     return { markér, links, saetPunkt };
   }
