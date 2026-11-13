@@ -1978,6 +1978,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('L opsætningen: masken med token, både lys og mørk', /\.tom-ravn \{[^}]*background: var\(--text\);[^}]*-webkit-mask: url\(hm-ravne\.png\)[^}]*mask: url\(hm-ravne\.png\)/.test(app));
   const ikon = png('design/brand/hm-app-ikon.png'), m1 = png('src-tauri/icons/menulinje.png'), i512 = png('src-tauri/icons/icon.png');
   tjek('L app-ikonet: 1024-kilde og ikonsæt fra den', ikon.w === 1024 && ikon.h === 1024 && i512.w === 512 && png('src-tauri/icons/32x32.png').w === 32 && png('src-tauri/icons/128x128@2x.png').w === 256);
+  tjek('L app-ikonet: macOS-ikonsættet har Apples ti filer (16–512 og @2x), og icon.icns er lavet af det', fs.readdirSync(path.join(repo, 'src-tauri/icons/hm.iconset')).filter(f => /^icon_(16|32|128|256|512)x\1(@2x)?\.png$/.test(f)).length === 10 && png('src-tauri/icons/hm.iconset/icon_512x512@2x.png').w === 1024 && fs.statSync(path.join(repo, 'src-tauri/icons/icon.icns')).size > 50000);
   tjek('L menulinjen: RGBA (include_image!), 36 px høj, beskåret tæt', m1.h === 36 && m1.w <= 50 && m1.farve === 6, `${m1.w}×${m1.h}`);
   tjek('L intet nyt i CSP eller værter', /img-src 'self' data:/.test(fs.readFileSync(path.join(repo, 'src-tauri/tauri.conf.json'), 'utf8')));
 }

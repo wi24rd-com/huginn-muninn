@@ -4,6 +4,10 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-13 23:30 — Programikonet er grønt på mørk bund
+#### Ændret
+- **Programikonet** (Dock, Finder, Windows): ravnene står i kittets grønne på en mørk flise, som de andre Wi24rd-programmer. Før var de hvide på blå. Ikonet i menulinjen er uændret.
+
 ### 2026-11-13 23:30 — Indstillinger er en popup, og første start er en guide
 #### Ændret
 - **Indstillinger er en popup bag tandhjulet** øverst til højre (⌘, / Ctrl+,, og Indstillinger… i programmenuen). Den åbner oven på den visning, du står i, og har grupperne Udseende og sprog, Dato og land, Start, Notifikationer, Forbindelse, Data og Første start. Fanen Indstillinger er væk; de syv visninger er tilbage som de eneste faner.
