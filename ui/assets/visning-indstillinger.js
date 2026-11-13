@@ -3,8 +3,8 @@
    · popuppen Indstillinger bag tandhjulet i titellinjen (#indst-knap, ⌘, / Ctrl+,): Udseende og sprog, Dato og land, Start,
      Notifikationer, Forbindelse, Data og Første start. Alt gemmes med det samme. Sprog og datoformat genindlæser, og popuppen
      åbner igen bagefter (sessionStorage). "Glem API Token…" og "Nulstil historik…" spørger i en dialog oven på popuppen.
-   · dialogen Domæner (Overblik › Vælg domæner, og alle gamle veje med afsnit=domaener): valget pr. domæne og "Giv besked" pr.
-     valgt domæne. Ingen valgte er en normal tilstand, så der er ingen bekræftelse. Samme del står i guidens trin 3.
+   · dialogen Domæner (Overblik › Vælg domæner, og alle gamle veje med afsnit=domaener): valget pr. domæne. "Giv besked" pr. valgt domæne er sin egen
+     dialog bag klokken i båndet (Overblik › Notifikationer). Ingen valgte er en normal tilstand, så der er ingen bekræftelse. Samme del står i guidens trin 3.
    · dialogen Om bag #om-knap og programmenuens Om.
    · guiden (kittets Kit.guide i en dialog): Velkommen, Dit API Token, Dine domæner, Besked. Den åbner af sig selv, første gang
      programmet står uden API Token, og fra "Vis guiden igen"; at den er vist, huskes i localStorage (hm-guide). "Næste" på
@@ -79,8 +79,8 @@
           await invoke('notifikation_zone_saet', { zone: r.id, valg: v.value });
           notif.zoner = { ...(notif.zoner || {}), [r.id]: v.value };
           if (v.value === 'standard') delete notif.zoner[r.id];
-          status($('indst-status'), T.notifGemt, 'ok');
-        } catch (e) { v.value = foer; status($('indst-status'), S.fejl(e), 'fejl'); }
+          status($('besked-status'), T.notifGemt, 'ok');
+        } catch (e) { v.value = foer; status($('besked-status'), S.fejl(e), 'fejl'); }
       });
       tb.append(el('tr', {}, el('th', { scope: 'row' }, window.hmTegn.knap(window.hmTegn.domaene(r.navn), { gaa: 'vaernet?' + new URLSearchParams({ zone: r.id, navn: r.navn }) }, 'link dyk-celle', fmt(T.aabnFor, { navn: r.navn }))), el('td', {}, el('span', { className: 'vliste' }, v, window.Kit.ikon('ned')))));
     }
@@ -283,7 +283,7 @@
   const domDel = $('dom-del');
   const domDialog = R.dialog('domaener', document.body, { t: 'domaenerH', indhold: el('div', { id: 'dom-plads' }), bred: true, knapper: LUK, fokus: 'domaener-h' });
   lukVedMaal(domDialog);
-  function tegnDomDel() { tegnDomaener(); prDomaeneNoegle = null; tegnPrDomaene(); $('dom-besked').hidden = !R.tilstand.raekker.length; }
+  function tegnDomDel() { tegnDomaener(); }
   function aabnDomaener() {
     if (guideDialog.aaben) return;
     if (popup.aaben) popup.luk();
@@ -291,6 +291,18 @@
     tegnDomDel();
     status($('domaener-status'), '');
     domDialog.aabn();
+  }
+
+  /* Notifikationer pr. domæne: sin egen knap med klokken i båndet på Overblik (Jan 2026-11-13). */
+  const beskedDialog = R.dialog('besked', document.body, { t: 'beskedH', indhold: $('besked-del'), bred: true, knapper: LUK, fokus: 'besked-h' });
+  lukVedMaal(beskedDialog);
+  function aabnBesked() {
+    if (guideDialog.aaben) return;
+    if (popup.aaben) popup.luk();
+    prDomaeneNoegle = null;
+    tegnPrDomaene();
+    status($('besked-status'), '');
+    beskedDialog.aabn();
   }
 
   const omDialog = R.dialog('om', document.body, { t: 'omH', indhold: $('om-del'), bred: true, knapper: LUK, fokus: 'om-h' });
@@ -335,7 +347,7 @@
   trinNoder[1].append(guideNote);
   for (const b of guideRod.querySelectorAll('.fod button')) b.id = 'guide-' + (b.classList.contains('primary') ? 'naeste' : b.classList.contains('ghost') ? 'spring' : 'tilbage');
   function aabnGuide() {
-    for (const d of [popup, domDialog, omDialog]) if (d.aaben) d.luk();
+    for (const d of [popup, domDialog, beskedDialog, omDialog]) if (d.aaben) d.luk();
     wiz.gaaTil(0);
     guideDialog.aabn();
   }
@@ -346,7 +358,7 @@
   $('opsaet-tom').querySelector('button').id = 'opsaet-guide';
   S.anvend($('opsaet-tom'));
 
-  R.paa('raekker', () => { tegnPrDomaene(); $('dom-besked').hidden = !R.tilstand.raekker.length; tegnForbindelse(); if (popup.aaben) tegnData(); });
+  R.paa('raekker', () => { tegnPrDomaene(); tegnForbindelse(); if (popup.aaben) tegnData(); });
   R.paa('domaener', () => { tegnDomaener(); guideTilstand(); });
   let foersteToken = true;
   R.paa('token', sat => {
@@ -357,8 +369,8 @@
     foersteToken = false;
   });
   R.paa('koe', tegnForbindelse);
-  const ALLE = [popup, domDialog, omDialog, guideDialog];
-  window.hmIndst = { aabn: aabnPopup, domaener: aabnDomaener, om: aabnOm, guide: aabnGuide, aaben: () => ALLE.some(d => d.aaben), lukAlle() { for (const d of ALLE) if (d.aaben) d.luk(); } };
+  const ALLE = [popup, domDialog, beskedDialog, omDialog, guideDialog];
+  window.hmIndst = { aabn: aabnPopup, domaener: aabnDomaener, besked: aabnBesked, om: aabnOm, guide: aabnGuide, aaben: () => ALLE.some(d => d.aaben), lukAlle() { for (const d of ALLE) if (d.aaben) d.luk(); } };
   if (husk(sessionStorage, 'hm-indst-aaben')) setTimeout(aabnPopup, 0); // efter et skift af sprog eller datoformat
   visAutostart();
   hentNotif();

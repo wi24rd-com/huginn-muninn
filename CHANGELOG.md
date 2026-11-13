@@ -8,7 +8,8 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 #### Ændret
 - **Indstillinger er en popup bag tandhjulet** øverst til højre (⌘, / Ctrl+,, og Indstillinger… i programmenuen). Den åbner oven på den visning, du står i, og har grupperne Udseende og sprog, Dato og land, Start, Notifikationer, Forbindelse, Data og Første start. Fanen Indstillinger er væk; de syv visninger er tilbage som de eneste faner.
 - **Om har sin egen knap** (i) ved siden af tandhjulet: version, licens, skrifter, kortdata og varemærkelinjen. Programmenuens Om åbner den samme dialog.
-- **Vælg domæner** på Overblik åbner dialogen Domæner: en kontakt pr. domæne og, for hvert valgt domæne, hvornår du vil have besked. Linjerne om fravalgte og nye domæner åbner den samme dialog.
+- **Vælg domæner** på Overblik åbner dialogen Domæner: en kontakt pr. domæne.
+- **Notifikationer** (klokken) på Overblik åbner sin egen dialog: hvornår du vil have besked om hvert valgt domæne. Linjerne om fravalgte og nye domæner åbner den samme dialog.
 - **Teknologi pr. domæne hører til Angreb:** fanen Angreb er markeret, og båndet har Tilbage til Angreb og Nulstil for alle domæner (før under Indstillinger › Domæner).
 - **Login-stier** rettes ét sted: Login › Ret stier. Afsnittet under Indstillinger er væk.
 

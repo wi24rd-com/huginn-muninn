@@ -45,6 +45,7 @@
     'hm-klode': [['circle', { cx: 12, cy: 12, r: 9 }], ['path', { d: 'M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z' }]],
     'hm-besoeg': [['circle', { cx: 9, cy: 8, r: 3.5 }], ['path', { d: 'M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5' }], ['path', { d: 'M15.5 4.8a3.5 3.5 0 0 1 0 6.4M17.5 14c2.4.8 4 3.1 4 6' }]],
     'hm-hent': [['path', { d: 'M20 11a8 8 0 1 0-2.3 5.7' }], ['path', { d: 'M20 4v7h-7' }]],
+    'hm-klokke': [['path', { d: 'M6 9a6 6 0 1 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9z' }], ['path', { d: 'M10 20a2 2 0 0 0 4 0' }]],
   });
   /* De syv visninger er båndets faner (kittets visninger med som: 'faner', fra 2.8.0), og Indstillinger står for sig til højre
      (Jans valg på skitsen 2026-11-13, V-FANER.1): tast, visning, tekstnøgle. Båndet under fanerne viser kun det, der hører til
@@ -61,6 +62,7 @@
     [null, 'gData', [{ id: 'hent', t: 'hentNu', ikon: 'hm-hent', pri: true }]],
     [['overblik'], 'gVis', [{ id: 'samlet', t: 'samletKnap', ikon: 'skjold' }]],
     [['overblik'], 'gDomaener', [{ id: 'vaelg-dom', t: 'baandVaelgDom', ikon: 'filter', ved: () => gaaTil('indstillinger', 'afsnit=domaener') }]],
+    [['overblik'], 'gBesked', [{ id: 'giv-besked', t: 'baandBesked', ikon: 'hm-klokke', ved: () => gaaTil('indstillinger', 'afsnit=besked') }]],
     [['siden-sidst'], 'gVis', [{ id: 'siden-skjul', t: 'sidenSkjul', ikon: 'hm-overblik' }]],
     [['vaernet'], 'gPeriode', valg('dyk-periode', 3, 'kalender')],
     [['vaernet'], 'gVis', valg('dyk-slags', 3, 'filter')],
@@ -188,7 +190,7 @@
     history.replaceState(history.state, '', '#' + navn + (q ? '?' + q : ''));
     tilstand.params = new URLSearchParams(q);
   }
-  /* Indstillinger er en popup (V-INDST.1), og det, der er arbejde, står hvor det bruges: afsnit=domaener er dialogen Domæner,
+  /* Indstillinger er en popup (V-INDST.1), og det, der er arbejde, står hvor det bruges: afsnit=domaener er dialogen Domæner, afsnit=besked dialogen Notifikationer pr. domæne (Overblik › Notifikationer),
      afsnit=om dialogen Om, afsnit=login Login for domænet med "Ret stier" foldet ud, alt andet popuppen. */
   function aabnIndst(params) {
     const I = window.hmIndst, afsnit = params.get('afsnit'), zone = params.get('zone');
@@ -196,6 +198,7 @@
     if (!I) return null;
     if (afsnit === 'om') return I.om();
     if (afsnit === 'domaener' && tilstand.sat) return I.domaener();
+    if (afsnit === 'besked' && tilstand.sat) return I.besked();
     return I.aabn();
   }
   function route() {

@@ -190,17 +190,18 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .indst { max-width: 700px; }
 /* Popuppen og Domæner: overskriften og "Luk" står fast, og indholdet ruller, når vinduet er lavt.
    KIT-ØNSKE K47: kittets dialog ruller som helhed, så fodlinjen forsvinder ved langt indhold. */
-#indst-dialog[open], #domaener-dialog[open], #om-dialog[open], #guide-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
-:is(#indst-dialog, #domaener-dialog) { width: min(720px, calc(100vw - 48px)); }
-:root[data-tekst="lille"] :is(#indst-dialog, #domaener-dialog) { width: min(720px, calc(100vw / .9) - 48px); }
-:root[data-tekst="stor"] :is(#indst-dialog, #domaener-dialog) { width: min(720px, calc(100vw / 1.125) - 48px); }
-:is(#indst-dialog, #domaener-dialog, #om-dialog) .modal-indhold { flex: 1 1 auto; min-height: 0; overflow: auto; }
-:is(#indst-dialog, #domaener-dialog, #om-dialog) :is(.modal-top, .modal-fod) { flex: none; }
+#indst-dialog[open], #domaener-dialog[open], #besked-dialog[open], #om-dialog[open], #guide-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+:is(#indst-dialog, #domaener-dialog, #besked-dialog) { width: min(720px, calc(100vw - 48px)); }
+:root[data-tekst="lille"] :is(#indst-dialog, #domaener-dialog, #besked-dialog) { width: min(720px, calc(100vw / .9) - 48px); }
+:root[data-tekst="stor"] :is(#indst-dialog, #domaener-dialog, #besked-dialog) { width: min(720px, calc(100vw / 1.125) - 48px); }
+:is(#indst-dialog, #domaener-dialog, #besked-dialog, #om-dialog) .modal-indhold { flex: 1 1 auto; min-height: 0; overflow: auto; }
+:is(#indst-dialog, #domaener-dialog, #besked-dialog, #om-dialog) :is(.modal-top, .modal-fod) { flex: none; }
 .modal .indst { max-width: none; }
 .modal .indst .kasse:last-child { margin-bottom: 0; }
 .modal .kasse-ikon { display: none; } /* popuppens grupper har kun den lille overskrift */
 .modal .autostart-banner { max-width: none; }
 .dom-del { border: 1px solid var(--border); border-radius: var(--card-radius); }
+.besked-note { margin: 0; padding: 10px 16px; }
 .om-del .om { padding: 0; }
 .om-del .velkomst { margin-bottom: 12px; }
 /* Guiden: trinene til venstre og fodlinjen står fast; trinets indhold ruller. */
