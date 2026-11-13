@@ -185,6 +185,14 @@
     liste(T.loginMetodeServer, 'm-server', d.metoder_server, 'metode', netLabel);
     return boks.childElementCount ? [V.blok(T.loginHvorH, T.loginHvorP, boks)] : [];
   }
+  /* "Ret stier" i båndet folder afsnittet ud nede i visningen og flytter fokus derhen. */
+  $('login-ret-knap').addEventListener('click', () => {
+    const ret = rod.querySelector('details.login-ret');
+    if (!ret || $('login-ret-knap').getAttribute('aria-disabled') === 'true') return;
+    ret.open = true;
+    ret.scrollIntoView({ block: 'start' });
+    ret.querySelector('summary').focus({ preventScroll: true });
+  });
   async function retStier() {
     if (samlet()) return [el('p', { className: 'vg-note', textContent: T.loginVaelgDomaene })];
     const zone = params.get('zone') || '', ret = el('details', { className: 'login-ret' }, el('summary', { textContent: T.loginRet }));
@@ -198,10 +206,12 @@
   async function tegn(d, g) {
     $('login-under').textContent = domaene;
     const p = periodeArg(), fast = !har('dag') && !har('fra');
-    $('login-periode').replaceChildren(V.segment('login-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p === 'd7'], [T.dykP30, medPeriode(), fast && p === 'd30']], 'login'));
+    R.iBaand('login-periode', V.segment('login-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p === 'd7'], [T.dykP30, medPeriode(), fast && p === 'd30'], [T.dykPAlt, medPeriode('periode', 'alt'), fast && p === 'alt']], 'login'));
+    R.baand.saetDeaktiveret('login-ret-knap', samlet(), samlet() ? 'loginVaelgDomaene' : null);
+    S.anvend($('login-ret-knap'));
     const genaabn = V.husk(rod), ret = await retStier();
     if (g !== gen) return;
-    const dele = [V.datoVaelger({ visning: 'login', periode: d.periode, nulstil: medPeriode('periode', 'alt'), gaa: (a, b) => R.gaaTil('login', medInterval(a, b)) })];
+    const dele = [V.datoVaelger({ visning: 'login', plads: 'login-datoer', tom: fast, periode: d.periode, gaa: (a, b) => R.gaaTil('login', medInterval(a, b)) })];
     if (d.stier.length) dele.push(stierBar(d));
     dele.push(...ret, ...filtreBar(d));
     if (d.ikke_tilgaengelig.length) dele.push(el('p', { className: 'vg-advarsel vg-gul', textContent: fmt(T.loginIkkeTilg, { d: d.ikke_tilgaengelig.map(V.dato).join(', ') }) }));
@@ -225,7 +235,7 @@
   function besked(tekst, farve = 'roed') {
     rod.removeAttribute('aria-busy');
     rod.replaceChildren(el('p', { className: `vg-advarsel vg-${farve}`, textContent: tekst }));
-    $('login-periode').replaceChildren();
+    R.iBaand('login-periode'); R.iBaand('login-datoer');
   }
 
   let gen = 0, aktiv = null, afmeld = [];

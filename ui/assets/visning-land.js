@@ -148,7 +148,6 @@
     const kilder = s.land.map(x => ({ navn: V.land(x.navn), vaerdi: x.vaerdi })).concat(s.rest === null ? [] : [{ navn: T.landModRest, vaerdi: s.rest }]);
     const kol = (h, indhold) => el('div', {}, el('h3', { textContent: h }), indhold);
     const blok = V.blok(T.landModBlokH, fmt(T.landModP, { land: navn, p: syv() ? T.landMod7Tekst : T.landMod28Tekst }),
-      el('div', { className: 'land-mod-valg' }, V.segment('land-mod', T.landModPeriode, [[T.landMod7, medPeriode('7'), syv()], [T.landMod28, medPeriode(''), !syv()]], 'land')),
       ...serieNote(d, syv() ? 'par7' : 'par28'),
       el('div', { className: 'vg-tre' },
         kol(fmt(T.landModH, { land: navn }), kilder.length ? procentListe(kilder) : tom(fmt(s.spurgt ? T.landModIkkeOplyst : T.landModIngen, { land: navn }))),
@@ -221,7 +220,8 @@
   }
 
   function faner() {
-    $('land-faner').replaceChildren(V.segment('land-fane', T.landFaner, [[V.land(kode), adresse(kode), !verdenFane()], [T.landVerdenFane, adresse(kode, { fane: 'verden' }), verdenFane()]], 'land'));
+    R.iBaand('land-mod', ...(verdenFane() ? [] : [V.segment('land-mod', T.landModPeriode, [[T.landMod7, medPeriode('7'), syv()], [T.landMod28, medPeriode(''), !syv()]], 'land')]));
+    R.iBaand('land-faner', V.segment('land-fane', T.landFaner, [[V.land(kode), adresse(kode), !verdenFane()], [T.landVerdenFane, adresse(kode, { fane: 'verden' }), verdenFane()]], 'land'));
     /* Et kig på et andet land end det gemte: vejen hjem. */
     $('land-kig').replaceChildren(...(gemt && kode !== gemt ? [V.knap(fmt(T.landTilbage, { land: V.land(gemt) }), { gaa: 'land' })] : []));
   }
@@ -247,7 +247,7 @@
   /* Intet land: vælgeren i båndet og forslaget. */
   function vaelgSelv() {
     rod.removeAttribute('aria-busy');
-    $('land-faner').replaceChildren();
+    R.iBaand('land-faner'); R.iBaand('land-mod');
     $('land-kig').replaceChildren();
     $('land-h').textContent = T.navLand;
     S.saetLand(T.navLand);
@@ -291,7 +291,7 @@
     await hent();
     if (g !== gen) return;
     const afsnit = { maal: 'land-maal', kilde: 'land-kilde', udfald: verdenFane() ? 'land-udfald-verden' : 'land-udfald' }[p.get('afsnit')], maal = afsnit && $(afsnit);
-    const igen = valgt && [...rod.querySelectorAll('[data-fokus]')].find(x => x.dataset.fokus === valgt);
+    const igen = valgt && [...$('land-mod').querySelectorAll('[data-fokus]'), ...rod.querySelectorAll('[data-fokus]')].find(x => x.dataset.fokus === valgt); // periodevælgeren står i båndet
     if (maal && !R.genbesoeg() && maal.scrollIntoView) maal.scrollIntoView({ block: 'start' });
     else if (!R.genbesoeg() && !igen) $('land-h').focus();
     if (igen) igen.focus();

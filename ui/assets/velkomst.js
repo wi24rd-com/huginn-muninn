@@ -5,11 +5,11 @@
    Cloudflare"), formularen, "opsaetning-punkter" og "filosofi". Filosofien står kun i opsætningen og bærer sloganet dér. Ravnene er masken .tom-ravn, som
    følger temaet; al tekst er HTML, så den kan oversættes og følger Tekststørrelse. "for Cloudflare®" står altid mindre end navnet og med lille f (Cloudflares
    varemærkeregler), også selv om logoet har stort F. Statusordene er programmets egne (T.status), og landet er det gemte (land(), visning-land.js) eller
-   "dit land". Ikonerne er klonet fra båndets knapper og Indstillinger. Bygges med createElement. */
+   "dit land". Ikonerne er kittets og programmets egne (Kit.ikon) og klokken fra Indstillinger. Bygges med createElement. */
 (function () {
   'use strict';
   const S = window.hmSprog, T = S.T, R = window.hmRamme, V = window.hmTegn, { el, fmt } = R;
-  const nav = v => document.querySelector(`#baand a[data-visning="${v}"] svg`);
+  const nav = v => window.Kit.ikon({ vaernet: 'skjold', overblik: 'hm-overblik', 'siden-sidst': 'hm-siden', login: 'laas' }[v]);
   const klokke = () => { const h = document.getElementById('indst-notif'); return h && h.previousElementSibling; }; // kassens ikon står foran overskriften
   /* Skjold, klokke, gitter, ur og lås. */
   const IKONER = [() => nav('vaernet'), klokke, () => nav('overblik'), () => nav('siden-sidst'), () => nav('login')];

@@ -36,6 +36,7 @@
   <span class="hoejre">
     <button class="rk" type="button" id="hist-tilbage" disabled><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
     <button class="rk" type="button" id="hist-frem" disabled><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button class="rk" type="button" id="baand-vejledning"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><span data-t="vejledningKort">Vejledning</span></button>
     <button class="rk" type="button" id="hjaelp-knap" aria-controls="hjaelp" aria-expanded="false"><span aria-hidden="true">?</span><span class="sr-only" data-t="hjaelpKnap">Hjælp</span></button>
   </span>
 </header>
@@ -83,7 +84,6 @@
   <section class="visning" id="visning-overblik" data-visning="overblik" aria-labelledby="overblik-h" hidden>
     <div class="titelrad">
       <h1 id="overblik-h" data-t="zonerH">Overblik</h1><span class="under" id="overblik-antal" aria-live="polite"></span>
-      <div class="hoejre"><button class="btn primary" type="button" id="samlet" disabled></button></div>
     </div>
     <div id="hul-linjer"></div>
     <p class="server-linje" id="server-linje" hidden></p>
@@ -103,7 +103,6 @@
     <p class="lead" id="siden-vist"></p>
     <div id="siden-huller"></div>
     <ul class="hm-siden" id="siden-liste"></ul>
-    <button class="btn" type="button" id="siden-skjul" data-t="sidenSkjul">Til overblikket</button>
   </section>
 
   <section class="visning" id="visning-vaernet" data-visning="vaernet" aria-labelledby="vaernet-h" hidden>
@@ -113,24 +112,23 @@
     <div class="hm-valgte" id="valgte" hidden></div>
     <div class="titelrad dyk-raekke">
       <nav class="dyk-filtre" id="dyk-filtre" hidden></nav>
-      <div class="hoejre" id="dyk-periode"></div>
     </div>
     <div class="hm-genforsoeg" id="vg-genforsoeg" hidden><span class="hm-gf-tekst" role="status" aria-live="polite"></span><button class="btn" type="button" data-t="proevNu">Prøv igen nu</button></div>
     <div class="vg" id="vagt" data-vagt="vaern"></div>
   </section>
 
   <section class="visning" id="visning-robotter" data-visning="robotter" aria-labelledby="robotter-h" hidden>
-    <div class="titelrad"><h1 id="robotter-h" tabindex="-1" data-t="navRobotter">Robotter</h1><span class="under" id="robotter-under"></span><div class="hoejre" id="robotter-periode"></div></div>
+    <div class="titelrad"><h1 id="robotter-h" tabindex="-1" data-t="navRobotter">Robotter</h1><span class="under" id="robotter-under"></span></div>
     <div class="vg" id="robotter-rod"></div>
   </section>
 
   <section class="visning" id="visning-login" data-visning="login" aria-labelledby="login-h" hidden>
-    <div class="titelrad"><h1 id="login-h" tabindex="-1" data-t="navLogin">Login</h1><span class="under" id="login-under"></span><div class="hoejre" id="login-periode"></div></div>
+    <div class="titelrad"><h1 id="login-h" tabindex="-1" data-t="navLogin">Login</h1><span class="under" id="login-under"></span></div>
     <div class="vg" id="login-rod"></div>
   </section>
 
   <section class="visning" id="visning-land" data-visning="land" aria-labelledby="land-h" hidden>
-    <div class="titelrad"><h1 id="land-h" tabindex="-1"></h1><span class="under" data-t="landRadar"></span><span class="under" id="land-kig"></span><div class="hoejre" id="land-faner"></div></div>
+    <div class="titelrad"><h1 id="land-h" tabindex="-1"></h1><span class="under" data-t="landRadar"></span><span class="under" id="land-kig"></span></div>
     <div class="vg" id="land-rod"></div>
   </section>
 

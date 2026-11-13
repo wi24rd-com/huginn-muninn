@@ -176,8 +176,9 @@
     };
     const felt = (navn, tekst) => {
       const b = el('button', { type: 'button', className: 'dato-knap' }), boksen = el('div', { className: 'dato-felt' }, el('span', { textContent: tekst }), b);
-      const vis = () => { b.textContent = dato(valgt[navn]); b.dataset.dag = valgt[navn]; b.setAttribute('aria-label', fmt(T.kalAabn, { felt: tekst, d: dato(valgt[navn]) })); };
-      vis();
+      /* o.tom (en fast periode er valgt): feltet står tomt, til brugeren vælger en dato; kalenderen åbner stadig på periodens dag. */
+      const vis = tom => { b.textContent = tom ? '–' : dato(valgt[navn]); b.dataset.dag = tom ? '' : valgt[navn]; b.setAttribute('aria-label', tom ? fmt(T.kalAabnTom, { felt: tekst }) : fmt(T.kalAabn, { felt: tekst, d: dato(valgt[navn]) })); };
+      vis(Boolean(o.tom));
       b.dataset.fokus = `dato:${navn}`;
       b.setAttribute('aria-haspopup', 'dialog');
       b.setAttribute('aria-expanded', 'false');
@@ -201,8 +202,9 @@
       });
       return boksen;
     };
-    const nulstil = knap(T.datoNulstil, { gaa: `${o.visning}?${o.nulstil}` }, 'link', T.datoNulstilLabel);
-    return el('div', { className: 'dato-vaelger' }, el('div', { className: 'dato-raekke' }, felt('fra', T.datoFra), felt('til', T.datoTil), nulstil), el('p', { className: 'vg-note', textContent: T.datoNote }), fejl);
+    /* Fra og Til står i båndets gruppe "Egne datoer" (o.plads, V-FANER.1); noten og en fejl står i visningen. Hele historikken er et valg i Periode. */
+    R.iBaand(o.plads, el('div', { className: 'dato-raekke' }, felt('fra', T.datoFra), felt('til', T.datoTil)));
+    return el('div', { className: 'dato-vaelger' }, el('p', { className: 'vg-note', textContent: T.datoNote }), fejl);
   }
   /* En sum med huller siger det. p: Rusts PeriodeUd. */
   const daekning = p => (p.med < p.dage ? [el('p', { className: 'vg-note hul-note', textContent: fmt(T.hulNote, { m: tal(p.med), n: tal(p.dage) }) })] : []);

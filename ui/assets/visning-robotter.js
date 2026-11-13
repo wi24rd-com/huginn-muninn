@@ -60,11 +60,15 @@
     if (c.uverificerede.length) boks.append(liste(T.robotSlags.uverificeret, 'uverificeret', falske('uverificeret', c.uverificerede), c.uverificerede.length));
     return boks.childElementCount ? [V.blok(T.dykListerH, '', boks)] : [];
   }
+  /* "Angreb fra robotter" i båndet åbner de stoppede robotter i Angreb for samme domæne og periode. */
+  let robotAngreb = null;
+  $('robot-angreb').addEventListener('click', () => R.gaaTil('vaernet', robotAngreb || dyk({ robot: 'stoppet' })));
   function tegn(d) {
     $('robotter-under').textContent = domaene;
     const p = periodeArg();
-    $('robotter-periode').replaceChildren(V.segment('robotter-periode', T.dykPeriode, [[T.dykP7, medPeriode(), p === 'd7'], [T.dykP30, medPeriode('30'), p === 'd30']], 'robotter'));
-    const genaabn = V.husk(rod), dele = [V.datoVaelger({ visning: 'robotter', periode: d.periode, nulstil: medPeriode('alt'), gaa: (a, b) => R.gaaTil('robotter', medInterval(a, b)) })];
+    R.iBaand('robotter-periode', V.segment('robotter-periode', T.dykPeriode, [[T.dykP7, medPeriode(), p === 'd7'], [T.dykP30, medPeriode('30'), p === 'd30'], [T.dykPAlt, medPeriode('alt'), p === 'alt']], 'robotter'));
+    robotAngreb = dyk({ robot: 'stoppet' });
+    const genaabn = V.husk(rod), dele = [V.datoVaelger({ visning: 'robotter', plads: 'robotter-datoer', tom: !interval(), periode: d.periode, gaa: (a, b) => R.gaaTil('robotter', medInterval(a, b)) })];
     if (interval()) { const n = periodeNavn(); dele.push(el('div', { className: 'login-stier' }, V.fjernChip(n, { gaa: 'robotter?' + medPeriode() }))); }
     dele.push(fliser(d), ...V.daekning(d.periode));
     if (d.stoppet.ikke_tilgaengelig.length) dele.push(el('p', { className: 'vg-advarsel vg-gul', textContent: fmt(T.robotIkkeTilg, { d: d.stoppet.ikke_tilgaengelig.map(V.dato).join(', ') }) }));
@@ -79,7 +83,7 @@
   function besked(tekst, farve = 'roed') {
     rod.removeAttribute('aria-busy');
     rod.replaceChildren(el('p', { className: `vg-advarsel vg-${farve}`, textContent: tekst }));
-    $('robotter-periode').replaceChildren();
+    R.iBaand('robotter-periode'); R.iBaand('robotter-datoer');
   }
 
   let gen = 0, aktiv = null, afmeld = [];

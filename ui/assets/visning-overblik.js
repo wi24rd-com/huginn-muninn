@@ -352,8 +352,7 @@
   function visAntal() {
     const n = st.raekker.length, fra = st.uvalgt.size, alleFra = !n && fra > 0;
     $('overblik-antal').textContent = n ? `· ${T.domaener(n)}` : '';
-    $('samlet').textContent = T.samletKnap;
-    $('samlet').disabled = n === 0;
+    R.baand.saetDeaktiveret('samlet', n === 0);
     $('samlet').hidden = alleFra;
     $('overblik-tom').hidden = !alleFra;
     $('overblik-rul').hidden = alleFra;

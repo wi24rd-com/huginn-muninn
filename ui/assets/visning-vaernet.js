@@ -94,7 +94,9 @@
     const nav = $('dyk-filtre'), noget = led.length || har('slags');
     nav.setAttribute('aria-label', T.dykFiltre);
     nav.hidden = !noget;
-    nav.replaceChildren(ul, ...(noget ? [V.knap(L.nulstil, { gaa: `vaernet?${omfangQ()}` }, 'link dyk-nulstil', L.nulstilLabel)] : []));
+    nav.replaceChildren(ul);
+    /* Nulstil står i båndet (gruppen Filtre) og er slået fra, når der intet er at nulstille. */
+    nulstilKnap(noget ? `vaernet?${omfangQ()}` : null);
   }
   /* Hovedet efter filter: regel (mærke, CVE, Cloudflares navn og guiden) og noter til de andre filtre. */
   function hoved(d) {
@@ -117,10 +119,21 @@
     if (/^labyrint/.test(params.get('robot') || '')) note(T.robotLabyrintNote);
     return ud;
   }
+  /* Uden tal står fanens pladser i båndet tomme, og Nulstil er slået fra. */
+  function tomBaand() {
+    ['dyk-periode', 'dyk-datoer', 'dyk-slags'].forEach(id => R.iBaand(id));
+    nulstilKnap(null);
+  }
+  /* Nulstil i båndet: med et mål (data-gaa, som alle andre links) eller slået fra med hvorfor. */
+  function nulstilKnap(maal) {
+    const b = $('dyk-nulstil');
+    R.baand.saetDeaktiveret('dyk-nulstil', !maal, maal ? null : 'baandNulstilIntet');
+    if (maal) { b.dataset.gaa = maal; b.setAttribute('aria-label', L.nulstilLabel); } else { delete b.dataset.gaa; b.removeAttribute('aria-label'); }
+    S.anvend(b);
+  }
   function slagsVaelger(d) {
-    const nu = params.get('slags'), boks = el('div', { className: 'dyk-slags' }, el('span', { textContent: T.dykSlagsH }));
-    boks.append(segment('dyk-slags', T.dykSlagsH, [[T.dykSAlt, medSlags(''), !nu], [fmt(T.dykSAngreb, { n: tal(d.slags.angreb) }), medSlags('angreb'), nu === 'angreb'], [fmt(T.dykSRutine, { n: tal(d.slags.rutine) }), medSlags('rutine'), nu === 'rutine']]));
-    return boks;
+    const nu = params.get('slags');
+    return (segment('dyk-slags', T.dykSlagsH, [[T.dykSAlt, medSlags(''), !nu], [fmt(T.dykSAngreb, { n: tal(d.slags.angreb) }), medSlags('angreb'), nu === 'angreb'], [fmt(T.dykSRutine, { n: tal(d.slags.rutine) }), medSlags('rutine'), nu === 'rutine']]));
   }
 
   /* ── fliser ── */
@@ -530,9 +543,10 @@
     visOverskrift();
     chips(d, liste);
     const p = params.get('periode'), fast = !har('dag') && !har('fra');
-    $('dyk-periode').replaceChildren(segment('dyk-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p !== '30' && p !== 'alt'], [T.dykP30, medPeriode('periode', '30'), fast && p === '30']]));
+    R.iBaand('dyk-periode', segment('dyk-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p !== '30' && p !== 'alt'], [T.dykP30, medPeriode('periode', '30'), fast && p === '30'], [T.dykPAlt, medPeriode('periode', 'alt'), fast && p === 'alt']]));
     const genaabn = V.husk(rod), fokus = fokusNu() || valgtFokus;
-    const vaelger = V.datoVaelger({ visning: 'vaernet', periode: d.periode, nulstil: medPeriode('periode', 'alt'), gaa: (a, b) => R.gaaTil('vaernet', kopi(q => { PERIODE.forEach(x => q.delete(x)); q.set('fra', a); q.set('til', b); })) });
+    R.iBaand('dyk-slags', ...(har('regel') || har('forsoeg') || erRobot() ? [] : [el('div', { className: 'dyk-slags' }, slagsVaelger(d))]));
+    const vaelger = V.datoVaelger({ visning: 'vaernet', plads: 'dyk-datoer', tom: fast, periode: d.periode, gaa: (a, b) => R.gaaTil('vaernet', kopi(q => { PERIODE.forEach(x => q.delete(x)); q.set('fra', a); q.set('til', b); })) });
     const bjaelke = el('div', { className: 'vg-bjaelke' }, el('p', { className: 'vg-status', textContent: stat.tekst }));
     const advarsel = stat.advarsel ? [el('p', { className: `vg-advarsel vg-${stat.advarsel[1]}`, textContent: stat.advarsel[0] })] : [];
     advarsel.forEach(a => a.setAttribute('role', 'alert'));
@@ -540,7 +554,7 @@
     if (et && !vurd) skjult.push(L.vurderingNavn);
     if (har('dag') && d.sum) skjult.push(L.soejlerNavn);
     /* Samme rækkefølge som altid: datovælger → Vis → trafik og hoved → fliser → fordeling → kort → lister → søjler → regler → resten, og "De seneste" sidst. */
-    const dele = [bjaelke, ...advarsel, ...kunIDag(d, liste), ...trafikLinjer(d), vaelger, ...(har('regel') || har('forsoeg') || erRobot() ? [] : [slagsVaelger(d)]), ...kunTrafik(d), ...(trafik ? [trafikAfsnit(trafik)] : []), ...hoved(d), fliser(d), ...(kunTrafik(d).length ? [] : V.daekning(d.periode)), ...fordeling(d), ...(vurd ? vurdering(d) : [])];
+    const dele = [bjaelke, ...advarsel, ...kunIDag(d, liste), ...trafikLinjer(d), vaelger, ...kunTrafik(d), ...(trafik ? [trafikAfsnit(trafik)] : []), ...hoved(d), fliser(d), ...(kunTrafik(d).length ? [] : V.daekning(d.periode)), ...fordeling(d), ...(vurd ? vurdering(d) : [])];
     if (d.loft) dele.push(el('p', { className: 'vg-advarsel vg-gul vg-loft', textContent: fmt(T.dykLoft, { n: tal(d.sum) }) }));
     /* V-SAMPLE.1: ældre døgn er talte rækker, nyere Cloudflares estimat. Kun når perioden krydser grænsen. */
     if (d.vaegt_fra) dele.push(el('p', { className: 'vg-note vg-vaegt', textContent: fmt(T.dykVaegtGraense, { d: V.datoLang(d.vaegt_fra) }) }));
@@ -577,7 +591,7 @@
     p.setAttribute('role', 'alert');
     rod.replaceChildren(p);
     $('dyk-filtre').hidden = true;
-    $('dyk-periode').replaceChildren();
+    tomBaand();
   }
 
   /* ── etiketterne ── */
@@ -740,7 +754,7 @@
       visDomaene(T.domaener(0), true);
       rod.removeAttribute('aria-busy');
       $('dyk-filtre').hidden = true;
-      $('dyk-periode').replaceChildren();
+      tomBaand();
       rod.replaceChildren(window.hmVelkomst.intetValgt());
       return;
     }

@@ -173,7 +173,8 @@
     const p = periodeArg();
     /* Øverst de faste fliser, så vælgeren (7/30/Et år og Fra/Til), og under den en overskrift for alt, der følger perioden (V-BESOEG.2 FIX 1). */
     const segment = V.segment('besoegende-periode', T.dykPeriode, [[T.dykP7, medPeriode(), !interval() && p === 'd7'], [T.dykP30, medPeriode('30'), !interval() && p === 'd30'], [B.aar, medPeriode('aar'), !interval() && p === 'alt']], 'besoegende');
-    const vaelger = el('div', { className: 'besoeg-valg' }, segment, V.datoVaelger({ visning: 'besoegende', periode: d.periode, nulstil: medPeriode('aar'), gaa: (a, b) => R.gaaTil('besoegende', medInterval(a, b)) }));
+    R.iBaand('besoegende-periode', segment);
+    const vaelger = el('div', { className: 'besoeg-valg' }, V.datoVaelger({ visning: 'besoegende', plads: 'besoegende-datoer', tom: !interval(), periode: d.periode, gaa: (a, b) => R.gaaTil('besoegende', medInterval(a, b)) }));
     const valgt = el('h2', { className: 'besoeg-valgt-h', textContent: fmt(B.valgtPeriode, { p: V.interval(d.periode.fra, d.periode.til) }) });
     const genaabn = V.husk(rod), dele = [fliser(d), vaelger, valgt];
     const chips = [], chip = (n, klasse) => chips.push(V.fjernChip(n, gaa(medFilter()), klasse));

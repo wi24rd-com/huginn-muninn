@@ -64,6 +64,10 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 /* ── skallen: det, Wi24rd UI Kit 2 lader programmet give selv ── */
 /* macOS: vinduesknapperne ligger oven på titellinjen (titleBarStyle Overlay). */
 [data-platform="macos"] .titel { padding-left: var(--titel-trafiklys); }
+/* Fanens pladser i båndet (V-FANER.1): Periode, Egne datoer og Vis fyldes af visningen. De står midt i knappernes højde. */
+.baand-plads { display: flex; align-items: center; min-height: 54px; }
+.baand-plads .dato-raekke { flex-wrap: nowrap; }
+.baand-plads .dato-knap { min-width: 5.5rem; }
 /* Mærket i titellinjen er kittets .mrk-maske; her står kun programmets billede og dets bredde. */
 .titel .hm-mrk { width: 26px; -webkit-mask-image: url(hm-ravne.png); mask-image: url(hm-ravne.png); }
 .titel b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

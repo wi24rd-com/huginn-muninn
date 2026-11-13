@@ -46,26 +46,67 @@
     'hm-besoeg': [['circle', { cx: 9, cy: 8, r: 3.5 }], ['path', { d: 'M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5' }], ['path', { d: 'M15.5 4.8a3.5 3.5 0 0 1 0 6.4M17.5 14c2.4.8 4 3.1 4 6' }]],
     'hm-hent': [['path', { d: 'M20 11a8 8 0 1 0-2.3 5.7' }], ['path', { d: 'M20 4v7h-7' }]],
   });
-  /* De syv visninger er store knapper forrest i båndet (kittets visninger i Kit.commandBar, fra 2.7.0; D26): tast, visning,
-     tekstnøgle, ikon. Navigationsruden har kun træet. Mere holder båndet på én række, også ved Stor tekst. */
-  const SKIFT = [['1', 'overblik', 'navOverblik', 'hm-overblik'], ['2', 'siden-sidst', 'navSiden', 'hm-siden'], ['3', 'vaernet', 'navVaernet', 'skjold'], ['4', 'robotter', 'navRobotter', 'hm-robot'], ['5', 'login', 'navLogin', 'laas'], ['6', 'land', 'navLand', 'hm-klode'], ['7', 'besoegende', 'navBesoeg', 'hm-besoeg']];
+  /* De syv visninger er båndets faner (kittets visninger med som: 'faner', fra 2.8.0), og Indstillinger står for sig til højre
+     (Jans valg på skitsen 2026-11-13, V-FANER.1): tast, visning, tekstnøgle. Båndet under fanerne viser kun det, der hører til
+     fanen: hver gruppe siger, hvilke visninger den hører til (kun), og rammen skjuler resten. Periode, egne datoer og Vis er
+     pladser (baand-plads), som visningen selv fylder gennem iBaand; Hent nu står forrest i alle faner. */
+  const SKIFT = [['1', 'overblik', 'navOverblik'], ['2', 'siden-sidst', 'navSiden'], ['3', 'vaernet', 'navVaernet'], ['4', 'robotter', 'navRobotter'], ['5', 'login', 'navLogin'], ['6', 'land', 'navLand'], ['7', 'besoegende', 'navBesoeg']];
   /* Landevælgeren står i båndet og vises kun på visninger med land: true; visningen fylder den og lytter på 'landValg'. */
   const landVaelger = Kit.vaelger({ etiket: { t: 'landVaelg' }, soeg: { ph: 'landSoegPh', ariaT: 'landSoeg' }, ingen: { t: 'landIngen' }, punkter: [], vedValg: id => udsend('landValg', id) });
+  const plads = id => ({ id: 'plads-' + id, element: el('div', { id, className: 'baand-plads' }) });
+  const GRUPPER = [
+    [null, 'gData', [{ id: 'hent', t: 'hentNu', ikon: 'hm-hent', pri: true }]],
+    [['overblik'], 'gVis', [{ id: 'samlet', t: 'samletKnap', ikon: 'skjold' }]],
+    [['overblik'], 'gDomaener', [{ id: 'vaelg-dom', t: 'baandVaelgDom', ikon: 'filter', ved: () => gaaTil('indstillinger', 'afsnit=domaener') }]],
+    [['siden-sidst'], 'gVis', [{ id: 'siden-skjul', t: 'sidenSkjul', ikon: 'hm-overblik' }]],
+    [['vaernet'], 'gPeriode', [plads('dyk-periode')]],
+    [['vaernet'], 'gDatoer', [plads('dyk-datoer')]],
+    [['vaernet'], 'gVis', [plads('dyk-slags')]],
+    [['vaernet'], 'gFiltre', [{ id: 'dyk-nulstil', t: 'baandNulstil', ikon: 'luk' }]],
+    [['vaernet'], 'gTeknologi', [{ id: 'ret-tek', t: 'baandRetTek', ikon: 'rediger', ved: () => gaaTil('teknologi') }]],
+    [['robotter'], 'gPeriode', [plads('robotter-periode')]],
+    [['robotter'], 'gDatoer', [plads('robotter-datoer')]],
+    [['robotter'], 'gVis', [{ id: 'robot-angreb', t: 'baandRobotAngreb', ikon: 'skjold' }]],
+    [['login'], 'gPeriode', [plads('login-periode')]],
+    [['login'], 'gDatoer', [plads('login-datoer')]],
+    [['login'], 'gStier', [{ id: 'login-ret-knap', t: 'loginRet', ikon: 'rediger' }]],
+    [['land'], 'gVis', [plads('land-faner')]],
+    [['land'], 'gPeriode', [plads('land-mod')]],
+    [null, 'gLand', [{ id: 'land', element: landVaelger.rod }]],
+    [['besoegende'], 'gPeriode', [plads('besoegende-periode')]],
+    [['besoegende'], 'gDatoer', [plads('besoegende-datoer')]],
+  ];
   const baand = Kit.commandBar($('baand'), { ariaT: 'baandAria', udenFaner: true, mere: { t: 'baandMere' },
-    visninger: { t: 'navH', punkter: SKIFT.map(([tast, id, t, ikon]) => ({ id, t, ikon, genvej: (mac ? '⌘' : 'Ctrl+') + tast, genvejAria: (mac ? 'Meta+' : 'Control+') + tast })) }, faner: [{ id: 'start', t: 'baandAria', grupper: [
-    { t: 'gData', knapper: [{ id: 'hent', t: 'hentNu', ikon: 'hm-hent', pri: true }] },
-    { t: 'gLand', knapper: [{ id: 'land', element: landVaelger.rod }] },
-    { t: 'gHjaelp', knapper: [{ id: 'vejledning', t: 'vejledningAabn', ikon: 'bog', ved: () => aabnVejledning() }] },
-    { t: 'gProgram', knapper: [{ id: 'indst', t: 'navIndst', ikon: 'tandhjul', ved: () => aabnGenvej('indstillinger') }] },
-  ] }] });
-  baand.knap('hent').id = 'hent-nu';
-  baand.knap('vejledning').id = 'baand-vejledning';
-  baand.knap('indst').id = 'indst-knap';
-  baand.knap('indst').setAttribute('data-visning', 'indstillinger');
+    visninger: { t: 'navH', som: 'faner', punkter: [
+      ...SKIFT.map(([tast, id, t]) => ({ id, t, genvej: (mac ? '⌘' : 'Ctrl+') + tast, genvejAria: (mac ? 'Meta+' : 'Control+') + tast })),
+      { id: 'indstillinger', t: 'navIndst', genvej: mac ? '⌘,' : 'Ctrl+,', genvejAria: mac ? 'Meta+,' : 'Control+,', hoejre: true },
+    ] },
+    faner: [{ id: 'start', t: 'baandAria', grupper: GRUPPER.map(([, t, knapper]) => ({ t, knapper })) }] });
+  /* Kommandoerne får de id'er, visningerne kender (kommandoens id er også knappens). */
+  for (const [, , knapper] of GRUPPER) for (const k of knapper) if (!k.element) baand.knap(k.id).id = k.id === 'hent' ? 'hent-nu' : k.id;
+  baand.knap('dyk-nulstil').classList.add('dyk-nulstil');
+  const baandGrupper = [...baand.paneler[0].querySelectorAll(':scope > .grp')];
+  GRUPPER.forEach(([kun], i) => { if (kun) { baandGrupper[i].dataset.kun = kun.join(' '); baandGrupper[i].hidden = true; } });
+  /* Kun fanens egne grupper står i båndet. Angreb med robotfilter og Teknologi låner fanen, men ikke båndet. */
+  let baandVisning = null;
+  function baandFor(navn) {
+    baandVisning = navn;
+    for (const g of baandGrupper) if (g.dataset.kun) g.hidden = !g.dataset.kun.split(' ').includes(navn) || g.hasAttribute('data-tom');
+    if (baand.tilpas) baand.tilpas();
+  }
+  /* En visning fylder sin plads i båndet. Fokus bliver på det samme valg (data-fokus), når pladsen tegnes om. */
+  function iBaand(id, ...noder) {
+    const p = $(id), a = document.activeElement, f = a && p.contains(a) ? a.dataset.fokus : null;
+    p.replaceChildren(...noder);
+    p.closest('.grp').toggleAttribute('data-tom', !noder.length); // en tom plads tager sin gruppe med
+    baandFor(baandVisning);
+    if (f) { const n = [...p.querySelectorAll('[data-fokus]')].find(x => x.dataset.fokus === f); if (n) n.focus({ preventScroll: true }); }
+    if (baand.tilpas) baand.tilpas();
+  }
   /* Visningsskiftet er kittets (links, markér, saetPunkt); rammen giver linkene de id'er, resten af programmet kender. */
   const skift = baand.visninger;
   for (const a of skift.links) {
-    a.id = 'vis-' + a.dataset.visning;
+    a.id = a.dataset.visning === 'indstillinger' ? 'indst-knap' : 'vis-' + a.dataset.visning;
     if (a.dataset.visning === 'land') a.querySelector('.vk-navn').id = 'nav-land';
   }
   const landGruppe = landVaelger.rod.closest('.grp');
@@ -141,7 +182,7 @@
     document.querySelectorAll('section[data-visning]').forEach(s => { s.hidden = s.getAttribute('data-visning') !== navn; });
     const punkt = navn === 'teknologi' ? 'indstillinger' : navn === 'vaernet' && (params.has('robot') || params.has('robotgruppe')) ? 'robotter' : navn;
     skift.markér(punkt);
-    baand.saetAktuel('indst', punkt === 'indstillinger');
+    baandFor(navn);
     document.querySelectorAll('#hjaelp .hjaelp-del').forEach(d => { d.hidden = d.getAttribute('data-hjaelp') !== navn; });
     $('band-land').hidden = !(visninger[navn] && visninger[navn].land);
     opdaterTitel();
@@ -151,8 +192,8 @@
   /* En visning kan låne en anden visnings titel (titel()): Angreb med robotfilter hedder Robotter. */
   function opdaterTitel() { const v = visninger[tilstand.visning]; document.title = S.titel((v && v.titel && v.titel()) || tilstand.visning); }
   function navTilstand() {
-    /* Uden API Token er de syv visninger slået fra (kittets visningsskift), og fanens tip siger hvorfor; Indstillinger i båndet er altid fri. */
-    for (const a of skift.links) skift.saetPunkt(a.dataset.visning, { deaktiveret: !tilstand.sat, hvorfor: tilstand.sat ? null : 'navUdenToken' });
+    /* Uden API Token er de syv visninger slået fra (kittets visningsskift), og fanens tip siger hvorfor; fanen Indstillinger er altid fri. */
+    for (const [, id] of SKIFT) skift.saetPunkt(id, { deaktiveret: !tilstand.sat, hvorfor: tilstand.sat ? null : 'navUdenToken' });
   }
   // Altid gennem gaaTil: et klik på den adresse, der allerede står, ville ellers rydde history.state (trinets nummer).
   document.querySelectorAll('a[data-visning]').forEach(a => a.addEventListener('click', ev => {
@@ -624,13 +665,14 @@
   const aabnVejledning = () => (invoke ? invoke('aabn_vejledning', { sprog: S.lang }).catch(() => { }) : null);
   $('hjaelp-vejledning').setAttribute('aria-label', T.vejledningLabel);
   $('hjaelp-vejledning').addEventListener('click', () => aabnVejledning());
+  $('baand-vejledning').addEventListener('click', () => aabnVejledning());
 
   /* Et klik på et CVE-nummer: Rust åbner cve.org i brugerens browser (aabn_cve validerer igen). */
   const CVE = /^CVE-[0-9]{4}-[0-9]{4,7}$/;
   const aabnCve = id => (invoke && CVE.test(id) ? invoke('aabn_cve', { id }).catch(() => { }) : null);
 
   window.hmRamme = {
-    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning,
+    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning, baand, iBaand,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, erstatAdresse, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
     platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, dialog, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
   };

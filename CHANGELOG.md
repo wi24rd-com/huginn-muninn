@@ -4,6 +4,18 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-13 23:30 — Faner i båndet, og båndet viser kun det, der hører til fanen
+#### Ændret
+- **De syv visninger er faner øverst i båndet** (Overblik, Siden sidst, Angreb, Robotter, Login, Danmark lige nu, Besøgende), og **Indstillinger** står for sig til højre. Genvejene ⌘1–⌘7 og ⌘, virker som før.
+- **Båndet under fanerne viser kun det, der hører til fanen.** "Hent nu" står forrest i alle.
+- **Periode, Fra og Til, Vis og Nulstil står nu i båndet** i Angreb, Robotter, Login og Besøgende, ikke længere nede i siden. De aktive filtre står stadig som mærker under overskriften.
+- **Fra og Til er tomme, så længe en fast periode er valgt.** Vælger du en dato, slipper den faste periode markeringen; vælger du kun Fra, går perioden frem til i går.
+- **"Hele historikken"** er et valg i Periode i Angreb, Robotter og Login (før: linket "Nulstil" ved datoerne).
+- **Nulstil** i Angreb står altid i båndet og er slået fra, når der ingen filtre er.
+- **Danmark lige nu:** Danmark/Verden, 7 dage/4 uger og landevælgeren står i båndet.
+- **"Angreb for alle" og "Vælg domæner"** (Overblik), **"Til overblikket"** (Siden sidst), **"Ret teknologier"** (Angreb), **"Angreb fra robotter"** (Robotter) og **"Ret stier"** (Login) er knapper i båndet.
+- **Vejledning** står i titellinjen ved siden af "?".
+
 ### 2026-11-13 23:30 — Wi24rd UI Kit 2, pakke 2.8.0
 #### Ændret
 - Pakke 2.8.0 ligger uændret i `ui/assets/kit2/`. Programmet bruger ikke den nye mulighed (visningerne som båndets egne faner) og beholder de store knapper i båndet.
