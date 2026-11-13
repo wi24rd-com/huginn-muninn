@@ -3734,8 +3734,8 @@ const DOMV = (fravalgte = [], x) => {
   const od = ob('da'), oe = ob('en');
   await sov(120);
   const mk = x => [...x.d.querySelectorAll('.moenster-maerke')];
-  tjek('Mærke: i Overblik ved status, også på en grøn række', mk(od).map(m => m.textContent).join() === 'Ligner målrettet,Ligner recon' && mk(od)[1].title.startsWith('Ligner rekognoscering') && od.w.hmSprog.maerkeNavn({ slags: 'rekognoscering' }) === 'Ligner rekognoscering' && mk(od).every(m => m.closest('td.st') && m.closest('td.st').querySelector('.chip.ok')), mk(od).map(m => m.textContent).join());
-  tjek('Mærke: engelsk', mk(oe).map(m => m.textContent).join() === 'Looks targeted,Looks like recon' && mk(oe)[1].title.startsWith('Looks like reconnaissance'), mk(oe).map(m => m.textContent).join());
+  tjek('Mærke: i Overblik ved status, også på en grøn række', mk(od).map(m => m.textContent).join() === 'Ligner målrettet,Recon' && mk(od)[1].title.startsWith('Ligner rekognoscering') && od.w.hmSprog.maerkeNavn({ slags: 'rekognoscering' }) === 'Ligner rekognoscering' && mk(od).every(m => m.closest('td.st') && m.closest('td.st').querySelector('.chip.ok')), mk(od).map(m => m.textContent).join());
+  tjek('Mærke: engelsk', mk(oe).map(m => m.textContent).join() === 'Looks targeted,Recon' && mk(oe)[1].title.startsWith('Looks like reconnaissance'), mk(oe).map(m => m.textContent).join());
   const knapAf = (m, x) => od.w.hmTegn.moensterKnap(groen(m, x)), k0 = knapAf(MAAL, { id: 'z1', navn: 'wi24rd.com' }), m0 = new URLSearchParams(k0.dataset.dyk), m1 = new URLSearchParams(knapAf(REK, { id: 'z2', navn: 'xyz.wi24rd.com' }).dataset.dyk);
   tjek('Mærke: målrettet åbner dagen med netværket', m0.get('dag') === '2026-11-02' && m0.get('netvaerk') === 'Mal AS' && m0.get('zone') === 'z1' && m0.get('slags') === 'angreb', m0.toString());
   tjek('Mærke: rekognoscering åbner dagen med stierne', m1.get('dag') === '2026-11-02' && m1.get('forsoeg') === 'alle', m1.toString());
@@ -4646,9 +4646,9 @@ const DOMV = (fravalgte = [], x) => {
   const o1 = side('#overblik', { ...MED_SIDEN, overblik: OD }), o2 = side('#overblik', { ...MED_SIDEN, overblik: OD }, 'en');
   await sov(120);
   const chipD = o1.d.querySelector('#overblik-raekker .moenster-maerke');
-  tjek('DNS og DMARC: mærket står som tekst i rækken', chipD?.textContent === 'Ligner DNS-recon' && chipD.tagName === 'SPAN' && chipD.classList.contains('moenster-dns_rekognoscering'), chipD?.outerHTML.slice(0, 120));
+  tjek('DNS og DMARC: mærket står som tekst i rækken', chipD?.textContent === 'DNS-recon' && chipD.tagName === 'SPAN' && chipD.classList.contains('moenster-dns_rekognoscering'), chipD?.outerHTML.slice(0, 120));
   tjek('DNS og DMARC: mærkets forklaring', chipD?.title === 'Ligner DNS-rekognoscering: 300 forskellige navne, der ikke findes, på én dag (normalt 4).', chipD?.title);
-  tjek('DNS-mærke: engelsk', o2.d.querySelector('#overblik-raekker .moenster-maerke')?.textContent === 'Looks like DNS recon');
+  tjek('DNS-mærke: engelsk', o2.d.querySelector('#overblik-raekker .moenster-maerke')?.textContent === 'DNS recon');
   tjek('DNS og DMARC: ental og flertal', o1.w.hmSprog.moensterTekst({ ...DNS_M, stier: 1, normalt: 1 }).includes('1 navn, der ikke findes') && o2.w.hmSprog.moensterTekst({ ...DNS_M, stier: 1, dns_navne: false }).includes('1 lookup of non-existent names'));
   const kn = o1.w.hmTegn.moensterKnap(OD[0]), kq = new URLSearchParams(kn.dataset.dyk);
   tjek('DNS og DMARC: knappen åbner dagen uden et stifilter', kq.get('dag') === '2026-11-02' && kq.get('zone') === OD[0].id && !kq.has('forsoeg') && !kq.has('netvaerk'), kn.dataset.dyk);

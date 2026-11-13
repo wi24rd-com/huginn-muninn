@@ -12,7 +12,7 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 - **Teknologi pr. domæne hører til Angreb:** fanen Angreb er markeret, og båndet har Tilbage til Angreb og Nulstil for alle domæner (før under Indstillinger › Domæner).
 - **Login-stier** rettes ét sted: Login › Ret stier. Afsnittet under Indstillinger er væk.
 
-- **Mærket i Overblik er kortere:** »Ligner recon« (og »Ligner DNS-recon«), så det står på én linje. Det fulde ord står alle andre steder, også i mærkets forklaring.
+- **Mærket i Overblik er kortere:** »Recon« (og »DNS-recon«), så det står på én linje. Det fulde ord står alle andre steder, også i mærkets forklaring.
 
 #### Tilføjet
 - **En guide ved første start** med fire trin: Velkommen, Dit API Token, Dine domæner og Besked. Næste er først fri på trin 2, når dit API Token er gemt og virker. Spring over efterlader en rolig side med knappen Åbn guiden, og guiden kan altid åbnes igen under Indstillinger › Første start.
