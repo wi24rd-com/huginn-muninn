@@ -434,7 +434,7 @@
   /* Mærket i en Overblik-række: en del af rækkens ene mål, så det er tekst. Som knap står det i Angreb og Siden sidst. */
   function moensterChip(r) {
     const m = r.moenster;
-    return el('span', { className: `moenster-maerke moenster-${m.slags}`, textContent: S.maerkeNavn(m), title: S.moensterTekst(m) });
+    return el('span', { className: `moenster-maerke moenster-${m.slags}`, textContent: S.maerkeNavn(m, true), title: S.moensterTekst(m) });
   }
   /* "Dit sites teknologi" i Angreb og dyk: kun valgene som chips, forslag fra data på én linje og knappen til #teknologi. o: zone, navn, linjer (teknologi_hent) og saet(tek, valg). */
   function tekKort(o) {

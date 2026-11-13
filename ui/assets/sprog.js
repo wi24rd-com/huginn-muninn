@@ -63,7 +63,7 @@
       dykHeleIDag: '{h} hele døgn · {n} i dag', dykForesp: 'Forespørgsler i alt', dykForespSub: '{o}: {n} — 1 af hver {m}', dykForespAabn: 'Forespørgsler i alt: {n}. Åbn trafikken',
       dykTrafikLinje: '{t} {p}: {n} {n|forespørgsel|forespørgsler} (normalt {m} om dagen). {stop}', dykSeTrafikken: 'Se trafikken →',
       autostartBanner: 'Programmet starter ikke ved login.', autostartSlaaTil: 'Slå Start ved login til', autostartHulKort: 'Slået fra: der kan komme huller i historikken.',
-      maerkeRekog: 'Ligner rekognoscering', maerkeDns: 'Ligner DNS-rekognoscering', maerkeMaal: 'Ligner målrettet', maerkeAabn: '{m} på {navn} den {d}: åbn dagen', maerkeGuide: 'Hvad betyder det? →',
+      maerkeRekog: 'Ligner rekognoscering', maerkeRekogKort: 'Ligner recon', maerkeDnsKort: 'Ligner DNS-recon', maerkeDns: 'Ligner DNS-rekognoscering', maerkeMaal: 'Ligner målrettet', maerkeAabn: '{m} på {navn} den {d}: åbn dagen', maerkeGuide: 'Hvad betyder det? →',
       moensterRekog: 'Ligner rekognoscering: {n} forskellige stier på én dag (normalt {m}){s}{t}.', moensterDns: 'Ligner DNS-rekognoscering: {n} opslag på navne, der ikke findes, på én dag (normalt {m}).', moensterDnsNavne: 'Ligner DNS-rekognoscering: {n} {n|navn|forskellige navne}, der ikke findes, på én dag (normalt {m}).', moensterScanner: ', som en almindelig scanner',
       moensterMaal: 'Ligner målrettet: angrebene steg her, men ikke {v}, og {p} % kom fra ét netværk{t}.', moensterVerden: 'i resten af verden', moensterAndre: 'på dine andre domæner', moensterTek: ', og angrebene ramte {t}, som dit site bruger',
       gMaalH: 'Hvad betyder »Ligner målrettet«?', gRekogH: 'Hvad er rekognoscering?', gDnsRekogH: 'Hvad er DNS-rekognoscering?', gDmarcH: 'Nogen sender mails i dit domænes navn',
@@ -410,7 +410,7 @@
       dykHeleIDag: '{h} whole days · {n} today', dykForesp: 'Requests in total', dykForespSub: '{o}: {n} — 1 in every {m}', dykForespAabn: 'Requests in total: {n}. Open the traffic',
       dykTrafikLinje: '{t} {p}: {n} {n|request|requests} (normally {m} a day). {stop}', dykSeTrafikken: 'See the traffic →',
       autostartBanner: 'The program does not start at login.', autostartSlaaTil: 'Turn on Start at login', autostartHulKort: 'Turned off: gaps may appear in the history.',
-      maerkeRekog: 'Looks like reconnaissance', maerkeDns: 'Looks like DNS reconnaissance', maerkeMaal: 'Looks targeted', maerkeAabn: '{m} on {navn} on {d}: open the day', maerkeGuide: 'What does it mean? →',
+      maerkeRekog: 'Looks like reconnaissance', maerkeRekogKort: 'Looks like recon', maerkeDnsKort: 'Looks like DNS recon', maerkeDns: 'Looks like DNS reconnaissance', maerkeMaal: 'Looks targeted', maerkeAabn: '{m} on {navn} on {d}: open the day', maerkeGuide: 'What does it mean? →',
       moensterRekog: 'Looks like reconnaissance: {n} different paths in one day (usually {m}){s}{t}.', moensterDns: 'Looks like DNS reconnaissance: {n} {n|lookup|lookups} of non-existent names in one day (usually {m}).', moensterDnsNavne: 'Looks like DNS reconnaissance: {n} different non-existent {n|name|names} in one day (usually {m}).', moensterScanner: ', like an ordinary scanner',
       moensterMaal: 'Looks targeted: attacks rose here but not {v}, and {p}% came from one network{t}.', moensterVerden: 'elsewhere', moensterAndre: 'on your other domains', moensterTek: ', and the attacks hit {t}, which your site uses',
       gMaalH: 'What does “Looks targeted” mean?', gRekogH: 'What is reconnaissance?', gDnsRekogH: 'What is DNS reconnaissance?', gDmarcH: 'Someone is sending mail in your domain’s name',
@@ -1010,7 +1010,8 @@
   const periode = (a, b) => (a === b ? dato(b) : `${datoValg === 'sprog' && a.slice(0, 4) === b.slice(0, 4) ? dato(a).replace(/ \d{4}$/, '') : dato(a)} – ${dato(b)}`);
   /* Mærket "Ligner …" (notify::moenster_tekst). Altid "ligner": tallene kan ikke mere. */
   /* Mærkets navn: i Overblik, Siden sidst og Angreb. */
-  const maerkeNavn = m => ({ maalrettet: T.maerkeMaal, dns_rekognoscering: T.maerkeDns }[m.slags] || T.maerkeRekog) + (m.foreloebig ? ` · ${T.maerkeForeloebig}` : '');
+  /* kort: Overblikkets smalle statuskolonne skriver »recon«; alle andre steder står det fulde ord. */
+  const maerkeNavn = (m, kort) => ({ maalrettet: T.maerkeMaal, dns_rekognoscering: kort ? T.maerkeDnsKort : T.maerkeDns }[m.slags] || (kort ? T.maerkeRekogKort : T.maerkeRekog)) + (m.foreloebig ? ` · ${T.maerkeForeloebig}` : '');
   function moensterTekst(m) {
     const t = m.tek ? fmt(T.moensterTek, { t: tekNavn(m.tek) }) : '';
     if (m.slags === 'dns_rekognoscering') return fmt(m.dns_navne ? T.moensterDnsNavne : T.moensterDns, { n: tal(m.stier), m: tal(Math.round(m.normalt)) });
