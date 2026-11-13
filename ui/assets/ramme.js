@@ -671,6 +671,16 @@
   const CVE = /^CVE-[0-9]{4}-[0-9]{4,7}$/;
   const aabnCve = id => (invoke && CVE.test(id) ? invoke('aabn_cve', { id }).catch(() => { }) : null);
 
+  /* macOS i fuld skærm skjuler de tre vinduesknapper: så skal titellinjen ikke holde plads til dem, og mærket står helt
+     til venstre. Vinduet siger selv, om det er i fuld skærm (core:window:default har is_fullscreen); der spørges efter hvert
+     størrelsesskift, og igen når macOS' overgang er færdig. */
+  if (mac && invoke) {
+    const fuldSkaerm = () => Promise.resolve(invoke('plugin:window|is_fullscreen', { label: 'main' })).then(f => document.documentElement.toggleAttribute('data-fuldskaerm', f === true)).catch(() => { });
+    let venter = null;
+    window.addEventListener('resize', () => { clearTimeout(venter); fuldSkaerm(); venter = setTimeout(fuldSkaerm, 900); });
+    fuldSkaerm();
+  }
+
   window.hmRamme = {
     aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning, baand, iBaand,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, erstatAdresse, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,

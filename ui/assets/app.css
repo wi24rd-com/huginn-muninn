@@ -13,7 +13,7 @@
   --card-radius: 8px;
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
-  --titel-trafiklys: 86px; /* plads til macOS' tre vinduesknapper */
+  --titel-trafiklys: 78px; /* plads til macOS' tre vinduesknapper (de slutter ved 65 px) */
   --vindue-min-bredde: 1100px; /* kittets er 900: visningerne står som store knapper forrest i båndet (D26) */
   --font-size-xs: 12px;
   --font-size-sm: 13px;
@@ -64,6 +64,8 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 /* ── skallen: det, Wi24rd UI Kit 2 lader programmet give selv ── */
 /* macOS: vinduesknapperne ligger oven på titellinjen (titleBarStyle Overlay). */
 [data-platform="macos"] .titel { padding-left: var(--titel-trafiklys); }
+/* I fuld skærm skjuler macOS vinduesknapperne: mærket står helt til venstre (ramme.js sætter data-fuldskaerm). */
+[data-platform="macos"][data-fuldskaerm] .titel { padding-left: var(--space-3); }
 /* Fanens pladser i båndet (V-FANER.1): Periode, Egne datoer og Vis fyldes af visningen. De står midt i knappernes højde. */
 .baand-plads { display: flex; align-items: center; min-height: 54px; }
 .baand-plads .dato-raekke { flex-wrap: nowrap; }

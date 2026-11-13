@@ -4,6 +4,11 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-13 23:30 — Mærket står til venstre i fuld skærm
+#### Rettet
+- **macOS i fuld skærm:** ravnene og navnet i titellinjen står nu helt ude til venstre. Før holdt titellinjen plads til de tre vinduesknapper, selv om macOS skjuler dem i fuld skærm.
+- I et almindeligt vindue står mærket lidt tættere på vinduesknapperne end før.
+
 ### 2026-11-13 23:30 — Faner i båndet, og båndet viser kun det, der hører til fanen
 #### Ændret
 - **De syv visninger er faner øverst i båndet** (Overblik, Siden sidst, Angreb, Robotter, Login, Danmark lige nu, Besøgende), og **Indstillinger** står for sig til højre. Genvejene ⌘1–⌘7 og ⌘, virker som før.
