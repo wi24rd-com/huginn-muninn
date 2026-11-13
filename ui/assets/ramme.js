@@ -67,6 +67,7 @@
     [['vaernet'], 'gFiltre', [{ id: 'dyk-nulstil', t: 'baandNulstil', ikon: 'luk' }]],
     [['vaernet'], 'gTeknologi', [{ id: 'ret-tek', t: 'baandRetTek', ikon: 'rediger', ved: () => gaaTil('teknologi') }]],
     [['vaernet'], 'gDatoer', [plads('dyk-datoer')]],
+    [['teknologi'], 'gTeknologi', [{ id: 'tek-tilbage', t: 'baandTilAngreb', ikon: 'skjold', ved: () => aabnGenvej('vaernet') }, { id: 'tek-nulstil-alle', t: 'domTekAlle', ikon: 'slet' }]],
     [['robotter'], 'gPeriode', valg('robotter-periode', 3, 'kalender')],
     [['robotter'], 'gVis', [{ id: 'robot-angreb', t: 'baandRobotAngreb', ikon: 'skjold' }]],
     [['robotter'], 'gDatoer', [plads('robotter-datoer')]],
@@ -82,7 +83,6 @@
   const baand = Kit.commandBar($('baand'), { ariaT: 'baandAria', udenFaner: true, mere: { t: 'baandMere' },
     visninger: { t: 'navH', som: 'faner', punkter: [
       ...SKIFT.map(([tast, id, t]) => ({ id, t, genvej: (mac ? '⌘' : 'Ctrl+') + tast, genvejAria: (mac ? 'Meta+' : 'Control+') + tast })),
-      { id: 'indstillinger', t: 'navIndst', genvej: mac ? '⌘,' : 'Ctrl+,', genvejAria: mac ? 'Meta+,' : 'Control+,', hoejre: true },
     ] },
     faner: [{ id: 'start', t: 'baandAria', grupper: GRUPPER.map(([, t, knapper]) => ({ t, knapper: knapper.map(({ valgAf, ...k }) => k) })) }] });
   /* Kommandoerne får de id'er, visningerne kender (kommandoens id er også knappens). */
@@ -99,7 +99,7 @@
   }
   const baandGrupper = [...baand.paneler[0].querySelectorAll(':scope > .grp')];
   GRUPPER.forEach(([kun], i) => { if (kun) { baandGrupper[i].dataset.kun = kun.join(' '); baandGrupper[i].hidden = true; } });
-  /* Kun fanens egne grupper står i båndet. Angreb med robotfilter og Teknologi låner fanen, men ikke båndet. */
+  /* Kun fanens egne grupper står i båndet. Angreb med robotfilter og Teknologi låner fanen, men ikke båndet. Teknologi har sin egen gruppe med vejen tilbage til Angreb. */
   let baandVisning = null;
   function baandFor(navn) {
     baandVisning = navn;
@@ -136,7 +136,7 @@
   /* Visningsskiftet er kittets (links, markér, saetPunkt); rammen giver linkene de id'er, resten af programmet kender. */
   const skift = baand.visninger;
   for (const a of skift.links) {
-    a.id = a.dataset.visning === 'indstillinger' ? 'indst-knap' : 'vis-' + a.dataset.visning;
+    a.id = 'vis-' + a.dataset.visning;
     if (a.dataset.visning === 'land') a.querySelector('.vk-navn').id = 'nav-land';
   }
   const landGruppe = landVaelger.rod.closest('.grp');
@@ -149,7 +149,7 @@
   S.anvend();
 
   /* ── visninger og router ── */
-  const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'robotter', 'login', 'land', 'besoegende', 'teknologi', 'indstillinger'];
+  const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'robotter', 'login', 'land', 'besoegende', 'teknologi'];
   const visninger = {};
   const registrer = (navn, v) => { visninger[navn] = v; };
   const sektion = navn => document.querySelector(`section[data-visning="${navn}"]`);
@@ -176,6 +176,8 @@
   /* Skift visning. Er adressen allerede den samme, tegnes den igen (hashchange kommer ikke). */
   function gaaTil(navn, query) {
     const q = query ? String(query) : '';
+    if (navn === 'indstillinger') return aabnIndst(new URLSearchParams(q)); // popuppen er ikke et trin i tilbage/frem
+    if (window.hmIndst) window.hmIndst.lukAlle(); // en genvej eller programmenuen skifter visning: dialogen bliver ikke stående over den nye
     const ny = '#' + navn + (q ? '?' + q : '');
     hist.genbesoeg = false;
     if (location.hash === ny) route(); else location.hash = ny;
@@ -186,8 +188,25 @@
     history.replaceState(history.state, '', '#' + navn + (q ? '?' + q : ''));
     tilstand.params = new URLSearchParams(q);
   }
+  /* Indstillinger er en popup (V-INDST.1), og det, der er arbejde, står hvor det bruges: afsnit=domaener er dialogen Domæner,
+     afsnit=om dialogen Om, afsnit=login Login for domænet med "Ret stier" foldet ud, alt andet popuppen. */
+  function aabnIndst(params) {
+    const I = window.hmIndst, afsnit = params.get('afsnit'), zone = params.get('zone');
+    if (afsnit === 'login' && tilstand.sat) return gaaTil('login', new URLSearchParams({ ...(zone ? { zone } : {}), ret: '1' }));
+    if (!I) return null;
+    if (afsnit === 'om') return I.om();
+    if (afsnit === 'domaener' && tilstand.sat) return I.domaener();
+    return I.aabn();
+  }
   function route() {
     let { navn, params } = laesHash();
+    /* Den gamle adresse #indstillinger (en genindlæsning, et gemt link): adressen bliver den visning, der stod, og popuppen åbner over den. */
+    if (navn === 'indstillinger') {
+      history.replaceState(history.state, '', tilstand.adresse || '#overblik');
+      if (!tilstand.visning) route();
+      aabnIndst(params);
+      return;
+    }
     /* Adressen erstattes: det er stadig ét trin i historikken. */
     if (navn === 'dyk' || (navn === 'vaernet' && params.get('vis') === 'angreb-i-gaar')) {
       history.replaceState(history.state, '', '#vaernet?' + (navn === 'dyk' ? fraDyk(params) : fraIGaar(params)));
@@ -197,10 +216,10 @@
       if (tilstand.visning && navn) return; // fx #indhold (spring til indhold): bliv
       navn = 'overblik';
     }
-    if (!tilstand.sat && navn !== 'indstillinger') navn = 'opsaetning';
+    if (!tilstand.sat) navn = 'opsaetning';
     /* Et domæne, der ikke er valgt, er væk overalt, også fra en gammel adresse. Adressen erstattes, så tilbage-knappen ikke sidder fast. */
     if (tilstand.uvalgt.has(params.get('zone'))) {
-      const ny = { vaernet: '#vaernet?samlet=1', robotter: '#robotter?samlet=1', login: '#login?samlet=1', besoegende: '#besoegende?samlet=1', teknologi: '#teknologi', indstillinger: '#indstillinger' }[navn] || '#overblik';
+      const ny = { vaernet: '#vaernet?samlet=1', robotter: '#robotter?samlet=1', login: '#login?samlet=1', besoegende: '#besoegende?samlet=1', teknologi: '#teknologi' }[navn] || '#overblik';
       history.replaceState(history.state, '', ny);
       return route();
     }
@@ -209,8 +228,9 @@
     if (foer && foer !== navn && visninger[foer] && visninger[foer].skjul) visninger[foer].skjul();
     tilstand.visning = navn;
     tilstand.params = params;
+    tilstand.adresse = location.hash;
     document.querySelectorAll('section[data-visning]').forEach(s => { s.hidden = s.getAttribute('data-visning') !== navn; });
-    const punkt = navn === 'teknologi' ? 'indstillinger' : navn === 'vaernet' && (params.has('robot') || params.has('robotgruppe')) ? 'robotter' : navn;
+    const punkt = navn === 'teknologi' ? 'vaernet' : navn === 'vaernet' && (params.has('robot') || params.has('robotgruppe')) ? 'robotter' : navn;
     skift.markér(punkt);
     baandFor(navn);
     document.querySelectorAll('#hjaelp .hjaelp-del').forEach(d => { d.hidden = d.getAttribute('data-hjaelp') !== navn; });
@@ -222,7 +242,7 @@
   /* En visning kan låne en anden visnings titel (titel()): Angreb med robotfilter hedder Robotter. */
   function opdaterTitel() { const v = visninger[tilstand.visning]; document.title = S.titel((v && v.titel && v.titel()) || tilstand.visning); }
   function navTilstand() {
-    /* Uden API Token er de syv visninger slået fra (kittets visningsskift), og fanens tip siger hvorfor; fanen Indstillinger er altid fri. */
+    /* Uden API Token er de syv visninger slået fra (kittets visningsskift), og fanens tip siger hvorfor; tandhjulet i titellinjen er altid frit. */
     for (const [, id] of SKIFT) skift.saetPunkt(id, { deaktiveret: !tilstand.sat, hvorfor: tilstand.sat ? null : 'navUdenToken' });
   }
   // Altid gennem gaaTil: et klik på den adresse, der allerede står, ville ellers rydde history.state (trinets nummer).
@@ -370,6 +390,7 @@
   const huskRul = () => { if (hist.ur === null) hist.rul[hist.trin] = hoved.scrollTop; };
   for (const t of ['wheel', 'touchstart', 'pointerdown', 'keydown']) hoved.addEventListener(t, stopRul, { passive: true });
   function nytHash() {
+    if (window.hmIndst) window.hmIndst.lukAlle(); // adressen er skiftet (tilbage/frem, et link): ingen dialog bliver stående over en anden visning
     const s = history.state, n = s && Number.isInteger(s.hmTrin) ? s.hmTrin : null;
     huskRul();
     stopRul();
@@ -651,14 +672,14 @@
   /* Tokenet afgør, om rammen viser opsætningen eller visningerne. Kaldes ved start, efter "Gem og forbind" og "Glem". */
   async function vis() {
     let sat = false;
-    try { sat = (await invoke('token_status')).sat; } catch (e) { status($('token-status'), S.fejl(e), 'fejl'); }
+    try { sat = (await invoke('token_status')).sat; } catch (e) { status($('opsaet-status'), S.fejl(e), 'fejl'); }
     tilstand.sat = sat;
     $('hent-nu').hidden = !sat;
     $('hent-nu').closest('.grp').hidden = !sat; // uden API Token er der intet at hente: hele gruppen væk, ikke kun knappen
     navTilstand();
     udsend('token', sat);
     if (sat) { route(); await zoner(); await sidenSidst(false); }
-    else { genforsoeg.afbryd(); tilstand.raekker = []; tilstand.domaener = []; tilstand.uvalgt = new Set(); tilstand.domaeneValg = 'samlet'; udsend('domaener'); sidenTal(); udsend('raekker', []); visKoe(null); route(); $('token').focus({ preventScroll: true }); } // velkomsten over feltet skal ses først
+    else { genforsoeg.afbryd(); tilstand.raekker = []; tilstand.domaener = []; tilstand.uvalgt = new Set(); tilstand.domaeneValg = 'samlet'; udsend('domaener'); sidenTal(); udsend('raekker', []); visKoe(null); route(); }
   }
 
   /* Fælles for opsætningen og Indstillinger → Skift nøgle. true, når nøglen er gemt. */
@@ -714,19 +735,19 @@
   window.hmRamme = {
     aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning, baand, iBaand, baandValg,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, erstatAdresse, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
-    platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, dialog, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
+    platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, dialog, genbesoeg: () => hist.genbesoeg, glemt: () => status($('opsaet-status'), T.glemt, 'ok'),
   };
 
   function start() {
     klarHist();
-    if (!invoke) { tilstand.visning = null; route(); status($('token-status'), T.mangler, 'fejl'); return; }
+    if (!invoke) { tilstand.visning = null; route(); status($('opsaet-status'), T.mangler, 'fejl'); return; }
     if (listen) {
       listen('hentekoe', e => { visKoe(e.payload); snartOverblik(e.payload && e.payload.tilstand !== 'henter'); udsend('hentekoe', e.payload); });
       listen('hent_nu', () => { hentNu(); });
       listen('siden_sidst', () => { sidenSidst(true); });
       listen('ekstra', e => { udsend('ekstra', e.payload); });
       listen('radar', () => { udsend('radar'); snartOverblik(true); });
-      listen('visning', e => { if (e.payload === 'om' || (VISNINGER.includes(e.payload) && (tilstand.sat || e.payload === 'indstillinger'))) aabnGenvej(e.payload); });
+      listen('visning', e => { if (e.payload === 'om' || e.payload === 'indstillinger' || (VISNINGER.includes(e.payload) && tilstand.sat)) aabnGenvej(e.payload); });
       listen('historik', e => { if (!iTekstfelt()) gaaHist(e.payload === 'frem' ? 1 : -1); });
       listen('tekst', e => { window.Tekst[{ stoerre: 'større', mindre: 'mindre' }[e.payload] || 'nulstil'](); });
     }

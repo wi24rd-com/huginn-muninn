@@ -1,17 +1,15 @@
-/* Huginn and Muninn — Indstillinger (mockup 3, skærm 2): Generelt (sprog i sprog.js, udseende og tekststørrelse i kit2/tema.js, "Start ved login", hvor
-   OS'et er sandheden: autostart_hent/autostart_saet), Notifikationer, Forbindelse, Data og Om. Notifikationerne:
-   forudindstillingen vælges i opsætningen og her (to grupper, samme værdi); "Giv besked, når et domæne kræver handling" og
-   valget pr. domæne gemmes i Rust (notifikation_hent/_saet/_zone_saet). "Pr. domæne" tegnes kun igen, når zonelisten ændrer
-   sig (rammen melder 'raekker' hvert 2. sekund, mens køen henter). Forbindelse: chippen læses af rammens tilstand (token_status,
-   zones_cache, køens fejlkode); "Skift nøgle…" folder feltet ud i kortet, og "Glem nøglen…" kræver bekræftelse i en <dialog>.
-   Data: data_status, når siden åbnes og når overblikket er nyt. "Nulstil historik…" kræver bekræftelse i en <dialog>, som
-   nævner det konkrete tab. #indstillinger?afsnit=om (programmenuens Om) ruller til Om. Klikbart: chippen og "Domæner med tal" åbner
-   Overblik, et domæne under Pr. domæne dets Angreb, og Historik det samlede dyk (kun når der er data bag; ellers er knappen slået fra).
-   Login-stier pr. domæne står under Notifikationer (visning-login.js tegner listen); #indstillinger?afsnit=login&zone=… ruller dertil.
-   Domæner er sin egen gruppe, for Notifikationer og Login-stier viser kun det, der er valgt her. Domæner er et tilvalg: kontakten gemmer de valgte i Rust, og
-   ingen valgte er en normal tilstand, så der er ingen bekræftelse. Kun et valgt domæne kan åbnes: det andet er væk overalt. Nye domæner står med mærket "ny".
-   Under domænelisten står en linje om teknologi-valgene og knappen til siden #teknologi. Land står under Generelt: samme valg som vælgeren i <Land> lige nu (visning-land.js fylder og gemmer).
-   Bygges med createElement/textContent. */
+/* Huginn and Muninn — Indstillinger, Domæner, Om og guiden ved første start (V-INDST.1). Markup'en står i index.html (#indst-dele
+   og #guide-dele, skjulte holdere); her flyttes den ind i kittets dialoger, så hver kontrol beholder sit id og sin logik:
+   · popuppen Indstillinger bag tandhjulet i titellinjen (#indst-knap, ⌘, / Ctrl+,): Udseende og sprog, Dato og land, Start,
+     Notifikationer, Forbindelse, Data og Første start. Alt gemmes med det samme. Sprog og datoformat genindlæser, og popuppen
+     åbner igen bagefter (sessionStorage). "Glem API Token…" og "Nulstil historik…" spørger i en dialog oven på popuppen.
+   · dialogen Domæner (Overblik › Vælg domæner, og alle gamle veje med afsnit=domaener): valget pr. domæne og "Giv besked" pr.
+     valgt domæne. Ingen valgte er en normal tilstand, så der er ingen bekræftelse. Samme del står i guidens trin 3.
+   · dialogen Om bag #om-knap og programmenuens Om.
+   · guiden (kittets Kit.guide i en dialog): Velkommen, Dit API Token, Dine domæner, Besked. Den åbner af sig selv, første gang
+     programmet står uden API Token, og fra "Vis guiden igen"; at den er vist, huskes i localStorage (hm-guide). "Næste" på
+     trin 2 er spærret, til et API Token er gemt og virker.
+   Rammen kalder window.hmIndst (aabn, domaener, om, guide); adressen #indstillinger oversættes i ramme.js. Bygges med createElement/textContent. */
 (function () {
   'use strict';
   const S = window.hmSprog, T = S.T, R = window.hmRamme;
@@ -89,26 +87,8 @@
   }
 
   /* ── Domæner ── */
-  /* "Teknologi pr. domæne": én linje og knappen til siden #teknologi (visning-teknologi.js), hvor valgene sættes. */
-  let tekValg = { zoner: {}, valg: false };
-  $('tek-aabn').setAttribute('aria-label', T.domTekH);
-  async function hentTekValg() {
-    try { tekValg = await invoke('teknologi_oversigt') || tekValg; } catch (e) { tekValg = { zoner: {}, valg: false }; }
-    tegnTek();
-  }
-  function tegnTek() {
-    const domaener = R.tilstand.domaener.filter(d => d.til).sort((a, b) => a.navn.localeCompare(b.navn)), n = d => tekValg.zoner[d.id] || 0;
-    const med = domaener.filter(n), uden = domaener.length - med.length;
-    $('tek-blok').hidden = !domaener.length;
-    $('tek-raekke').hidden = !tekValg.valg;
-    $('tek-linje').textContent = [...med.slice(0, 3).map(d => fmt(T.domTekValg, { navn: d.navn, n: n(d) })), ...(uden ? [fmt(T.domTekUden, { n: T.domaener(uden) })] : [])].join(' · ');
-  }
-  $('tek-nulstil-alle').addEventListener('click', async () => {
-    if (!await R.bekraeft(T.bekraeftTekAlleP)) return;
-    try { await invoke('teknologi_nulstil', { zone: null }); status($('domaener-status'), T.tekNulstillet, 'ok'); await R.hentOverblik(); await hentTekValg(); } catch (e) { status($('domaener-status'), S.fejl(e), 'fejl'); }
-  });
   async function gemDomaener(valgte) {
-    try { await R.gemValgte(valgte); status($('domaener-status'), T.domaenerGemt, 'ok'); hentTekValg(); }
+    try { await R.gemValgte(valgte); status($('domaener-status'), T.domaenerGemt, 'ok'); }
     catch (e) { status($('domaener-status'), S.fejl(e), 'fejl'); tegnDomaener(true); }
   }
   let domNoegle = null; // listen, som "Domæner" sidst blev tegnet med: rammen melder ofte, og en omtegning tager fokus
@@ -141,32 +121,11 @@
   $('domaener-alle-til').addEventListener('click', () => gemDomaener(R.tilstand.domaener.map(d => d.id)));
   $('domaener-alle-fra').addEventListener('click', () => gemDomaener([]));
 
-  /* ── Login-stier pr. domæne ── */
-  const loginValg = $('login-domaene');
-  let loginOensket = null; // domænet fra adressen: zonelisten kan komme, efter at siden er åbnet
-  function tegnLoginValg(zone) {
-    loginOensket = zone || loginOensket;
-    const zoner = [...R.tilstand.raekker].sort((a, b) => a.navn.localeCompare(b.navn)), foer = loginOensket || loginValg.value;
-    const noegle = zoner.map(r => r.id + '\t' + r.navn).join('\n');
-    $('indst-login').hidden = !zoner.length;
-    if (noegle !== loginValg.dataset.noegle) {
-      loginValg.dataset.noegle = noegle;
-      loginValg.replaceChildren(...zoner.map(r => el('option', { value: r.id, textContent: r.navn })));
-    }
-    if (zoner.some(r => r.id === foer)) { loginValg.value = foer; loginOensket = null; }
-    if (loginValg.value && loginValg.value !== loginValg.dataset.vist) tegnLoginPanel();
-  }
-  function tegnLoginPanel() {
-    loginValg.dataset.vist = loginValg.value;
-    window.hmLoginStier.panel(loginValg.value).then(p => $('login-panel').replaceChildren(p));
-  }
-  loginValg.addEventListener('change', tegnLoginPanel);
-
   async function visAutostart() {
     try { $('autostart').checked = await invoke('autostart_hent'); visAutostartHul(); } catch (e) { status($('indst-status'), S.fejl(e), 'fejl'); }
   }
   /* Slået fra er rødt: banneret øverst med knappen, og noten i rækken er kort, så det ikke står to gange. */
-  const visAutostartHul = () => { const fra = !$('autostart').checked; $('autostart-hul').hidden = !fra; $('autostart-banner').hidden = !fra; };
+  const visAutostartHul = () => { const fra = !$('autostart').checked; $('autostart-hul').hidden = !fra; $('autostart-banner').hidden = !fra; $('guide-autostart').checked = !fra; };
   async function saetAutostart(til) {
     const boks = $('autostart'), st = $('indst-status');
     boks.disabled = true;
@@ -176,6 +135,7 @@
   }
   $('autostart').addEventListener('change', () => saetAutostart($('autostart').checked));
   $('autostart-til').addEventListener('click', () => saetAutostart(true));
+  $('guide-autostart').addEventListener('change', () => saetAutostart($('guide-autostart').checked));
   for (const g of NIVEAU_GRUPPER) document.querySelectorAll(`input[name="${g}"]`).forEach(i => i.addEventListener('change', () => { if (i.checked) gemNotif(i.value, notif.roed); }));
   $('notif-roed').addEventListener('change', () => gemNotif(notif.niveau, $('notif-roed').checked));
   $('notif-rekog').addEventListener('change', async () => {
@@ -225,10 +185,10 @@
   });
   /* Kittets dialog lukker selv ved Annullér, Glem og Esc; her står kun det, Glem gør. */
   const NEJ_JA = ja => [{ id: 'nej', t: 'annuller' }, { id: 'ja', t: ja, variant: 'danger' }];
-  const glemDialog = R.dialog('glem', $('visning-indstillinger'), { t: 'glemH', p: { t: 'glemP' }, knapper: NEJ_JA('glemJa') }), dialog = glemDialog.rod;
+  const glemDialog = R.dialog('glem', document.body, { t: 'glemH', p: { t: 'glemP' }, knapper: NEJ_JA('glemJa') }), dialog = glemDialog.rod;
   $('glem').addEventListener('click', () => glemDialog.aabn());
   $('glem-ja').addEventListener('click', async () => {
-    try { await invoke('token_delete'); await R.vis(); status($('indst-status'), T.glemt, 'ok'); R.glemt(); }
+    try { await invoke('token_delete'); popup.luk(); await R.vis(); R.glemt(); }
     catch (e) { status($('indst-status'), S.fejl(e), 'fejl'); }
   });
 
@@ -275,7 +235,7 @@
     const { sikkerhed: s, trafik: f } = d.nulstil, ud = [...(s && s.dage ? [linje(s, T.nulstilSikkerhed)] : []), ...(f && f.dage ? [linje(f, T.nulstilTrafik)] : [])];
     return ud.length ? ud : [T.nulstilIntetTab];
   }
-  const nulstilKit = R.dialog('nulstil', $('visning-indstillinger'), { t: 'nulstilH', p: '', knapper: NEJ_JA('nulstilJa') }), nulstilDialog = nulstilKit.rod;
+  const nulstilKit = R.dialog('nulstil', document.body, { t: 'nulstilH', p: '', knapper: NEJ_JA('nulstilJa') }), nulstilDialog = nulstilKit.rod;
   $('nulstil').addEventListener('click', async () => {
     let d = null;
     try { d = await invoke('data_status'); } catch (e) { /* ukendt */ }
@@ -298,22 +258,108 @@
   // data-t, så sprog.js' anvend() ikke skriver den almene tekst tilbage.
   if (R.mac) { for (const [id, k] of [['forb-note', 'forbNoteMac'], ['data-hist-note', 'dataHistNoteMac'], ['nulstil-note', 'nulstilNoteMac']]) { $(id).dataset.t = k; $(id).textContent = T[k]; } }
 
-  R.paa('raekker', () => { tegnPrDomaene(); tegnLoginValg(); tegnForbindelse(); if (R.tilstand.visning === 'indstillinger') tegnData(); });
-  R.paa('domaener', () => { tegnDomaener(); tegnTek(); });
-  R.paa('token', tegnForbindelse);
-  R.paa('koe', tegnForbindelse);
-  R.registrer('indstillinger', {
-    vis(params) {
-      tegnForbindelse();
-      tegnData();
-      tegnLoginValg(params.get('zone'));
-      tegnDomaener();
-      hentTekValg();
-      const afsnit = { om: $('indst-om'), login: $('indst-login'), domaener: $('indst-domaener') }[params.get('afsnit')];
-      if (afsnit && !R.genbesoeg() && afsnit.scrollIntoView) afsnit.scrollIntoView({ block: 'start' });
+  /* ── popuppen, dialogerne og guiden ── */
+  const LUK = [{ id: 'luk', t: 'luk' }];
+  const husk = (lager, noegle, v) => { try { if (v === undefined) return lager.getItem(noegle); if (v === null) lager.removeItem(noegle); else lager.setItem(noegle, v); } catch (e) { /* gælder kun denne gang */ } return null; };
+  const ryd = () => { visSkift(false); if (dialog.open) dialog.close(); if (nulstilDialog.open) nulstilDialog.close(); window.hmLand.glemTilbage(); };
+  /* Et mål inde i en dialog (et domæne, chippen, Historik) lukker dialogerne, før rammen skifter visning. */
+  const lukVedMaal = d => d.rod.addEventListener('click', ev => { if (ev.target.closest('[data-gaa], [data-dyk]')) d.luk(); }, true);
+
+  const popupIndhold = el('div', { className: 'indst-popup' }, $('indst-status'), $('autostart-banner'), document.querySelector('#indst-dele .indst'));
+  const popup = R.dialog('indst', document.body, { t: 'indstH', indhold: popupIndhold, bred: true, knapper: LUK, fokus: 'indst-h',
+    vedLuk() { $('indst-knap').setAttribute('aria-expanded', 'false'); husk(sessionStorage, 'hm-indst-aaben', null); ryd(); } });
+  lukVedMaal(popup);
+  function aabnPopup() {
+    if (guideDialog.aaben) return;
+    tegnForbindelse();
+    tegnData();
+    $('indst-knap').setAttribute('aria-expanded', 'true');
+    husk(sessionStorage, 'hm-indst-aaben', '1');
+    popup.aabn();
+    popupIndhold.closest('.modal-indhold').scrollTop = 0;
+  }
+  $('indst-knap').addEventListener('click', aabnPopup);
+
+  const domDel = $('dom-del');
+  const domDialog = R.dialog('domaener', document.body, { t: 'domaenerH', indhold: el('div', { id: 'dom-plads' }), bred: true, knapper: LUK, fokus: 'domaener-h' });
+  lukVedMaal(domDialog);
+  function tegnDomDel() { tegnDomaener(); prDomaeneNoegle = null; tegnPrDomaene(); $('dom-besked').hidden = !R.tilstand.raekker.length; }
+  function aabnDomaener() {
+    if (guideDialog.aaben) return;
+    if (popup.aaben) popup.luk();
+    $('dom-plads').append(domDel);
+    tegnDomDel();
+    status($('domaener-status'), '');
+    domDialog.aabn();
+  }
+
+  const omDialog = R.dialog('om', document.body, { t: 'omH', indhold: $('om-del'), bred: true, knapper: LUK, fokus: 'om-h' });
+  function aabnOm() { if (!guideDialog.aaben) omDialog.aabn(); }
+  $('om-knap').addEventListener('click', aabnOm);
+
+  /* Guiden. Trinenes indhold er noderne fra #guide-dele; trin 3 låner domænedelen, mens guiden står på det. */
+  const TRIN = ['velkommen', 'token', 'domaener', 'besked'];
+  /* KIT-ØNSKE K48: kittet tømmer pladsen ved hvert skift. Et trin, der ikke vises, og domænedelen lægges tilbage i de skjulte holdere, så
+     kontrollerne altid findes i dokumentet (rammen melder domæner og token, også mens guiden står på et andet trin). */
+  const trinNoder = TRIN.map(n => $('guide-trin-' + n)), venter = $('guide-domaener-venter');
+  const guideRod = el('div', { id: 'guide' });
+  /* KIT-ØNSKE K46: "Næste" kan ikke spærres af et trin (Kit.guide har ingen betingelse pr. trin); knappen slås fra her. */
+  const guideNote = el('p', { className: 'note guide-spaerret', id: 'guide-spaerret', textContent: T.guideTokenFoerst, hidden: true });
+  let wiz = null;
+  const guideDialog = window.Kit.dialog({ guide: true, ariaLabelledby: 'guide-h', id: 'guide-dialog', indhold: guideRod, vedLuk() { husk(localStorage, 'hm-guide', 'vist'); } });
+  document.body.append(guideDialog.rod);
+  function guideTilstand() {
+    if (!wiz) return;
+    const frem = guideRod.querySelector('.fod .primary'), spaerret = wiz.aktuel === 1 && !R.tilstand.sat;
+    frem.disabled = spaerret;
+    if (spaerret) frem.setAttribute('aria-describedby', 'guide-spaerret'); else frem.removeAttribute('aria-describedby');
+    guideNote.hidden = !spaerret;
+    venter.hidden = !R.tilstand.sat || R.tilstand.domaener.length > 0;
+  }
+  wiz = window.Kit.guide(guideRod, {
+    hId: 'guide-h',
+    trin: TRIN.map((n, i) => ({ t: 'guideTrin' + (i + 1), h: 'guideH' + (i + 1), p: 'guideP' + (i + 1), indhold: trinNoder[i] })),
+    naeste: { t: 'guideNaeste' }, tilbage: { t: 'guideTilbage' }, slut: { t: 'guideSlut' }, spring: { t: 'guideSpring' },
+    vedSkift(i) {
+      trinNoder.forEach((e, n) => { if (n !== i) $('guide-dele').append(e); });
+      if (TRIN[i] === 'domaener') { trinNoder[i].append(domDel); tegnDomDel(); } else if (!domDialog.aaben) $('indst-dele').append(domDel);
+      S.anvend(guideRod);
+      guideRod.dataset.trin = String(i + 1);
+      guideTilstand();
+      const h = $('guide-h');
+      if (h && guideDialog.aaben) h.focus();
     },
-    skjul() { visSkift(false); if (dialog.open) dialog.close(); if (nulstilDialog.open) nulstilDialog.close(); window.hmLand.glemTilbage(); },
+    vedSpring() { guideDialog.luk('spring'); },
+    vedSlut() { guideDialog.luk('slut'); if (R.tilstand.sat) R.gaaTil('overblik'); },
   });
+  trinNoder[1].append(guideNote);
+  for (const b of guideRod.querySelectorAll('.fod button')) b.id = 'guide-' + (b.classList.contains('primary') ? 'naeste' : b.classList.contains('ghost') ? 'spring' : 'tilbage');
+  function aabnGuide() {
+    for (const d of [popup, domDialog, omDialog]) if (d.aaben) d.luk();
+    wiz.gaaTil(0);
+    guideDialog.aabn();
+  }
+  $('guide-igen').addEventListener('click', aabnGuide);
+
+  /* Den tomme tilstand bag guiden, når der ikke er et API Token. */
+  $('opsaet-tom').append(window.Kit.tomTilstand({ ikon: 'laas', t: 'opsaetTomH', niveau: 2, p: { t: 'opsaetTomP' }, handling: { t: 'opsaetTomKnap', variant: 'primary', ved: aabnGuide } }));
+  $('opsaet-tom').querySelector('button').id = 'opsaet-guide';
+  S.anvend($('opsaet-tom'));
+
+  R.paa('raekker', () => { tegnPrDomaene(); $('dom-besked').hidden = !R.tilstand.raekker.length; tegnForbindelse(); if (popup.aaben) tegnData(); });
+  R.paa('domaener', () => { tegnDomaener(); guideTilstand(); });
+  let foersteToken = true;
+  R.paa('token', sat => {
+    tegnForbindelse();
+    guideTilstand();
+    /* Første gang programmet står uden API Token, og efter "Glem API Token…": guiden åbner af sig selv, hvis den ikke er vist. */
+    if (!sat && !guideDialog.aaben && (husk(localStorage, 'hm-guide') !== 'vist' || !foersteToken)) setTimeout(() => { if (!R.tilstand.sat && !window.hmIndst.aaben()) aabnGuide(); }, 0);
+    foersteToken = false;
+  });
+  R.paa('koe', tegnForbindelse);
+  const ALLE = [popup, domDialog, omDialog, guideDialog];
+  window.hmIndst = { aabn: aabnPopup, domaener: aabnDomaener, om: aabnOm, guide: aabnGuide, aaben: () => ALLE.some(d => d.aaben), lukAlle() { for (const d of ALLE) if (d.aaben) d.luk(); } };
+  if (husk(sessionStorage, 'hm-indst-aaben')) setTimeout(aabnPopup, 0); // efter et skift af sprog eller datoformat
   visAutostart();
   hentNotif();
   visOm();

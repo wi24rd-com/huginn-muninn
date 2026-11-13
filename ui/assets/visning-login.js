@@ -197,9 +197,14 @@
     if (samlet()) return [el('p', { className: 'vg-note', textContent: T.loginVaelgDomaene })];
     const zone = params.get('zone') || '', ret = el('details', { className: 'login-ret' }, el('summary', { textContent: T.loginRet }));
     ret.dataset.noegle = 'login-ret';
-    ret.addEventListener('toggle', async () => {
-      if (ret.open && !ret.querySelector('.login-panel')) ret.append(await panel(zone, () => snartUdefra()));
-    });
+    let henter = false;
+    const fyld = async () => {
+      if (!ret.open || henter || ret.querySelector('.login-panel')) return;
+      henter = true;
+      ret.append(await panel(zone, () => snartUdefra()));
+    };
+    ret.addEventListener('toggle', fyld);
+    if (params.get('ret') === '1') { ret.open = true; fyld(); } // den gamle adresse #indstillinger?afsnit=login&zone=…
     return [ret];
   }
   let snartUdefra = () => { };

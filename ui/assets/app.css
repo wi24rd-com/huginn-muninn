@@ -186,8 +186,37 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 .hm-siden-linje { min-height: 0; color: inherit; font: inherit; text-align: left; }
 .hm-siden small { display: block; margin-top: 4px; color: var(--text); font-size: var(--font-size-md); }
 
-/* ── Indstillinger (mockup 3, skærm 2) og opsætningen ── */
+/* ── Indstillinger (popuppen bag tandhjulet), dialogerne Domæner og Om, og guiden ved første start (V-INDST.1) ── */
 .indst { max-width: 700px; }
+/* Popuppen og Domæner: overskriften og "Luk" står fast, og indholdet ruller, når vinduet er lavt.
+   KIT-ØNSKE K47: kittets dialog ruller som helhed, så fodlinjen forsvinder ved langt indhold. */
+#indst-dialog[open], #domaener-dialog[open], #om-dialog[open], #guide-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+:is(#indst-dialog, #domaener-dialog) { width: min(720px, calc(100vw - 48px)); }
+:root[data-tekst="lille"] :is(#indst-dialog, #domaener-dialog) { width: min(720px, calc(100vw / .9) - 48px); }
+:root[data-tekst="stor"] :is(#indst-dialog, #domaener-dialog) { width: min(720px, calc(100vw / 1.125) - 48px); }
+:is(#indst-dialog, #domaener-dialog, #om-dialog) .modal-indhold { flex: 1 1 auto; min-height: 0; overflow: auto; }
+:is(#indst-dialog, #domaener-dialog, #om-dialog) :is(.modal-top, .modal-fod) { flex: none; }
+.modal .indst { max-width: none; }
+.modal .indst .kasse:last-child { margin-bottom: 0; }
+.modal .kasse-ikon { display: none; } /* popuppens grupper har kun den lille overskrift */
+.modal .autostart-banner { max-width: none; }
+.dom-del { border: 1px solid var(--border); border-radius: var(--card-radius); }
+.om-del .om { padding: 0; }
+.om-del .velkomst { margin-bottom: 12px; }
+/* Guiden: trinene til venstre og fodlinjen står fast; trinets indhold ruller. */
+#guide-dialog .modal-indhold { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+#guide { flex: 1 1 auto; min-height: 0; }
+#guide .indhold { min-height: 0; overflow: auto; }
+#guide .trin-indhold > * { max-width: none; }
+/* Kittets .wiz .indhold h2 er trinets overskrift; velkomstens egne rubrikker beholder deres størrelse. */
+#guide .trin-indhold .velkomst-h { margin: 0 0 8px; font-size: var(--font-size-md); line-height: inherit; font-weight: 700; }
+#guide .trin-indhold .filosofi-h { margin: 0 0 8px; font-size: var(--font-size-xs); line-height: inherit; font-weight: 600; }
+#guide .hm-niveau, #guide .opsaetning-punkter .velkomst, #guide .filosofi { max-width: none; }
+#guide .dom-del, #guide .hm-niveau + .raekke { margin-top: 12px; }
+#guide .hm-niveau + .raekke { border: 1px solid var(--border); border-radius: var(--card-radius); }
+/* KIT-ØNSKE K46: et trin kan ikke spærre "Næste"; HAM slår knappen fra og siger hvorfor. */
+.guide-spaerret { margin: 10px 0 0; }
+#opsaet-tom { max-width: 46rem; }
 #indst-status { position: sticky; top: 0; z-index: 2; max-width: 700px; } /* synlig, også når man har rullet ned til Data */
 /* Hver gruppe er kittets kasse (.kasse) med ikon i overskriften; rækkerne går helt ud til kanten (.kasse-indhold.fyld). */
 .indst .kasse { margin-bottom: 16px; }
@@ -314,13 +343,6 @@ button.chip-knap:hover:not(:disabled) { box-shadow: inset 0 0 0 100vmax var(--co
 .filosofi p { margin: 0 0 8px; max-width: none; }
 .filosofi p:last-child { margin-bottom: 0; }
 .filosofi-slogan { color: var(--accent); font: 700 var(--font-size-lg)/1.3 var(--font-sans); }
-@media (min-width: 1100px) {
-  .opsaetning-krop { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; grid-template-areas: "flow filosofi" "punkter filosofi"; gap: 0 24px; align-items: start; }
-  .opsaetning-flow { grid-area: flow; }
-  .opsaetning-punkter { grid-area: punkter; }
-  .opsaetning-filosofi { grid-area: filosofi; }
-  .filosofi { margin-top: 0; }
-}
 .velkomst-situation { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
 .velkomst-situation p { margin: 0 0 12px; max-width: none; }
 .velkomst-situation b { display: block; }

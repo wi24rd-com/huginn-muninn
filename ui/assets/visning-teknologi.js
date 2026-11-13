@@ -229,9 +229,17 @@
     if (g !== gen) return;
     d = ny;
     rod.removeAttribute('aria-busy');
+    const harValg = d.domaener.some(dom => Object.keys(dom.valg || {}).length > 0);
+    R.baand.saetDeaktiveret('tek-nulstil-alle', !harValg, harValg ? null : 'tekNulstilIntet');
+    S.anvend($('tek-nulstil-alle'));
     if (!d.domaener.length) { $('teknologi-faner').replaceChildren(); rod.replaceChildren(window.hmVelkomst.intetValgt()); return; }
     tegn();
   }
+  /* "Nulstil for alle domæner" står i båndet på Teknologi (V-INDST.1; før under Indstillinger → Domæner). Spørger først. */
+  $('tek-nulstil-alle').addEventListener('click', async () => {
+    if ($('tek-nulstil-alle').getAttribute('aria-disabled') === 'true' || !await R.bekraeft(T.bekraeftTekAlleP)) return;
+    try { await invoke('teknologi_nulstil', { zone: null }); await hent(); R.hentOverblik(); besked(T.tekNulstillet, 'ok'); } catch (e) { besked(S.fejl(e), 'fejl'); }
+  });
   R.paa('domaener', () => { if (R.tilstand.visning === 'teknologi') hent(); });
   R.registrer('teknologi', {
     async vis(p, { samme } = {}) {

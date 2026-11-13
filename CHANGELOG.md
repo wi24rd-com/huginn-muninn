@@ -4,6 +4,20 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-13 23:30 — Indstillinger er en popup, og første start er en guide
+#### Ændret
+- **Indstillinger er en popup bag tandhjulet** øverst til højre (⌘, / Ctrl+,, og Indstillinger… i programmenuen). Den åbner oven på den visning, du står i, og har grupperne Udseende og sprog, Dato og land, Start, Notifikationer, Forbindelse, Data og Første start. Fanen Indstillinger er væk; de syv visninger er tilbage som de eneste faner.
+- **Om har sin egen knap** (i) ved siden af tandhjulet: version, licens, skrifter, kortdata og varemærkelinjen. Programmenuens Om åbner den samme dialog.
+- **Vælg domæner** på Overblik åbner dialogen Domæner: en kontakt pr. domæne og, for hvert valgt domæne, hvornår du vil have besked. Linjerne om fravalgte og nye domæner åbner den samme dialog.
+- **Teknologi pr. domæne hører til Angreb:** fanen Angreb er markeret, og båndet har Tilbage til Angreb og Nulstil for alle domæner (før under Indstillinger › Domæner).
+- **Login-stier** rettes ét sted: Login › Ret stier. Afsnittet under Indstillinger er væk.
+
+#### Tilføjet
+- **En guide ved første start** med fire trin: Velkommen, Dit API Token, Dine domæner og Besked. Næste er først fri på trin 2, når dit API Token er gemt og virker. Spring over efterlader en rolig side med knappen Åbn guiden, og guiden kan altid åbnes igen under Indstillinger › Første start.
+
+#### Rettet
+- Gamle adresser (`#indstillinger`, også med `afsnit=om`, `afsnit=domaener` og `afsnit=login`) åbner det rigtige sted i stedet for en side, der ikke findes længere.
+
 ### 2026-11-13 23:30 — Store knapper og tydelige faner, som skitsen
 #### Ændret
 - **Periode og Vis er store knapper med ikon** i båndet (7 dage, 30 dage, Hele historikken; Alt, Kun angreb, Kun rutine; Danmark, Verden; 7 dage, 4 uger), ikke små sammenhængende knapper. Den valgte har grøn flade og kant.

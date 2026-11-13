@@ -81,6 +81,7 @@ function side(hash, svar, sprog = 'da', platform = 'windows', foer = null, indla
   fastUr(w);
   w.localStorage.setItem('hm-sprog', sprog);
   if (platform) w.__HM_PLATFORM__ = platform;
+  w.localStorage.setItem('hm-guide', 'vist'); // guiden åbner kun af sig selv i de tjek, der fjerner mærket
   if (foer) foer(w);
   // jsdom har ikke showModal/close.
   w.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
@@ -106,6 +107,9 @@ const sidsteDyk = s => s.kald.filter(k => k[0] === 'dyk').pop()[1];
 /* Som rammen: data-dyk uden periode er 30 dage. */
 const fraDyk = q => { const p = new URLSearchParams(q); if (!['periode', 'dag', 'fra', 'til'].some(k => p.has(k))) p.set('periode', '30'); return p.toString(); };
 const synlige = d => [...d.querySelectorAll('section[data-visning]')].filter(s => !s.hidden).map(s => s.getAttribute('data-visning'));
+/* V-INDST.1: Indstillinger er en popup, Domæner og Om egne dialoger, og første start en guide. */
+const aaben = (d, id) => d.getElementById(id + '-dialog').hasAttribute('open');
+const aabneDialoger = d => [...d.querySelectorAll('dialog[open]')].map(x => x.id).join();
 
 // ── Data ──
 const celler = tr => [...tr.querySelectorAll('td')];
@@ -305,9 +309,9 @@ const hv = tr => tr.querySelector('.hv-tekst');
   });
   await sov(50);
   const { d, kald } = s;
-  tjek('Opstart, Indstillinger er en visning i rammen; Om står dér, og hjælpeskuffen henviser til den', synlige(d).join() === 'indstillinger' && d.querySelector('#indst-knap').getAttribute('aria-current') === 'page' && d.querySelector('main [data-t=om2]') && !d.querySelector('#hjaelp [data-t=om2]') && d.querySelector('#hjaelp [data-t=hjOm]').textContent === 'Version, licenser og varemærke står under Indstillinger → Om.');
-  tjek('Opstart, overskrift og kontakt på dansk', d.getElementById('indstillinger-h').textContent === 'Indstillinger' && d.querySelector('label[for=autostart] [data-t=autostart]').textContent === 'Start ved login');
-  tjek('Opstart, "Glem nøglen…" er flyttet til Indstillinger', d.querySelector('#visning-indstillinger #glem') && !d.querySelector('#visning-overblik #glem') && !d.getElementById('glem').hidden);
+  tjek('Opstart, Indstillinger er en popup over visningen (den gamle adresse åbner den); Om står i sin egen dialog, og hjælpeskuffen henviser til Om-knappen', synlige(d).join() === 'overblik' && s.w.location.hash === '#overblik' && aaben(d, 'indst') && d.getElementById('indst-knap').getAttribute('aria-expanded') === 'true' && !d.querySelector('main [data-t=om2]') && !d.querySelector('#indst-dialog [data-t=om2]') && d.querySelector('#om-dialog [data-t=om2]') && !d.querySelector('#hjaelp [data-t=om2]') && d.querySelector('#hjaelp [data-t=hjOm]').textContent === 'Version, licenser og varemærke står bag Om-knappen (i) øverst til højre.', synlige(d).join() + ' ' + s.w.location.hash + ' ' + aabneDialoger(d));
+  tjek('Opstart, overskrift og kontakt på dansk', d.getElementById('indst-h').textContent === 'Indstillinger' && d.querySelector('label[for=autostart] [data-t=autostart]').textContent === 'Start ved login');
+  tjek('Opstart, "Glem nøglen…" er flyttet til Indstillinger', d.querySelector('#indst-dialog #glem') && !d.querySelector('#visning-overblik #glem') && !d.getElementById('glem').hidden);
   const boks = d.getElementById('autostart');
   tjek('Opstart, afkrydsningen læses fra OS (autostart_hent → ☑)', kald.some(k => k[0] === 'autostart_hent') && boks.checked);
   boks.click(); await sov(10);
@@ -320,7 +324,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   tjek('Opstart, sprog_saet kaldes ved skift (en)', JSON.stringify(kald.filter(k => k[0] === 'sprog_saet').pop()) === '["sprog_saet",{"sprog":"en"}]' && kald.filter(k => k[0] === 'sprog_saet').length === 2);
   d.getElementById('glem').click(); d.getElementById('glem-ja').click(); await sov(20);
   tjek('Opstart, "Glem nøglen…" + Glem kalder token_delete', kald.some(k => k[0] === 'token_delete'));
-  tjek('Opstart, ingen style= i Indstillinger', !d.getElementById('visning-indstillinger').outerHTML.includes('style='));
+  tjek('Opstart, ingen style= i Indstillinger', !d.getElementById('indst-dialog').outerHTML.includes('style='));
 }
 {
   const s = side('', {
@@ -329,7 +333,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   await sov(50);
   const { d } = s, boks = d.getElementById('autostart');
   const indstLink = d.querySelector('#indst-knap');
-  tjek('Opstart, uden token: opsætningen vises, Indstillinger kan åbnes, "Glem nøglen…" skjult', synlige(d).join() === 'opsaetning' && !indstLink.hasAttribute('aria-disabled') && d.getElementById('glem').hidden);
+  tjek('Opstart, uden token: opsætningen vises, Indstillinger kan åbnes, "Glem nøglen…" skjult', synlige(d).join() === 'opsaetning' && indstLink.tagName === 'BUTTON' && !indstLink.disabled && d.getElementById('glem').hidden);
   tjek('Opstart, OS siger fra: ☐', !boks.checked);
   boks.click(); await sov(10);
   tjek('Opstart, fejl vises som fejl, og afkrydsningen går tilbage', !boks.checked && d.getElementById('indst-status').className === 'r6-status fejl' && d.getElementById('indst-status').textContent === 'Start ved login kunne ikke læses eller ændres.', d.getElementById('indst-status').className + ' ' + d.getElementById('indst-status').textContent);
@@ -337,7 +341,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
 {
   const s = side('#indstillinger', { token_status: { sat: false }, autostart_hent: () => { throw { kode: 'autostart' }; } }, 'en');
   await sov(50);
-  tjek('Opstart, engelsk: Settings, Start at login, fejl ved læsning', s.d.getElementById('indstillinger-h').textContent === 'Settings' && s.d.querySelector('label[for=autostart] [data-t=autostart]').textContent === 'Start at login' && s.d.getElementById('indst-status').textContent === 'Start at login could not be read or changed.', s.d.getElementById('indst-status').textContent);
+  tjek('Opstart, engelsk: Settings, Start at login, fejl ved læsning', s.d.getElementById('indst-h').textContent === 'Settings' && s.d.querySelector('label[for=autostart] [data-t=autostart]').textContent === 'Start at login' && s.d.getElementById('indst-status').textContent === 'Start at login could not be read or changed.', s.d.getElementById('indst-status').textContent);
   tjek('Opstart, engelsk: sprog_saet {sprog: en}', JSON.stringify(s.kald.find(k => k[0] === 'sprog_saet')) === '["sprog_saet",{"sprog":"en"}]');
   const a = side('', { token_status: { sat: false }, autostart_hent: true }, 'auto');
   await sov(50);
@@ -423,7 +427,7 @@ const basis = x => Object.assign({ token_status: { sat: true }, zones_cache: { z
   const antal = d.querySelectorAll('#pr-domaene-liste select').length, foersteSel = d.querySelector('#pr-domaene-liste select');
   s.emit('hentekoe', { zone: null, tilstand: 'faerdig', zoner_i_alt: 3, zoner_faerdige: 3, doegn_i_alt: 1, doegn_faerdige: 1, zoner_fejl: 0 }); await sov(60);
   tjek('N pr. domæne: tegnes ikke om, når overblikket tegnes igen med samme zoner', d.querySelector('#pr-domaene-liste select') === foersteSel && d.querySelectorAll('#pr-domaene-liste select').length === antal);
-  tjek('N indst: ingen style= i Indstillinger', !d.getElementById('visning-indstillinger').outerHTML.includes('style='));
+  tjek('N indst: ingen style= i Indstillinger', !d.getElementById('indst-dialog').outerHTML.includes('style='));
 }
 {
   const s = side('#indstillinger', basis({
@@ -442,13 +446,13 @@ const basis = x => Object.assign({ token_status: { sat: true }, zones_cache: { z
   const s = side('', { token_status: { sat: false }, autostart_hent: true, notifikation_saet: a => { gemt = a; return null; } });
   await sov(60);
   const { d } = s;
-  tjek('N opsætning: forudindstillingen står under token-feltet, Standard forvalgt (også når notifikation_hent fejler)', d.querySelector('#visning-opsaetning #opsaet-niveau') && d.querySelector('#opsaet-niveau input[value=standard]').checked && d.getElementById('notif-roed').checked && d.getElementById('opsaet-niveau-p').textContent.startsWith('Hvornår vil du have besked?'));
+  tjek('N guiden: forudindstillingen står i trin 4 (Besked), Standard forvalgt (også når notifikation_hent fejler)', d.querySelector('#guide-trin-besked #opsaet-niveau') && d.querySelector('#guide-trin-besked #guide-autostart') && d.querySelector('#opsaet-niveau input[value=standard]').checked && d.getElementById('notif-roed').checked && d.getElementById('opsaet-niveau-p').textContent.startsWith('Hvornår vil du have besked?'));
   tjek('N opsætning: pr. domæne viser "står her, når zonelisten er hentet"', d.querySelector('#pr-domaene-liste td').textContent === 'Domænerne står her, når zonelisten er hentet.');
   d.querySelector('#opsaet-niveau input[value=alt]').click(); await sov(10);
   tjek('N opsætning: Alt → notifikation_saet {niveau: alt, roed: true}; Indstillinger følger med', JSON.stringify(gemt) === '{"niveau":"alt","roed":true}' && d.querySelector('#indst-niveau input[value=alt]').checked, JSON.stringify(gemt));
   const e = side('', { token_status: { sat: false }, autostart_hent: true }, 'en');
   await sov(60);
-  tjek('N engelsk: Notifications · hele sætninger · Notify me when a domain needs action · Per domain', e.d.querySelector('[data-t=niveauH]').textContent === 'Notifications' && [...e.d.querySelectorAll('#indst-niveau label')].map(b => b.textContent).join('|') === 'Only when serious, at most once a day|When serious (recommended)|Also when a domain should be watched' && e.d.querySelector('label[for=notif-roed]').textContent === 'Notify me when a domain needs action' && e.d.querySelector('#pr-domaene-h').textContent === 'Per domain');
+  tjek('N engelsk: Notifications · hele sætninger · Notify me when a domain needs action · Notify me (pr. domæne, i dialogen Domæner)', e.d.querySelector('[data-t=niveauH]').textContent === 'Notifications' && [...e.d.querySelectorAll('#indst-niveau label')].map(b => b.textContent).join('|') === 'Only when serious, at most once a day|When serious (recommended)|Also when a domain should be watched' && e.d.querySelector('label[for=notif-roed]').textContent === 'Notify me when a domain needs action' && e.d.querySelector('#dom-del #pr-domaene-h').textContent === 'Notify me');
   tjek('N note: hvordan de slås fra i Systemindstillinger (da) / System Settings (en)', d.querySelector('[data-t=notifNote]').textContent.includes('Systemindstillinger → Notifikationer → Huginn and Muninn') && e.d.querySelector('[data-t=notifNote]').textContent.includes('System Settings → Notifications → Huginn and Muninn'));
 }
 {
@@ -493,7 +497,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   await sov(60);
   const { d, w } = s;
   tjek('S nav: start på Overblik (tom adresse), aria-current og titel', synlige(d).join() === 'overblik' && d.querySelector('#vis-overblik').getAttribute('aria-current') === 'page' && d.title === 'Overblik · Wi24rd Huginn and Muninn', d.title);
-  const forventet = [['siden-sidst', 'Siden sidst · Wi24rd Huginn and Muninn'], ['vaernet', 'Angreb · 2 domæner · Wi24rd Huginn and Muninn'], ['indstillinger', 'Indstillinger · Wi24rd Huginn and Muninn'], ['overblik', 'Overblik · Wi24rd Huginn and Muninn']];
+  const forventet = [['siden-sidst', 'Siden sidst · Wi24rd Huginn and Muninn'], ['vaernet', 'Angreb · 2 domæner · Wi24rd Huginn and Muninn'], ['overblik', 'Overblik · Wi24rd Huginn and Muninn']];
   const ud = [];
   for (const [navn, titel] of forventet) {
     d.querySelector(`:is(a, button)[data-visning="${navn}"]`).click(); await sov(40);
@@ -510,16 +514,16 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   await sov(60);
   const { d, w, tast, kald, emit } = s;
   const spor = [];
-  for (const [key, maal] of [['2', 'siden-sidst'], ['3', 'vaernet'], [',', 'indstillinger'], ['1', 'overblik']]) { tast(key, { ctrlKey: true }); await sov(40); spor.push(synlige(d).join()); }
-  tjek('S genveje Windows: Ctrl+2/3/,/1 skifter visning', spor.join() === 'siden-sidst,vaernet,indstillinger,overblik', spor.join());
+  for (const [key, maal] of [['2', 'siden-sidst'], ['3', 'vaernet'], [',', 'indstillinger'], ['1', 'overblik']]) { tast(key, { ctrlKey: true }); await sov(40); spor.push(synlige(d).join() + (aaben(d, 'indst') ? '+popup' : '')); }
+  tjek('S genveje Windows: Ctrl+2/3/1 skifter visning, og Ctrl+, åbner popuppen Indstillinger over den visning, der står (et visningsskift lukker den)', spor.join() === 'siden-sidst,vaernet,vaernet+popup,overblik', spor.join());
   tast('r', { ctrlKey: true }); await sov(20); tast('F5'); await sov(20);
   tjek('S genveje Windows: Ctrl+R og F5 = Hent nu (hent_nu), ikke genindlæsning', kald.filter(k => k[0] === 'hent_nu').length === 2);
   tjek('S genveje: sidebjælken og hjælpen viser "Ctrl+1" på Windows', d.querySelector('#baand a[data-visning="overblik"]').getAttribute('aria-keyshortcuts') === 'Control+1' && d.querySelector('#genveje').textContent.includes('Ctrl+R'));
   emit('visning', 'indstillinger'); await sov(30);
-  const a = synlige(d).join();
+  const a = synlige(d).join() + (aaben(d, 'indst') ? '+popup' : '');
   emit('visning', 'vaernet'); await sov(30);
   emit('visning', 'noget-andet'); await sov(30);
-  tjek('S hændelsen "visning" (programmenuen) skifter visning; ukendte navne ignoreres', a === 'indstillinger' && synlige(d).join() === 'vaernet' && w.location.hash.startsWith('#vaernet'), a + ' / ' + synlige(d).join());
+  tjek('S hændelsen "visning" (programmenuen) skifter visning (Indstillinger… åbner popuppen); ukendte navne ignoreres', a === 'overblik+popup' && !aaben(d, 'indst') && synlige(d).join() === 'vaernet' && w.location.hash.startsWith('#vaernet'), a + ' / ' + synlige(d).join());
   d.getElementById('hent-nu').click(); await sov(10);
   tjek('S "Hent nu" i båndet → hent_nu', kald.filter(k => k[0] === 'hent_nu').length === 3);
   const m = side('', MED_SIDEN, 'da', 'macos');
@@ -606,7 +610,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   d.querySelector('a[data-visning="overblik"]').click(); tast('1', { ctrlKey: true }); await sov(30);
   tjek('S uden token: Overblik/Siden sidst/Angreb er slået fra, opsætningen står (titel "Forbind med Cloudflare")', fra && synlige(d).join() === 'opsaetning' && d.title === 'Forbind med Cloudflare · Wi24rd Huginn and Muninn' && !s.kald.some(k => k[0] === 'vaern_samlet_cache'), synlige(d).join() + ' ' + d.title);
   tast(',', { ctrlKey: true }); await sov(30);
-  tjek('S uden token: Ctrl+, åbner stadig Indstillinger, og "Hent nu" er skjult', synlige(d).join() === 'indstillinger' && w.location.hash === '#indstillinger' && d.getElementById('hent-nu').hidden);
+  tjek('S uden token: Ctrl+, åbner stadig Indstillinger, og "Hent nu" er skjult', synlige(d).join() === 'opsaetning' && aaben(d, 'indst') && !w.location.hash.includes('indstillinger') && d.getElementById('hent-nu').hidden, synlige(d).join() + ' ' + w.location.hash + ' ' + aabneDialoger(d));
 }
 // ── Sprog: "dage" og "Afvist", ordlisten ──
 {
@@ -650,7 +654,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
   tjek('S vindue: Overlay, skjult titel, trafiklys, minWidth 1100 (visningerne står i båndet); CSP med style-src \'self\'', v.titleBarStyle === 'Overlay' && v.hiddenTitle === true && v.trafficLightPosition && v.minWidth === 1100
     && csp === "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'", JSON.stringify(v));
   const html = ui('index.html');
-  tjek('S vindue: titellinjen er trækbar (data-tauri-drag-region="deep"), og dens knapper er <button> (blokerer trækket); Indstillinger står i båndet', /<header class="titel" data-tauri-drag-region="deep">/.test(html) && /<button class="rk" type="button" id="hist-tilbage"/.test(html) && /<button class="rk" type="button" id="hjaelp-knap"/.test(html) && !/<a class="rk" href="#indstillinger"/.test(html));
+  tjek('S vindue: titellinjen er trækbar (data-tauri-drag-region="deep"), og dens knapper er <button> (blokerer trækket); tandhjulet og Om står efter "?"', /<button class="rk" type="button" id="hjaelp-knap"[^\n]*\n\s*<button class="rk" type="button" id="indst-knap" aria-haspopup="dialog"[^\n]*\n\s*<button class="rk" type="button" id="om-knap" aria-haspopup="dialog"/.test(html) && /<header class="titel" data-tauri-drag-region="deep">/.test(html) && /<button class="rk" type="button" id="hist-tilbage"/.test(html) && /<button class="rk" type="button" id="hjaelp-knap"/.test(html) && !/<a class="rk" href="#indstillinger"/.test(html));
   const p = cap.permissions;
   tjek('S capabilities: + core:window:allow-start-dragging, + allow-hent-nu, − core:menu:default, − core:tray:default', p.includes('core:window:allow-start-dragging') && p.includes('allow-hent-nu') && !p.includes('core:menu:default') && !p.some(x => x.startsWith('core:tray') || x.startsWith('core:menu')) && tilladt('hent_nu'), p.join(','));
   tjek('S capabilities: + allow-data-status', p.includes('allow-data-status'));
@@ -865,10 +869,10 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const s = side('#indstillinger', B2()), { d, w, kald } = s;
   await sov(60);
   const grupper = [...d.querySelectorAll('.indst > .kasse > .kasse-top > h2')].map(h => h.textContent);
-  tjek('Indstillinger, grupperne i rækkefølge: Generelt, Domæner, Notifikationer, Forbindelse, Data, Om', grupper.join() === 'Generelt,Domæner,Notifikationer,Forbindelse,Data,Om', grupper.join());
-  const generelt = [...d.querySelectorAll('.indst > .kasse')[0].querySelectorAll('.raekke')].map(r => r.querySelector('.etik').firstChild.textContent);
-  tjek('Indstillinger, Generelt: Sprog er første række, så Datoformat, Land, Udseende, Tekststørrelse og Start ved login', generelt.join('|') === 'Sprog|Datoformat|Land|Udseende|Tekststørrelse|Start ved login', generelt.join('|'));
-  tjek('Indstillinger, ingen <details> ud over trinene til API Token, og "token" står kun som "API Token" og Cloudflares egne ord i Indstillinger (da)', !d.querySelector('#visning-indstillinger details:not(.token-trin)') && !/token/i.test(d.getElementById('visning-indstillinger').textContent.replace(/API Token(et)?|Create (Custom )?Token|Token name|Token expiration/g, '')), d.getElementById('visning-indstillinger').textContent.match(/.{20}token.{20}/i)?.[0]);
+  tjek('Indstillinger, popuppens syv grupper i rækkefølge: Udseende og sprog, Dato og land, Start, Notifikationer, Forbindelse, Data, Første start (Domæner og Om er egne dialoger)', grupper.join() === 'Udseende og sprog,Dato og land,Start,Notifikationer,Forbindelse,Data,Første start' && d.querySelector('#indst-dialog .modal-fod #indst-luk')?.textContent === 'Luk' && d.querySelector('#indst-dialog #guide-igen')?.textContent === 'Vis guiden igen', grupper.join());
+  const generelt = [...d.querySelectorAll('.indst > .kasse')].slice(0, 3).map(k => [...k.querySelectorAll('.raekke')].map(r => r.querySelector('.etik').firstChild.textContent).join('|'));
+  tjek('Indstillinger, de tre første grupper: Udseende, Sprog og Tekststørrelse · Datoformat og Land · Start ved login', generelt.join(' · ') === 'Udseende|Sprog|Tekststørrelse · Datoformat|Land · Start ved login', generelt.join(' · '));
+  tjek('Indstillinger, ingen <details> ud over trinene til API Token, og "token" står kun som "API Token" og Cloudflares egne ord i Indstillinger (da)', !d.querySelector('#indst-dialog details:not(.token-trin)') && !/token/i.test(d.getElementById('indst-dialog').textContent.replace(/API Token(et)?|Create (Custom )?Token|Token name|Token expiration/g, '')), d.getElementById('indst-dialog').textContent.match(/.{20}token.{20}/i)?.[0]);
   tjek('Indstillinger, pr. domæne er en rigtig tabel: domæne · vælger', d.querySelectorAll('#pr-domaene-liste tr').length === 3 && d.querySelector('#pr-domaene-liste tr th').textContent === 'abe.wi24rd.com' && d.querySelector('#pr-domaene-liste tr td select'));
   tjek('Indstillinger, noten om Systemindstillinger står i Notifikationer', d.querySelector('.indst [data-t=notifSystem]').textContent.includes('Systemindstillinger → Notifikationer'));
 
@@ -938,9 +942,9 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   // Om
   const om = d.querySelector('.om');
   tjek('Indstillinger, Om: version fra getVersion, ingen eksterne links', d.getElementById('om-version').textContent === 'Version 9.8.7' && !om.querySelector('a, [href]:not(use)') && !/https?:/.test(om.textContent), om.textContent);
-  tjek('Indstillinger, Om: navn, "for Cloudflare®" for sig, linjen, skrifter/kortdata og varemærket på ét sprog', d.querySelector('#visning-indstillinger .velkomst-navn').textContent === 'Wi24rdHuginn and Muninnfor Cloudflare®' && d.querySelector('#visning-indstillinger .velkomst-wi em').textContent === '24' && d.querySelector('#visning-indstillinger .velkomst-cf').textContent === 'for Cloudflare®'
+  tjek('Indstillinger, Om: navn, "for Cloudflare®" for sig, linjen, skrifter/kortdata og varemærket på ét sprog', d.querySelector('#om-dialog .velkomst-navn').textContent === 'Wi24rdHuginn and Muninnfor Cloudflare®' && d.querySelector('#om-dialog .velkomst-wi em').textContent === '24' && d.querySelector('#om-dialog .velkomst-cf').textContent === 'for Cloudflare®'
     && om.textContent.includes('Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd') && om.textContent.includes('Inter og JetBrains Mono') && om.textContent.includes('Natural Earth') && om.textContent.includes('Cloudflare® er et registreret varemærke tilhørende Cloudflare, Inc. Wi24rd Huginn and Muninn er ikke tilknyttet Cloudflare, Inc.') && !/registered trademark/.test(om.textContent), om.textContent);
-  tjek('Indstillinger, ingen style= i Indstillinger', !d.getElementById('visning-indstillinger').outerHTML.includes('style='));
+  tjek('Indstillinger, ingen style= i Indstillinger', !d.getElementById('indst-dialog').outerHTML.includes('style='));
   d.getElementById('glem').click(); d.getElementById('glem-ja').click(); await sov(30);
   tjek('Indstillinger, Glem nøglen: Glem kalder token_delete, dialogen lukker', !dialog.hasAttribute('open') && kald.filter(k => k[0] === 'token_delete').length === 1);
 }
@@ -948,8 +952,8 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const s = side('#indstillinger', B2({ token_status: { sat: false }, zones_cache: { zoner: [], hentet: null }, data_status: { bytes: 900, foerste: null, sidste: null, domaener: 0 } }), 'en', 'macos');
   await sov(50);
   const { d } = s, c = d.getElementById('forb-chip');
-  tjek('Indstillinger, engelsk uden API Token: "No API Token", ingen anden "token", Glem skjult, Hent slået fra', c.querySelector('.ord').textContent === 'No API Token' && c.classList.contains('none') && !/token/i.test(d.getElementById('visning-indstillinger').textContent.replace(/API Token(et)?|Create (Custom )?Token|Token name|Token expiration/g, '')) && d.getElementById('glem').hidden && d.getElementById('data-hent').disabled, c.outerHTML);
-  tjek('Indstillinger, engelsk: grupperne og trademarket på engelsk', [...d.querySelectorAll('.indst > .kasse > .kasse-top > h2')].map(h => h.textContent).join() === 'General,Domains,Notifications,Connection,Data,About' && d.querySelector('.om').textContent.includes('Cloudflare® is a registered trademark of Cloudflare, Inc. Wi24rd Huginn and Muninn is not affiliated with Cloudflare, Inc.'));
+  tjek('Indstillinger, engelsk uden API Token: "No API Token", ingen anden "token", Glem skjult, Hent slået fra', c.querySelector('.ord').textContent === 'No API Token' && c.classList.contains('none') && !/token/i.test(d.getElementById('indst-dialog').textContent.replace(/API Token(et)?|Create (Custom )?Token|Token name|Token expiration/g, '')) && d.getElementById('glem').hidden && d.getElementById('data-hent').disabled, c.outerHTML);
+  tjek('Indstillinger, engelsk: grupperne og trademarket på engelsk', [...d.querySelectorAll('.indst > .kasse > .kasse-top > h2')].map(h => h.textContent).join() === 'Appearance and language,Date and country,Start-up,Notifications,Connection,Data,First start' && d.getElementById('indst-luk').textContent === 'Close' && d.getElementById('om-h').textContent === 'About Huginn and Muninn' && d.querySelector('.om').textContent.includes('Cloudflare® is a registered trademark of Cloudflare, Inc. Wi24rd Huginn and Muninn is not affiliated with Cloudflare, Inc.'));
   tjek('Indstillinger, tom database: "1 kB", "None yet", macOS-noterne', d.getElementById('data-stoerrelse').textContent === '1 kB' && d.getElementById('data-historik').textContent === 'None yet' && d.getElementById('data-hist-note').textContent === 'The program keeps all history on your Mac and deletes nothing by itself.' && d.getElementById('forb-note').textContent === 'The API Token is in the macOS Keychain.', d.getElementById('data-stoerrelse').textContent);
   const fejl = side('#indstillinger', B2({ data_status: () => { throw { kode: 'lager' }; } }));
   await sov(40);
@@ -971,16 +975,17 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const s = side('#overblik', B2(), 'da', 'macos');
   await sov(50);
   const { d, w, emit } = s;
-  d.getElementById('indst-om').scrollIntoView = o => sc.push(o);
   emit('visning', 'om'); await sov(30);
-  tjek('Indstillinger, Om i programmenuen: åbner Indstillinger og ruller til Om', w.location.hash === '#indstillinger?afsnit=om' && synlige(d).join() === 'indstillinger' && sc.length === 1 && sc[0].block === 'start', w.location.hash + ' ' + sc.length);
-  d.querySelector('a[data-visning=overblik]').click(); await sov(30);
-  emit('historik', 'tilbage'); await sov(40);
-  tjek('Indstillinger, tilbage til Om ruller ikke igen (rullepositionen gendannes)', w.location.hash === '#indstillinger?afsnit=om' && sc.length === 1, w.location.hash + ' ' + sc.length);
+  const foerOm = w.location.hash, trinOm = w.history.length;
+  tjek('Om i programmenuen: åbner dialogen Om over visningen; adressen og historikken er urørt, og popuppen Indstillinger åbner ikke', aabneDialoger(d) === 'om-dialog' && w.location.hash === foerOm && w.history.length === trinOm && d.getElementById('om-h').textContent === 'Om Huginn and Muninn', aabneDialoger(d) + ' ' + w.location.hash);
+  d.getElementById('om-luk').click(); await sov(10);
+  const lukket = aabneDialoger(d);
+  d.getElementById('om-knap').click(); await sov(10);
+  tjek('Om-knappen i titellinjen åbner samme dialog, og Luk lukker den', lukket === '' && aabneDialoger(d) === 'om-dialog' && d.getElementById('om-knap').getAttribute('aria-label') === 'Om Huginn and Muninn' && d.getElementById('om-knap').title === 'Om Huginn and Muninn', lukket + ' / ' + aabneDialoger(d));
   const u = side('', B2({ token_status: { sat: false } }), 'da', 'macos');
   await sov(40);
   u.emit('visning', 'om'); await sov(30);
-  tjek('Indstillinger, Om i programmenuen virker også uden nøgle', synlige(u.d).join() === 'indstillinger', synlige(u.d).join());
+  tjek('Om i programmenuen virker også uden API Token', aabneDialoger(u.d) === 'om-dialog' && synlige(u.d).join() === 'opsaetning', aabneDialoger(u.d));
 }
 // ── Ugetallets farve ──
 {
@@ -1010,7 +1015,8 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   emit('hentekoe', { zone: null, doegn_faerdige: 9, doegn_i_alt: 9, zoner_faerdige: 3, zoner_i_alt: 3, zoner_fejl: 0, tilstand: 'faerdig' }); await sov(30);
   tjek('Tilbage og frem, hentekøens opdateringer laver aldrig et trin', w.history.length === laengde + 1 && w.location.hash === '#vaernet?zone=z2&navn=xyz.wi24rd.com');
   d.querySelector('#indst-knap').click(); await sov(30);
-  tjek('Domænetræ, står også i Indstillinger', !bånd.hidden);
+  tjek('Domænetræ, står også bag popuppen Indstillinger (popuppen skifter ikke visning)', !bånd.hidden && aabneDialoger(d) === 'indst-dialog' && w.location.hash === '#vaernet?zone=z2&navn=xyz.wi24rd.com', aabneDialoger(d));
+  d.getElementById('indst-luk').click();
   const html = ui('index.html'), css = udenKommentarer(ui('assets/app.css'));
   tjek('Domænevælger, flag pr. visning: domaener: true kun på Angreb', /R\.registrer\('vaernet', \{\s*domaener: true/.test(ui('assets/visning-vaernet.js')) && /\.domaener\)/.test(ui('assets/ramme.js')) && !/domaener: true/.test(ui('assets/visning-overblik.js') + ui('assets/visning-siden.js') + ui('assets/visning-indstillinger.js')));
   tjek('Skallen: de gamle vælgere og båndet er væk (ingen <select id="vg-zone">/"vg-land", ingen .band*, .bknap eller .side i index.html og app.css)', !/vg-zone|vg-land|class="band|band-vaelger|band-boelge|bknap/.test(html) && !/\.band\b|\.band-|\.bknap|\.krop\b|\.side \{/.test(css));
@@ -1021,12 +1027,12 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   await sov(60);
   const q = x => d.querySelector(x);
   tjek('Skallen: titellinje, bånd, navigationsrude, arbejdsflade med fodlinje og sidepanel står som kittets AppShell; intet window.Sprog', Boolean(q('.vindue > header.titel') && q('.vindue > #baand.cmd.enkel') && q('.vindue > .midte > nav#side.nav') && q('.vindue > .midte > .arb > main#indhold.flade') && q('.vindue > .midte > .arb > footer.fodl') && q('.vindue > .midte > aside#hjaelp.sidepanel')) && !w.Sprog && Boolean(w.Kit));
-  tjek('Skallen: de syv visninger er båndets faner (kittets som: faner) i fast rækkefølge med Indstillinger for sig til højre; ingen gruppe Visninger, Hjælp eller Program i båndet, og Hent nu står forrest', [...d.querySelectorAll('#baand a.vk:not(#indst-knap)')].map(a => a.dataset.visning).join() === 'overblik,siden-sidst,vaernet,robotter,login,land,besoegende' && q('#baand').classList.contains('med-faner') && d.querySelectorAll('#baand .cmd-faner a.vfane').length === 8 && q('#baand .cmd-faner .hoejre a#indst-knap.vfane[data-visning="indstillinger"]') !== null && q('#baand .grp:first-child .cap').textContent === 'Data' && q('#baand .grp:first-child #hent-nu') !== null && ![...d.querySelectorAll('#baand .grp .cap')].some(c => ['Visninger', 'Hjælp', 'Program'].includes(c.textContent)) && !q('#skift') && !q('.vfaner, .skift') && q('header.titel').nextElementSibling.id === 'baand' && !q('.titel #indst-knap') && q('#baand a.vk[aria-current="page"]').dataset.visning === 'overblik', [...d.querySelectorAll('#baand a.vk:not(#indst-knap)')].map(a => a.dataset.visning).join());
+  tjek('Skallen: de syv visninger er båndets faner (kittets som: faner) i fast rækkefølge, og ingen står til højre (Indstillinger er tandhjulet i titellinjen, med Om ved siden af); ingen gruppe Visninger, Hjælp eller Program i båndet, og Hent nu står forrest', [...d.querySelectorAll('#baand a.vk')].map(a => a.dataset.visning).join() === 'overblik,siden-sidst,vaernet,robotter,login,land,besoegende' && q('#baand').classList.contains('med-faner') && d.querySelectorAll('#baand .cmd-faner a.vfane').length === 7 && !q('#baand .cmd-faner .hoejre a') && !q('#baand [data-visning="indstillinger"]') && q('#baand .grp:first-child .cap').textContent === 'Data' && q('#baand .grp:first-child #hent-nu') !== null && ![...d.querySelectorAll('#baand .grp .cap')].some(c => ['Visninger', 'Hjælp', 'Program'].includes(c.textContent)) && !q('#skift') && !q('.vfaner, .skift') && q('header.titel').nextElementSibling.id === 'baand' && q('.titel .hoejre > button#hjaelp-knap + button#indst-knap.rk + button#om-knap.rk') !== null && q('#indst-knap').getAttribute('aria-label') === 'Indstillinger' && q('#baand a.vk[aria-current="page"]').dataset.visning === 'overblik', [...d.querySelectorAll('#baand a.vk')].map(a => a.dataset.visning).join());
   tjek('Skallen: båndet er uden faner med Hent nu som eneste primære kommando; landegruppen er skjult uden for Land', !q('#baand .tabs') && d.querySelectorAll('#baand .cb.pri').length === 1 && q('#baand .cb.pri').id === 'hent-nu' && q('#band-land').hidden && q('#baand').getAttribute('role') === 'group' && q('#baand').getAttribute('aria-label') === 'Kommandoer', q('#baand').getAttribute('aria-label'));
   { /* V-FANER.1: båndet under fanerne viser kun fanens egne grupper (Jans skitse 2026-11-13); Hent nu står forrest i alle. */
     const grp = [...d.querySelectorAll('#baand .grupper > .grp')], cap = g => g.querySelector('.cap').textContent;
     const forV = v => grp.filter(g => (g.dataset.kun || '').split(' ').includes(v)).map(g => cap(g) + ':' + (g.querySelector('.kn.baand-valg') ? g.querySelector('.kn').id : [...g.querySelectorAll('.cb, .baand-plads')].map(x => x.id).join('+'))).join(' | ');
-    const facit = { overblik: 'Vis:samlet | Domæner:vaelg-dom', 'siden-sidst': 'Vis:siden-skjul', vaernet: 'Periode:dyk-periode | Vis:dyk-slags | Filtre:dyk-nulstil | Teknologi:ret-tek | Egne datoer:dyk-datoer', robotter: 'Periode:robotter-periode | Vis:robot-angreb | Egne datoer:robotter-datoer', login: 'Periode:login-periode | Stier:login-ret-knap | Egne datoer:login-datoer', land: 'Vis:land-faner | Periode:land-mod', besoegende: 'Periode:besoegende-periode | Egne datoer:besoegende-datoer', indstillinger: '' };
+    const facit = { overblik: 'Vis:samlet | Domæner:vaelg-dom', 'siden-sidst': 'Vis:siden-skjul', vaernet: 'Periode:dyk-periode | Vis:dyk-slags | Filtre:dyk-nulstil | Teknologi:ret-tek | Egne datoer:dyk-datoer', robotter: 'Periode:robotter-periode | Vis:robot-angreb | Egne datoer:robotter-datoer', login: 'Periode:login-periode | Stier:login-ret-knap | Egne datoer:login-datoer', land: 'Vis:land-faner | Periode:land-mod', besoegende: 'Periode:besoegende-periode | Egne datoer:besoegende-datoer', teknologi: 'Teknologi:tek-tilbage+tek-nulstil-alle' };
     const galt = Object.keys(facit).filter(v => forV(v) !== facit[v]);
     tjek('V-FANER.1 hver fane har sine egne grupper i båndet, i skitsens rækkefølge (Egne datoer sidst), og Periode og Vis er store knapper (.cb), ikke segmentknapper', galt.length === 0 && !d.querySelector('#baand .seg') && d.querySelectorAll('#baand .baand-valg > .cb').length === 19, galt.map(v => v + ': ' + forV(v)).join(' || '));
     const synlige2 = () => grp.filter(g => !g.hidden).map(cap).join();
@@ -1049,7 +1055,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   await sov(60);
   const hoved = d.getElementById('indhold'), tb = d.getElementById('hist-tilbage'), fr = d.getElementById('hist-frem'), rul = t => { hoved.scrollTop = t; };
   tjek('Tilbage og frem, ved start: ‹ og › er deaktiveret, tooltip med genvejen (Windows)', tb.disabled && fr.disabled && tb.title === 'Tilbage (Alt+←)' && fr.title === 'Frem (Alt+→)' && tb.getAttribute('aria-label') === 'Tilbage', tb.title);
-  tjek('Tilbage og frem, ‹ › står i titellinjen til højre som kittets .rk-knapper, før Vejledning og Hjælp (Indstillinger er en fane)', tb.matches('.titel .hoejre > .rk') && fr.matches('.titel .hoejre > .rk') && tb.nextElementSibling === fr && fr.nextElementSibling.id === 'baand-vejledning' && fr.nextElementSibling.matches('button.rk') && fr.nextElementSibling.textContent === 'Vejledning' && fr.nextElementSibling.nextElementSibling.id === 'hjaelp-knap' && d.getElementById('hjaelp-knap').nextElementSibling === null);
+  tjek('Tilbage og frem, ‹ › står i titellinjen til højre som kittets .rk-knapper, før Vejledning og Hjælp; efter dem tandhjulet (Indstillinger) og Om som de sidste', tb.matches('.titel .hoejre > .rk') && fr.matches('.titel .hoejre > .rk') && tb.nextElementSibling === fr && fr.nextElementSibling.id === 'baand-vejledning' && fr.nextElementSibling.matches('button.rk') && fr.nextElementSibling.textContent === 'Vejledning' && fr.nextElementSibling.nextElementSibling.id === 'hjaelp-knap' && d.getElementById('hjaelp-knap').nextElementSibling.id === 'indst-knap' && d.getElementById('indst-knap').matches('button.rk[aria-haspopup="dialog"][aria-expanded="false"]') && d.getElementById('indst-knap').nextElementSibling.id === 'om-knap' && d.getElementById('om-knap').matches('button.rk[aria-haspopup="dialog"]') && d.getElementById('om-knap').nextElementSibling === null);
   rul(300);
   d.querySelector('#overblik-raekker tr').click(); await sov(60);
   tjek('Tilbage og frem, nyt trin: Angreb for z1, ‹ aktiv, › deaktiveret, rullet til toppen', w.location.hash === '#vaernet?zone=z1&navn=wi24rd.com' && !tb.disabled && fr.disabled && hoved.scrollTop === 0, `${hoved.scrollTop}`);
@@ -1124,7 +1130,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   const { d, w } = s;
   tjek('Tilbage og frem, genindlæsning: trinet, frem og rullepositionen er bevaret', w.history.state?.hmTrin === 2 && !d.getElementById('hist-tilbage').disabled && !d.getElementById('hist-frem').disabled && d.getElementById('indhold').scrollTop === 210, `${JSON.stringify(w.history.state)} ${d.getElementById('indhold').scrollTop}`);
   const a = side('#overblik', B2()); await sov(50);
-  a.d.querySelector('#indst-knap').click(); await sov(30);
+  a.d.querySelector('#vis-siden-sidst').click(); await sov(30);
   a.d.getElementById('indhold').scrollTop = 77;
   a.w.dispatchEvent(new a.w.Event('pagehide'));
   const gemt = JSON.parse(a.w.sessionStorage.getItem('hm-historik'));
@@ -1162,7 +1168,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   await sov(60);
   const hoved = d.getElementById('indhold'), tb = d.getElementById('hist-tilbage'), fr = d.getElementById('hist-frem');
   hoved.scrollTop = 300;
-  d.querySelector('#indst-knap').click(); await sov(30);
+  d.querySelector('#vis-siden-sidst').click(); await sov(30);
   tb.click(); await sov(30);
   hoved.scrollTop = 5;
   fr.click(); await sov(30);
@@ -1192,14 +1198,14 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   tjek('P1 målene er faste (app.css :root), intet data-density', (ui('assets/app.css').match(/--font-size-lg:/g) || []).length === 1 && !/data-density|comfortable/.test(ui('assets/app.css') + ui('assets/vagt.css')));
   tjek('P1 tekststørrelsen er kittets: zoom på roden ved data-tekst (lille .9, stor 1.125), og kittet deler vinduets mål med trinnet', /:root\[data-tekst="lille"\] \{ zoom: \.9; \}/.test(kitCss) && /:root\[data-tekst="stor"\] \{ zoom: 1\.125; \}/.test(kitCss) && /:root\[data-tekst="stor"\] \.vindue \{ height: calc\(100vh \/ 1\.125\)/.test(kitCss));
   const vMaal = regler(alCss).filter(([s, k]) => /\d(vh|vw)\b/.test(k)), uden = vMaal.filter(([s]) => !s.includes('data-tekst')).map(([s]) => s);
-  tjek('P1 hvert mål i vh/vw i app.css/vagt.css har en regel pr. trin, der deler med kittets zoom', uden.length === 2 && uden.every(s => [['lille', '.9'], ['stor', '1.125']].every(([t, z]) => vMaal.some(([s2, k]) => s2 === `:root[data-tekst="${t}"] ${s}` && k.includes(`/ ${z})`)))), uden.join(' | '));
+  tjek('P1 hvert mål i vh/vw i app.css/vagt.css har en regel pr. trin, der deler med kittets zoom', uden.length === 3 && uden.every(s => [['lille', '.9'], ['stor', '1.125']].every(([t, z]) => vMaal.some(([s2, k]) => s2 === `:root[data-tekst="${t}"] ${s}` && k.includes(`/ ${z})`)))), uden.join(' | '));
   tjek('P1 intet i programmet kender den gamle skala (data-density, hmTekst, tekst.js)', !fs.existsSync(path.join(repo, 'ui', 'assets', 'tekst.js')) && ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f)).map(f => 'assets/' + f)].every(f => !/data-density|hmTekst|tekst\.js/.test(ui(f))));
   /* V-KIT2.1 B2b: knapper, chips, kontakter, afkrydsning, radiogrupper, valglister og segmentknap er kittets. */
   const uiKode = ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /\.(js|css)$/.test(f)).map(f => 'assets/' + f)].map(f => [f, udenKommentarer(fjernCssKommentarer(ui(f)))]);
   const gamle = /class="knap\b|'knap\b[^']*'|(?<![\w$\])])\.knap\b(?![(-])|primaer|chip-(roed|gul|groen|graa)|\bkontakt'|class="kontakt|input\.kontakt|hm-valgmulighed|class="segment|'segment'|\.segment\b(?!\()|radiol\b|input\.boks|'boks'/;
   tjek('B2b intet i ui/ bruger programmets gamle knapper, chips, kontakter, segmenter, radiolister eller afkrydsninger', uiKode.every(([, k]) => !gamle.test(k)), uiKode.filter(([, k]) => gamle.test(k)).map(([f, k]) => f + ': ' + gamle.exec(k)[0]).join(' | '));
   const ix = ui('index.html');
-  tjek('B2b index.html: knapper er .btn (18; dialogernes bygger kittet, og Angreb for alle og Til overblikket står i båndet), kontakter .tilfra (3), radioer .afk-boks i .valgsaet (12), og hver <select> står i .vliste (4)', (ix.match(/<button class="btn( primary| danger)?"/g) || []).length === 18 && (ix.match(/<input class="tilfra" type="checkbox" role="switch"/g) || []).length === 3 && (ix.match(/<label class="afk"><input class="afk-boks" type="radio"/g) || []).length === 12 && (ix.match(/class="valgsaet/g) || []).length === 4 && (ix.match(/<select/g) || []).length === 4 && (ix.match(/<span class="vliste"><select/g) || []).length === 4);
+  tjek('B2b index.html: knapper er .btn (17; dialogernes og guidens bygger kittet, og Angreb for alle og Til overblikket står i båndet), kontakter .tilfra (4, med Start ved login i guiden), radioer .afk-boks i .valgsaet (12), og hver <select> står i .vliste (3)', (ix.match(/<button class="btn( primary| danger)?"/g) || []).length === 17 && (ix.match(/<input class="tilfra" type="checkbox" role="switch"/g) || []).length === 4 && (ix.match(/<label class="afk"><input class="afk-boks" type="radio"/g) || []).length === 12 && (ix.match(/class="valgsaet/g) || []).length === 4 && (ix.match(/<select/g) || []).length === 3 && (ix.match(/<span class="vliste"><select/g) || []).length === 3);
   const kitKode = ui('assets/kit2/kit.css');
   tjek('B2b kittets klasser findes i kit.css, og app.css tegner dem ikke om', ['.btn {', '.btn.primary', '.btn.danger', '.chip.ok', '.chip.warn', '.chip.danger', '.chip.none', '.tilfra {', '.afk-boks {', '.valgsaet {', '.vliste select {', '.seg {', '.seg-v {'].every(s => kitKode.includes(s)) && !/(^|\n)\.(chip|tilfra|afk|afk-boks|valgsaet|vliste|seg|seg-v)\b[^{\n]*\{/.test(appCss) && !/\.btn\b/.test(appCss) && /\.btn \{[^}]*white-space: nowrap/.test(kitKode));
   /* V-KIT2.1 B2d: sideskiftet og de små tomme tilstande er kittets. Tabellerne venter på kittet (K36). */
@@ -1207,16 +1213,16 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   tjek('B2d (kittet er pakke 2.8.0) ingen visning bygger selv en <table> til tal: Overblik og læsetabellerne er Kit.tabel', uiKode.every(([f, k]) => !/el\('table', \{ className: 'vg-tabel|<table class="tabel"|class="tabel-rul"/.test(k)) && /raekkeHandling: 'aabn', layout: 'auto', fastFoerste: true/.test(ui('assets/visning-overblik.js')) && /raekkeHandling: 'ingen', layout: 'auto'/.test(ui('assets/vg-tegn.js')) && ui('assets/kit2/VERSION').trim() === '2.8.0');
   /* Pakke 2.5.0: HAM's midlertidige tilføjelser (K22–K26, K28, K32–K35) er væk. */
   tjek('2.5.0 intet i ui/ har programmets egen pille, valgte flise, flise med to mål, filter med × eller tal ved Siden sidst', uiKode.every(([, k]) => !/\.pille\b|pille-bar|koe-kort|koe-tekst|koe-fremskridt|vg-hoved|dyk-flise-to|dyk-flise-aabn|dyk-filter-x|siden-tal|traeStille|KIT-ØNSKE K(2[2-6]|28|3[2-5])/.test(k)), uiKode.filter(([, k]) => /\.pille\b|vg-hoved|dyk-flise-to|siden-tal|traeStille/.test(k)).map(([f]) => f).join());
-  tjek('2.5.0 kittets dele er i brug: fodstatus, segment uden valg, flise med valgt/under/indhold, filterchip med vedFjern, saetPunkt og saetPunkter', /Kit\.fodstatus\(/.test(ui('assets/ramme.js')) && /skift\.saetPunkt\(/.test(ui('assets/ramme.js')) && /trae\.saetPunkter\(/.test(ui('assets/ramme.js')) && /kunBrugerValg: true/.test(ui('assets/ramme.js')) && /valgt: valgt < 0 \? null/.test(ui('assets/vg-tegn.js')) && /vedFjern:/.test(ui('assets/vg-tegn.js')) && /valgt: aktiv \|\| undefined/.test(ui('assets/vg-tegn.js')) && /statusflise\(\{ tekst: '', indhold:/.test(ui('assets/visning-vaernet.js')) && ix.includes('class="mrk-maske hm-mrk"') && (ix.match(/<svg class="kasse-ikon"/g) || []).length === 6);
+  tjek('2.5.0 kittets dele er i brug: fodstatus, segment uden valg, flise med valgt/under/indhold, filterchip med vedFjern, saetPunkt og saetPunkter', /Kit\.fodstatus\(/.test(ui('assets/ramme.js')) && /skift\.saetPunkt\(/.test(ui('assets/ramme.js')) && /trae\.saetPunkter\(/.test(ui('assets/ramme.js')) && /kunBrugerValg: true/.test(ui('assets/ramme.js')) && /valgt: valgt < 0 \? null/.test(ui('assets/vg-tegn.js')) && /vedFjern:/.test(ui('assets/vg-tegn.js')) && /valgt: aktiv \|\| undefined/.test(ui('assets/vg-tegn.js')) && /statusflise\(\{ tekst: '', indhold:/.test(ui('assets/visning-vaernet.js')) && ix.includes('class="mrk-maske hm-mrk"') && (ix.match(/<svg class="kasse-ikon"/g) || []).length === 4);
   /* V-KIT2.1 B2c: dialoger, kasser, fliser og filterchips er kittets. */
   const gamleC = /<dialog|class="kort"|'vg-flise\b|\.vg-flise\b(?!r)|class="dialog|\.dialog\b(?!\()|dialog-knapper|showModal/;
   tjek('B2c intet i ui/ bruger programmets gamle dialoger, kort eller fliser', uiKode.every(([, k]) => !gamleC.test(k)), uiKode.filter(([, k]) => gamleC.test(k)).map(([f, k]) => f + ': ' + gamleC.exec(k)[0]).join(' | '));
-  tjek('B2c index.html: seks kasser med overskriften i hovedet og navn fra den (aria-labelledby)', (ix.match(/<section class="kasse" aria-labelledby="(indst-[a-z]+)"><div class="kasse-top"><svg class="kasse-ikon" [^>]*>.*?<\/svg><h2 id="\1">/g) || []).length === 6 && (ix.match(/<div class="kasse-indhold fyld">/g) || []).length === 6);
+  tjek('B2c index.html: popuppens syv grupper er kasser i fast rækkefølge med overskriften i hovedet og navn fra den (aria-labelledby)', [...ix.matchAll(/<section class="kasse" aria-labelledby="(indst-[a-z]+)"><div class="kasse-top">(?:<svg class="kasse-ikon" [^>]*>.*?<\/svg>)?<h2 id="\1">/g)].map(m => m[1]).join() === 'indst-generelt,indst-dato,indst-start,indst-notif,indst-forbindelse,indst-data,indst-foerste' && (ix.match(/<div class="kasse-indhold fyld">/g) || []).length === 7);
   {
     const s = side('#indstillinger', B2()), { d } = s;
     await sov(50);
     const g = d.getElementById('glem-dialog'), n = d.getElementById('nulstil-dialog');
-    tjek('B2c dialogerne er kittets (.modal) med de kendte id\'er, navn og beskrivelse', [g, n].every(x => x && x.tagName === 'DIALOG' && x.className === 'modal' && x.closest('#visning-indstillinger')) && g.getAttribute('aria-labelledby') === 'glem-h' && g.getAttribute('aria-describedby') === 'glem-p' && d.getElementById('glem-h').textContent === 'Glem API Tokenet?' && d.getElementById('glem-ja').classList.contains('danger') && d.getElementById('glem-ja').parentElement.className === 'modal-fod' && !d.getElementById('bekraeft-dialog'), g && g.outerHTML.slice(0, 160));
+    tjek('B2c dialogerne er kittets (.modal) med de kendte id\'er, navn og beskrivelse', [g, n].every(x => x && x.tagName === 'DIALOG' && x.className === 'modal' && x.parentElement === d.body) && g.getAttribute('aria-labelledby') === 'glem-h' && g.getAttribute('aria-describedby') === 'glem-p' && d.getElementById('glem-h').textContent === 'Glem API Tokenet?' && d.getElementById('glem-ja').classList.contains('danger') && d.getElementById('glem-ja').parentElement.className === 'modal-fod' && !d.getElementById('bekraeft-dialog'), g && g.outerHTML.slice(0, 160));
     d.getElementById('glem').focus(); d.getElementById('glem').click();
     const aaben = g.hasAttribute('open'), fokus = d.activeElement.id;
     g.dispatchEvent(new s.w.Event('cancel')); g.close(); await sov(10);
@@ -1322,7 +1328,7 @@ const dagFor = n => new Date(urNu() - n * 864e5).toISOString().slice(0, 10);
   const s = side('#indstillinger', B2({ data_status: () => data, nulstil_historik: null })), { d, kald, w } = s;
   await sov(50);
   const knap = d.getElementById('nulstil'), dialog = d.getElementById('nulstil-dialog'), p = d.getElementById('nulstil-p');
-  const dataKort = d.querySelectorAll('.indst > .kasse')[4], rk = [...dataKort.querySelectorAll('.raekke')].at(-1);
+  const dataKort = d.querySelector('.indst > .kasse[aria-labelledby="indst-data"]'), rk = [...dataKort.querySelectorAll('.raekke')].at(-1);
   tjek('Nulstil: rækken siger, hvad der er væk for altid', rk.contains(knap) && knap.classList.contains('danger') && knap.textContent === 'Nulstil historik…' && rk.textContent.includes('Sletter alle tal på din computer og henter dem forfra. Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år — alt ældre er væk for altid.') && knap.getAttribute('aria-describedby') === 'nulstil-note', rk.textContent);
   knap.click(); await sov(10);
   tjek('Nulstil: dialogen siger det med konkrete datoer, og intet slettes endnu', dialog.hasAttribute('open') && d.getElementById('nulstil-h').textContent === 'Nulstil historikken?' && p.textContent === 'Du har sikkerhedstal fra 4. oktober. Efter nulstilling kan kun tal fra 6. oktober hentes igen. 2 dage forsvinder for altid.' && !kald.some(k => k[0] === 'nulstil_historik'), p.textContent);
@@ -1699,7 +1705,9 @@ const ROBOT_DYK = dykSvar({ regler: [], top: { regel: [], land: [], netvaerk: []
         await sov(0);
         if (hvordan === 'klik') e.dispatchEvent(new w.MouseEvent('click', { bubbles: true, cancelable: true }));
         else e.dispatchEvent(new w.KeyboardEvent('keydown', { key: hvordan, bubbles: true, cancelable: true }));
-        if (w.location.hash !== maal) galt.push(`${hvordan}: ${w.location.hash} ≠ ${maal}`);
+        /* V-INDST.1: et mål under Indstillinger åbner en dialog over visningen og ændrer ikke adressen. */
+        if (maal.startsWith('#indstillinger')) { if (w.location.hash.includes('indstillinger') || !d.querySelector('dialog[open]')) galt.push(`${hvordan}: ${maal} åbnede ${aabneDialoger(d) || 'ingen dialog'} (${w.location.hash})`); w.hmIndst.lukAlle(); }
+        else if (w.location.hash !== maal) galt.push(`${hvordan}: ${w.location.hash} ≠ ${maal}`);
       }
       if (galt.length > 3) break;
     }
@@ -2198,16 +2206,13 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   const z = { zones_cache: { zoner: OVERBLIK, hentet: NU_ISO }, data_status: { bytes: 8e6, foerste: '2026-10-04', sidste: '2026-11-03', domaener: 3 } };
   const s = side('#indstillinger?afsnit=login&zone=z2', DYK({ ...VIS, ...z })), { d } = s;
   await sov(90);
-  tjek('V Indstillinger: Pr. domæne har login-stier med domænet fra adressen', d.getElementById('login-domaene').value === 'z2' && s.kald.some(k => k[0] === 'login_stier' && k[1].zone === 'z2') && d.querySelectorAll('#login-panel .login-valg input').length === 3, d.getElementById('login-domaene').value);
-  d.getElementById('login-domaene').value = 'z1';
-  d.getElementById('login-domaene').dispatchEvent(new s.w.Event('change', { bubbles: true }));
-  await sov(40);
-  tjek('V Indstillinger: et andet domæne henter sine stier', s.kald.some(k => k[0] === 'login_stier' && k[1].zone === 'z1'));
-  const boks = d.querySelector('#login-panel .login-valg input');
+  const lq = new URLSearchParams(s.w.location.hash.split('?')[1] || '');
+  tjek('V den gamle adresse #indstillinger?afsnit=login&zone=… åbner Login for domænet med "Ret stier" foldet ud (login-stierne står ikke længere under Indstillinger)', s.w.location.hash.startsWith('#login?') && lq.get('zone') === 'z2' && synlige(d).join() === 'login' && aabneDialoger(d) === '' && d.querySelector('#login-rod details.login-ret')?.open === true && s.kald.some(k => k[0] === 'login_stier' && k[1].zone === 'z2') && d.querySelectorAll('#login-rod .login-ret .login-valg input').length === 3 && !d.getElementById('login-domaene') && !d.getElementById('indst-login'), s.w.location.hash + ' ' + aabneDialoger(d));
+  const boks = d.querySelector('#login-rod .login-ret .login-valg input');
   boks.checked = false;
   boks.dispatchEvent(new s.w.Event('change', { bubbles: true }));
   await sov(30);
-  tjek('V Indstillinger: en sti slås fra', s.kald.some(k => k[0] === 'login_sti_saet' && k[1].zone === 'z1' && k[1].sti === '/login' && k[1].til === false));
+  tjek('V Ret stier fra den gamle adresse: en sti slås fra', s.kald.some(k => k[0] === 'login_sti_saet' && k[1].zone === 'z2' && k[1].sti === '/login' && k[1].til === false), JSON.stringify(s.kald.filter(k => k[0] === 'login_sti_saet')));
 }
 {
   const s = side('#overblik', DYK(VIS)), { d, w } = s;
@@ -2252,7 +2257,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   const sidst = (x, c) => x.kald.filter(k => k[0] === c).pop();
   tjek('BES visningen står, og kaldet har zonen, 7 dage og intet land', synlige(d).join() === 'besoegende' && sidst(s, 'besoegende')[1].omfang.zone === 'z1' && sidst(s, 'besoegende')[1].periode === 'd7' && sidst(s, 'besoegende')[1].land === null, JSON.stringify(sidst(s, 'besoegende')));
   const punkt = x => x.d.querySelector('a[data-visning="besoegende"]');
-  tjek('BES menupunktet efter Land lige nu med Ctrl+7 (dansk, Windows) og ⌘7 (engelsk, macOS), og det er det aktuelle', [...s.d.querySelectorAll('#baand a.vk:not(#indst-knap)')].at(-2).dataset.visning === 'land' && [...s.d.querySelectorAll('#baand a.vk:not(#indst-knap)')].at(-1) === punkt(s) && punkt(s).textContent === 'Besøgende' && punkt(s).getAttribute('aria-keyshortcuts') === 'Control+7' && punkt(en).textContent === 'Visitors' && punkt(en).getAttribute('aria-keyshortcuts') === 'Meta+7' && punkt(s).getAttribute('aria-current') === 'page' && punkt(s).matches('.vfane'), punkt(s).textContent + ' / ' + punkt(en).textContent);
+  tjek('BES menupunktet efter Land lige nu med Ctrl+7 (dansk, Windows) og ⌘7 (engelsk, macOS), og det er det aktuelle', [...s.d.querySelectorAll('#baand a.vk')].at(-2).dataset.visning === 'land' && [...s.d.querySelectorAll('#baand a.vk')].at(-1) === punkt(s) && punkt(s).textContent === 'Besøgende' && punkt(s).getAttribute('aria-keyshortcuts') === 'Control+7' && punkt(en).textContent === 'Visitors' && punkt(en).getAttribute('aria-keyshortcuts') === 'Meta+7' && punkt(s).getAttribute('aria-current') === 'page' && punkt(s).matches('.vfane'), punkt(s).textContent + ' / ' + punkt(en).textContent);
   tjek('BES titel og hjælp følger visningen, og Genveje i hjælpen har ⌘7/Ctrl+7', d.title.startsWith('Besøgende · wi24rd.com') && en.d.title.startsWith('Visitors · wi24rd.com') && !d.querySelector('.hjaelp-del[data-hjaelp=besoegende]').hidden && d.querySelector('[data-t=hjBesoeg]').textContent.startsWith('Her ser du') && d.getElementById('genveje').textContent.includes('Ctrl+7Besøgende') && en.d.getElementById('genveje').textContent.includes('⌘7Visitors'), d.title + ' / ' + en.d.getElementById('genveje').textContent);
   const fl = qa('.besoeg-fliser > *'), flise = t => fl.find(x => x.textContent.includes(t));
   tjek('BES fem fliser med tallene og "N af M dage"', fl.length === 5 && flise('i går').querySelector('.sflise-tal').textContent === '412' && flise('på 7 dage').textContent === 'Unikke besøgende på 7 dage2.3806 af 7 dage' && flise('på 30 dage').querySelector('.sflise-under') === null && flise('på et år').textContent === 'Unikke besøgende på et år131.900340 af 365 dage' && flise('Besøg på 30 dage').querySelector('.sflise-tal').textContent === '4.210', fl.map(x => x.textContent).join(' | '));
@@ -2686,7 +2691,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('L "Tilbage til" står, indtil man forlader Indstillinger', tilK.hidden, tilK.textContent);
   const ingenF = side('#indstillinger', LANDV({ land_hent: { land: 'DK', forslag: null }, autostart_hent: false, notifikation_hent: { niveau: 'standard', roed: true, zoner: {} }, data_status: { bytes: 1, foerste: null, sidste: null, domaener: 0 } }));
   await sov(80);
-  tjek('L uden et tydeligt forslag er der ingen knap', ingenF.d.getElementById('indst-land-forslag').hidden && !ingenF.d.getElementById('visning-indstillinger').textContent.includes('Foreslået'));
+  tjek('L uden et tydeligt forslag er der ingen knap', ingenF.d.getElementById('indst-land-forslag').hidden && !ingenF.d.getElementById('indst-dialog').textContent.includes('Foreslået'));
 
   /* Ramme, engelsk, Hvorfor */
   const en = side('#land?kode=DK', LANDV(), 'en');
@@ -2717,7 +2722,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   tjek('L hjælpen følger visningen med ordene', !hj.d.querySelector('.hjaelp-del[data-hjaelp=land]').hidden && [...hj.d.querySelectorAll('#ord-land dt')].map(x => x.textContent).join() === 'Cloudflare Radar,Indeks,Kilde og mål');
   const ids = ['radar', 'indeks', 'kildemaal', 'tendens'];
   tjek('L BOG: de nye ord findes på begge sprog', ids.every(id => hj.w.hmSprog.bogIds.includes(id) && hj.w.hmSprog.bog(id).alle && en.w.hmSprog.bog(id).alle !== hj.w.hmSprog.bog(id).alle));
-  tjek('L slogan: ét sted, på Om og opsætningen', [...hj.d.querySelectorAll('.velkomst .slogan')].length === 2 && hj.d.querySelector('#visning-opsaetning .filosofi-slogan').textContent === 'Sikkerhed er ikke noget, man køber. Det er noget, man forstår.' && hj.d.querySelector('#visning-indstillinger .slogan') && en.d.querySelector('#visning-indstillinger .slogan').textContent === "Security isn't something you buy. It's something you understand.");
+  tjek('L slogan: ét sted, på Om og i guidens trin 1', [...hj.d.querySelectorAll('.velkomst .slogan')].length === 2 && hj.d.querySelector('#guide-trin-velkommen .filosofi-slogan').textContent === 'Sikkerhed er ikke noget, man køber. Det er noget, man forstår.' && hj.d.querySelector('#om-dialog .slogan') && en.d.querySelector('#om-dialog .slogan').textContent === "Security isn't something you buy. It's something you understand.");
   const da = fs.readFileSync(path.join(repo, 'README.da.md'), 'utf8'), enR = fs.readFileSync(path.join(repo, 'README.md'), 'utf8');
   tjek('L begge README: slogan under titlen og afsnittet', da.split('\n').slice(0, 5).join().includes('Sikkerhed er ikke noget, man køber.') && enR.split('\n').slice(0, 5).join().includes("Security isn't something you buy.") && da.includes('## Dit land lige nu og Verden') && enR.includes('## Your country now and the World'));
   tjek('L licens: egen kode er Apache-2.0, W\'s filer står som før', (t => t.includes('Programmets egen kode er under Apache-2.0-licensen') && !t.includes('egen kode er under MIT') && t.includes('samme ophavsmand, MIT'))(fs.readFileSync(path.join(repo, 'THIRD_PARTY_LICENSES.md'), 'utf8')));
@@ -2742,14 +2747,14 @@ const DOMV = (fravalgte = [], x) => {
   const { d } = s, rk = [...d.querySelectorAll('#overblik-raekker tr')], note = d.getElementById('fravalgt-note');
   tjek('D2 Overblik: et fravalgt domæne står ikke i tabellen', rk.length === 1 && rk[0].textContent.includes('wi24rd.com') && !d.getElementById('overblik-tabel').textContent.includes('xyz.wi24rd.com'));
   tjek('D4 titlen tæller kun dem, der er til', d.getElementById('overblik-antal').textContent === '· 1 domæne', d.getElementById('overblik-antal').textContent);
-  tjek('D4 de fravalgte nævnes ét sted, og linjen er klikbar', !note.hidden && note.textContent === '2 domæner er ikke valgt — Indstillinger' && note.dataset.gaa === 'indstillinger?afsnit=domaener', note.textContent);
+  tjek('D4 de fravalgte nævnes ét sted, og linjen er klikbar', !note.hidden && note.textContent === '2 domæner er ikke valgt — Vælg domæner' && note.dataset.gaa === 'indstillinger?afsnit=domaener', note.textContent);
   note.click();
   await sov(60);
-  tjek('D4 linjen åbner Indstillinger', synlige(d).join() === 'indstillinger' && s.w.location.hash === '#indstillinger?afsnit=domaener', s.w.location.hash);
+  tjek('D4 linjen åbner dialogen Domæner over Overblik', synlige(d).join() === 'overblik' && aabneDialoger(d) === 'domaener-dialog' && !s.w.location.hash.includes('indstillinger') && d.querySelector('#domaener-dialog #domaener-liste') !== null, s.w.location.hash + ' ' + aabneDialoger(d));
 
   const e1 = side('#overblik', DOMV(['z1']), 'en');
   await sov(70);
-  tjek('D4 engelsk og ental', e1.d.getElementById('fravalgt-note').textContent === '1 domain is not chosen — Settings' && e1.d.getElementById('samlet').textContent === 'Attacks for all');
+  tjek('D4 engelsk og ental', e1.d.getElementById('fravalgt-note').textContent === '1 domain is not chosen — Choose domains' && e1.d.getElementById('samlet').textContent === 'Attacks for all');
 
   const tom = side('#overblik', DOMV(['z1', 'z2', 'z3']));
   await sov(70);
@@ -2779,16 +2784,16 @@ const DOMV = (fravalgte = [], x) => {
   gl2.w.location.hash = '#dyk?zone=z2&navn=b.wi24rd.com&regel=x';
   await sov(70);
   tjek('D2 en gammel dyk-adresse på et fravalgt domæne går til det samlede Angreb', gl2.w.location.hash === '#vaernet?samlet=1' && synlige(gl2.d).join() === 'vaernet', gl2.w.location.hash);
-  tjek('D2 Pr. domæne og Login-stier har ikke det fravalgte', (x => !x.includes('xyz.wi24rd.com'))(gl2.d.getElementById('pr-domaene-liste').textContent + gl2.d.getElementById('login-domaene').textContent));
+  tjek('D2 Pr. domæne og Login-stier har ikke det fravalgte', (x => !x.includes('xyz.wi24rd.com'))(gl2.d.getElementById('pr-domaene-liste').textContent));
 
   /* Indstillinger → Domæner */
-  const i = side('#indstillinger', DOMV(['z2']));
+  const i = side('#indstillinger?afsnit=domaener', DOMV(['z2']));
   await sov(80);
   const liste = () => [...i.d.querySelectorAll('#domaener-liste tr')], erNavn = (r, n) => r.textContent.includes(n) && !r.textContent.includes('.' + n), kontakt = n => liste().find(r => erNavn(r, n)).querySelector('input');
   tjek('Domæner: alle domæner står, også det fravalgte', liste().length === 3 && kontakt('xyz.wi24rd.com').checked === false && kontakt('wi24rd.com').checked === true);
   const k0 = kontakt('wi24rd.com');
   tjek('Domæner: kontakten er en switch med navn', k0.getAttribute('role') === 'switch' && k0.className === 'tilfra' && k0.getAttribute('aria-label') === 'Vis wi24rd.com i Huginn', k0.outerHTML);
-  tjek('Domæner: forklaringen står', i.d.getElementById('visning-indstillinger').textContent.includes('Vælg de domæner, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere; dets tal bliver liggende.') && i.d.getElementById('domaener-alle-til').textContent === 'Vælg alle' && i.d.getElementById('domaener-alle-fra').textContent === 'Fravælg alle');
+  tjek('Domæner: dialogen Domæner står over Overblik med forklaringen', aabneDialoger(i.d) === 'domaener-dialog' && synlige(i.d).join() === 'overblik' && i.d.getElementById('domaener-h').textContent === 'Domæner' && i.d.querySelector('#domaener-dialog #dom-del').textContent.includes('Vælg de domæner, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere; dets tal bliver liggende.') && i.d.getElementById('domaener-alle-til').textContent === 'Vælg alle' && i.d.getElementById('domaener-alle-fra').textContent === 'Fravælg alle');
   tjek('Domæner: API Tokenet ser N domæner', i.d.getElementById('domaener-ser').textContent === 'API Tokenet ser 3 domæner' && !i.d.getElementById('domaener-ser').hidden, i.d.getElementById('domaener-ser').textContent);
   const navn = n => liste().find(r => erNavn(r, n)).querySelector('th');
   tjek('Domæner: navnet åbner Angreb; et fravalgt domæne er væk, så det kan ikke åbnes', navn('wi24rd.com').querySelector('button').dataset.gaa.startsWith('vaernet?zone=z1') && !navn('xyz.wi24rd.com').querySelector('button'));
@@ -2804,16 +2809,16 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Domæner: "Vælg alle"', sidst() === 'z1,z2,z3' && i.w.hmRamme.tilstand.uvalgt.size === 0 && i.d.getElementById('domaener-alle-til').disabled);
   i.d.getElementById('domaener-alle-fra').click();
   await sov(40);
-  tjek('Domæner: "Fravælg alle" uden dialog', sidst() === '' && i.w.hmRamme.tilstand.uvalgt.size === 3 && i.d.getElementById('domaener-alle-fra').disabled && !i.d.getElementById('domaener-alle-til').disabled && !i.d.getElementById('domaener-dialog'), sidst());
+  tjek('Domæner: "Fravælg alle" uden dialog', sidst() === '' && i.w.hmRamme.tilstand.uvalgt.size === 3 && i.d.getElementById('domaener-alle-fra').disabled && !i.d.getElementById('domaener-alle-til').disabled && !i.d.getElementById('bekraeft-dialog') && aabneDialoger(i.d) === 'domaener-dialog', sidst());
   i.tast('1', { ctrlKey: true });
   await sov(50);
   tjek('Domæner: "Fravælg alle" giver tom-tilstanden', !i.d.getElementById('overblik-tom').hidden && i.d.getElementById('overblik-rul').hidden);
-  const eneste = side('#indstillinger', DOMV(['z2', 'z3']));
+  const eneste = side('#indstillinger?afsnit=domaener', DOMV(['z2', 'z3']));
   await sov(80);
   [...eneste.d.querySelectorAll('#domaener-liste input')].find(x => x.checked).click();
   await sov(30);
   tjek('Domæner: det sidste domæne kan fravælges uden dialog', eneste.kald.filter(k => k[0] === 'domaener_saet').pop()[1].valgte.length === 0);
-  const ufejl = side('#indstillinger', DOMV([], { domaener_saet: () => { throw { kode: 'lager' }; } }));
+  const ufejl = side('#indstillinger?afsnit=domaener', DOMV([], { domaener_saet: () => { throw { kode: 'lager' }; } }));
   await sov(80);
   const uk = ufejl.d.querySelector('#domaener-liste input');
   uk.click();
@@ -2868,7 +2873,7 @@ const DOMV = (fravalgte = [], x) => {
   const s = side('#overblik', DOMV(['z1', 'z2', 'z3'], { land_hent: { land: 'DK', forslag: null } }));
   await sov(90);
   const { d, w } = s, steder = ['opsaetning-punkter', 'intet-valgt', 'om'].map(x => d.querySelector(`[data-velkomst="${x}"] .velkomst`));
-  tjek('W velkomsten findes de tre steder', steder.every(Boolean) && d.querySelector('#visning-opsaetning .velkomst') === steder[0] && d.querySelector('#visning-overblik .velkomst') === steder[1] && d.querySelector('#visning-indstillinger .velkomst') === steder[2]);
+  tjek('W velkomsten findes de tre steder: guidens trin 1, Overblik uden valgte domæner og dialogen Om', steder.every(Boolean) && d.querySelector('#guide-dialog #guide-trin-velkommen .velkomst') === steder[0] && d.querySelector('#visning-overblik .velkomst') === steder[1] && d.querySelector('#om-dialog .velkomst') === steder[2] && !d.querySelector('#visning-opsaetning .velkomst, #indst-dialog .velkomst'));
   tjek('W samme indhold i Om og intet valgt', fælles(steder[1]) === fælles(steder[2]), fælles(steder[1]).slice(0, 200));
   tjek('W samme punkter alle tre steder', new Set(steder.map(x => x.querySelector('.velkomst-punkter').textContent)).size === 1);
   const v = steder[2], punkter = [...v.querySelectorAll('.velkomst-punkter li')];
@@ -2878,7 +2883,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('W sloganet og overskriften', v.querySelector('.slogan').textContent === w.hmSprog.T.slogan && v.querySelector('.velkomst-h').textContent === 'Det her kan du forvente');
   const form = e => e.querySelector('path, rect, circle').outerHTML;
   const kilder = ['skjold', null, 'hm-overblik', 'hm-siden', 'laas']; // fanerne har ingen ikoner (V-FANER.1): ikonerne er kittets og programmets egne
-  const klokke = [...d.querySelectorAll('#visning-indstillinger h2')].find(h => h.textContent === 'Notifikationer').previousElementSibling;
+  const klokke = [...d.querySelectorAll('#indst-dialog h2')].find(h => h.textContent === 'Notifikationer').previousElementSibling;
   const ikoner = kilder.map((q, i) => (i === 1 ? klokke : w.Kit.ikon(q)));
   tjek('W fem punkter med skjold, klokke, gitter, ur og lås (kittets og programmets ikoner, klokken fra Indstillinger)', punkter.length === 5 && punkter.every((p, i) => p.querySelector('svg.ik') && form(p.querySelector('svg')) === form(ikoner[i])), String(punkter.length));
   tjek('W punkt 1 bruger programmets egne statusnavne', punkter[0].textContent === 'Huginn holder øje med sikkerheden på alle dine Cloudflare-domæner: angreb, robotter og login-forsøg, samlet på én skærm med en dom i klart sprog: Roligt, Hold øje eller Handl.', punkter[0].textContent);
@@ -2893,17 +2898,17 @@ const DOMV = (fravalgte = [], x) => {
   tjek('W Om har ingen knap', !steder[2].querySelector('button') && d.getElementById('om-version') && d.querySelector('.om').textContent.includes('Cloudflare, Inc.'));
   const knap = steder[1].querySelector('button');
   tjek('W intet valgt: teksten og "Vælg domæner"', steder[1].querySelector('.velkomst-situation')?.textContent.includes('Du har ikke valgt nogen domæner endnu') && knap?.textContent === 'Vælg domæner' && knap?.dataset.gaa === 'indstillinger?afsnit=domaener' && knap?.getAttribute('aria-label') === 'Vælg domæner');
-  const ops = d.getElementById('visning-opsaetning'), foer = (x, y) => Boolean(x.compareDocumentPosition(y) & 4);
-  const top = ops.querySelector('.velkomst-kompakt'), felt = d.getElementById('token-form'), fil = ops.querySelector('.filosofi');
-  tjek('W opsætningen: logo og navn, formularen, punkterne og filosofien i den rækkefølge', top && foer(top, d.getElementById('opsaetning-h')) && foer(d.getElementById('opsaetning-h'), felt) && foer(felt, steder[0]) && foer(steder[0], fil) && top?.querySelector('.tom-ravn') && top?.querySelector('.velkomst-cf').textContent === 'for Cloudflare®' && d.querySelector('#visning-opsaetning .hm-hjaelp'));
+  const ops = d.getElementById('visning-opsaetning'), g1 = d.getElementById('guide-trin-velkommen'), foer = (x, y) => Boolean(x.compareDocumentPosition(y) & 4);
+  const top = g1.querySelector('.velkomst-kompakt'), felt = d.getElementById('token-form'), fil = g1.querySelector('.filosofi');
+  tjek('W guidens trin 1: logo og navn, punkterne og filosofien i den rækkefølge; formularen og vejledningen står i trin 2, og intet af det står i arbejdsfladen', top && foer(top, steder[0]) && foer(steder[0], fil) && top?.querySelector('.tom-ravn') && top?.querySelector('.velkomst-cf').textContent === 'for Cloudflare®' && felt.closest('#guide-trin-token') && d.querySelector('#guide-trin-token .hm-hjaelp') && !g1.querySelector('input, form') && !d.querySelector('main form, main .hm-hjaelp, main .filosofi'));
   tjek('W opsætningen: ingen knap i velkomsten', !steder[0].querySelector('button') && !top?.querySelector('button') && !fil.querySelector('button'));
-  tjek('W opsætningen: h1 er første overskrift, og navnet er ikke en overskrift', ops.querySelector('h1, h2, h3') === d.getElementById('opsaetning-h') && !top?.querySelector('h1, h2, h3') && top?.querySelector('.velkomst-navn').tagName === 'P');
-  tjek('W opsætningen: sloganet står én gang, i filosofien', ops.textContent.split(w.hmSprog.T.slogan).length === 2 && fil.querySelector('.filosofi-slogan').textContent === w.hmSprog.T.slogan && !ops.querySelector('.slogan'));
-  tjek('W filosofien står kun i opsætningen', d.querySelectorAll('.filosofi').length === 1 && !d.getElementById('visning-indstillinger').textContent.includes('filosofi') && !d.getElementById('visning-overblik').textContent.includes('filosofi'));
+  tjek('W opsætningen: h1 er første overskrift (den tomme tilstand er h2 under den), og navnet er ikke en overskrift', ops.querySelector('h1, h2, h3') === d.getElementById('opsaetning-h') && ops.querySelector('#opsaet-tom h2.tomt-h')?.textContent === 'Der er ikke gemt et API Token' && !top?.querySelector('h1, h2, h3') && top?.querySelector('.velkomst-navn').tagName === 'P');
+  tjek('W guidens trin 1: sloganet står én gang, i filosofien', g1.textContent.split(w.hmSprog.T.slogan).length === 2 && fil.querySelector('.filosofi-slogan').textContent === w.hmSprog.T.slogan && !g1.querySelector('.slogan'));
+  tjek('W filosofien står kun i guidens trin 1', d.querySelectorAll('.filosofi').length === 1 && !d.getElementById('om-dialog').textContent.includes('filosofi') && !d.getElementById('indst-dialog').textContent.includes('filosofi') && !d.getElementById('visning-overblik').textContent.includes('filosofi'));
   tjek('W Om og intet valgt har sloganet under navnet', steder.slice(1).every(x => x.querySelector('.velkomst-navn + .slogan')));
   tjek('W filosofien ordret på dansk', [...fil.children].map(e => e.textContent).join('|') === 'Wi24rd — vores filosofi|Sikkerhed er ikke noget, man køber. Det er noget, man forstår.|Vi mener, at cybersikkerhed skal være tilgængelig for alle – ikke kun for store virksomheder med dyre værktøjer og egne sikkerhedsteams.|Ingen falske løfter. Ingen unødig kompleksitet. Bare praktiske værktøjer, klare indsigter og den viden, der skal til for at træffe bedre sikkerhedsbeslutninger.|Lavet til at styrke dig. Ikke til at gøre dig afhængig.', [...fil.children].map(e => e.textContent).join('|'));
   tjek('W filosofien: versalerne er CSS, ikke tekst', /\.filosofi-h \{[^}]*text-transform: uppercase/.test(ui('assets/app.css')) && fil.querySelector('h2').textContent !== fil.querySelector('h2').textContent.toUpperCase());
-  tjek('W opsætningen: fokus i nøglefeltet ruller ikke velkomsten væk', /\$\('token'\)\.focus\(\{ preventScroll: true \}\)/.test(ui('assets/ramme.js')));
+  tjek('W guiden: fokus står på trinets overskrift, når et trin åbner (ikke i feltet), og rammen flytter ikke fokus til feltet', /const h = \$\('guide-h'\);\s*if \(h && guideDialog\.aaben\) h\.focus\(\);/.test(ui('assets/visning-indstillinger.js')) && !/\$\('token'\)\.focus/.test(ui('assets/ramme.js')));
   const en = side('#overblik', DOMV(['z1', 'z2', 'z3'], { land_hent: { land: null, forslag: null } }), 'en', 'windows', w2 => Object.defineProperty(w2.navigator, 'language', { value: 'en', configurable: true }));
   await sov(90);
   const ev = en.d.querySelector('[data-velkomst="om"] .velkomst'), ep = [...ev.querySelectorAll('.velkomst-punkter li')];
@@ -2931,12 +2936,15 @@ const DOMV = (fravalgte = [], x) => {
       kortdata: { verden: { lande: { DK: [0, 0], US: [0, 0], VC: [0, 0] }, colo: {}, net: {}, land: '' }, colo: {}, tidszoner: { zoner: {} } },
       login_stier: { stier: [{ sti: '/wp-login.php', til: true, start: true }, { sti: '/wp-admin/', til: false, start: true }, { sti: '/administrator/', til: false, start: true }, { sti: '/user/login', til: false, start: true }, { sti: '/min/egen/meget/lange/login/sti/som/skal/kunne/brydes/uden/at/noget/stikker/ud.php', til: true, start: false }], forslag: ['/api/auth/signin', '/en/meget/lang/sti/til/noget/der/ligner/et/login/og/fylder/hele/raekken/og/lidt/til.php', '/signup', '/register', '/konto/log-ind'] },
     };
-    const maal = `setTimeout(() => { const ud = [], ind = 16 - .5; for (const k of document.querySelectorAll('section:not([hidden]) .kasse, section:not([hidden]) .velkomst')) { const r = k.getBoundingClientRect(); if (!r.width) continue;
-      for (const e of k.querySelectorAll('*')) { if (e.closest('table, .sr-only, dialog') || e.hidden) continue; const kontrol = e.matches('input, select, button, textarea, summary'), tekst = [...e.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim());
+    const maal = `setTimeout(() => { const ud = [], ind = 16 - .5; const trinNr = /[?&]trin=(\\d)/.exec(location.hash); if (trinNr) for (let i = 1; i < Number(trinNr[1]); i++) document.getElementById('guide-naeste').click();
+      /* V-INDST.1: står en dialog åben (popuppen, Domæner, Om eller guiden), er det den, der måles. */
+      const dlg = document.querySelector('dialog[open]'), rulEl = dlg && (dlg.querySelector('#guide .indhold') || dlg.querySelector('.modal-indhold'));
+      for (const k of (dlg ? dlg.querySelectorAll('.kasse, .velkomst, .dom-del') : document.querySelectorAll('section:not([hidden]) .kasse, section:not([hidden]) .velkomst'))) { const r = k.getBoundingClientRect(); if (!r.width) continue;
+      for (const e of k.querySelectorAll('*')) { if (e.closest('table, .sr-only, dialog:not([open])') || e.hidden) continue; const kontrol = e.matches('input, select, button, textarea, summary'), tekst = [...e.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim());
         if (!kontrol && !tekst.length) continue; /* Teksten selv, ikke boksen: en boks med padding må gerne gå ud til kanten. */
         const felter = kontrol ? [e.getBoundingClientRect()] : tekst.flatMap(n => { const g = document.createRange(); g.selectNodeContents(n); return [...g.getClientRects()]; });
         for (const b of felter) { if (!b.width || !b.height) continue; const v = b.left - r.left, h = r.right - b.right; if (v < ind || h < ind) ud.push([e.tagName, e.className, e.id, Math.round(v), Math.round(h)].join(' ')); } } }
-      const sek = document.querySelector('section:not([hidden])'), v = sek.querySelector('.velkomst-navn'), st = q => getComputedStyle(sek.querySelector(q)); let bag = v, bg = 'rgba(0, 0, 0, 0)';
+      const sek = dlg || document.querySelector('section:not([hidden])'), v = sek.querySelector('.velkomst-navn'), st = q => getComputedStyle(sek.querySelector(q)); let bag = v, bg = 'rgba(0, 0, 0, 0)';
       while (bag && bg === 'rgba(0, 0, 0, 0)') { bg = getComputedStyle(bag).backgroundColor; bag = bag.parentElement; }
       const velkomst = v && { hm: parseFloat(st('.velkomst-hm').fontSize), cf: parseFloat(st('.velkomst-cf').fontSize), wi: parseFloat(st('.velkomst-wi').fontSize), h: parseFloat(st('.velkomst-h').fontSize), f24: st('.velkomst-wi em').color, hmFarve: st('.velkomst-hm').color, bg };
       const felt = document.getElementById('token'), fr = felt.getBoundingClientRect(), hoved = document.getElementById('indhold');
@@ -2944,7 +2952,8 @@ const DOMV = (fravalgte = [], x) => {
       const nl = document.getElementById('nav-land'), nf = parseFloat(getComputedStyle(nl).fontSize);
       const nav = { tekst: nl.textContent, title: nl.title, linjer: nl.getBoundingClientRect().height < nf * 2, afskaaret: nl.scrollWidth > nl.clientWidth, ellipse: getComputedStyle(nl).textOverflow };
       const nl2 = document.getElementById('nye-domaener'), nyLinje = nl2 && !nl2.hidden ? { over: [...document.querySelectorAll('body *')].filter(e => !e.closest('.tabel-rul') && e.getBoundingClientRect().right > innerWidth + 1).slice(0, 6).map(e => e.tagName + '.' + e.className + '#' + e.id), bredde: document.documentElement.scrollWidth, inde: innerWidth, h: Math.max(...[...nl2.querySelectorAll('*')].map(x => x.getBoundingClientRect().right)), plads: nl2.getBoundingClientRect().right } : null;
-      const felter = { top: fr.top, bund: fr.bottom, hoejde: fr.height, vindue: innerHeight, rul: hoved.scrollTop, synlig: fr.width > 0 };
+      const felter = { top: fr.top, bund: fr.bottom, hoejde: fr.height, vindue: innerHeight, rul: (rulEl || hoved).scrollTop, synlig: fr.width > 0 };
+      const dr = dlg && dlg.getBoundingClientRect(), df = dlg && dlg.querySelector('.modal-fod, .fod'), dlgBoks = dlg ? { id: dlg.id, top: dr.top, bund: dr.bottom, v: dr.left, h: dr.right, vh: innerHeight, vw: innerWidth, ruller: rulEl.scrollHeight > rulEl.clientHeight + 1, kanRulle: ['auto', 'scroll'].includes(getComputedStyle(rulEl).overflowY), fod: df ? df.getBoundingClientRect().bottom : null, trin: dlg.querySelectorAll('.trin li').length } : null;
       const sl = document.getElementById('server-linje'), serverOver = Boolean(sl && !sl.hidden && [...sl.querySelectorAll('*'), sl].some(e => e.getBoundingClientRect().right > innerWidth + 1));
       const hv = [...document.querySelectorAll('#overblik-raekker .hv-tekst')].map(e => ({ linjer: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)), mere: Boolean(e.nextElementSibling && e.nextElementSibling.classList.contains('hv-mere')) }));
       let kal = null; const kb = document.querySelector('.dato-knap'); if (location.hash.includes('kal=1') && kb) { kb.click(); const b = document.querySelector('.kal').getBoundingClientRect(); kal = { v: b.left, h: b.right, bund: b.bottom, vindue: innerWidth, dage: document.querySelectorAll('.kal-dag').length, vandret: document.documentElement.scrollWidth > innerWidth }; }
@@ -2954,8 +2963,8 @@ const DOMV = (fravalgte = [], x) => {
       const ov = document.getElementById('overblik-rul'), overblik = ov && !ov.hidden && document.querySelector('#overblik-raekker th') ? { boks: ov.clientWidth, indhold: ov.scrollWidth, foerste: getComputedStyle(document.querySelector('#overblik-raekker th')).position } : null;
       if (overblik) { const h = document.querySelector('.hovedomr'); overblik.fladen = h.scrollWidth <= h.clientWidth; ov.scrollLeft = 80; overblik.fast = Math.abs(document.querySelector('#overblik-raekker th').getBoundingClientRect().left - ov.getBoundingClientRect().left) <= 2; }
       const bGraf = document.getElementById('besoeg-graf'), hv2 = document.getElementById('indhold'), besoeg = bGraf ? { soejler: bGraf.querySelectorAll('.dyk-soejle').length, indhold: bGraf.scrollWidth, boks: bGraf.clientWidth, diagram: Math.round(bGraf.querySelector('.dyk-diagram').getBoundingClientRect().width), hovedIndhold: hv2.scrollWidth, hovedBoks: hv2.clientWidth, maaneder: bGraf.querySelectorAll('.dyk-x b').length } : null;
-      document.body.textContent = 'MAALT:' + JSON.stringify({ tabel, overblik, besoeg, hv, kal, velkomst, felter, segmenter, nav, nyLinje, serverOver, n: document.querySelectorAll('section:not([hidden]) .kasse *').length, login: Boolean(document.querySelector('#login-panel .login-valg')), domaener: document.querySelectorAll('#domaener-liste input').length, vandret: document.documentElement.scrollWidth > innerWidth, ud }) + ':SLUT'; }, 1500);`;
-    const koer = (bredde, tekst, tema = 'light', hash = '#indstillinger?zone=z2', ekstra = {}, { sprog = 'da', hoejde = 1400 } = {}) => {
+      document.body.textContent = 'MAALT:' + JSON.stringify({ tabel, overblik, besoeg, hv, kal, velkomst, felter, segmenter, nav, nyLinje, serverOver, n: (dlg || document).querySelectorAll(dlg ? '.kasse *, .dom-del *' : 'section:not([hidden]) .kasse *').length, dlgBoks, domaener: document.querySelectorAll('#domaener-liste input').length, vandret: document.documentElement.scrollWidth > innerWidth, ud }) + ':SLUT'; }, 1500);`;
+    const koer = (bredde, tekst, tema = 'light', hash = '#indstillinger', ekstra = {}, { sprog = 'da', hoejde = 1400 } = {}) => {
       const stub = `<script>localStorage.setItem('hm-sprog',${JSON.stringify(sprog)});localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':${BES_NOEGLE};return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
       const html = ui('index.html').replace('<script src="assets/gamle-valg.js"></script>', UR_STUB + stub + '<script src="assets/gamle-valg.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
       const navn = `${bredde}-${hoejde}-${tekst}-${tema}-${sprog}-${hash.length}-${JSON.stringify(ekstra).length}`, fil = path.join(mappe, 'ui', `maal-${navn}.html`);
@@ -2966,7 +2975,9 @@ const DOMV = (fravalgte = [], x) => {
     };
     for (const [bredde, tekst] of [[1200, 'normal'], [1100, 'large']]) {
       const r = koer(bredde, tekst);
-      tjek(`M Indstillinger ved ${bredde} px, ${tekst}: siden er målt, og Login-stierne og Domæner er med`, r && r.n > 50 && r.login && r.domaener === 2, JSON.stringify(r).slice(0, 200));
+      tjek(`M Indstillinger ved ${bredde} px, ${tekst}: popuppen er målt (den gamle adresse åbner den)`, r && r.n > 50 && r.dlgBoks && r.dlgBoks.id === 'indst-dialog', JSON.stringify(r).slice(0, 200));
+      const rd = koer(bredde, tekst, 'light', '#indstillinger?afsnit=domaener');
+      tjek(`M Domæner ved ${bredde} px, ${tekst}: dialogen er målt med begge domæner, intet står nærmere end 16 px fra kanten (tabeller undtaget), og ingen vandret rullebjælke`, rd && rd.dlgBoks && rd.dlgBoks.id === 'domaener-dialog' && rd.domaener === 2 && !rd.ud.length && !rd.vandret, rd && JSON.stringify(rd.dlgBoks) + ' ' + rd.ud.slice(0, 5).join(' | '));
       tjek(`M Indstillinger ved ${bredde} px, ${tekst}: intet i et kort står nærmere end 16 px fra kanten (tabeller undtaget)`, r && !r.ud.length, r && r.ud.slice(0, 5).join(' | '));
       tjek(`M Indstillinger ved ${bredde} px, ${tekst}: ingen vandret rullebjælke`, r && !r.vandret);
     }
@@ -2975,7 +2986,7 @@ const DOMV = (fravalgte = [], x) => {
     const kontrastTal = (a, b) => { const [x, y] = [lys(a), lys(b)].sort((m, n) => n - m); return (x + .05) / (y + .05); };
     const alleFra = { domaener_hent: zoner.map(z => ({ ...z, til: false })), overblik: [], valg_hent: [] }, udenNoegle = { token_status: { sat: false } };
     const kontraster = [], hoejder = {};
-    for (const [sted, hash, ekstra] of [['Om', '#indstillinger', {}], ['alle slået fra', '#overblik', alleFra], ['opsætningen', '#overblik', udenNoegle]]) {
+    for (const [sted, hash, ekstra] of [['Om', '#indstillinger?afsnit=om', {}], ['alle slået fra', '#overblik', alleFra], ['guidens trin 1', '#overblik', udenNoegle]]) {
       for (const [bredde, tekst, tema] of [[1200, 'normal', 'light'], [1200, 'normal', 'dark'], [1100, 'large', 'dark']]) {
         const r = koer(bredde, tekst, tema, hash, ekstra), v = r && r.velkomst, nav = `${sted}, ${bredde} px, ${tekst}, ${tema}`;
         tjek(`W ${nav}: navnet er størst, og "for Cloudflare®" er mindre`, v && v.hm > v.cf && v.hm > v.wi && v.cf < v.hm * .75, JSON.stringify(v));
@@ -2990,9 +3001,16 @@ const DOMV = (fravalgte = [], x) => {
     /* Feltet uden rul, knapgrupperne og sidebjælken. */
     const felter = [];
     for (const [bredde, hoejde, tema, sprog] of [[1200, 860, 'light', 'da'], [1200, 860, 'dark', 'en'], [1400, 900, 'light', 'da'], [1000, 860, 'light', 'en']]) {
-      const r = koer(bredde, 'normal', tema, '#overblik', udenNoegle, { sprog, hoejde }), f = r && r.felter;
+      const r = koer(bredde, 'normal', tema, '#overblik?trin=2', udenNoegle, { sprog, hoejde }), f = r && r.felter;
       felter.push(f && `${bredde}×${hoejde} ${sprog}: ${Math.round(f.top)}–${Math.round(f.bund)}`);
-      tjek(`F feltet til API Tokenet er synligt uden rul ved ${bredde} × ${hoejde}, ${tema}, ${sprog}`, f && f.synlig && f.vindue <= hoejde && f.rul === 0 && f.bund < f.vindue && f.top > 0, JSON.stringify(f));
+      tjek(`F feltet til API Tokenet (guidens trin 2) er synligt uden rul ved ${bredde} × ${hoejde}, ${tema}, ${sprog}`, f && f.synlig && f.vindue <= hoejde && f.rul === 0 && f.bund < f.vindue && f.top > 0, JSON.stringify(f));
+    }
+    /* V-INDST.1: hver dialog ligger inden for vinduet ved mindste vindue og Stor tekst, fodlinjen kan ses, og indholdet ruller selv. */
+    for (const [navn, hash, ekstra, id, skalRulle] of [['popuppen Indstillinger', '#indstillinger', {}, 'indst-dialog', true], ['Domæner', '#indstillinger?afsnit=domaener', {}, 'domaener-dialog', false], ['Om', '#indstillinger?afsnit=om', {}, 'om-dialog', false], ['guidens trin 1', '#overblik', udenNoegle, 'guide-dialog', true], ['guidens trin 2', '#overblik?trin=2', udenNoegle, 'guide-dialog', false]]) {
+      for (const [bredde, hoejde, tekst] of [[1100, 560, 'large'], [1200, 860, 'normal']]) {
+        const r = koer(bredde, tekst, 'light', hash, ekstra, { hoejde }), b = r && r.dlgBoks;
+        tjek(`V-INDST.1 ${navn} ved ${bredde} × ${hoejde}, ${tekst}: dialogen ligger inden for vinduet med fodlinjen synlig, indholdet kan rulle selv, og der er ingen vandret rullebjælke`, b && b.id === id && b.top >= 0 && b.bund <= b.vh + 1 && b.v >= 0 && b.h <= b.vw + 1 && (b.fod === null || b.fod <= b.vh + 1) && b.kanRulle && (!skalRulle || hoejde > 560 || b.ruller) && !r.vandret, JSON.stringify(b));
+      }
     }
     const grupper = [];
     for (const [sprog, tekst, bredde] of [['da', 'normal', 1200], ['en', 'normal', 1200], ['da', 'large', 1200], ['en', 'large', 1200], ['en', 'large', 1100], ['da', 'compact', 1100]]) {
@@ -3222,7 +3240,7 @@ const DOMV = (fravalgte = [], x) => {
   };
   const send = (s, felt, v) => { felt.value = v; felt.closest('form').dispatchEvent(new s.w.Event('submit', { bubbles: true, cancelable: true })); };
   const steder = [
-    ['Indstillinger', '#indstillinger', async () => { }],
+    ['Den gamle adresse', '#indstillinger?afsnit=login&zone=z1', async () => { }],
     ['Ret stier', '#login?zone=z1&navn=wi24rd.com', async s => { const r = s.d.querySelector('details.login-ret'); r.open = true; r.dispatchEvent(new s.w.Event('toggle')); await sov(60); }],
   ];
   for (const [sted, hash, aabn] of steder) {
@@ -3247,7 +3265,7 @@ const DOMV = (fravalgte = [], x) => {
     await sov(40);
     tjek(`E ${sted}: Fjern kalder login_sti_fjern, og stien er væk`, s.kald.filter(k => k[0] === 'login_sti_fjern').pop()?.[1].sti === '/min-login/' && fjernKnapper().length === 1 && !p().querySelector('.login-valg').textContent.includes('/min-login/'), s.kald.filter(k => k[0] === 'login_sti_fjern').pop()?.[1].sti);
   }
-  const x = stub(), en = side('#indstillinger', { ...B2(), ...VIS, ...x }, 'en');
+  const x = stub(), en = side('#login?zone=z1&navn=wi24rd.com&ret=1', { ...B2(), ...VIS, ...x }, 'en');
   await sov(70);
   const p = en.d.querySelector('.login-panel');
   tjek('E engelsk: Add your own login path, Add, Remove', p.querySelector('.login-egen label').textContent === 'Add your own login path' && p.querySelector('.login-egen button').textContent === 'Add' && p.querySelector('.login-valg button').textContent === 'Remove' && p.querySelector('.login-egen input').placeholder === '/my-login/');
@@ -3303,7 +3321,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek(`KS ingen rest i UI, menu, README og tests (${filer.length} filer)`, filer.length > 15 && fund.length === 0, fund.join());
   const s = side('', B2());
   await sov(30);
-  tjek('KS sidebjælken har de syv visninger og Indstillinger, og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('#baand [data-visning]').length === 8 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('a[data-visning]').length);
+  tjek('KS båndet har de syv visninger (Indstillinger er tandhjulet i titellinjen), og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('#baand [data-visning]').length === 7 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('a[data-visning]').length);
 }
 
 // ── Angreb er én side: overskriften, chips og Nulstil ──
@@ -3395,27 +3413,12 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Foreløbigt mærke: teksten siger, hvornår det afgøres', fd.w.hmSprog.moensterTekst(MAAL).endsWith('Foreløbig — afgøres, når dagen efter er hentet.') && fe.w.hmSprog.moensterTekst(MAAL).endsWith('Preliminary — decided when the next day is fetched.'));
   tjek('Foreløbigt mærke: afgjort står uden "foreløbig"', !fd.w.hmSprog.moensterTekst({ ...MAAL, foreloebig: false }).includes('Foreløbig'));
 
-  /* Den korte tabel er erstattet af en linje og knappen til #teknologi. */
-  const OVER = { zoner: { z1: 3, z2: 1, z3: 0 }, valg: true };
-  let over = JSON.parse(JSON.stringify(OVER));
+  /* V-INDST.1: teknologi står ikke længere under Domæner; vejen er Angreb › Ret teknologier, og "Nulstil for alle domæner" står i båndet på Teknologi (tjekkes dér). */
   const zoner = [{ id: 'z1', navn: 'wi24rd.com', til: true, ny: false }, { id: 'z2', navn: 'xyz.wi24rd.com', til: true, ny: false }, { id: 'z3', navn: 'tom.wi24rd.com', til: true, ny: false }, { id: 'z4', navn: 'fravalgt.wi24rd.com', til: false, ny: false }];
-  const ind = side('#indstillinger', DYK({ domaener_hent: zoner, autostart_hent: true, data_status: { bytes: 1, foerste: null, sidste: null, domaener: 0, nulstil: { sikkerhed: null, trafik: null } }, domaener_saet: null, teknologi_oversigt: () => over, teknologi_nulstil: () => { over = { zoner: { z1: 0, z2: 0, z3: 0 }, valg: false }; return null; } }));
+  const ind = side('#indstillinger?afsnit=domaener', DYK({ domaener_hent: zoner, autostart_hent: true, data_status: { bytes: 1, foerste: null, sidste: null, domaener: 0, nulstil: { sikkerhed: null, trafik: null } }, domaener_saet: null }));
   await sov(140);
-  tjek('Teknologi: en kort linje i stedet for tabellen', ind.d.getElementById('tek-linje').textContent === 'wi24rd.com: 3 valg · xyz.wi24rd.com: 1 valg · 1 domæne uden valg' && !ind.d.getElementById('tek-tabel'), ind.d.getElementById('tek-linje').textContent);
-  tjek('Teknologi: knappen åbner siden', ind.d.getElementById('tek-aabn').dataset.gaa === 'teknologi' && ind.d.getElementById('tek-aabn').textContent === 'Teknologi pr. domæne →', ind.d.getElementById('tek-aabn').outerHTML);
-  tjek('Domænelisten: den lange linje er væk fra domænelisten', !ind.d.querySelector('#domaener-liste .tek-oversigt, #domaener-liste .tek-nulstil'));
-  tjek('Domænelisten: linjen står efter "API Tokenet ser N domæner"', Boolean(ind.d.getElementById('domaener-ser').compareDocumentPosition(ind.d.getElementById('tek-blok')) & 4));
-  const nulKald = () => ind.kald.filter(k => k[0] === 'teknologi_nulstil');
-  ind.d.getElementById('tek-nulstil-alle').click(); await sov(10);
-  tjek('Nulstil teknologi: Nulstil for alle spørger først', ind.d.getElementById('bekraeft-dialog').hasAttribute('open') && !nulKald().length);
-  ind.d.getElementById('bekraeft-nej').click(); await sov(20);
-  tjek('Nulstil teknologi: Annullér nulstiller intet', !nulKald().length && !ind.d.getElementById('bekraeft-dialog').hasAttribute('open'));
-  ind.d.getElementById('tek-nulstil-alle').click(); await sov(10); ind.d.getElementById('bekraeft-ja').click(); await sov(60);
-  tjek('Nulstil teknologi: alle domæner, og knappen går, når der ikke er flere valg', JSON.stringify(nulKald().at(-1)) === '["teknologi_nulstil",{"zone":null}]' && ind.d.getElementById('tek-raekke').hidden && !ind.d.getElementById('tek-blok').hidden, JSON.stringify(nulKald().at(-1)));
-  const kontakt = ind.d.querySelector('#domaener-liste input');
-  const oversigter = () => ind.kald.filter(k => k[0] === 'teknologi_oversigt').length, foerKontakt = oversigter();
-  over = OVER; kontakt.focus(); kontakt.checked = false; kontakt.dispatchEvent(new ind.w.Event('change', { bubbles: true })); await sov(80);
-  tjek('Nulstil teknologi: linjen følger valget af domæner', oversigter() > foerKontakt, oversigter() - foerKontakt);
+  tjek('Teknologi: linjen og knappen under Domæner er væk; Angreb › Ret teknologier åbner siden', !ind.d.getElementById('tek-linje') && !ind.d.getElementById('tek-aabn') && !ind.d.getElementById('tek-blok') && !ind.kald.some(k => k[0] === 'teknologi_oversigt') && /id: 'ret-tek', t: 'baandRetTek', ikon: 'rediger', ved: \(\) => gaaTil\('teknologi'\)/.test(ui('assets/ramme.js')));
+  tjek('Domænelisten: den lange linje er væk fra domænelisten', !ind.d.querySelector('#domaener-liste .tek-oversigt, #domaener-liste .tek-nulstil') && aabneDialoger(ind.d) === 'domaener-dialog' && ind.d.querySelectorAll('#domaener-dialog #domaener-liste input').length === 4, aabneDialoger(ind.d));
 
   /* Boksen "Vurdering" */
   const VURD = { dag: '2026-11-05', maal_ja: false, foreloebig: false, rekog_ja: false, maal: [
@@ -3773,11 +3776,11 @@ const DOMV = (fravalgte = [], x) => {
   /* Del C */
   const op = side('', { token_status: { sat: false }, autostart_hent: true, aabn_api_token: null, token_set: () => { throw { kode: 'mangler_analytics' }; } }), ope = side('', { token_status: { sat: false }, autostart_hent: true, token_set: () => { throw { kode: 'mangler_zone' }; } }, 'en');
   await sov(80);
-  const opS = op.d.getElementById('visning-opsaetning'), ak = [...opS.querySelectorAll('button')].find(b => b.textContent === 'Opret API Token hos Cloudflare');
-  tjek('API Token: knappen i opsætningen åbner Cloudflare gennem Rust', ak && (ak.click(), true) && op.kald.some(k => k[0] === 'aabn_api_token'));
+  const opS = op.d.getElementById('guide-trin-token'), ak = [...opS.querySelectorAll('button')].find(b => b.textContent === 'Opret API Token hos Cloudflare');
+  tjek('API Token: knappen i guidens trin 2 åbner Cloudflare gennem Rust', ak && (ak.click(), true) && op.kald.some(k => k[0] === 'aabn_api_token'));
   const ind = side('#indstillinger', DYK({ autostart_hent: true, data_status: { bytes: 1000, foerste: null, sidste: null, domaener: 0 } }));
   await sov(100);
-  tjek('API Token: knappen og trinene står også under Forbindelse', [...ind.d.querySelectorAll('#visning-indstillinger button')].some(b => b.textContent === 'Opret API Token hos Cloudflare') && ind.d.querySelector('#visning-indstillinger details.token-trin'));
+  tjek('API Token: knappen og trinene står også under Forbindelse', [...ind.d.querySelectorAll('#indst-dialog button')].some(b => b.textContent === 'Opret API Token hos Cloudflare') && ind.d.querySelector('#indst-dialog details.token-trin'));
   const trin = [...opS.querySelectorAll('.token-trin li')].map(l => l.textContent);
   tjek('API Token: trinene med Cloudflares ord, foldbart', opS.querySelector('details.token-trin') && !opS.querySelector('details.token-trin').open && trin.length === 7 && ['Create Token', 'Policies', 'DNS & Zones', 'Analytics & Logs', 'Zone › Read', 'Analytics › Read', 'Include · All zones', 'Specific zone', 'No expiration', 'Continue to summary', 'Analytics: Read', 'Zone: Read'].every(o => trin.join(' ').includes(o)), trin.join(' | '));
   const it = opS.querySelector('.token-it');
@@ -4130,7 +4133,7 @@ const DOMV = (fravalgte = [], x) => {
       mal(proeve, 'kontrolprøve', kontrol);
       document.body.textContent = 'MAALT:' + JSON.stringify({ sider, ud, baand, kontrol: kontrol.map(k => k.t) }) + ':SLUT';
     })();`;
-    const vaern = vaernUd(), MED = SIDER.filter(s => !s.ekstra), OPS = SIDER.find(s => s.id === 'opsaetning'), FRA = SIDER.find(s => s.id === 'alle-fra'), EST = SIDER.find(s => s.id === 'angreb-estimat');
+    const vaern = vaernUd(), MED = SIDER.filter(s => !s.ekstra), OPS = SIDER.find(s => s.id === 'opsaetning'), G1 = SIDER.find(s => s.id === 'guide-1'), G2 = SIDER.find(s => s.id === 'guide-2'), FRA = SIDER.find(s => s.id === 'alle-fra'), EST = SIDER.find(s => s.id === 'angreb-estimat');
     const koer = (navn, tema, ekstra, sider, bredde = 1400, tekst = 'normal') => {
       const stub = `<script>localStorage.setItem('hm-sprog','da');localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';window.__HM_MAAL__=${JSON.stringify(sider)};const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':${BES_NOEGLE};return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
       const html = ui('index.html').replace('<script src="assets/gamle-valg.js"></script>', UR_STUB + stub + '<script src="assets/gamle-valg.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
@@ -4143,13 +4146,13 @@ const DOMV = (fravalgte = [], x) => {
     for (const tema of ['light', 'dark']) {
       const REK7 = { slags: 'rekognoscering', dag: '2026-11-02', stier: 240, normalt: 12, scanner: true, ny: true, netvaerk: null, procent: 0, verden: false, tek: null }, MAAL7 = { ...REK7, slags: 'maalrettet', netvaerk: 'Mal AS', procent: 75, verden: true };
       const B3RK = [{ ...OVERBLIK[0], moenster: MAAL7 }, { ...OVERBLIK[1], moenster: REK7 }];
-      const B3 = koer('b3', tema, { autostart_hent: false, overblik: B3RK, siden_sidst: { vis: false, nye: [], raekker: B3RK, nye_robotter: [] }, dyk: dykSvar({ trafik: { i_alt: 809000, dage: [{ dag: '2026-10-28', n: 410000, median: 1500, stoppet: 19 }, { dag: '2026-10-29', n: 399000, median: 1500, stoppet: 26 }] }, kun_i_dag: { stier: [{ v: '/x', n: 1 }], lande: [], t: null } }) }, [{ navn: 'Overblik med mærker', hash: 'overblik' }, { navn: 'Siden sidst med mærker', hash: 'siden-sidst' }, { navn: 'Angreb med mærke', hash: 'vaernet?' + dom }, { navn: 'Start ved login fra', hash: 'indstillinger' }, { navn: 'dyk med gul linje, boks og kalender', hash: 'dyk?' + dom, aabn: ['.dato-knap'] }]);
+      const B3 = koer('b3', tema, { autostart_hent: false, overblik: B3RK, siden_sidst: { vis: false, nye: [], raekker: B3RK, nye_robotter: [] }, dyk: dykSvar({ trafik: { i_alt: 809000, dage: [{ dag: '2026-10-28', n: 410000, median: 1500, stoppet: 19 }, { dag: '2026-10-29', n: 399000, median: 1500, stoppet: 26 }] }, kun_i_dag: { stier: [{ v: '/x', n: 1 }], lande: [], t: null } }) }, [{ navn: 'Overblik med mærker', hash: 'overblik' }, { navn: 'Siden sidst med mærker', hash: 'siden-sidst' }, { navn: 'Angreb med mærke', hash: 'vaernet?' + dom }, { navn: 'Start ved login fra', hash: 'overblik', aabn: ['#indst-knap'], rod: '#indst-dialog', luk: '#indst-luk' }, { navn: 'dyk med gul linje, boks og kalender', hash: 'dyk?' + dom, aabn: ['.dato-knap'] }]);
       const KAL = koer('kal900', tema, {}, [{ navn: 'kalenderen ved 1100 px og Stor tekst', hash: 'dyk?' + dom, aabn: ['.dato-knap'] }], 1100, 'large');
       const FIX3 = koer('fix3', tema, { overblik: [{ ...OVERBLIK[0], tilstand: [{ slags: 'pause', status: null, kl: null }], laek: { dag: '2026-11-02', n: 3, naaet: 1 } }, OVERBLIK[1]], vurdering: VURD7, login: { ...LOGIN_UD, laek: [{ dag: '2026-11-02', sti: '/login', n: 3, naaet: 1 }], laek_andet: [{ v: 'username_leaked', n: 2 }], laek_dage: 30 }, dyk: dykSvar({ periode: { fra: '2026-01-01', til: '2026-11-02', dage: 306, med: 30, data_fra: '2026-01-01', data_til: '2026-11-02', i_dag: '2026-11-03', sikkerhed_fra: '2026-10-04', trafik_fra: '2026-01-01' }, trafik_serie: [{ dag: '2026-01-01', n: 40, hentet: true }, { dag: '2026-01-02', n: 0, hentet: false }] }) }, [{ navn: 'Overblik med tilstand og læk', hash: 'overblik' }, { navn: 'Angreb med Vurdering', hash: 'vaernet?' + dom, aabn: ['details.vurdering summary'] }, { navn: 'Login med læk', hash: 'login?' + dom }, { navn: 'dyk med året', hash: 'dyk?' + dom + '&periode=alt' }]);
       /* DMARC-afsnittet og den åbne kolonnemenu. */
       const TEK5 = { domaener: [{ zone: 'z1', navn: 'eksempel.wi24rd.com', valg: { react: ['bruger', false] }, antal: { react: 4 } }], katalog: [{ tek: 'react', navn: 'React', gruppe: 'ramme', angreb: 4, set: true, vis: true, ny: false }] };
       const FIX5 = koer('fix5', tema, { email_oversigt: { mails: 1200, fejlet: 41, afsendere: 2, hentede_dage: 30, fejl: null, liste: [{ afsender: 'Ond Afsender', land: 'RU', mails: 40, fejlet: 40 }, { afsender: '', land: '', mails: 9, fejlet: 1 }] }, teknologi_side: TEK5 }, [{ navn: 'Angreb med DMARC', hash: 'vaernet?' + dom }, { navn: '#teknologi med åben kolonnemenu', hash: 'teknologi', aabn: ['.tek-kol-knap'] }]);
-      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [{ ...OPS, aabn: ['.hm-hjaelp summary'] }]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST])];
+      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [OPS]), koer('guide1', tema, G1.ekstra, [G1]), koer('guide2', tema, G2.ekstra, [G2]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST])];
       /* Gradienten er lysest længst mod højre, så båndet måles også i det smalleste vindue og i standardvinduet. */
       const smalle = [1100, 1200].map(b => koer('baand' + b, tema, {}, [{ navn: `skallen ved ${b} px`, hash: 'vaernet?samlet=1' }], b));
       const sider = r.flatMap(x => (x ? x.sider : [])), ud = [...r, ...smalle].flatMap(x => (x ? x.ud : [])), klasser = new Set(sider.flatMap(s => s.klasser));
@@ -4222,12 +4225,108 @@ const DOMV = (fravalgte = [], x) => {
   }
 }
 
+// ── V-INDST.1: popuppen Indstillinger, dialogerne Domæner og Om, og guiden ved første start ──
+{
+  const foerste = w => w.localStorage.removeItem('hm-guide');
+  const ZL = [{ id: 'z1', navn: 'wi24rd.com', til: true, ny: false }, { id: 'z2', navn: 'xyz.wi24rd.com', til: true, ny: false }];
+  let sat = false, auto = true;
+  const g = side('', B2({ token_status: () => ({ sat }), token_set: a => { if (a.token === 'forkert') throw { kode: 'afvist' }; sat = true; return null; }, domaener_hent: () => (sat ? ZL : []), domaener_saet: null, autostart_hent: () => auto, autostart_saet: a => { auto = a.til; return auto; }, notifikation_hent: { niveau: 'standard', roed: true, zoner: {} }, notifikation_saet: null }), 'da', 'windows', foerste);
+  await sov(80);
+  const { d, w } = g, $ = id => d.getElementById(id), trin = () => [...d.querySelectorAll('#guide .trin li')].map(li => li.textContent).join(), indhold = q => d.querySelector('#guide .trin-indhold ' + q);
+  const send = (felt, v) => { felt.value = v; felt.closest('form').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true })); };
+  tjek('V-INDST.1 guiden åbner af sig selv, første gang programmet står uden API Token: fire trin, trin 1 er velkomsten uden felter, og Tilbage er slået fra', aabneDialoger(d) === 'guide-dialog' && trin() === '1Velkommen,2Dit API Token,3Dine domæner,4Besked' && $('guide-h').textContent === 'Velkommen til Huginn and Muninn' && indhold('.velkomst-kompakt') && indhold('.velkomst-punkter') && !indhold('input') && $('guide-tilbage').disabled && $('guide-naeste').textContent === 'Næste' && $('guide-spring').textContent === 'Spring over' && synlige(d).join() === 'opsaetning' && $('guide-dialog').getAttribute('aria-labelledby') === 'guide-h', aabneDialoger(d) + ' ' + trin());
+  tjek('V-INDST.1 guiden: "for Cloudflare®" står for sig og er ikke en del af navnet i en overskrift', indhold('.velkomst-cf').textContent === 'for Cloudflare®' && indhold('.velkomst-navn').tagName === 'P');
+  $('guide-naeste').click(); await sov(20);
+  tjek('V-INDST.1 guiden, trin 2: Cloudflare-knappen, vejledningen, feltet og Gem og forbind; Næste er spærret uden et gemt API Token, og teksten siger hvorfor', $('guide-h').textContent === 'Forbind med Cloudflare' && indhold('#token-form #token') && indhold('.token-hjaelp button')?.textContent === 'Opret API Token hos Cloudflare' && indhold('details.token-trin') && $('guide-naeste').disabled && $('guide-naeste').getAttribute('aria-describedby') === 'guide-spaerret' && !$('guide-spaerret').hidden && $('guide-spaerret').textContent === 'Gem et API Token, der virker, før du går videre.' && !$('guide-tilbage').disabled, $('guide-h').textContent);
+  $('guide-naeste').click(); await sov(10);
+  tjek('V-INDST.1 guiden, trin 2: et klik på den spærrede Næste flytter ikke trinnet', $('guide-h').textContent === 'Forbind med Cloudflare');
+  send($('token'), 'forkert'); await sov(40);
+  tjek('V-INDST.1 guiden, trin 2: et forkert API Token giver fejlen i trinnet, og Næste er stadig spærret', $('token-status').classList.contains('fejl') && $('token-status').textContent.length > 10 && $('guide-naeste').disabled && aabneDialoger(d) === 'guide-dialog', $('token-status').textContent);
+  send($('token'), 'x'.repeat(40)); await sov(120);
+  tjek('V-INDST.1 guiden, trin 2: et API Token, der virker, frigør Næste; guiden bliver stående, feltet er tømt, og fanerne er slået til bag den', !$('guide-naeste').disabled && $('guide-spaerret').hidden && !$('guide-naeste').hasAttribute('aria-describedby') && aabneDialoger(d) === 'guide-dialog' && $('token').value === '' && synlige(d).join() === 'overblik' && d.querySelector('#vis-overblik').getAttribute('aria-disabled') !== 'true' && g.kald.filter(k => k[0] === 'token_set').length === 2, $('token-status').textContent + ' ' + synlige(d).join());
+  $('guide-naeste').click(); await sov(30);
+  tjek('V-INDST.1 guiden, trin 3: samme domæneliste som dialogen Domæner, med en kontakt pr. domæne; de færdige trin kan vælges igen', $('guide-h').textContent === 'Vælg dine domæner' && d.querySelectorAll('#guide .trin-indhold #dom-del #domaener-liste input.tilfra').length === 2 && $('guide-domaener-venter').hidden && d.querySelectorAll('#guide .trin button.t.done').length === 2, $('guide-h').textContent + ' ' + d.querySelectorAll('#guide .trin-indhold #domaener-liste input').length);
+  d.querySelector('#guide #domaener-liste input').click(); await sov(40);
+  tjek('V-INDST.1 guiden, trin 3: et fravalg gemmes med det samme (domaener_saet)', JSON.stringify(g.kald.filter(k => k[0] === 'domaener_saet').pop()?.[1].valgte) === '["z2"]', JSON.stringify(g.kald.filter(k => k[0] === 'domaener_saet')));
+  $('guide-naeste').click(); await sov(30);
+  tjek('V-INDST.1 guiden, trin 4: notifikationsniveauet og Start ved login; knappen hedder Færdig, og domænedelen er lagt tilbage', $('guide-h').textContent === 'Besked og start' && indhold('#opsaet-niveau input[value=standard]')?.checked && indhold('#guide-autostart')?.checked === true && $('guide-naeste').textContent === 'Færdig' && d.querySelector('#indst-dele > #dom-del') && d.querySelector('#guide-dele > #guide-trin-domaener'), $('guide-h').textContent + ' ' + $('guide-naeste').textContent);
+  indhold('#opsaet-niveau input[value=alt]').click(); $('guide-autostart').click(); await sov(30);
+  tjek('V-INDST.1 guiden, trin 4: valgene gemmes med det samme, og popuppens kontroller følger med', JSON.stringify(g.kald.filter(k => k[0] === 'notifikation_saet').pop()?.[1]) === '{"niveau":"alt","roed":true}' && JSON.stringify(g.kald.filter(k => k[0] === 'autostart_saet').pop()?.[1]) === '{"til":false}' && !$('autostart').checked && d.querySelector('#indst-niveau input[value=alt]').checked, JSON.stringify(g.kald.filter(k => /_saet$/.test(k[0])).slice(-3)));
+  $('guide-naeste').click(); await sov(60);
+  tjek('V-INDST.1 guiden: Færdig lukker og åbner Overblik, og at guiden er vist, huskes lokalt (hm-guide), ikke i Rust', aabneDialoger(d) === '' && w.location.hash === '#overblik' && synlige(d).join() === 'overblik' && w.localStorage.getItem('hm-guide') === 'vist' && !g.kald.some(k => /guide/.test(k[0])), aabneDialoger(d) + ' ' + w.location.hash);
+  $('indst-knap').click(); await sov(10); $('guide-igen').click(); await sov(20);
+  tjek('V-INDST.1 "Vis guiden igen" (Indstillinger › Første start) lukker popuppen og åbner guiden på trin 1; med et gemt API Token er Næste fri hele vejen', aabneDialoger(d) === 'guide-dialog' && $('guide-h').textContent === 'Velkommen til Huginn and Muninn' && ($('guide-naeste').click(), $('guide-h').textContent === 'Forbind med Cloudflare') && !$('guide-naeste').disabled && $('guide-spaerret').hidden, aabneDialoger(d) + ' ' + $('guide-h').textContent);
+  $('guide-dialog').dispatchEvent(new w.Event('cancel')); $('guide-dialog').close(); await sov(10);
+  tjek('V-INDST.1 guiden: Esc lukker den, og alle trin og kontroller står stadig i dokumentet', aabneDialoger(d) === '' && ['guide-trin-velkommen', 'guide-trin-token', 'guide-trin-domaener', 'guide-trin-besked', 'token', 'opsaet-niveau', 'guide-autostart', 'dom-del', 'domaener-liste'].every(id => $(id) && $(id).isConnected));
+
+  const u = side('', { token_status: { sat: false }, autostart_hent: true }, 'da', 'windows', foerste);
+  await sov(60);
+  const aabnede = aabneDialoger(u.d);
+  u.d.getElementById('guide-spring').click(); await sov(20);
+  tjek('V-INDST.1 Spring over uden API Token: bag guiden står den rolige tomme tilstand med én knap, fanerne er slået fra, og intet af det gamle står i arbejdsfladen', aabnede === 'guide-dialog' && aabneDialoger(u.d) === '' && synlige(u.d).join() === 'opsaetning' && u.d.getElementById('opsaetning-h').textContent === 'Forbind med Cloudflare' && u.d.querySelector('#opsaet-tom .tomt .tomt-h').textContent === 'Der er ikke gemt et API Token' && u.d.querySelectorAll('#visning-opsaetning button').length === 1 && u.d.getElementById('opsaet-guide').textContent === 'Åbn guiden' && u.d.querySelector('#vis-overblik').getAttribute('aria-disabled') === 'true' && u.w.localStorage.getItem('hm-guide') === 'vist' && !u.d.querySelector('main .kasse, main .indst, main form, main #sprog, main #token, main .velkomst-kompakt, main .filosofi'), aabnede + ' → ' + aabneDialoger(u.d));
+  u.d.getElementById('opsaet-guide').focus(); u.d.getElementById('opsaet-guide').click(); await sov(20);
+  const igen = aabneDialoger(u.d);
+  u.d.getElementById('guide-dialog').dispatchEvent(new u.w.Event('cancel')); u.d.getElementById('guide-dialog').close(); await sov(10);
+  tjek('V-INDST.1 "Åbn guiden" åbner guiden igen, og Esc giver fokus tilbage til knappen', igen === 'guide-dialog' && aabneDialoger(u.d) === '' && u.d.activeElement.id === 'opsaet-guide', igen + ' ' + u.d.activeElement.id);
+  const anden = side('', { token_status: { sat: false }, autostart_hent: true });
+  await sov(60);
+  tjek('V-INDST.1 anden start uden API Token: guiden åbner ikke af sig selv igen; den tomme tilstand står', aabneDialoger(anden.d) === '' && synlige(anden.d).join() === 'opsaetning' && Boolean(anden.d.getElementById('opsaet-guide')));
+  anden.d.getElementById('indst-knap').click(); await sov(10);
+  tjek('V-INDST.1 uden API Token kan popuppen åbnes (sprog, tema, Forbindelse), og "Glem API Token…" er skjult', aabneDialoger(anden.d) === 'indst-dialog' && !anden.d.getElementById('sprog').disabled && anden.d.getElementById('glem').hidden && !anden.d.getElementById('skift-noegle').disabled);
+
+  let pSat = true;
+  const p = side('#vaernet?samlet=1', B2({ token_status: () => ({ sat: pSat }), token_delete: () => { pSat = false; return null; } }));
+  await sov(80);
+  const pd = p.d, knap = pd.getElementById('indst-knap');
+  knap.focus(); knap.click(); await sov(10);
+  const iPopup = [aabneDialoger(pd), pd.activeElement.id, knap.getAttribute('aria-expanded'), p.w.location.hash, p.w.history.length].join(' ');
+  pd.getElementById('nulstil').click(); await sov(30);
+  const oven = aabneDialoger(pd);
+  pd.getElementById('nulstil-dialog').dispatchEvent(new p.w.Event('cancel')); pd.getElementById('nulstil-dialog').close(); await sov(10);
+  const efterEsc = aabneDialoger(pd);
+  pd.getElementById('indst-dialog').dispatchEvent(new p.w.Event('cancel')); pd.getElementById('indst-dialog').close(); await sov(10);
+  tjek('V-INDST.1 tandhjulet åbner popuppen over visningen (fokus på overskriften, aria-expanded, adressen og historikken urørt); en bekræftelse ligger oven på, Esc lukker kun den øverste, og fokus går tilbage til tandhjulet', iPopup === `indst-dialog indst-h true #vaernet?samlet=1 ${p.w.history.length}` && oven === 'nulstil-dialog,indst-dialog' && efterEsc === 'indst-dialog' && aabneDialoger(pd) === '' && pd.activeElement.id === 'indst-knap' && knap.getAttribute('aria-expanded') === 'false' && synlige(pd).join() === 'vaernet', [iPopup, oven, efterEsc, pd.activeElement.id].join(' | '));
+  knap.click(); await sov(10); pd.getElementById('glem').click(); pd.getElementById('glem-ja').click(); await sov(60);
+  tjek('V-INDST.1 "Glem API Token…" lukker popuppen, viser den tomme tilstand med beskeden, og guiden åbner igen', p.kald.some(k => k[0] === 'token_delete') && aabneDialoger(pd) === 'guide-dialog' && synlige(pd).join() === 'opsaetning' && pd.getElementById('opsaet-status').textContent.length > 5 && pd.getElementById('glem').hidden, aabneDialoger(pd) + ' ' + synlige(pd).join() + ' »' + pd.getElementById('opsaet-status').textContent + '«');
+
+  const dm = side('#overblik', DOMV(['z2']));
+  await sov(80);
+  const vd = dm.d.getElementById('vaelg-dom');
+  vd.focus(); vd.click(); await sov(20);
+  const besked = [...dm.d.querySelectorAll('#domaener-dialog #dom-besked #pr-domaene-liste select')];
+  tjek('V-INDST.1 Overblik › Vælg domæner åbner dialogen Domæner: valget pr. domæne (også det fravalgte) og "Giv besked" for hvert valgt domæne', aabneDialoger(dm.d) === 'domaener-dialog' && dm.d.querySelectorAll('#domaener-dialog #domaener-liste input.tilfra').length === 3 && besked.length === 2 && besked.every(v => v.getAttribute('aria-label').startsWith('Notifikationer for ') || v.getAttribute('aria-label').length > 5) && !dm.d.getElementById('pr-domaene-liste').textContent.includes('xyz.wi24rd.com') && dm.d.getElementById('pr-domaene-h').textContent === 'Giv besked' && dm.d.querySelector('#dom-besked [data-t=domBeskedP]').textContent.startsWith('Hvornår du vil have besked om hvert valgt domæne.') && !dm.d.querySelector('#indst-dialog #pr-domaene-liste, #indst-dialog #domaener-liste'), aabneDialoger(dm.d) + ' ' + besked.length);
+  dm.d.getElementById('domaener-luk').click(); await sov(10);
+  tjek('V-INDST.1 Domæner: Luk lukker, og fokus går tilbage til knappen i båndet', aabneDialoger(dm.d) === '' && dm.d.activeElement.id === 'vaelg-dom', dm.d.activeElement.id);
+
+  /* De gamle adresser (A2): hver åbner det rigtige over den visning, der står, og adressen bliver visningens. */
+  for (const [hash, dialog] of [['#indstillinger', 'indst-dialog'], ['#indstillinger?afsnit=om', 'om-dialog'], ['#indstillinger?afsnit=domaener', 'domaener-dialog'], ['#indstillinger?afsnit=data', 'indst-dialog']]) {
+    const x = side(hash, B2());
+    await sov(70);
+    tjek(`V-INDST.1 den gamle adresse ${hash} åbner ${dialog} over Overblik`, aabneDialoger(x.d) === dialog && synlige(x.d).join() === 'overblik' && x.w.location.hash === '#overblik', aabneDialoger(x.d) + ' ' + x.w.location.hash);
+  }
+  const iApp = side('#vaernet?samlet=1', B2());
+  await sov(70);
+  const trinFoer = iApp.w.history.state?.hmTrin;
+  iApp.w.location.hash = '#indstillinger'; await sov(40);
+  const stod = aabneDialoger(iApp.d) + ' ' + iApp.w.location.hash + ' ' + synlige(iApp.d).join();
+  iApp.tast('1', { ctrlKey: true }); await sov(50);
+  tjek('V-INDST.1 den gamle adresse inde i programmet: popuppen åbner over Angreb, adressen bliver Angrebs igen, og et visningsskift lukker popuppen', stod === 'indst-dialog #vaernet?samlet=1 vaernet' && aabneDialoger(iApp.d) === '' && synlige(iApp.d).join() === 'overblik', stod);
+  const gen = side('#overblik', B2(), 'da', 'windows', w2 => w2.sessionStorage.setItem('hm-indst-aaben', '1'));
+  await sov(70);
+  const efterGen = aabneDialoger(gen.d);
+  gen.d.getElementById('indst-luk').click(); await sov(10);
+  tjek('V-INDST.1 efter et skift af sprog eller datoformat (genindlæsning) åbner popuppen igen; Luk glemmer det', efterGen === 'indst-dialog' && gen.w.sessionStorage.getItem('hm-indst-aaben') === null && /sessionStorage, 'hm-indst-aaben', '1'/.test(ui('assets/visning-indstillinger.js')), efterGen);
+  tjek('V-INDST.1 Rust er urørt: programmenuen sender stadig "indstillinger" og "om", og ruten oversætter', /INDSTILLINGER => Some\(Handling::Visning\("indstillinger"\)\)/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'programmenu.rs'), 'utf8')) && /if \(navn === 'indstillinger'\) return aabnIndst\(/.test(ui('assets/ramme.js')));
+  tjek('V-INDST.1 ny kode nævner ikke kittets hjemsted, og ingen andre domæner end wi24rd.com', !/grimnir/i.test(ui('assets/visning-indstillinger.js') + ui('assets/visning-teknologi.js') + ui('assets/ramme.js')) && !/[a-z0-9-]+\.(dk|com|net|org)\b/i.test(ui('assets/visning-indstillinger.js').replace(/wi24rd\.com|wi24rd\b/gi, '')));
+}
+
 // ── Fotobogen: listen følger programmet, og et gennemløb giver et billede af hver visning uden fejl ──
 {
   const visninger = new Set([...ui('index.html').matchAll(/data-visning="([^"]+)"/g)].map(m => m[1])), ider = SIDER.map(s => s.id);
   tjek('Fotobog: hver post i sider.mjs har sit eget id', ider.every(Boolean) && new Set(ider).size === SIDER.length, ider.join());
   const fIndst = SIDER.find(x => x.id === 'indstillinger'), fForb = SIDER.find(x => x.id === 'indstillinger-forbindelse');
-  tjek('V-START.1 fotobog: indstillinger er taget fra toppen uden at åbne API Token-feltet; Forbindelse og Data har sit eget id', fIndst && fIndst.hash === 'indstillinger' && !fIndst.aabn && !fIndst.rul && fForb && fForb.hash === 'indstillinger' && JSON.stringify(fForb.aabn) === '["#skift-noegle"]', JSON.stringify([fIndst, fForb]));
+  tjek('V-START.1 fotobog: indstillinger (popuppen bag tandhjulet) er taget fra toppen uden at åbne API Token-feltet; Forbindelse og Data har sit eget id', fIndst && JSON.stringify(fIndst.aabn) === '["#indst-knap"]' && fIndst.rod === '#indst-dialog' && !fIndst.rul && fForb && JSON.stringify(fForb.aabn) === '["#indst-knap","#skift-noegle"]' && fForb.rul, JSON.stringify([fIndst, fForb]));
+  tjek('V-INDST.1 fotobog: de gamle id\'er findes stadig, og guiden (fire trin), Domæner og Om har hver sit billede', ['indstillinger', 'indstillinger-forbindelse', 'glem-dialog', 'opsaetning', 'teknologi', 'guide-1', 'guide-2', 'guide-3', 'guide-4', 'domaener-dialog', 'om-dialog'].every(x => ider.includes(x)), ider.join());
   tjek('Fotobog: hver hash i sider.mjs starter med en visning fra index.html', SIDER.every(s => visninger.has(s.hash.split('?')[0])), SIDER.filter(s => !visninger.has(s.hash.split('?')[0])).map(s => s.id).join());
   const CHROME = [process.env.HM_CHROME, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(f => f && fs.existsSync(f));
   if (!CHROME) console.log('SPRUNGET OVER Fotobog: Chrome findes ikke (sæt HM_CHROME)');
@@ -4429,7 +4528,22 @@ const DOMV = (fravalgte = [], x) => {
   const fm2 = af.d.querySelector('form.login-egen');
   fm2.querySelector('input').value = 'generic rules'; fm2.dispatchEvent(new af.w.Event('submit', { bubbles: true, cancelable: true })); await sov(40);
   tjek('Teknologinavne: et navn, der ikke kan bruges, siger hvorfor', af.d.getElementById('tek-side-status').textContent.startsWith('Navnet kan ikke bruges.'), af.d.getElementById('tek-side-status').textContent);
-  tjek('Teknologi: sidebjælken peger på Indstillinger, og vinduet har en titel', a.d.querySelector('#indst-knap').getAttribute('aria-current') === 'page' && a.d.title.startsWith('Teknologi pr. domæne'), a.d.title);
+  tjek('Teknologi: fanen Angreb er den aktuelle, båndet har Hent nu, Tilbage til Angreb og Nulstil for alle domæner, og vinduet har en titel', a.d.querySelector('#vis-vaernet').getAttribute('aria-current') === 'page' && [...a.d.querySelectorAll('#baand .grupper > .grp')].filter(g => !g.hidden).map(g => g.querySelector('.cap').textContent).join() === 'Data,Teknologi' && a.d.getElementById('tek-tilbage').textContent === 'Tilbage til Angreb' && a.d.title.startsWith('Teknologi pr. domæne'), a.d.title);
+  {
+    let valg = true;
+    const SIDE2 = () => { const x = SIDE(); if (!valg) x.domaener.forEach(dm => { dm.valg = {}; }); return x; };
+    const na = side('#teknologi', TS({ teknologi_side: () => SIDE2(), teknologi_nulstil: () => { valg = false; return null; } }));
+    await sov(120);
+    const knap = na.d.getElementById('tek-nulstil-alle'), nulKald = () => na.kald.filter(k => k[0] === 'teknologi_nulstil');
+    knap.click(); await sov(10);
+    tjek('Nulstil teknologi: Nulstil for alle (båndet på Teknologi) spørger først', knap.textContent === 'Nulstil for alle domæner' && knap.getAttribute('aria-disabled') !== 'true' && na.d.getElementById('bekraeft-dialog').hasAttribute('open') && !nulKald().length);
+    na.d.getElementById('bekraeft-nej').click(); await sov(20);
+    tjek('Nulstil teknologi: Annullér nulstiller intet', !nulKald().length && !na.d.getElementById('bekraeft-dialog').hasAttribute('open'));
+    knap.click(); await sov(10); na.d.getElementById('bekraeft-ja').click(); await sov(80);
+    tjek('Nulstil teknologi: alle domæner, beskeden står, og knappen slås fra, når der ikke er flere valg', JSON.stringify(nulKald().at(-1)) === '["teknologi_nulstil",{"zone":null}]' && na.d.getElementById('tek-side-status').textContent === 'Teknologi-valgene er nulstillet.' && knap.getAttribute('aria-disabled') === 'true', JSON.stringify(nulKald().at(-1)) + ' ' + na.d.getElementById('tek-side-status').textContent);
+    na.d.getElementById('tek-tilbage').click(); await sov(60);
+    tjek('Teknologi: Tilbage til Angreb åbner Angreb', synlige(na.d).join() === 'vaernet' && na.w.location.hash.startsWith('#vaernet'), na.w.location.hash);
+  }
   tjek('Teknologi: de nye kommandoer er tilladt', ['teknologi_side', 'teknologi_vis_saet', 'teknologi_kolonne', 'teknologi_tilfoej'].every(tilladt));
   const tom = side('#teknologi', TS({ teknologi_side: { domaener: [], katalog: [] } }));
   await sov(120);
