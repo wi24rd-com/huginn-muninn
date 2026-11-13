@@ -340,6 +340,40 @@ a.cb { text-decoration: none; }
 .mere-punkt[aria-disabled="true"]:hover { background: var(--surface); }
 .mere-punkt[aria-disabled="true"] > svg, .mere-punkt[aria-disabled="true"] .mere-navn { opacity: .5; }
 
+/* Fra 2.8.0 (D27): visningerne som båndets egne faner (commandBar med visninger.som: 'faner'). Rækken over båndets knapper
+   har sidens flade (--bg); den åbne fane har båndets flade (--surface-raised), en kant på tre sider og en streg på 2 px i
+   accent øverst, og den dækker rækkens kant forneden (margin -1 px), så fane og bånd er én flade uden kant imellem. Vægt,
+   kant og streg: ikke kun farve. Et punkt med hoejre står for sig i højre side. Båndet under har 4 px mindre luft øverst
+   end uden faner (rækken giver luften). Fanerne flyttes aldrig til Mere. Båndet er et gitter: rækken over begge kolonner,
+   knapperne i den første (resten af bredden) og Mere i den anden (sin egen bredde). Rækken må ikke give Mere-kolonnen
+   bredde (målt i WebKit: med max-content-kolonner fik Mere 357 px af rækken, og Mere slog til, før det var nødvendigt). */
+.cmd.med-faner { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.cmd.med-faner > .cmd-faner { grid-column: 1 / -1; }
+.cmd.enkel.med-faner .grupper { padding-top: var(--space-1); }
+.cmd-faner {
+  display: flex; align-items: flex-end; gap: 2px; min-width: 0; padding: var(--space-1) var(--space-3) 0;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.cmd-faner > .tip-plads { flex: 0 1 auto; min-width: 0; }
+.cmd-faner > .hoejre { margin-left: auto; }
+.vfane {
+  display: flex; align-items: center; gap: var(--space-2); flex: 0 1 auto; min-width: 0; height: 30px; margin-bottom: -1px;
+  padding: 0 var(--space-4); border: 1px solid var(--bg); border-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--bg); color: var(--text); text-decoration: none; font-size: 13px; white-space: nowrap; cursor: pointer;
+}
+.vfane:hover { background: var(--surface); border-color: var(--surface); }
+.vfane[aria-current="page"] { background: var(--surface-raised); border-color: var(--border); font-weight: 600; box-shadow: inset 0 2px 0 var(--accent); }
+.vfane svg { width: 16px; height: 16px; fill: none; stroke: var(--text-muted); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.vfane[aria-current="page"] svg { stroke: var(--accent); }
+.vfane:focus-visible { outline: 2px solid var(--info); outline-offset: -2px; }
+.vfane[aria-disabled="true"] { opacity: .5; cursor: default; }
+.vfane[aria-disabled="true"]:hover { background: var(--bg); border-color: var(--bg); }
+.vfane > .ant { flex: none; font-size: var(--small-size); color: var(--text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.vfane > .ant-kraever {
+  min-width: 20px; height: 18px; padding: 0 6px; border: 1px solid var(--danger); border-radius: var(--radius-pill);
+  background: var(--danger-soft); color: var(--danger); font-weight: 700; text-align: center; line-height: 16px;
+}
+
 /* ── NavPane ── */
 .nav { display: flex; flex-direction: column; width: 232px; flex: none; background: var(--surface); border-right: 1px solid var(--border); }
 .nav h3 { margin: 0; padding: var(--space-3) var(--space-3) var(--space-2); font-size: var(--h3-size); line-height: var(--h3-line); font-weight: var(--h3-weight); }

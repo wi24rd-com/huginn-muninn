@@ -4,6 +4,10 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-13 23:30 — Wi24rd UI Kit 2, pakke 2.8.0
+#### Ændret
+- Pakke 2.8.0 ligger uændret i `ui/assets/kit2/`. Programmet bruger ikke den nye mulighed (visningerne som båndets egne faner) og beholder de store knapper i båndet.
+
 ### 2026-11-13 23:30 — Wi24rd UI Kit 2, pakke 2.7.0: visningerne i båndet er kittets
 #### Ændret
 - **Visningernes knapper i båndet** bygges nu af Wi24rd UI Kit 2 (pakke 2.7.0) i stedet for af programmet selv. De står og virker som før.

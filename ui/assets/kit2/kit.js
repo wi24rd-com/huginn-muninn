@@ -529,13 +529,22 @@
      sidst i båndet: kommandoer, der ikke er plads til på én række, flyttes bagfra ind i dens menu med samme navne, ikoner
      og tilstande, og hvorfor står under navnet; den primære (pri) flyttes sidst. Visningerne og elementer ({ id, element })
      flyttes aldrig. tilpas() regner
-     det om (båndet gør det selv, når det eller en gruppe skifter størrelse). */
+     det om (båndet gør det selv, når det eller en gruppe skifter størrelse).
+     Fra 2.8.0 (D27; kun når som gives, ellers er visningerne præcis som i 2.7.0): visninger: { …, som: 'faner' } stiller
+     visningerne som båndets egne faner i en række over båndets knapper (.cmd-faner) i stedet for en gruppe i båndet. Den
+     åbne fane har båndets flade og en streg i accent øverst og hænger sammen med båndet; de andre ligger på rækkens
+     flade. Et punkt med hoejre: true står for sig i højre side af rækken (fx Ordbog). Fanerne er de samme links (.vk)
+     med de samme greb (markér, saetPunkt), tal, slået fra med hvorfor, genvej og fuldt navn i tippet, afkortning og
+     mellemrum som Enter; de flyttes aldrig til Mere. */
   let cbNr = 0;
   function commandBar(rod, o) {
     const enkel = Boolean(o.udenFaner);
     if (enkel && o.faner.length !== 1) throw new Error('commandBar: udenFaner kræver præcis én fane (fik ' + o.faner.length + ')');
     if ((o.visninger || o.mere) && !enkel) throw new Error('commandBar: visninger og mere kræver udenFaner');
     if (o.visninger && o.visninger.punkter.length > MAKS_VISNINGER) throw new Error('commandBar: højst otte visninger (fik ' + o.visninger.punkter.length + ')');
+    const somFaner = Boolean(o.visninger && o.visninger.som === 'faner');
+    if (o.visninger && o.visninger.som != null && !somFaner) throw new Error("commandBar: visninger.som kan kun være 'faner' (fik " + o.visninger.som + ')');
+    if (o.visninger && !somFaner && o.visninger.punkter.some(v => v.hoejre)) throw new Error("commandBar: hoejre kræver visninger.som: 'faner'");
     rod.classList.add('cmd');
     rod.textContent = '';
     const nr = ++cbNr;
@@ -548,7 +557,7 @@
       if (o.ariaT) rod.setAttribute('data-t-aria', o.ariaT);
     }
     const knapper = {}, faner = [], paneler = [], tips = {}, visLinks = [];
-    let grpNr = 0, visGrp = null, mereMenu = null, bygMereMenu = () => { };
+    let grpNr = 0, visGrp = null, fanerRaekke = null, mereMenu = null, bygMereMenu = () => { };
     for (const f of o.faner) {
       const tab = el('button', 'tab', tekstAf(f));
       tab.type = 'button';
@@ -565,7 +574,23 @@
         panel.setAttribute('aria-labelledby', tab.id);
       }
       panel.dataset.fane = f.id;
-      if (o.visninger) {
+      if (somFaner) {
+        // Fra 2.8.0: fanerne står i en række over båndets knapper (uden for panelet; Mere rører dem aldrig).
+        fanerRaekke = el('div', 'cmd-faner');
+        fanerRaekke.setAttribute('role', 'group');
+        if (o.visninger.t) fanerRaekke.setAttribute('data-t-aria', o.visninger.t);
+        else if (o.visninger.tekst != null) fanerRaekke.setAttribute('aria-label', String(o.visninger.tekst));
+        for (const v of o.visninger.punkter) {
+          const a = el('a', 'vk vfane' + (v.hoejre ? ' hoejre' : ''));
+          a.href = '#' + v.id;
+          a.dataset.visning = v.id;
+          if (v.ikon) a.appendChild(ikon(v.ikon));
+          a.appendChild(el('span', 'vk-navn', tekstAf(v)));
+          if (v.genvejAria) a.setAttribute('aria-keyshortcuts', v.genvejAria);
+          fanerRaekke.appendChild(a);
+          visLinks.push(a);
+        }
+      } else if (o.visninger) {
         visGrp = el('div', 'grp grp-visninger');
         visGrp.setAttribute('role', 'group');
         const kn = el('div', 'kn');
@@ -624,7 +649,10 @@
       }
       paneler.push(panel);
     }
-    if (enkel) rod.append(...paneler);
+    if (enkel && fanerRaekke) {
+      rod.classList.add('med-faner');
+      rod.append(fanerRaekke, ...paneler);
+    } else if (enkel) rod.append(...paneler);
     else rod.append(tabs, ...paneler);
     function vaelgFane(id, fokus) {
       for (const t of faner) {
@@ -712,6 +740,8 @@
         vtip[v.id].tip.append(fuldt, tekst);
         vtip[v.id].tekst = tekst;
         vtip[v.id].genvej = v.genvej || null;
+        // Fra 2.8.0: tippets ramme står for sig i højre side sammen med fanen.
+        if (v.hoejre && a.parentElement.classList.contains('tip-plads')) a.parentElement.classList.add('hoejre');
       }
       const saetTipTekst = id => {
         const s = tilstand[id] || {}, t = vtip[id].tekst;
@@ -754,11 +784,12 @@
         }
       }
       // Et link slået fra gør intet; mellemrum åbner som Enter (et link gør det ikke selv), som båndets knapper.
-      visGrp.addEventListener('click', e => {
+      const visVaert = visGrp || fanerRaekke;
+      visVaert.addEventListener('click', e => {
         const a = e.target.closest('.vk');
         if (a && a.getAttribute('aria-disabled') === 'true') e.preventDefault();
       });
-      visGrp.addEventListener('keydown', e => {
+      visVaert.addEventListener('keydown', e => {
         const a = e.target.closest && e.target.closest('.vk');
         if (!a || e.key !== ' ' || e.altKey || e.ctrlKey || e.metaKey) return;
         e.preventDefault();
@@ -770,6 +801,7 @@
         saetPunkt(v.id, { deaktiveret: false, ...p });
       }
       svar.visninger = { links: visLinks, markér, saetPunkt };
+      if (fanerRaekke) svar.visninger.raekke = fanerRaekke;
     }
 
     /* ── Fra 2.7.0: Mere (G21) ── Båndet står altid på én række: tilpas() lægger alle kommandoer tilbage og flytter så
