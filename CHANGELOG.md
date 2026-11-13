@@ -4,6 +4,14 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-13 23:30 — Wi24rd UI Kit 2, pakke 2.7.0: visningerne i båndet er kittets
+#### Ændret
+- **Visningernes knapper i båndet** bygges nu af Wi24rd UI Kit 2 (pakke 2.7.0) i stedet for af programmet selv. De står og virker som før.
+- **Den åbne visning** har fået en streg forneden ud over den grønne flade og den fede skrift.
+- **Genvejen og "Kræver et API Token."** står i kittets tip, som også kan læses med tastaturet.
+- **Smalt vindue eller Stor tekst:** båndet står altid på én række. Det, der ikke er plads til, samles under "Mere"; visningerne og landevælgeren bliver stående.
+- Pakke 2.7.0 ligger uændret i `ui/assets/kit2/`.
+
 ### 2026-11-12 23:30 — Visningerne står i båndet
 #### Ændret
 - **De syv visninger** (Overblik, Siden sidst, Angreb, Robotter, Login, Danmark lige nu, Besøgende) står nu som store knapper først i båndet, på samme række som "Hent nu" og "Åbn vejledningen". Den åbne visning er markeret.

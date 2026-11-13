@@ -291,6 +291,54 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* Fra 2.2.0: et bånd med én fane og ingen fanerække (udenFaner), og en plads til en vælger eller segmentknap i en gruppe. */
 .cmd.enkel .grupper { padding: var(--space-2) var(--space-3); }
 .baand-el { display: flex; align-items: center; height: 54px; padding: 0 var(--space-1); }
+/* Fra 2.7.0 (D26, K41, K42): én række, ingen over båndet. Visningerne er store knapper (.cb.vk: links til #id) i en
+   gruppe forrest. Den åbne visning, og en kommando, der peger på det viste (fx Indstillinger), har aria-current="page":
+   samme flade og vægt som en trykket knap og en streg på 2 px forneden i accent (flade, vægt og streg: ikke kun farve).
+   Et langt navn afkortes med … (det fulde navn står i tippet). Et tal står øverst til højre på knappen; et tal, der
+   kræver handling, er en pille med kant og fed skrift. */
+.cb[aria-current="page"] { background: var(--accent-soft); border-color: var(--accent-soft); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+.cb[aria-current="page"] svg { stroke: var(--accent); }
+a.cb { text-decoration: none; }
+.cb.vk { position: relative; }
+.vk-navn { max-width: 152px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb.vk > .ant { position: absolute; top: 2px; right: 4px; font-size: var(--label-size); line-height: 14px; color: var(--text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.cb.vk > .ant-kraever {
+  min-width: 18px; padding: 0 5px; border: 1px solid var(--danger); border-radius: var(--radius-pill);
+  background: var(--danger-soft); color: var(--danger); font-weight: 700; text-align: center;
+}
+.vk-tip-navn { display: block; font-weight: 600; }
+.tip.tip-tom { display: none; }
+/* Fra 2.7.0 (G21): Mere. Båndet står på én række (ingen ombrydning); de kommandoer, der ikke er plads til, er skjult i
+   båndet (data-i-mere) og står i Mere-menuen; en gruppe uden synlige kommandoer skjules (data-mere-tom). Mere står sidst
+   efter gruppeskillet. Menuen står under Mere ved dens højre kant. */
+.cmd.med-mere { display: flex; align-items: flex-start; }
+.cmd.med-mere > .grupper { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
+.cmd.med-mere > .grupper > .grp { flex: none; }
+.cmd.mere-vist > .grupper { padding-right: 0; }
+.cmd.mere-vist > .grupper > .grp:last-child { border-right: 1px solid var(--border); }
+.cmd.med-mere .kn > [data-i-mere], .cmd.med-mere .kn > .tip-plads:has(> [data-i-mere]), .cmd.med-mere .grp[data-mere-tom] { display: none; }
+.mere-plads { position: relative; flex: none; display: flex; padding: var(--space-2) var(--space-3); }
+.mere-menu {
+  position: absolute; top: calc(100% - var(--space-1)); right: var(--space-3); z-index: 30;
+  display: flex; flex-direction: column; gap: 1px; min-width: 220px; max-width: 320px; max-height: calc(100vh / var(--tekst-zoom) - 160px); overflow: auto;
+  padding: var(--space-1); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-pop);
+}
+.mere-punkt {
+  display: flex; align-items: flex-start; gap: var(--space-2); width: 100%; min-height: 32px; padding: 6px var(--space-2);
+  border: 0; border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; line-height: 20px; text-align: left; cursor: pointer;
+}
+.mere-punkt:hover { background: var(--surface-raised); }
+.mere-punkt:focus-visible { outline: 2px solid var(--info); outline-offset: -2px; }
+.mere-punkt svg { width: 18px; height: 18px; margin-top: 1px; flex: none; fill: none; stroke: var(--text-muted); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.mere-punkt.pri { font-weight: 600; }
+.mere-punkt.pri svg { stroke: var(--accent); }
+.mere-punkt[aria-checked="true"] { background: var(--accent-soft); font-weight: 600; }
+.mere-punkt[aria-checked="true"] svg { stroke: var(--accent); }
+.mere-tekst { display: flex; flex-direction: column; min-width: 0; }
+.mere-hvorfor { font-size: var(--small-size); line-height: var(--small-line); color: var(--text-muted); font-weight: 400; }
+.mere-punkt[aria-disabled="true"] { cursor: default; }
+.mere-punkt[aria-disabled="true"]:hover { background: var(--surface); }
+.mere-punkt[aria-disabled="true"] > svg, .mere-punkt[aria-disabled="true"] .mere-navn { opacity: .5; }
 
 /* ── NavPane ── */
 .nav { display: flex; flex-direction: column; width: 232px; flex: none; background: var(--surface); border-right: 1px solid var(--border); }
@@ -785,3 +833,7 @@ button.sflise[aria-current]:not([aria-current="false"]):hover, a.sflise[aria-cur
 :root { --tekst-zoom: 1; }
 :root[data-tekst="lille"] { --tekst-zoom: .9; }
 :root[data-tekst="stor"] { --tekst-zoom: 1.125; }
+/* Fra 2.7.0: programmets eget mindstemål for .vindue. Programmet sætter --vindue-min-bredde (og evt. --vindue-min-hoejde)
+   på :root i sin egen CSS (ingen inline-stil), fx :root { --vindue-min-bredde: 1100px; }. Målet er vinduets på skærmen og
+   deles med trinnet som ovenfor, så det også ved lille og stor er præcis det mål. Uden variablerne er det 900 × 560 som før. */
+.vindue, :root[data-tekst] .vindue { min-width: calc(var(--vindue-min-bredde, 900px) / var(--tekst-zoom)); min-height: calc(var(--vindue-min-hoejde, 560px) / var(--tekst-zoom)); }

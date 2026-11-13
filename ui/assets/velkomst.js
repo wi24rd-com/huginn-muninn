@@ -9,7 +9,7 @@
 (function () {
   'use strict';
   const S = window.hmSprog, T = S.T, R = window.hmRamme, V = window.hmTegn, { el, fmt } = R;
-  const nav = v => document.querySelector(`#baand button[data-visning="${v}"] svg`);
+  const nav = v => document.querySelector(`#baand a[data-visning="${v}"] svg`);
   const klokke = () => { const h = document.getElementById('indst-notif'); return h && h.previousElementSibling; }; // kassens ikon står foran overskriften
   /* Skjold, klokke, gitter, ur og lås. */
   const IKONER = [() => nav('vaernet'), klokke, () => nav('overblik'), () => nav('siden-sidst'), () => nav('login')];

@@ -14,6 +14,7 @@
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
   --titel-trafiklys: 86px; /* plads til macOS' tre vinduesknapper */
+  --vindue-min-bredde: 1100px; /* kittets er 900: visningerne står som store knapper forrest i båndet (D26) */
   --font-size-xs: 12px;
   --font-size-sm: 13px;
   --font-size-md: 14px;
@@ -63,20 +64,6 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 /* ── skallen: det, Wi24rd UI Kit 2 lader programmet give selv ── */
 /* macOS: vinduesknapperne ligger oven på titellinjen (titleBarStyle Overlay). */
 [data-platform="macos"] .titel { padding-left: var(--titel-trafiklys); }
-/* KIT-ØNSKE K41: en knap i båndet, der åbner en visning, vises som valgt, mens visningen er åben (kittet har kun aria-pressed). */
-.cb[aria-current="page"] { background: var(--accent-soft); border-color: var(--accent-soft); font-weight: 600; }
-.cb[aria-current="page"] svg { stroke: var(--accent); }
-/* KIT-ØNSKE K42: et tal på en båndknap (nyt siden sidst), øverst til højre på knappen; farverne er kittets .ant-kraever fra visningsskiftet. */
-.cb { position: relative; }
-.cb > .ant { position: absolute; top: 2px; right: 4px; min-width: 18px; padding: 0 5px; border: 1px solid var(--danger); border-radius: var(--radius-pill); background: var(--danger-soft); color: var(--danger); font-size: var(--label-size); font-weight: 700; line-height: 14px; font-variant-numeric: tabular-nums; }
-/* Et gemt lands navn kan være langt: knappen holder sin bredde, og navnet afkortes med … (det fulde navn står i tippet). */
-#nav-land { max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cb > span { white-space: nowrap; }
-/* Mindste vindue er 1100 px bredt (kittets er 900): de syv visninger står som store knapper i båndet (Jans valg), og de skal
-   stå på én række sammen med Hent nu, landevælgeren, vejledningen og Indstillinger. Samme regnestykke som kittets ved Lille og Stor. */
-.vindue { min-width: 1100px; }
-:root[data-tekst="lille"] .vindue { min-width: calc(1100px / .9); }
-:root[data-tekst="stor"] .vindue { min-width: calc(1100px / 1.125); }
 /* Mærket i titellinjen er kittets .mrk-maske; her står kun programmets billede og dets bredde. */
 .titel .hm-mrk { width: 26px; -webkit-mask-image: url(hm-ravne.png); mask-image: url(hm-ravne.png); }
 .titel b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

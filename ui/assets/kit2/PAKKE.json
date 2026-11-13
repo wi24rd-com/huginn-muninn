@@ -1,20 +1,20 @@
 {
   "kit": "Wi24rd UI Kit 2",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "filer": {
     "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
     "LICENSE.md": "c2e97926eb9db0536978a08eb14ff963eeb75ce85aeec0074212455140b39612",
-    "VERSION": "6693435eadb673dda297a0652d241e293e361200bc40db949cf2501d18dd01ee",
+    "VERSION": "362148d7721ad4a1bb64981ff8d604ef7f4d22267ea8845042f54f90940f24fd",
     "fonts/OFL-Inter.txt": "3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345",
     "fonts/OFL-JetBrainsMono.txt": "403581b69dac5cff4079205e01c6b467e56af449ecbd7247693ddb1baafa005b",
     "fonts/inter-latin-ext-wght-normal.woff2": "34b9c504cab7a73e37b746343a449132e56cf7b5481af2cb81dc74dcff25c956",
     "fonts/inter-latin-wght-normal.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
     "fonts/jetbrains-mono-latin-ext-wght-normal.woff2": "79bfdab9ba467e26eea4122e6f2567e188dd8a09a8c730d501fc487c4ab99c6e",
     "fonts/jetbrains-mono-latin-wght-normal.woff2": "18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e",
-    "kit.css": "8cd0e0c804cc076c1aed489366de8cadb7d9717c4adc841b4c3d155167949fd6",
-    "kit.js": "b6cd87b064734ded06b11c3db168a8e7aa59cc2482e1f6c6e7720cca7311d622",
+    "kit.css": "51e531cd4697c1fd1bfc1294aaec71cdc3ce84dc01d677902bcef818993f1d44",
+    "kit.js": "bde1b0dea84c930f32d529cbd0b876036e51c2e1b6887bd3cabfccffb434c72d",
     "sprogmotor.js": "5dd9bd4353162b88034caa353f1d17aa686e903c13e7e67f7899c103d90ab5f1",
     "tema.js": "bdc0c075c63c88a26cefef2638b3142cf6a64928427c27924602d1f36cb99860",
-    "tokens.css": "04511ef071f81dd8f67f1142d2d8813a13355062c494d794e1ba685d0c3f2d24"
+    "tokens.css": "80f39081ebc85e1fb1580c4cfd4b58b8355dc72182a68b955706ce8db2a07c17"
   }
 }

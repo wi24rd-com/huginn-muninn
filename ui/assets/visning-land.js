@@ -61,7 +61,7 @@
     fyld(indst, gemt);
     $('nav-land').dataset.t = gemt ? '' : 'navLand';
     $('nav-land').textContent = gemt ? ligeNu(gemt) : T.navLand;
-    $('nav-land').title = gemt ? $('nav-land').textContent : ''; // et langt landenavn kan afkortes med … i fanen (kittets .vf-navn); standardnavnet har kun kittets tip
+    // et langt landenavn afkorter kittet med … og viser det fulde navn i knappens tip (fra 2.7.0)
     window.hmVelkomst.land(gemt ? V.land(gemt) : null);
     $('indst-land-note').textContent = gemt ? fmt(T.landIndstNote, { land: V.land(gemt) }) : T.landVaelgP;
     const vis = forslag && forslag !== gemt;

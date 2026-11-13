@@ -518,11 +518,24 @@
      Fra 2.5.0 (G11): hvorforTip: true viser hvorfor i et værktøjstip (Kit.vaerktoejstip) i stedet for title, så det kan
      læses med tastaturet og med en skærmlæser (aria-describedby). Uden indstillingen står hvorfor i title som før (et
      tip ville ændre markup, som programmer og tests kender). saetDeaktiveret(id, fra, hvorfor) slår en kommando til og
-     fra udefra og flytter hvorfor med (tip eller title efter indstillingen); kald Sprog.anvend bagefter. */
+     fra udefra og flytter hvorfor med (tip eller title efter indstillingen); kald Sprog.anvend bagefter.
+     Fra 2.7.0 (D26, K41, K42, G21; kun med udenFaner, og kun når indstillingerne gives; ellers er båndet præcis som i 2.6.0):
+     visninger: { t|tekst, punkter: [{id, t|tekst, ikon, genvej, genvejAria, antal, kraever, antalAriaT|antalAria,
+     deaktiveret, hvorfor}] } stiller visningerne som store knapper i en gruppe forrest i båndet (samme data som
+     visningsskiftet, højst otte). Hver er et link til #id (.cb.vk) med aria-current="page" på den åbne; genvejen (eller
+     hvorfor, når den er slået fra) og det fulde navn, når det er afkortet med …, står i et værktøjstip. Returværdien har
+     visninger: { links, markér(id), saetPunkt(id, {…}) } som visningsskiftet. saetAktuel(id, til) sætter
+     aria-current="page" på en anden kommando (fx Indstillinger, mens den er åben). mere: { t|tekst } giver en Mere-knap
+     sidst i båndet: kommandoer, der ikke er plads til på én række, flyttes bagfra ind i dens menu med samme navne, ikoner
+     og tilstande, og hvorfor står under navnet; den primære (pri) flyttes sidst. Visningerne og elementer ({ id, element })
+     flyttes aldrig. tilpas() regner
+     det om (båndet gør det selv, når det eller en gruppe skifter størrelse). */
   let cbNr = 0;
   function commandBar(rod, o) {
     const enkel = Boolean(o.udenFaner);
     if (enkel && o.faner.length !== 1) throw new Error('commandBar: udenFaner kræver præcis én fane (fik ' + o.faner.length + ')');
+    if ((o.visninger || o.mere) && !enkel) throw new Error('commandBar: visninger og mere kræver udenFaner');
+    if (o.visninger && o.visninger.punkter.length > MAKS_VISNINGER) throw new Error('commandBar: højst otte visninger (fik ' + o.visninger.punkter.length + ')');
     rod.classList.add('cmd');
     rod.textContent = '';
     const nr = ++cbNr;
@@ -534,8 +547,8 @@
       rod.setAttribute('role', 'group');
       if (o.ariaT) rod.setAttribute('data-t-aria', o.ariaT);
     }
-    const knapper = {}, faner = [], paneler = [], tips = {};
-    let grpNr = 0;
+    const knapper = {}, faner = [], paneler = [], tips = {}, visLinks = [];
+    let grpNr = 0, visGrp = null, mereMenu = null, bygMereMenu = () => { };
     for (const f of o.faner) {
       const tab = el('button', 'tab', tekstAf(f));
       tab.type = 'button';
@@ -552,6 +565,27 @@
         panel.setAttribute('aria-labelledby', tab.id);
       }
       panel.dataset.fane = f.id;
+      if (o.visninger) {
+        visGrp = el('div', 'grp grp-visninger');
+        visGrp.setAttribute('role', 'group');
+        const kn = el('div', 'kn');
+        visGrp.appendChild(kn);
+        for (const v of o.visninger.punkter) {
+          const a = el('a', 'cb vk');
+          a.href = '#' + v.id;
+          a.dataset.visning = v.id;
+          if (v.ikon) a.appendChild(ikon(v.ikon));
+          a.appendChild(el('span', 'vk-navn', tekstAf(v)));
+          if (v.genvejAria) a.setAttribute('aria-keyshortcuts', v.genvejAria);
+          kn.appendChild(a);
+          visLinks.push(a);
+        }
+        const cap = el('span', 'cap', tekstAf(o.visninger));
+        cap.id = `kit-cb${nr}-grp-${++grpNr}`;
+        visGrp.setAttribute('aria-labelledby', cap.id);
+        visGrp.appendChild(cap);
+        panel.appendChild(visGrp);
+      }
       for (const g of f.grupper) {
         const grp = el('div', 'grp');
         grp.setAttribute('role', 'group');
@@ -631,8 +665,256 @@
         if (o.hvorforTip) tips[id] = vaerktoejstip(b, { t: hvorfor });
         else b.setAttribute('data-t-title', hvorfor);
       }
+      if (mereMenu && !mereMenu.hidden) bygMereMenu();
     }
-    return { rod, vaelgFane, knap: id => knapper[id], paneler, saetDeaktiveret };
+    const svar = { rod, vaelgFane, knap: id => knapper[id], paneler, saetDeaktiveret };
+    if (!o.visninger && !o.mere) return svar;
+
+    /* ── Fra 2.7.0: aria-current på en kommando (K41) ── */
+    svar.saetAktuel = (id, til) => {
+      const b = knapper[id];
+      if (!b || !b.classList.contains('cb')) throw new Error('commandBar: ukendt kommando: ' + id);
+      if (til) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
+    };
+
+    /* ── Fra 2.7.0: visningerne som store knapper forrest i båndet (D26, K42) ──
+       Tippet har to dele: det fulde navn (kun når navnet er afkortet; tjekkes, lige før tippet vises) og genvejen eller,
+       når visningen er slået fra, hvorfor. Er begge tomme, vises tippet ikke. */
+    if (o.visninger) {
+      const tilstand = {}, vtip = {};
+      const linkAf = id => {
+        const a = visLinks.find(x => x.dataset.visning === id);
+        if (!a) throw new Error('commandBar: ukendt visning: ' + id);
+        return a;
+      };
+      const afkortet = s => {
+        const r = document.createRange ? document.createRange() : null;
+        if (!r || typeof r.getBoundingClientRect !== 'function') return s.scrollWidth > s.clientWidth + 1;
+        r.selectNodeContents(s);
+        return r.getBoundingClientRect().width > s.getBoundingClientRect().width + 0.5;
+      };
+      for (const v of o.visninger.punkter) {
+        const a = linkAf(v.id), navn = a.querySelector('.vk-navn');
+        const fuldt = el('span', 'vk-tip-navn');
+        fuldt.hidden = true;
+        const tekst = el('span', 'vk-tip-tekst');
+        const opdater = () => {
+          const af = afkortet(navn);
+          fuldt.textContent = af ? navn.textContent : '';
+          fuldt.hidden = !af;
+          vtip[v.id].tip.classList.toggle('tip-tom', !af && !tekst.textContent && !tekst.getAttribute('data-t'));
+        };
+        // Før tippets egne lyttere, så teksten er rigtig, når det placeres.
+        a.addEventListener('focus', opdater);
+        a.addEventListener('mouseenter', opdater);
+        vtip[v.id] = vaerktoejstip(a, {});
+        vtip[v.id].tip.append(fuldt, tekst);
+        vtip[v.id].tekst = tekst;
+        vtip[v.id].genvej = v.genvej || null;
+      }
+      const saetTipTekst = id => {
+        const s = tilstand[id] || {}, t = vtip[id].tekst;
+        t.removeAttribute('data-t');
+        t.textContent = '';
+        if (s.deaktiveret && s.hvorfor) {
+          if (typeof s.hvorfor === 'object' && !s.hvorfor.t) t.textContent = String(s.hvorfor.tekst);
+          else t.setAttribute('data-t', typeof s.hvorfor === 'object' ? s.hvorfor.t : s.hvorfor);
+        } else if (vtip[id].genvej) t.textContent = vtip[id].genvej;
+        vtip[id].tip.classList.toggle('tip-tom', !t.textContent && !t.getAttribute('data-t'));
+      };
+      const markér = id => {
+        for (const a of visLinks) {
+          if (a.dataset.visning === id) a.setAttribute('aria-current', 'page');
+          else a.removeAttribute('aria-current');
+        }
+      };
+      function saetPunkt(id, p) {
+        const a = linkAf(id);
+        const s = tilstand[id] = { ...(tilstand[id] || {}), ...p };
+        if ('deaktiveret' in p || 'hvorfor' in p) {
+          if (s.deaktiveret) a.setAttribute('aria-disabled', 'true');
+          else a.removeAttribute('aria-disabled');
+          saetTipTekst(id);
+        }
+        if (['antal', 'kraever', 'antalAriaT', 'antalAria'].some(k => k in p)) {
+          for (const x of a.querySelectorAll(':scope > [data-ant]')) x.remove();
+          if (s.antal != null) {
+            const ant = el('span', 'ant' + (s.kraever ? ' ant-kraever' : ''), String(s.antal));
+            ant.setAttribute('data-ant', '');
+            a.appendChild(ant);
+            if (s.antalAriaT || s.antalAria) {
+              ant.setAttribute('aria-hidden', 'true');
+              const sr = el('span', 'skjult-tekst', s.antalAriaT ? { t: s.antalAriaT } : s.antalAria);
+              sr.setAttribute('data-ant', '');
+              sr.setAttribute('data-v', String(s.antal));
+              a.appendChild(sr);
+            }
+          }
+        }
+      }
+      // Et link slået fra gør intet; mellemrum åbner som Enter (et link gør det ikke selv), som båndets knapper.
+      visGrp.addEventListener('click', e => {
+        const a = e.target.closest('.vk');
+        if (a && a.getAttribute('aria-disabled') === 'true') e.preventDefault();
+      });
+      visGrp.addEventListener('keydown', e => {
+        const a = e.target.closest && e.target.closest('.vk');
+        if (!a || e.key !== ' ' || e.altKey || e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+        a.click();
+      });
+      for (const v of o.visninger.punkter) {
+        const p = {};
+        for (const k of ['deaktiveret', 'hvorfor', 'antal', 'kraever', 'antalAriaT', 'antalAria']) if (v[k] != null) p[k] = v[k];
+        saetPunkt(v.id, { deaktiveret: false, ...p });
+      }
+      svar.visninger = { links: visLinks, markér, saetPunkt };
+    }
+
+    /* ── Fra 2.7.0: Mere (G21) ── Båndet står altid på én række: tilpas() lægger alle kommandoer tilbage og flytter så
+       bagfra én ad gangen ind i Mere-menuen (den primære sidst), til rækken ikke er bredere end båndet. En gruppe, hvis kommandoer alle er
+       flyttet, skjules (data-mere-tom; programmets egen hidden røres ikke). Menuen bygges, når den åbnes, ud fra
+       knapperne, som de står: navn, ikon, primær, trykket, slået fra og hvorfor. Et punkt klikker den skjulte knap, så
+       programmets egne lyttere og ved() kører som før. Mus: menuen åbner uden at flytte fokus eller markeringen (G23);
+       tastatur (Enter, mellemrum, pil ned/op): fokus på første/sidste punkt; Esc lukker med fokus på Mere. */
+    if (o.mere) {
+      rod.classList.add('med-mere');
+      const panel = paneler[0];
+      const plads = el('div', 'mere-plads');
+      plads.hidden = true;
+      const mk = el('button', 'cb cb-mere');
+      mk.type = 'button';
+      mk.appendChild(ikon('ned'));
+      mk.appendChild(el('span', null, tekstAf(o.mere)));
+      mk.id = `kit-cb${nr}-mere`;
+      mk.setAttribute('aria-haspopup', 'menu');
+      mk.setAttribute('aria-expanded', 'false');
+      mereMenu = el('div', 'mere-menu');
+      mereMenu.id = `kit-cb${nr}-mere-menu`;
+      mereMenu.setAttribute('role', 'menu');
+      mereMenu.setAttribute('aria-labelledby', mk.id);
+      mereMenu.hidden = true;
+      mk.setAttribute('aria-controls', mereMenu.id);
+      plads.append(mk, mereMenu);
+      rod.appendChild(plads);
+      let flyttet = [];
+      // Skjult af programmet inde i båndet (en gruppe eller en knap med hidden); båndet selv kan være skjult.
+      const skjult = b => { const h = b.closest('[hidden]'); return Boolean(h && panel.contains(h)); };
+      const punkter = () => [...mereMenu.querySelectorAll('.mere-punkt')];
+      const kandidater = () => [...panel.querySelectorAll('.grp:not(.grp-visninger) .kn > .cb, .grp:not(.grp-visninger) .kn > .tip-plads > .cb')];
+      /* Rækken passer, når den sidste synlige gruppes højre kant (med dens egen luft) er inden for båndets: samme
+         koordinater i alle motorer (scrollWidth tæller luften til højre med i Chromium, men kun delvis i WebKit, målt). */
+      const sidsteGrp = () => [...panel.querySelectorAll(':scope > .grp')].filter(g => !g.hidden && !g.hasAttribute('data-mere-tom')).pop();
+      const passer = () => { const g = sidsteGrp(); return !g || g.getBoundingClientRect().right <= panel.getBoundingClientRect().right + 1; };
+      function luk(fokus) {
+        if (mereMenu.hidden) return;
+        mereMenu.hidden = true;
+        mk.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('mousedown', udenfor, true);
+        document.removeEventListener('keydown', escUde, true);
+        if (fokus) mk.focus();
+      }
+      const udenfor = e => { if (!plads.contains(e.target)) luk(false); };
+      const escUde = e => { if (e.key === 'Escape' && !mereMenu.contains(document.activeElement)) { e.preventDefault(); e.stopPropagation(); luk(false); } };
+      function aaben(fokus) {
+        bygMereMenu();
+        mereMenu.hidden = false;
+        mk.setAttribute('aria-expanded', 'true');
+        document.addEventListener('mousedown', udenfor, true);
+        document.addEventListener('keydown', escUde, true);
+        const p = punkter();
+        if (fokus === 'foerste' && p[0]) p[0].focus();
+        else if (fokus === 'sidste' && p.length) p[p.length - 1].focus();
+      }
+      bygMereMenu = function () {
+        mereMenu.textContent = '';
+        for (const b of flyttet) {
+          if (skjult(b)) continue;
+          const p = el('button', 'mere-punkt' + (b.classList.contains('pri') ? ' pri' : ''));
+          p.type = 'button';
+          p.tabIndex = -1;
+          p.dataset.kommando = b.dataset.kommando;
+          const trykket = b.getAttribute('aria-pressed');
+          p.setAttribute('role', trykket != null ? 'menuitemcheckbox' : 'menuitem');
+          if (trykket != null) p.setAttribute('aria-checked', trykket);
+          const svg = b.querySelector(':scope > svg');
+          if (svg) p.appendChild(svg.cloneNode(true));
+          const tekst = el('span', 'mere-tekst');
+          tekst.appendChild(el('span', 'mere-navn', b.querySelector(':scope > span').textContent));
+          if (b.getAttribute('aria-disabled') === 'true') {
+            p.setAttribute('aria-disabled', 'true');
+            const id = b.dataset.kommando;
+            const hv = tips[id] ? tips[id].tip.textContent : b.getAttribute('title') || '';
+            if (hv) {
+              const h = el('span', 'mere-hvorfor', hv);
+              h.id = `${mereMenu.id}-${id}-hvorfor`;
+              p.setAttribute('aria-describedby', h.id);
+              tekst.appendChild(h);
+            }
+          }
+          p.appendChild(tekst);
+          p.addEventListener('click', () => {
+            if (p.getAttribute('aria-disabled') === 'true') return;
+            const medTastatur = mereMenu.contains(document.activeElement);
+            luk(medTastatur);
+            b.click();
+          });
+          mereMenu.appendChild(p);
+        }
+      };
+      function tilpas() {
+        luk(false);
+        for (const b of flyttet) b.removeAttribute('data-i-mere');
+        flyttet = [];
+        for (const g of panel.querySelectorAll('.grp[data-mere-tom]')) g.removeAttribute('data-mere-tom');
+        plads.hidden = true;
+        rod.classList.remove('mere-vist');
+        if (!panel.getBoundingClientRect().width || passer()) return;
+        plads.hidden = false;
+        rod.classList.add('mere-vist');
+        // Bagfra, men den primære kommando sidst (den står i båndet, så længe der er plads til den).
+        const k = kandidater().filter(b => !skjult(b));
+        const orden = [...k.filter(b => !b.classList.contains('pri')).reverse(), ...k.filter(b => b.classList.contains('pri')).reverse()];
+        for (const b of orden) {
+          if (passer()) break;
+          b.setAttribute('data-i-mere', '');
+          flyttet.push(b);
+          flyttet.sort((x, y) => k.indexOf(x) - k.indexOf(y));
+          const g = b.closest('.grp');
+          if (!g.querySelector('.baand-el') && [...g.querySelectorAll('.cb')].every(x => x.hasAttribute('data-i-mere') || skjult(x))) g.setAttribute('data-mere-tom', '');
+        }
+      }
+      mk.addEventListener('mousedown', e => e.preventDefault());
+      mereMenu.addEventListener('mousedown', e => e.preventDefault());
+      mk.addEventListener('click', e => {
+        if (!mereMenu.hidden) luk(e.detail === 0);
+        else aaben(e.detail === 0 ? 'foerste' : null);
+      });
+      mk.addEventListener('keydown', e => {
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        e.preventDefault();
+        aaben(e.key === 'ArrowDown' ? 'foerste' : 'sidste');
+      });
+      mereMenu.addEventListener('keydown', e => {
+        const p = punkter(), i = p.indexOf(document.activeElement);
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); luk(true); return; }
+        if (e.key === 'Tab') { luk(false); return; }
+        const ny = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: p.length - 1 }[e.key];
+        if (ny == null || !p.length) return;
+        e.preventDefault();
+        p[(ny + p.length) % p.length].focus();
+      });
+      if (typeof ResizeObserver === 'function') {
+        const ro = new ResizeObserver(() => tilpas());
+        ro.observe(rod);
+        for (const kn of panel.querySelectorAll('.kn')) ro.observe(kn);
+      } else window.addEventListener('resize', tilpas);
+      svar.tilpas = tilpas;
+      svar.mere = { knap: mk, menu: mereMenu, get flyttet() { return flyttet.map(b => b.dataset.kommando); }, aaben: () => aaben('foerste'), luk: () => luk(false) };
+      tilpas();
+    }
+    return svar;
   }
 
   /* ── NavPane: træet ── punkter: [{id, t, antal, boern: [...]}]. Et klik filtrerer arbejdsfladen; det skifter aldrig
