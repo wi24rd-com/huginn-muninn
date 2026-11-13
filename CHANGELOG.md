@@ -4,6 +4,13 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-13 23:30 — Store knapper og tydelige faner, som skitsen
+#### Ændret
+- **Periode og Vis er store knapper med ikon** i båndet (7 dage, 30 dage, Hele historikken; Alt, Kun angreb, Kun rutine; Danmark, Verden; 7 dage, 4 uger), ikke små sammenhængende knapper. Den valgte har grøn flade og kant.
+- **Hent nu** er en fyldt, grøn knap.
+- **Fanerne er større** og nemmere at ramme.
+- **Egne datoer** (Fra og Til) står sidst i båndet.
+
 ### 2026-11-13 23:30 — Mærket står til venstre i fuld skærm
 #### Rettet
 - **macOS i fuld skærm:** ravnene og navnet i titellinjen står nu helt ude til venstre. Før holdt titellinjen plads til de tre vinduesknapper, selv om macOS skjuler dem i fuld skærm.

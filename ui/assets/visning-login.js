@@ -206,7 +206,7 @@
   async function tegn(d, g) {
     $('login-under').textContent = domaene;
     const p = periodeArg(), fast = !har('dag') && !har('fra');
-    R.iBaand('login-periode', V.segment('login-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p === 'd7'], [T.dykP30, medPeriode(), fast && p === 'd30'], [T.dykPAlt, medPeriode('periode', 'alt'), fast && p === 'alt']], 'login'));
+    R.baandValg('login-periode', [[T.dykP7, medPeriode('periode', '7'), fast && p === 'd7'], [T.dykP30, medPeriode(), fast && p === 'd30'], [T.dykPAlt, medPeriode('periode', 'alt'), fast && p === 'alt']], 'login');
     R.baand.saetDeaktiveret('login-ret-knap', samlet(), samlet() ? 'loginVaelgDomaene' : null);
     S.anvend($('login-ret-knap'));
     const genaabn = V.husk(rod), ret = await retStier();
@@ -235,7 +235,7 @@
   function besked(tekst, farve = 'roed') {
     rod.removeAttribute('aria-busy');
     rod.replaceChildren(el('p', { className: `vg-advarsel vg-${farve}`, textContent: tekst }));
-    R.iBaand('login-periode'); R.iBaand('login-datoer');
+    R.baandValg('login-periode', null); R.iBaand('login-datoer');
   }
 
   let gen = 0, aktiv = null, afmeld = [];

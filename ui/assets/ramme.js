@@ -54,26 +54,29 @@
   /* Landevælgeren står i båndet og vises kun på visninger med land: true; visningen fylder den og lytter på 'landValg'. */
   const landVaelger = Kit.vaelger({ etiket: { t: 'landVaelg' }, soeg: { ph: 'landSoegPh', ariaT: 'landSoeg' }, ingen: { t: 'landIngen' }, punkter: [], vedValg: id => udsend('landValg', id) });
   const plads = id => ({ id: 'plads-' + id, element: el('div', { id, className: 'baand-plads' }) });
+  /* Et valg mellem få (Periode, Vis) er store knapper som i skitsen: knapperne bygges her, og visningen sætter tekst, mål og
+     hvilken der er valgt gennem baandValg. */
+  const valg = (navn, n, ikon) => Array.from({ length: n }, (_, i) => ({ id: `${navn}-${i}`, tekst: '', ikon, valgAf: navn }));
   const GRUPPER = [
     [null, 'gData', [{ id: 'hent', t: 'hentNu', ikon: 'hm-hent', pri: true }]],
     [['overblik'], 'gVis', [{ id: 'samlet', t: 'samletKnap', ikon: 'skjold' }]],
     [['overblik'], 'gDomaener', [{ id: 'vaelg-dom', t: 'baandVaelgDom', ikon: 'filter', ved: () => gaaTil('indstillinger', 'afsnit=domaener') }]],
     [['siden-sidst'], 'gVis', [{ id: 'siden-skjul', t: 'sidenSkjul', ikon: 'hm-overblik' }]],
-    [['vaernet'], 'gPeriode', [plads('dyk-periode')]],
-    [['vaernet'], 'gDatoer', [plads('dyk-datoer')]],
-    [['vaernet'], 'gVis', [plads('dyk-slags')]],
+    [['vaernet'], 'gPeriode', valg('dyk-periode', 3, 'kalender')],
+    [['vaernet'], 'gVis', valg('dyk-slags', 3, 'filter')],
     [['vaernet'], 'gFiltre', [{ id: 'dyk-nulstil', t: 'baandNulstil', ikon: 'luk' }]],
     [['vaernet'], 'gTeknologi', [{ id: 'ret-tek', t: 'baandRetTek', ikon: 'rediger', ved: () => gaaTil('teknologi') }]],
-    [['robotter'], 'gPeriode', [plads('robotter-periode')]],
-    [['robotter'], 'gDatoer', [plads('robotter-datoer')]],
+    [['vaernet'], 'gDatoer', [plads('dyk-datoer')]],
+    [['robotter'], 'gPeriode', valg('robotter-periode', 3, 'kalender')],
     [['robotter'], 'gVis', [{ id: 'robot-angreb', t: 'baandRobotAngreb', ikon: 'skjold' }]],
-    [['login'], 'gPeriode', [plads('login-periode')]],
-    [['login'], 'gDatoer', [plads('login-datoer')]],
+    [['robotter'], 'gDatoer', [plads('robotter-datoer')]],
+    [['login'], 'gPeriode', valg('login-periode', 3, 'kalender')],
     [['login'], 'gStier', [{ id: 'login-ret-knap', t: 'loginRet', ikon: 'rediger' }]],
-    [['land'], 'gVis', [plads('land-faner')]],
-    [['land'], 'gPeriode', [plads('land-mod')]],
+    [['login'], 'gDatoer', [plads('login-datoer')]],
+    [['land'], 'gVis', valg('land-faner', 2, 'hm-klode')],
+    [['land'], 'gPeriode', valg('land-mod', 2, 'kalender')],
     [null, 'gLand', [{ id: 'land', element: landVaelger.rod }]],
-    [['besoegende'], 'gPeriode', [plads('besoegende-periode')]],
+    [['besoegende'], 'gPeriode', valg('besoegende-periode', 3, 'kalender')],
     [['besoegende'], 'gDatoer', [plads('besoegende-datoer')]],
   ];
   const baand = Kit.commandBar($('baand'), { ariaT: 'baandAria', udenFaner: true, mere: { t: 'baandMere' },
@@ -81,10 +84,19 @@
       ...SKIFT.map(([tast, id, t]) => ({ id, t, genvej: (mac ? '⌘' : 'Ctrl+') + tast, genvejAria: (mac ? 'Meta+' : 'Control+') + tast })),
       { id: 'indstillinger', t: 'navIndst', genvej: mac ? '⌘,' : 'Ctrl+,', genvejAria: mac ? 'Meta+,' : 'Control+,', hoejre: true },
     ] },
-    faner: [{ id: 'start', t: 'baandAria', grupper: GRUPPER.map(([, t, knapper]) => ({ t, knapper })) }] });
+    faner: [{ id: 'start', t: 'baandAria', grupper: GRUPPER.map(([, t, knapper]) => ({ t, knapper: knapper.map(({ valgAf, ...k }) => k) })) }] });
   /* Kommandoerne får de id'er, visningerne kender (kommandoens id er også knappens). */
   for (const [, , knapper] of GRUPPER) for (const k of knapper) if (!k.element) baand.knap(k.id).id = k.id === 'hent' ? 'hent-nu' : k.id;
   baand.knap('dyk-nulstil').classList.add('dyk-nulstil');
+  /* Valgenes række får navnet som id (dyk-periode, dyk-slags …), og gruppen er skjult, til visningen har sat valgene. */
+  for (const [, , knapper] of GRUPPER) {
+    if (!knapper[0].valgAf) continue;
+    const kn = baand.knap(knapper[0].id).closest('.kn');
+    kn.id = knapper[0].valgAf;
+    kn.classList.add('baand-valg', knapper[0].valgAf);
+    kn.closest('.grp').setAttribute('data-tom', '');
+    for (const k of knapper) { const b = baand.knap(k.id); b.hidden = true; b.addEventListener('click', () => b.focus({ preventScroll: true })); }
+  }
   const baandGrupper = [...baand.paneler[0].querySelectorAll(':scope > .grp')];
   GRUPPER.forEach(([kun], i) => { if (kun) { baandGrupper[i].dataset.kun = kun.join(' '); baandGrupper[i].hidden = true; } });
   /* Kun fanens egne grupper står i båndet. Angreb med robotfilter og Teknologi låner fanen, men ikke båndet. */
@@ -102,6 +114,24 @@
     baandFor(baandVisning);
     if (f) { const n = [...p.querySelectorAll('[data-fokus]')].find(x => x.dataset.fokus === f); if (n) n.focus({ preventScroll: true }); }
     if (baand.tilpas) baand.tilpas();
+  }
+  /* Visningen sætter et valg i båndet: valg = [[tekst, query, valgt], …] (som hmTegn.segment), eller intet for at skjule
+     gruppen. Knapperne bliver stående, så fokus bliver på valget; målet står i data-gaa som alle andre links. */
+  function baandValg(navn, valg, visning) {
+    const kn = $(navn);
+    [...kn.querySelectorAll('.cb')].forEach((b, i) => {
+      const v = valg && valg[i];
+      b.hidden = !v;
+      if (!v) { delete b.dataset.gaa; return; }
+      const span = b.querySelector('span');
+      span.removeAttribute('data-t');
+      span.textContent = v[0];
+      b.dataset.gaa = v[1] ? `${visning}?${v[1]}` : visning;
+      b.dataset.fokus = `${navn}:${v[0]}`;
+      b.setAttribute('aria-pressed', String(Boolean(v[2])));
+    });
+    kn.closest('.grp').toggleAttribute('data-tom', !(valg && valg.length));
+    baandFor(baandVisning);
   }
   /* Visningsskiftet er kittets (links, markér, saetPunkt); rammen giver linkene de id'er, resten af programmet kender. */
   const skift = baand.visninger;
@@ -682,7 +712,7 @@
   }
 
   window.hmRamme = {
-    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning, baand, iBaand,
+    aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning, baand, iBaand, baandValg,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, erstatAdresse, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
     platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, dialog, genbesoeg: () => hist.genbesoeg, glemt: () => status($('token-status'), T.glemt, 'ok'),
   };

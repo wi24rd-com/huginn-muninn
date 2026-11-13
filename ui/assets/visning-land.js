@@ -220,8 +220,8 @@
   }
 
   function faner() {
-    R.iBaand('land-mod', ...(verdenFane() ? [] : [V.segment('land-mod', T.landModPeriode, [[T.landMod7, medPeriode('7'), syv()], [T.landMod28, medPeriode(''), !syv()]], 'land')]));
-    R.iBaand('land-faner', V.segment('land-fane', T.landFaner, [[V.land(kode), adresse(kode), !verdenFane()], [T.landVerdenFane, adresse(kode, { fane: 'verden' }), verdenFane()]], 'land'));
+    R.baandValg('land-mod', verdenFane() ? null : [[T.landMod7, medPeriode('7'), syv()], [T.landMod28, medPeriode(''), !syv()]], 'land');
+    R.baandValg('land-faner', [[V.land(kode), adresse(kode), !verdenFane()], [T.landVerdenFane, adresse(kode, { fane: 'verden' }), verdenFane()]], 'land');
     /* Et kig på et andet land end det gemte: vejen hjem. */
     $('land-kig').replaceChildren(...(gemt && kode !== gemt ? [V.knap(fmt(T.landTilbage, { land: V.land(gemt) }), { gaa: 'land' })] : []));
   }
@@ -247,7 +247,7 @@
   /* Intet land: vælgeren i båndet og forslaget. */
   function vaelgSelv() {
     rod.removeAttribute('aria-busy');
-    R.iBaand('land-faner'); R.iBaand('land-mod');
+    R.baandValg('land-faner', null); R.baandValg('land-mod', null);
     $('land-kig').replaceChildren();
     $('land-h').textContent = T.navLand;
     S.saetLand(T.navLand);

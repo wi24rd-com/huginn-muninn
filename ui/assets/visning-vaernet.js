@@ -65,7 +65,8 @@
 
   /* ── byggeklodser ── */
   const knap = (tekst, query, klasse, label) => V.knap(tekst, query, klasse || 'link', label);
-  const segment = (navn, etiket, valg) => V.segment(navn, etiket, valg.map(([t, q, valgt]) => [t, udenStandard(q), valgt]), 'vaernet');
+  /* Periode og Vis er store knapper i båndet (R.baandValg). */
+  const segment = (navn, etiket, valg) => R.baandValg(navn, valg.map(([t, q, valgt]) => [t, udenStandard(q), valgt]), 'vaernet');
   const flise = (n, tekst, sub, query, aktiv) => V.flise(n, tekst, sub, query, { aktiv });
   /* Et afsnit med fast id, så det kan nås med data-rul og fra tests. */
   function afsnit(id, h, p, ...indhold) {
@@ -121,7 +122,7 @@
   }
   /* Uden tal står fanens pladser i båndet tomme, og Nulstil er slået fra. */
   function tomBaand() {
-    ['dyk-periode', 'dyk-datoer', 'dyk-slags'].forEach(id => R.iBaand(id));
+    R.baandValg('dyk-periode', null); R.baandValg('dyk-slags', null); R.iBaand('dyk-datoer');
     nulstilKnap(null);
   }
   /* Nulstil i båndet: med et mål (data-gaa, som alle andre links) eller slået fra med hvorfor. */
@@ -543,9 +544,9 @@
     visOverskrift();
     chips(d, liste);
     const p = params.get('periode'), fast = !har('dag') && !har('fra');
-    R.iBaand('dyk-periode', segment('dyk-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p !== '30' && p !== 'alt'], [T.dykP30, medPeriode('periode', '30'), fast && p === '30'], [T.dykPAlt, medPeriode('periode', 'alt'), fast && p === 'alt']]));
+    segment('dyk-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p !== '30' && p !== 'alt'], [T.dykP30, medPeriode('periode', '30'), fast && p === '30'], [T.dykPAlt, medPeriode('periode', 'alt'), fast && p === 'alt']]);
     const genaabn = V.husk(rod), fokus = fokusNu() || valgtFokus;
-    R.iBaand('dyk-slags', ...(har('regel') || har('forsoeg') || erRobot() ? [] : [el('div', { className: 'dyk-slags' }, slagsVaelger(d))]));
+    if (har('regel') || har('forsoeg') || erRobot()) R.baandValg('dyk-slags', null); else slagsVaelger(d);
     const vaelger = V.datoVaelger({ visning: 'vaernet', plads: 'dyk-datoer', tom: fast, periode: d.periode, gaa: (a, b) => R.gaaTil('vaernet', kopi(q => { PERIODE.forEach(x => q.delete(x)); q.set('fra', a); q.set('til', b); })) });
     const bjaelke = el('div', { className: 'vg-bjaelke' }, el('p', { className: 'vg-status', textContent: stat.tekst }));
     const advarsel = stat.advarsel ? [el('p', { className: `vg-advarsel vg-${stat.advarsel[1]}`, textContent: stat.advarsel[0] })] : [];

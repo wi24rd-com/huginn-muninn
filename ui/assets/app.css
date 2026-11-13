@@ -66,7 +66,17 @@ code { font-size: max(.9em, var(--font-size-xs)); } /* aldrig under 12 px, helle
 [data-platform="macos"] .titel { padding-left: var(--titel-trafiklys); }
 /* I fuld skærm skjuler macOS vinduesknapperne: mærket står helt til venstre (ramme.js sætter data-fuldskaerm). */
 [data-platform="macos"][data-fuldskaerm] .titel { padding-left: var(--space-3); }
-/* Fanens pladser i båndet (V-FANER.1): Periode, Egne datoer og Vis fyldes af visningen. De står midt i knappernes højde. */
+/* Skitsens udseende (Jan 2026-11-13): tydelige faner og en fyldt Hent nu.
+   KIT-ØNSKE K43: den primære kommando i båndet er fyldt med accent. */
+.cb.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.cb.pri svg { stroke: var(--on-accent); }
+.cb.pri:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.cb.pri[aria-disabled="true"]:hover { background: var(--accent); border-color: var(--accent); }
+/* KIT-ØNSKE K44: større faner (kittets er 30 px høje med 13 px tekst). */
+.cmd-faner .vfane { height: 38px; padding: 0 var(--space-4); font-size: var(--h3-size); }
+/* Et valg i båndet (Periode, Vis): den valgte knap har også en kant, så valget ikke kun er en flade. */
+.baand-valg .cb[aria-pressed="true"] { border-color: var(--accent); }
+/* Fanens plads til Egne datoer (V-FANER.1) fyldes af visningen og står midt i knappernes højde. */
 .baand-plads { display: flex; align-items: center; min-height: 54px; }
 .baand-plads .dato-raekke { flex-wrap: nowrap; }
 .baand-plads .dato-knap { min-width: 5.5rem; }

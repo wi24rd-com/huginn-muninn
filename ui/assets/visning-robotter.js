@@ -66,7 +66,7 @@
   function tegn(d) {
     $('robotter-under').textContent = domaene;
     const p = periodeArg();
-    R.iBaand('robotter-periode', V.segment('robotter-periode', T.dykPeriode, [[T.dykP7, medPeriode(), p === 'd7'], [T.dykP30, medPeriode('30'), p === 'd30'], [T.dykPAlt, medPeriode('alt'), p === 'alt']], 'robotter'));
+    R.baandValg('robotter-periode', [[T.dykP7, medPeriode(), p === 'd7'], [T.dykP30, medPeriode('30'), p === 'd30'], [T.dykPAlt, medPeriode('alt'), p === 'alt']], 'robotter');
     robotAngreb = dyk({ robot: 'stoppet' });
     const genaabn = V.husk(rod), dele = [V.datoVaelger({ visning: 'robotter', plads: 'robotter-datoer', tom: !interval(), periode: d.periode, gaa: (a, b) => R.gaaTil('robotter', medInterval(a, b)) })];
     if (interval()) { const n = periodeNavn(); dele.push(el('div', { className: 'login-stier' }, V.fjernChip(n, { gaa: 'robotter?' + medPeriode() }))); }
@@ -83,7 +83,7 @@
   function besked(tekst, farve = 'roed') {
     rod.removeAttribute('aria-busy');
     rod.replaceChildren(el('p', { className: `vg-advarsel vg-${farve}`, textContent: tekst }));
-    R.iBaand('robotter-periode'); R.iBaand('robotter-datoer');
+    R.baandValg('robotter-periode', null); R.iBaand('robotter-datoer');
   }
 
   let gen = 0, aktiv = null, afmeld = [];
