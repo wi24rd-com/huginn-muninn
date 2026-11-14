@@ -10,6 +10,7 @@ Posterne står efter dato, nyeste først.
 - Alle skærmbilleder i vejledningen er taget på ny, og der er kommet billeder af guidens fire trin og de tre dialoger.
 - **README** (dansk og engelsk) har status 1.0.0, et afsnit om installation og link til vejledningen.
 - **README** har øverst et tydeligt link til at hente den nyeste udgave.
+- **README** har fået et banner øverst (`docs/banner.jpg`) og siger tydeligt, at Windows-udgaven ikke er udgivet endnu.
 - Skærmbillederne i vejledningen viser nu programmets egen version i fodlinjen (før et fast prøvetal), så de passer til den udgave, de beskriver.
 
 ## [1.0.0] — 2026-11-14
