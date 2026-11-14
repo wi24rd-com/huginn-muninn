@@ -21,6 +21,8 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const SCRIPT = process.env.SIGNER_SCRIPT ?? path.join(REPO, "tools/signer.sh");
 const IDENTITET = "Developer ID Application: Prøve Person (TEST000000)";
 const PROFIL = "proeve-profil";
+// Versionen læses fra programmets egen tauri.conf.json (testrepoet får en kopi), så testen følger et versionsskift.
+const VER = JSON.parse(fs.readFileSync(path.join(REPO, "src-tauri/tauri.conf.json"), "utf8")).version;
 
 let ok = 0;
 const fejl = [];
@@ -290,9 +292,9 @@ try {
     tjek("filtider: dagens dato", dag === null || tider.every((t) => t.startsWith(dag)), tider[0]);
     tjek("filtider: også signaturen og billetten, der kom til efter første touch", fs.existsSync(path.join(app, "Contents/_CodeSignature/CodeResources")) && fs.existsSync(path.join(app, "Contents/CodeResources")));
     const ud = path.join(r.hjem, "Huginn-Muninn-udgivelser");
-    const zip = path.join(ud, "Huginn-Muninn-0.1.0.zip");
+    const zip = path.join(ud, `Huginn-Muninn-${VER}.zip`);
     tjek("zip: den endelige zip ligger uden for repoet", fs.existsSync(zip));
-    tjek("zip: zip-filen til notarisering er fjernet", !fs.existsSync(path.join(ud, "Huginn-Muninn-0.1.0-til-notarisering.zip")));
+    tjek("zip: zip-filen til notarisering er fjernet", !fs.existsSync(path.join(ud, `Huginn-Muninn-${VER}-til-notarisering.zip`)));
     tjek("zip: zip-filens egen filtid", lokalt("stat", ["-f", "%Sm", "-t", "%H:%M:%S", zip]).trim() === IND);
     const poster = lokalt("unzip", ["-Z", "-T", zip]).split("\n").filter((l) => l.includes("Huginn and Muninn.app"));
     const hhmmss = IND.replaceAll(":", "");
@@ -301,12 +303,12 @@ try {
     tjek("notarisering: loggen hentet til en fil uden for repoet", fs.existsSync(path.join(ud, "notarisering-00000000-0000-0000-0000-000000000001.json")));
     // V-PUDS.2 N2: version og commit i den sidste linje og i en tekstfil ved zip-filen, uden klokkeslæt.
     const h = git(r, "rev-parse", "--short", "HEAD").trim();
-    const txt = path.join(ud, "Huginn-Muninn-0.1.0.txt");
+    const txt = path.join(ud, `Huginn-Muninn-${VER}.txt`);
     const indhold = fs.existsSync(txt) ? fs.readFileSync(txt, "utf8") : "";
-    tjek("N2: tekstfilen ved zip-filen: version og commit", indhold === `Huginn and Muninn 0.1.0\ncommit ${h}\n`, JSON.stringify(indhold));
+    tjek("N2: tekstfilen ved zip-filen: version og commit", indhold === `Huginn and Muninn ${VER}\ncommit ${h}\n`, JSON.stringify(indhold));
     tjek("N2: tekstfilen har intet klokkeslæt, og dens filtid er den faste", !/\d\d:\d\d/.test(indhold) && lokalt("stat", ["-f", "%Sm", "-t", "%H:%M:%S", txt]).trim() === IND);
     const sidste = k.ud.trim().split("\n").pop();
-    tjek("N2: den sidste linje har version og commit", sidste.startsWith("== færdig: ") && sidste.includes(`Huginn and Muninn 0.1.0, commit ${h}`), sidste);
+    tjek("N2: den sidste linje har version og commit", sidste.startsWith("== færdig: ") && sidste.includes(`Huginn and Muninn ${VER}, commit ${h}`), sidste);
     tjek("N2: rent og pushet står i loggen", k.ud.includes(`kode: arbejdstræet er rent, og HEAD ${h} findes på origin/main`));
     tjek("N2: intet midlertidigt zip-navn tilbage", !fs.readdirSync(ud).some((f) => f.endsWith(".ufaerdig")), fs.readdirSync(ud).join(", "));
   }
@@ -319,7 +321,7 @@ try {
     tjek("afvist: loggen hentet uden for repoet", fs.existsSync(path.join(r.hjem, "Huginn-Muninn-udgivelser/notarisering-00000000-0000-0000-0000-000000000001.json")));
     tjek("afvist: notarytool log med profilen", k.stub.some((l) => l.startsWith("xcrun notarytool log 00000000-0000-0000-0000-000000000001 --keychain-profile " + PROFIL)));
     tjek("afvist: intet hæftet", !k.stub.some((l) => l.startsWith("xcrun stapler")));
-    tjek("afvist: ingen endelig zip", !fs.existsSync(path.join(r.hjem, "Huginn-Muninn-udgivelser/Huginn-Muninn-0.1.0.zip")));
+    tjek("afvist: ingen endelig zip", !fs.existsSync(path.join(r.hjem, `Huginn-Muninn-udgivelser/Huginn-Muninn-${VER}.zip`)));
     tjek("afvist: siger hvorfor", k.fejl.includes("ikke godkendt") && k.fejl.includes("Invalid"));
   }
 
@@ -358,7 +360,7 @@ try {
     fs.rmSync(path.join(r.hjem, "Huginn-Muninn-udgivelser"), { recursive: true, force: true });
     const k = koer(r, ["udgiv"], { lokal: lokalProfil });
     const ud = path.join(r.hjem, "Huginn-Muninn-udgivelser");
-    const zip = path.join(ud, "Huginn-Muninn-0.1.0.zip");
+    const zip = path.join(ud, `Huginn-Muninn-${VER}.zip`);
     const navne = lokalt("unzip", ["-Z", "-1", zip]).split("\n").filter(Boolean);
     tjek("mellemrum: ditto-zippen indeholder Huginn and Muninn.app/Contents/…", k.status === 0 && navne.includes(`${APP}/Contents/MacOS/huginn-muninn`) && navne.includes(`${APP}/Contents/Info.plist`) && navne.every((n) => n.startsWith(`${APP}/`)), navne.slice(0, 4).join(" | ") + k.fejl);
     tjek("mellemrum: filerne i udgivelsesmappen har ingen mellemrum i navnet", fs.existsSync(ud) && fs.readdirSync(ud).length >= 3 && fs.readdirSync(ud).every((f) => !f.includes(" ")), fs.existsSync(ud) ? fs.readdirSync(ud).join(", ") : "");
@@ -405,10 +407,10 @@ try {
     k = koer(r, ["udgiv", "--toer", "--urent"], { lokal: lokalProfil });
     tjek("N2 --urent: tilsidesætter (bygger og signerer)", k.status === 0 && k.linjer.some((l) => l.startsWith("+ codesign --force --sign")), k.fejl);
     tjek("N2 --urent: advarer", k.fejl.includes("ADVARSEL") && k.fejl.includes("--urent") && k.fejl.includes("ikke rent"), k.fejl);
-    tjek("N2 --urent --toer: tekstfilen nævnt med urent", k.linjer.some((l) => l.includes("Huginn-Muninn-0.1.0.txt: Huginn and Muninn 0.1.0, commit ") && l.endsWith(", urent arbejdstræ")));
+    tjek("N2 --urent --toer: tekstfilen nævnt med urent", k.linjer.some((l) => l.includes(`Huginn-Muninn-${VER}.txt: Huginn and Muninn ${VER}, commit `) && l.endsWith(", urent arbejdstræ")));
     fs.rmSync(path.join(r.hjem, "Huginn-Muninn-udgivelser"), { recursive: true, force: true });
     k = koer(r, ["udgiv", "--urent"], { lokal: lokalProfil });
-    const txt = path.join(r.hjem, "Huginn-Muninn-udgivelser/Huginn-Muninn-0.1.0.txt");
+    const txt = path.join(r.hjem, `Huginn-Muninn-udgivelser/Huginn-Muninn-${VER}.txt`);
     const indhold = fs.existsSync(txt) ? fs.readFileSync(txt, "utf8") : "";
     tjek("N2 --urent (stubbe): tekstfilen siger urent", k.status === 0 && indhold.includes("arbejdstræ: urent (--urent)"), k.fejl + indhold);
     tjek("N2 --urent (stubbe): den sidste linje siger urent", k.ud.trim().split("\n").pop().endsWith(", urent)"));
@@ -456,7 +458,7 @@ try {
     if (process.env.SIGNER_VIS) console.log(`--- koer med hængende notarytool (${sek} s), stdout:\n${k.ud}--- stderr:\n${k.fejl}---`);
     tjek("N3 hænger: afbrudt (exit ≠ 0) inden for få sekunder", k.status !== 0 && sek < 20, `${sek} s, exit ${k.status}`);
     tjek("N3 hænger: notarytool var i gang", fs.existsSync(pidfil) && k.stub.some((l) => l.startsWith("xcrun notarytool submit")));
-    tjek("N3 hænger: loglinjen siger hvad der skete", k.ud.includes("tidsgrænse: udgiv afbrudt efter 2 s") && k.ud.includes("Fjernet: Huginn-Muninn-0.1.0-til-notarisering.zip"), k.ud);
+    tjek("N3 hænger: loglinjen siger hvad der skete", k.ud.includes("tidsgrænse: udgiv afbrudt efter 2 s") && k.ud.includes(`Fjernet: Huginn-Muninn-${VER}-til-notarisering.zip`), k.ud);
     tjek("N3 hænger: loglinjen om den indsendte notarisering", k.ud.includes("næste aften bygges, signeres og indsendes en ny"));
     tjek("N3 hænger: jobbet bliver stående (ingen bootout) og prøver igen", !k.stub.some((l) => l.startsWith("launchctl")) && k.ud.includes("jobbet prøver igen kl."), k.stub.join(" | "));
     const tilbage = fs.existsSync(ud) ? fs.readdirSync(ud) : [];

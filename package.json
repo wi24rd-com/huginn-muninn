@@ -1,6 +1,6 @@
 {
   "name": "huginn-muninn",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Wi24rd Huginn and Muninn — for Cloudflare®",
   "license": "Apache-2.0",

@@ -1,8 +1,12 @@
 # Changelog
 
-Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
+Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
+
+## [1.0.0] — 2026-11-14
+
+Første offentlige udgave til macOS: signeret med Developer ID og notariseret af Apple.
 
 ### 2026-11-14 23:30 — Programmet kan signeres og notariseres til macOS
 #### Tilføjet
