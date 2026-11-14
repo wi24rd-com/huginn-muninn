@@ -101,6 +101,6 @@ Hvad dit site bruger af teknologi, siger du i [Teknologi pr. domæne](40-visning
 Åbn dialogen med knappen **i** ved siden af tandhjulet (**Om Huginn and Muninn**).
 
 ![Dialogen Om](../img/om-dialog--light-da-1200x860.webp)
-*Version, licens og knappen til denne vejledning.*
+*Dialogen åbner med navnet og **Det her kan du forvente**. Version, licens og knappen til denne vejledning står længere nede.*
 
 Version, linjen "Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd", skrifter og kortdata (Inter og JetBrains Mono under SIL Open Font License 1.1; world-countries under ODbL og Natural Earth, public domain), varemærkelinjen om Cloudflare og knappen **Åbn vejledningen**, der åbner vejledningen i din browser.

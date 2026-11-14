@@ -101,6 +101,6 @@ Open the dialog with **Notifications** (the bell) in the band on **Overview**.
 Open the dialog with the **i** button next to the gear (**About Huginn and Muninn**).
 
 ![The dialog About](../img/om-dialog--light-en-1200x860.webp)
-*Version, licence and the button to this guide.*
+*The dialog opens with the name and **What to expect**. The version, the licence and the button to this guide are further down.*
 
 The version, the line "Apache-2.0 licence · No telemetry · Nothing is sent to Wi24rd", fonts and map data (Inter and JetBrains Mono under the SIL Open Font License 1.1; world-countries under ODbL and Natural Earth, public domain), the trademark line about Cloudflare and the button **Open the guide**, which opens the guide in your browser.

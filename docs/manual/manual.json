@@ -3,8 +3,8 @@
  "navn": "Wi24rd Huginn and Muninn",
  "version": "1.0.0",
  "dato": "2026-11-14",
- "commit": "8aafb17",
- "fotobog_commit": "8aafb17",
+ "commit": "3b2edf0",
+ "fotobog_commit": "3b2edf0",
  "fotobog_dato": "2026-11-14",
  "sprog": [
   "da",
@@ -78,98 +78,98 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/guide-1--light-da-1200x860.webp",
-     "sha256": "d984ff58c271d8ed5d3b22e83551863c75362043f891c263598c148a64bbc302"
+     "sha256": "0c3cbb5bea0b479cdf7debec972cbaedc903c341527fcfb5ded3847919533db8"
     },
     {
      "id": "opsaetning",
      "tema": "light",
      "sprog": "da",
      "fil": "img/opsaetning--light-da-1200x860.webp",
-     "sha256": "82a4ce6a508e00d70539a6fd33d0684e4c0f97f6fe5e0b254b84261edab104ba"
+     "sha256": "64959633cabdee4ae309588f0803c7fe6864551ed16c72a758d513d723a38c4b"
     },
     {
      "id": "guide-2",
      "tema": "light",
      "sprog": "da",
      "fil": "img/guide-2--light-da-1200x860.webp",
-     "sha256": "74f176e71ed1f2f089530acef019a0af0d3f49f44fba70c7bc3f0ad34b285666"
+     "sha256": "47b7309926d2a5c3f7c65ebd9ac1508ee5b8d8b0b4db9b6767565323cc1b486e"
     },
     {
      "id": "guide-3",
      "tema": "light",
      "sprog": "da",
      "fil": "img/guide-3--light-da-1200x860.webp",
-     "sha256": "6d61fdc627cc7de37eb1f4b407076c8d56fdf6aa9a44537527b69b98ea25cfb1"
+     "sha256": "5d9fc64cc4d9f759d29b636987a20dabedb4cb09040a68c0252e49aa365fae44"
     },
     {
      "id": "domaener-dialog",
      "tema": "light",
      "sprog": "da",
      "fil": "img/domaener-dialog--light-da-1200x860.webp",
-     "sha256": "334483392454b5f0a49c0400579d37c8ed139bfd55dc671b599b8002e3f18dd0"
+     "sha256": "f31160968ab3168f2c2dcbc57d7a4773e047aa510ef7d70f525b3176dcedf85d"
     },
     {
      "id": "alle-fra",
      "tema": "light",
      "sprog": "da",
      "fil": "img/alle-fra--light-da-1200x860.webp",
-     "sha256": "ed467f2bf767c71d2bc68b6dba6622ee795d2037752943693aaf858d1815e32e"
+     "sha256": "cb3c21f364f966b7a3360ef1775a38835bba4c8cca6703f855d92eea6af0ffc0"
     },
     {
      "id": "guide-4",
      "tema": "light",
      "sprog": "da",
      "fil": "img/guide-4--light-da-1200x860.webp",
-     "sha256": "8b7eb921418d96ff9970d5d540994ab31acdf8af43a1525ac8d71cfda4b77ab3"
+     "sha256": "e2e06cd0f1ece104be9553cff928c3d497e1e921ea40428bcd95efd5cd66467f"
     },
     {
      "id": "guide-1",
      "tema": "light",
      "sprog": "en",
      "fil": "img/guide-1--light-en-1200x860.webp",
-     "sha256": "450b1450011bd129e9eebcff4add4d94a304fd0c73e1ef9ab13e980337ff387b"
+     "sha256": "31329eb032b5c52860ada0e71d98258f26dff671c31d66dd8d082f53937f8d32"
     },
     {
      "id": "opsaetning",
      "tema": "light",
      "sprog": "en",
      "fil": "img/opsaetning--light-en-1200x860.webp",
-     "sha256": "2798fd596f2a438b9c97e7e3500d62de4477c33d782316ba384d07c0c0101df5"
+     "sha256": "4bc44d85c0678edc12c183443e7e208bbe55b2a2492510522bdf98d981a08ec5"
     },
     {
      "id": "guide-2",
      "tema": "light",
      "sprog": "en",
      "fil": "img/guide-2--light-en-1200x860.webp",
-     "sha256": "533264880d44978dea8745b11da5eb317775fd0e403768b75e30b9524f6f9862"
+     "sha256": "606200f027bcac10a5a60dbdc6971b755a274a0497243b99bd6202ba42f68e3d"
     },
     {
      "id": "guide-3",
      "tema": "light",
      "sprog": "en",
      "fil": "img/guide-3--light-en-1200x860.webp",
-     "sha256": "8d4f6bed91accb84cd7b6b3ffaa76ec926b2051ec38f1622fef07d3a96d55741"
+     "sha256": "1548cd6365995cef279bd4cc7f1b380a8b045681ce4c1b9c3444f0ca06892532"
     },
     {
      "id": "domaener-dialog",
      "tema": "light",
      "sprog": "en",
      "fil": "img/domaener-dialog--light-en-1200x860.webp",
-     "sha256": "f03e1bf08f317b63746009898624086332579945164671759574cb0f30492cbf"
+     "sha256": "b1e9a5fd0301cb6a4c6a805659a862f54508441e4bef9d74e4be2fe4a00386cd"
     },
     {
      "id": "alle-fra",
      "tema": "light",
      "sprog": "en",
      "fil": "img/alle-fra--light-en-1200x860.webp",
-     "sha256": "8e4b8092f75bf68c1f3c60f98f27ea2b2307e0abba43444d56bd2b3a8635c19d"
+     "sha256": "2a4c7bcd3972e508b0f5441455f15af7d831add1641005fa0652fb9e3028197c"
     },
     {
      "id": "guide-4",
      "tema": "light",
      "sprog": "en",
      "fil": "img/guide-4--light-en-1200x860.webp",
-     "sha256": "93ccf31f22986441789733fe26b1940241679b2566109609d43cf866a0e15cee"
+     "sha256": "77ea5961b6cf9a8d3eb1b162a2bc0729c24ffd8a50dd570e87f438bb5941cab1"
     }
    ]
   },
@@ -307,98 +307,98 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/indstillinger--light-da-1200x860.webp",
-     "sha256": "601ec91d68f16982190364461a9950324ca348b828cb0bab00d522dd061d4b90"
+     "sha256": "68ca84272806eddf87fbd6a3c752cfe3027c34a9937185cdf35429b1323e6694"
     },
     {
      "id": "overblik",
      "tema": "dark",
      "sprog": "da",
      "fil": "img/overblik--dark-da-1200x860.webp",
-     "sha256": "8b345dae2f7c2c6dc40898d53fec767a13655682303101105a19dce635243f30"
+     "sha256": "b45b8ae7eedd434b6bc9df1e7321f2046afc1f4949ed2baa524c633162e31a36"
     },
     {
      "id": "indstillinger-forbindelse",
      "tema": "light",
      "sprog": "da",
      "fil": "img/indstillinger-forbindelse--light-da-1200x860.webp",
-     "sha256": "21cd0ba48d82182cf38ccc839bc5f1a375ae75450830d5323f62c4a65fb67008"
+     "sha256": "6756d0133e638029f52810eb837da1bdcdf071b2066af978c2ffb6dac93c5750"
     },
     {
      "id": "glem-dialog",
      "tema": "light",
      "sprog": "da",
      "fil": "img/glem-dialog--light-da-1200x860.webp",
-     "sha256": "66362e2b35d62f1064c43a83ea53256e2d88fa2274cf75709a4de91afd17a775"
+     "sha256": "966cf5f3daa8305eae0807a9b5318ed8c2c46e022f2ecd991bd55306ab6cf05b"
     },
     {
      "id": "domaener-dialog",
      "tema": "light",
      "sprog": "da",
      "fil": "img/domaener-dialog--light-da-1200x860.webp",
-     "sha256": "334483392454b5f0a49c0400579d37c8ed139bfd55dc671b599b8002e3f18dd0"
+     "sha256": "f31160968ab3168f2c2dcbc57d7a4773e047aa510ef7d70f525b3176dcedf85d"
     },
     {
      "id": "besked-dialog",
      "tema": "light",
      "sprog": "da",
      "fil": "img/besked-dialog--light-da-1200x860.webp",
-     "sha256": "57d4107de83a2b480b862319d82063694a2d3dc746e55864f72799e929df822e"
+     "sha256": "990024d49c4373541c55c738355942c27ba473368c6d7c0488c69f0ef6270b0e"
     },
     {
      "id": "om-dialog",
      "tema": "light",
      "sprog": "da",
      "fil": "img/om-dialog--light-da-1200x860.webp",
-     "sha256": "fb3296478ead2eefd1e27f7ee4275679deda81bba4888d1487acd9df596528a2"
+     "sha256": "b6e9addb9c93cf593726b4560f4eb2390039df2ac9874cccaba03f53b6565ad4"
     },
     {
      "id": "indstillinger",
      "tema": "light",
      "sprog": "en",
      "fil": "img/indstillinger--light-en-1200x860.webp",
-     "sha256": "17b2714af40b7bece537d9b199b317418c188b5a4eceec19aa50a092e30e53b8"
+     "sha256": "6a3c229b852c14219141e1d971388c5cd7ad3d176ed4218da373611efa248c0f"
     },
     {
      "id": "overblik",
      "tema": "dark",
      "sprog": "en",
      "fil": "img/overblik--dark-en-1200x860.webp",
-     "sha256": "00aa1e0b46d6fbb9014fc2a43d6901d442e1d07ad7e881280ef9a7e55c690347"
+     "sha256": "6f51b2979e1b1963f556b004f7ad56fec4ddf3042d63038b12449da6e526af97"
     },
     {
      "id": "indstillinger-forbindelse",
      "tema": "light",
      "sprog": "en",
      "fil": "img/indstillinger-forbindelse--light-en-1200x860.webp",
-     "sha256": "64cfa48817272ecab3f3d9bc4b9fc839d03a6dd39d7518b26cac668347766c75"
+     "sha256": "6c2e3aabd58c9a980ec30429e06d09dd2e18ab01216b1f1919d49ce92d6e0fb0"
     },
     {
      "id": "glem-dialog",
      "tema": "light",
      "sprog": "en",
      "fil": "img/glem-dialog--light-en-1200x860.webp",
-     "sha256": "dce7bacdaee56b3885cfe5eee0c684ea93cf46987a822957f2d8118eec1d070f"
+     "sha256": "79ff8816b3f0ebcdb449b5c94638c421e0366e3b5270f1d3f0efbb725b5a860c"
     },
     {
      "id": "domaener-dialog",
      "tema": "light",
      "sprog": "en",
      "fil": "img/domaener-dialog--light-en-1200x860.webp",
-     "sha256": "f03e1bf08f317b63746009898624086332579945164671759574cb0f30492cbf"
+     "sha256": "b1e9a5fd0301cb6a4c6a805659a862f54508441e4bef9d74e4be2fe4a00386cd"
     },
     {
      "id": "besked-dialog",
      "tema": "light",
      "sprog": "en",
      "fil": "img/besked-dialog--light-en-1200x860.webp",
-     "sha256": "03399e1d3ee21ee32187aae06ed42f8b61bd982fbe158995878d99594d083920"
+     "sha256": "372bea1f14e2bc05a9e1f503e4f0deb682e1bbe9bb6494da7d712f0a558aafec"
     },
     {
      "id": "om-dialog",
      "tema": "light",
      "sprog": "en",
      "fil": "img/om-dialog--light-en-1200x860.webp",
-     "sha256": "47df47ce747c17dafa3fc983ee61bed92ccb1ea33baf60c9f9a53c847bb4e3fb"
+     "sha256": "ff1c60f292ca31ee5858723f564d773ae397f2e2f912baa87e8cd3660d934c32"
     }
    ]
   },
@@ -526,28 +526,28 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/indstillinger--light-da-1200x860.webp",
-     "sha256": "601ec91d68f16982190364461a9950324ca348b828cb0bab00d522dd061d4b90"
+     "sha256": "68ca84272806eddf87fbd6a3c752cfe3027c34a9937185cdf35429b1323e6694"
     },
     {
      "id": "indstillinger-forbindelse",
      "tema": "light",
      "sprog": "da",
      "fil": "img/indstillinger-forbindelse--light-da-1200x860.webp",
-     "sha256": "21cd0ba48d82182cf38ccc839bc5f1a375ae75450830d5323f62c4a65fb67008"
+     "sha256": "6756d0133e638029f52810eb837da1bdcdf071b2066af978c2ffb6dac93c5750"
     },
     {
      "id": "indstillinger",
      "tema": "light",
      "sprog": "en",
      "fil": "img/indstillinger--light-en-1200x860.webp",
-     "sha256": "17b2714af40b7bece537d9b199b317418c188b5a4eceec19aa50a092e30e53b8"
+     "sha256": "6a3c229b852c14219141e1d971388c5cd7ad3d176ed4218da373611efa248c0f"
     },
     {
      "id": "indstillinger-forbindelse",
      "tema": "light",
      "sprog": "en",
      "fil": "img/indstillinger-forbindelse--light-en-1200x860.webp",
-     "sha256": "64cfa48817272ecab3f3d9bc4b9fc839d03a6dd39d7518b26cac668347766c75"
+     "sha256": "6c2e3aabd58c9a980ec30429e06d09dd2e18ab01216b1f1919d49ce92d6e0fb0"
     }
    ]
   },
@@ -567,28 +567,28 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/land-dk--light-da-1200x860.webp",
-     "sha256": "6e346366ebb767a692e0145b2f68fcbc507602860b218b94fc7ec33c216c4084"
+     "sha256": "a9646e5cabf625a9f9ea5ea756729f6b278fa28571ebd6623d0f9e2f050148fd"
     },
     {
      "id": "land-verden",
      "tema": "light",
      "sprog": "da",
      "fil": "img/land-verden--light-da-1200x860.webp",
-     "sha256": "b6b4c0f4ba1d2867d3aa847305e6fc5f250a6d37ca2e69aebeb1d6911ad0acaf"
+     "sha256": "09295dcef441dee2412a87103d1b78cf27c42c9f43092dc65754f53fd995fb2f"
     },
     {
      "id": "land-dk",
      "tema": "light",
      "sprog": "en",
      "fil": "img/land-dk--light-en-1200x860.webp",
-     "sha256": "e80106f8d2d0e258ba3f63f6cda65fdb87d6973c7544c4e10f861c80cb1fb796"
+     "sha256": "a9e3a022dbde906abdd026a1921ec5ba3b44e7086904ba1d7676d5c75a299475"
     },
     {
      "id": "land-verden",
      "tema": "light",
      "sprog": "en",
      "fil": "img/land-verden--light-en-1200x860.webp",
-     "sha256": "c300469bb98f7d04bda4b8e6a9276ee5d25402358f4c0e434fdd6ac175bb2760"
+     "sha256": "5058c3b3eb527b171ba379bb6778eae25ceac6c32a35caf21e042a7adac05f11"
     }
    ]
   },
@@ -608,14 +608,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/login--light-da-1200x860.webp",
-     "sha256": "592c33d1e949fdc83da5b669afb2f612f60647372953be090022bbba0746f4b0"
+     "sha256": "1b23591edbc1b3343180b31c75fc7091f429ac28ca35586ac9bdf3e85eadbff5"
     },
     {
      "id": "login",
      "tema": "light",
      "sprog": "en",
      "fil": "img/login--light-en-1200x860.webp",
-     "sha256": "fa6dd43cb9caf0528bc9b44f3a6161f534fc285b527e3fd60330bc6bb3c1f5f2"
+     "sha256": "62e5b8d02d55cb07924157e312e6fd1ce8a4e1dc0ba8c7c9dd9a19ffada7bc7a"
     }
    ]
   },
@@ -635,28 +635,28 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/guide-1--light-da-1200x860.webp",
-     "sha256": "d984ff58c271d8ed5d3b22e83551863c75362043f891c263598c148a64bbc302"
+     "sha256": "0c3cbb5bea0b479cdf7debec972cbaedc903c341527fcfb5ded3847919533db8"
     },
     {
      "id": "opsaetning",
      "tema": "light",
      "sprog": "da",
      "fil": "img/opsaetning--light-da-1200x860.webp",
-     "sha256": "82a4ce6a508e00d70539a6fd33d0684e4c0f97f6fe5e0b254b84261edab104ba"
+     "sha256": "64959633cabdee4ae309588f0803c7fe6864551ed16c72a758d513d723a38c4b"
     },
     {
      "id": "guide-1",
      "tema": "light",
      "sprog": "en",
      "fil": "img/guide-1--light-en-1200x860.webp",
-     "sha256": "450b1450011bd129e9eebcff4add4d94a304fd0c73e1ef9ab13e980337ff387b"
+     "sha256": "31329eb032b5c52860ada0e71d98258f26dff671c31d66dd8d082f53937f8d32"
     },
     {
      "id": "opsaetning",
      "tema": "light",
      "sprog": "en",
      "fil": "img/opsaetning--light-en-1200x860.webp",
-     "sha256": "2798fd596f2a438b9c97e7e3500d62de4477c33d782316ba384d07c0c0101df5"
+     "sha256": "4bc44d85c0678edc12c183443e7e208bbe55b2a2492510522bdf98d981a08ec5"
     }
    ]
   },
@@ -676,14 +676,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/overblik--light-da-1200x860.webp",
-     "sha256": "d03273fc139f8118256c9c87f7917f19717acd957b76346c4e4c3f979b963947"
+     "sha256": "225ff0acbf0d507da958fcfe36627ad39f75621da64cfd8e5cac48cd31ad2d60"
     },
     {
      "id": "overblik",
      "tema": "light",
      "sprog": "en",
      "fil": "img/overblik--light-en-1200x860.webp",
-     "sha256": "4a613f3c7e7653dd3166629d26d686524c69f3425d93fc17c8ef211f705c8be0"
+     "sha256": "588afe836f02945c57df55fd676541ceed085152a03a1dd86d4b733c84521e46"
     }
    ]
   },
@@ -703,14 +703,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/robotter--light-da-1200x860.webp",
-     "sha256": "dabc64f0ef1fea85ea60d5f9007fb9a18737a00848ac7a6f7f5b002e451933c7"
+     "sha256": "2415b205e00e038739513de6cb2619bd1ac8266eea47644879b2769d0742e5ae"
     },
     {
      "id": "robotter",
      "tema": "light",
      "sprog": "en",
      "fil": "img/robotter--light-en-1200x860.webp",
-     "sha256": "b5071ce4dcbb0272517a014a5e34a5558140fbb71b27efdd23987c882ad3eb70"
+     "sha256": "a59a4f1c4d0b5a1094338658c936e1212fa6b0d626654c67e99d03aab1d55934"
     }
    ]
   },
@@ -730,14 +730,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/siden-sidst--light-da-1200x860.webp",
-     "sha256": "4650ee78f61085f5234351cc7a3b634a53a336ac7c373cdb96db51a1f58e24ba"
+     "sha256": "d76a871451f5c51e166332db2873dfa949e6e597502aab2413b2d00a5ca69b9f"
     },
     {
      "id": "siden-sidst",
      "tema": "light",
      "sprog": "en",
      "fil": "img/siden-sidst--light-en-1200x860.webp",
-     "sha256": "afb1f91bc9e8d096593806f336b3b96b85e91770f93edb7017d5621da0fdb264"
+     "sha256": "b4832d0c202359022abe6a5d4ff32ff4a35643d039c06ce8628e3f824165e113"
     }
    ]
   },
@@ -757,14 +757,14 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/teknologi--light-da-1200x860.webp",
-     "sha256": "c813a703409a6134b2cfb085e44d87a79b16c4625db4af922d9ddb78d2d1887d"
+     "sha256": "a3333d20c38b43feeca022876c8986273473e3416915e7568afad0eed5e7ce36"
     },
     {
      "id": "teknologi",
      "tema": "light",
      "sprog": "en",
      "fil": "img/teknologi--light-en-1200x860.webp",
-     "sha256": "fae6792ea19ac5682e26461ea6475382a3fa0b5c54722e8b68101e7a42a397c5"
+     "sha256": "05114b618354e8b3d84d5bcd58f8b53c78c560894e6cce55197181c1f9159c48"
     }
    ]
   },
@@ -784,98 +784,98 @@
      "tema": "light",
      "sprog": "da",
      "fil": "img/angreb--light-da-1200x860.webp",
-     "sha256": "ff9bd9e0e42e7bbdcd400907f5aec8f0384529cfcde70a404c9fd071104a02d2"
+     "sha256": "2ee211bd2957a06324e4dad0d39384296ef4d53baddf02cca49e8c6056ebbf44"
     },
     {
      "id": "angreb-samlet",
      "tema": "light",
      "sprog": "da",
      "fil": "img/angreb-samlet--light-da-1200x860.webp",
-     "sha256": "b048839e47c9a46f81f8b69ebf8c249c663601afbfe977413fc39225e1cee533"
+     "sha256": "3f6a2d2829a1cc602bba12567c6b9198dc796ef236d3a1527fb74f3f8bdbd8fe"
     },
     {
      "id": "angreb-fund",
      "tema": "light",
      "sprog": "da",
      "fil": "img/angreb-fund--light-da-1200x860.webp",
-     "sha256": "53e8de1e72078572aecb8d33b8fe6fb062a88649477df80917737488f7a020d1"
+     "sha256": "20d38ab87313b1a96faa5ac1a8098a118860ef681a00ff99c3002659a5da00e1"
     },
     {
      "id": "dyk-regel",
      "tema": "light",
      "sprog": "da",
      "fil": "img/dyk-regel--light-da-1200x860.webp",
-     "sha256": "951229dfd7c39dd64cae340c1b8f1531ae77fe3431f69a9a326d269fddb5ba45"
+     "sha256": "61e2fa3714225d3cc6b17585187c14fe41bb5e6b3893339bcade8b4da990aa6e"
     },
     {
      "id": "dyk-land",
      "tema": "light",
      "sprog": "da",
      "fil": "img/dyk-land--light-da-1200x860.webp",
-     "sha256": "45967af2bf6e27c9bc542d4747d7905aba3ea15724df8359601229e5f1aa10d9"
+     "sha256": "947b3f834e7e150490837b941af0c45ebd982ca3542aa451703064a737f54f2f"
     },
     {
      "id": "trafik-dyk",
      "tema": "light",
      "sprog": "da",
      "fil": "img/trafik-dyk--light-da-1200x860.webp",
-     "sha256": "d04ff007507c3ca23f4b8fa98c3aee51fda2acecd6f3753ca95ac02c645bf477"
+     "sha256": "793fa8cc61cbc4c98777a64b65e7c9d1f985ca208d6b5e90919c9f660946f60c"
     },
     {
      "id": "angreb-estimat",
      "tema": "light",
      "sprog": "da",
      "fil": "img/angreb-estimat--light-da-1200x860.webp",
-     "sha256": "440c20ebf0e92ac6946f9abdeacc7b8fb7a68db10844b418ebcf20c223da5d37"
+     "sha256": "b3020b67aa703cc9eec3eceee0a7576d3da8f70a49f592e7601995b0616fc41c"
     },
     {
      "id": "angreb",
      "tema": "light",
      "sprog": "en",
      "fil": "img/angreb--light-en-1200x860.webp",
-     "sha256": "493ea9d968a8b9e2b6b17e758c4576025f0134045d02ba81b8c830d5d6429f35"
+     "sha256": "a78059dfd1873776229c3d9679658022f239d0821d346d90c81674878738bba6"
     },
     {
      "id": "angreb-samlet",
      "tema": "light",
      "sprog": "en",
      "fil": "img/angreb-samlet--light-en-1200x860.webp",
-     "sha256": "d465e3129fe3e83f519960525e1a4b601fcb28613936bbb1db59177dd3e8662e"
+     "sha256": "7e5768f7a1fc5e214f371aebe69713f3468aa07e442da1b6367391831526dbcb"
     },
     {
      "id": "angreb-fund",
      "tema": "light",
      "sprog": "en",
      "fil": "img/angreb-fund--light-en-1200x860.webp",
-     "sha256": "20129afcf95e03ba546db89c68407df06c26e405515b046991124fc462bac0ba"
+     "sha256": "f168807fc6abb823244f5cf6b0fa90d78c41a8d51b93aa55e0be9cf787d3e97e"
     },
     {
      "id": "dyk-regel",
      "tema": "light",
      "sprog": "en",
      "fil": "img/dyk-regel--light-en-1200x860.webp",
-     "sha256": "ee2ceed4e83348f692d0ca254c7eb3c223c8ade7d19146fbe7117491ed55613a"
+     "sha256": "95cab2bb9cb3a15b299da34f7e7f7dfade0123a30e8d6e621bdbed852cd708a9"
     },
     {
      "id": "dyk-land",
      "tema": "light",
      "sprog": "en",
      "fil": "img/dyk-land--light-en-1200x860.webp",
-     "sha256": "7e6f488d7ec9280a0e063bd83388b57fc8d571a6139431bf5c91f23298b41098"
+     "sha256": "5b17076389cad39ef505e6e967aa986281aa5e672e888a7fdf8a912f033914f3"
     },
     {
      "id": "trafik-dyk",
      "tema": "light",
      "sprog": "en",
      "fil": "img/trafik-dyk--light-en-1200x860.webp",
-     "sha256": "fe0ef3609858c8e024490ddeb526d5ee2f689a9be5d9437cc3437343cace7f3b"
+     "sha256": "e18f8aca3d2b3aa9e6052b4724ef813003c48f56f2456ec08082a75111a2af33"
     },
     {
      "id": "angreb-estimat",
      "tema": "light",
      "sprog": "en",
      "fil": "img/angreb-estimat--light-en-1200x860.webp",
-     "sha256": "e35d8db1ef3e18dde4b653a64e5451a60d4c7a9e8ae2863abaa81779372575c6"
+     "sha256": "d478c5466c9c4cfb635902d965541b77f8533b5059c30616ce7d72824ee825f6"
     }
    ]
   }
