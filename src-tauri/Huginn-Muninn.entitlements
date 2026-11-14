@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Huginn and Muninn: entitlements under hardened runtime (V-SIGN.1). Listen er bevidst tom.
+
+  Hardened runtime slår JIT, usigneret eksekverbar hukommelse, DYLD-miljøvariabler, indlæsning af biblioteker fra
+  andre teams og fejlsøgning fra. Målt på den usignerede debug-bundle og i koden har programmet ikke brug for nogen af dem:
+  - Kun systembiblioteker: `otool -L` på Contents/MacOS/huginn-muninn viser 15 biblioteker, alle under
+    /System/Library/Frameworks og /usr/lib. Biblioteksvalideringen er derfor opfyldt uden
+    com.apple.security.cs.disable-library-validation.
+  - Én eksekverbar fil: bundlen har Info.plist, binæren og ikonet. Ingen Frameworks/, ingen hjælpeprogrammer.
+  - Ingen JIT, ingen DYLD_*-variabler og ingen indlæsning af fremmede biblioteker i programmets egen kode (søgt i
+    src-tauri/src). Websiden tegnes af WebKits egen WebContent-tjeneste, som Apple signerer med sin egen JIT-entitlement.
+  - Netværk (api.cloudflare.com): programmet har ingen app-sandkasse, så udgående forbindelser kræver ingen entitlement.
+  - Notifikationer (tauri-plugin-notification), ikonet i menulinjen, én instans og de to LaunchAgent-plister (start ved
+    login og daglig start; launchd starter binæren direkte, og programmet kalder /bin/launchctl) kræver ingen
+    entitlement uden sandkasse.
+  - Nøglering: keyring med apple-native gemmer en generisk adgangskode (tjenesten com.wi24rd.huginn-muninn) i
+    login-nøgleringen. Ingen keychain-access-groups i koden, så ingen provisioning profile.
+  - Ingen kamera, mikrofon, placering, kontakter, kalender, billeder eller Apple Events.
+  - Ingen com.apple.security.get-task-allow, heller ikke i prøvebygningen. Notariseringen afviser den.
+  Måles i den signerede bygning efter proeve: netværk, notifikation, start ved login og daglig start, ikonet i
+  menulinjen, én instans, og at Nøglering spørger én gang om det gemte API Token.
+-->
+<plist version="1.0">
+<dict/>
+</plist>

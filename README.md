@@ -81,6 +81,8 @@ npm install
 npm run tauri dev
 npm run test:ui              # the UI smoke test (jsdom)
 npm run kit:tjek             # the copies in ui/assets/kit2/ match the Wi24rd UI Kit 2 package
+npm run test:signer          # the signing script tested with stubs (macOS; signs nothing)
+sh tools/signer.sh proeve    # macOS: debug build signed with your own Developer ID, no notarisation
 ```
 Requires Rust (rustup) and Node 20+.
 

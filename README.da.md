@@ -81,6 +81,8 @@ npm install
 npm run tauri dev
 npm run test:ui              # UI-røgtesten (jsdom)
 npm run kit:tjek             # kopierne i ui/assets/kit2/ er som pakken Wi24rd UI Kit 2
+npm run test:signer          # signeringsscriptet prøvet med stubbe (macOS; signerer intet)
+sh tools/signer.sh proeve    # macOS: debug-bygning signeret med din egen Developer ID, uden notarisering
 ```
 Kræver Rust (rustup) og Node 20+.
 

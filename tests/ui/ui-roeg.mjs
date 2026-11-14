@@ -4326,6 +4326,20 @@ const DOMV = (fravalgte = [], x) => {
   tjek('V-INDST.1 ny kode nævner ikke kittets hjemsted, og ingen andre domæner end wi24rd.com', !/grimnir/i.test(ui('assets/visning-indstillinger.js') + ui('assets/visning-teknologi.js') + ui('assets/ramme.js')) && !/[a-z0-9-]+\.(dk|com|net|org)\b/i.test(ui('assets/visning-indstillinger.js').replace(/wi24rd\.com|wi24rd\b/gi, '')));
 }
 
+// ── V-SIGN.1: signeringen til Apple (selve scriptet prøves af npm run test:signer) ──
+{
+  const mac = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8')).bundle.macOS || {};
+  const ent = fs.readFileSync(path.join(repo, 'src-tauri', 'Huginn-Muninn.entitlements'), 'utf8');
+  tjek('V-SIGN.1 tauri.conf.json: hardened runtime, entitlements peger på filen, ingen signingIdentity, og kun .app bygges', mac.hardenedRuntime === true && mac.entitlements === 'Huginn-Muninn.entitlements' && !('signingIdentity' in mac) && mac.minimumSystemVersion === '11.0' && JSON.stringify(JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8')).bundle.targets) === '["app"]', JSON.stringify(mac));
+  tjek('V-SIGN.1 entitlements: listen er tom, og get-task-allow er ikke slået til', /<plist version="1\.0">\s*<dict\/>\s*<\/plist>\s*$/.test(ent) && !/<key>/.test(ent));
+  const sh = fs.readFileSync(path.join(repo, 'tools', 'signer.sh'), 'utf8'), kode = sh.replace(/^\s*#.*$/gm, '');
+  tjek('V-SIGN.1 signer.sh: ingen adgangskode, intet adgangskodeflag, intet kald til security, og git hentes og pushes aldrig', !sh.includes('--' + 'pass' + 'word') && !/(^|[\s;|&(])security\s/m.test(kode) && !/git[^\n]*\b(fetch|push|pull)\b/.test(kode) && !/[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}/.test(sh));
+  tjek('V-SIGN.1 signer.sh: udgivelserne ligger uden for repoet, og en mappe i repoet afvises', /UD=\$\{UD:-\$HOME\/\$FILNAVN-udgivelser\}/.test(sh) && /case "\$UD\/" in "\$ROD"\/\*\) fejl "udgivelser=\$UD ligger i repoet/.test(sh));
+  tjek('V-SIGN.1 signer.sh: programmets egne navne (bundlen med mellemrum under src-tauri/target, filnavne uden)', sh.includes('APPNAVN="Huginn and Muninn"') && sh.includes('FILNAVN="Huginn-Muninn"') && sh.includes('app="$ROD/src-tauri/target/release/bundle/macos/$APPNAVN.app"') && sh.includes('STANDARD_PROFIL="ham-notary"'));
+  tjek('V-SIGN.1 .gitignore: tools/signer.lokal, og package.json har test:signer', fs.readFileSync(path.join(repo, '.gitignore'), 'utf8').split('\n').includes('/tools/signer.lokal') && JSON.parse(fs.readFileSync(path.join(repo, 'package.json'), 'utf8')).scripts['test:signer'] === 'node tests/signer/signer.mjs');
+  tjek('V-SIGN.1 README: de to kommandoer står under Byg på begge sprog, uden identitet og Team ID', ['README.md', 'README.da.md'].every(f => { const t = fs.readFileSync(path.join(repo, f), 'utf8'); return t.includes('sh tools/signer.sh proeve') && t.includes('npm run test:signer') && !/Developer ID Application:|\([A-Z0-9]{10}\)/.test(t); }));
+}
+
 // ── Fotobogen: listen følger programmet, og et gennemløb giver et billede af hver visning uden fejl ──
 {
   const visninger = new Set([...ui('index.html').matchAll(/data-visning="([^"]+)"/g)].map(m => m[1])), ider = SIDER.map(s => s.id);

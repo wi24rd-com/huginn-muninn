@@ -42,6 +42,9 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
+# Lokale valg til signeringen (identitet, profil, udgivelsesmappe)
+/tools/signer.lokal
+
 # Filer, programmet, testene og bygningen ikke bruger
 /design/brand/menulinje-forenklet.png
 /tools/fast-tid.sh

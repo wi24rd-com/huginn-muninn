@@ -4,6 +4,11 @@ Udgivelser er endnu ikke tagget. Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-14 23:30 — Programmet kan signeres og notariseres til macOS
+#### Tilføjet
+- **Signering til Apple:** `tools/signer.sh` signerer programmet med Developer ID, sender det til Apples notarisering og hæfter svaret på. Udgivelser signeres kun i et fast tidsvindue. Intet ændrer sig i programmet selv; en signeret udgave viser udviklerens navn i stedet for »unidentified developer«.
+- `npm run test:signer` prøver scriptet med stubbe, uden at signere noget.
+
 ### 2026-11-13 23:30 — Programikonet er grønt på mørk bund
 #### Ændret
 - **Programikonet** (Dock, Finder, Windows): ravnene står i kittets grønne på en mørk flise, som de andre Wi24rd-programmer. Før var de hvide på blå. Ikonet i menulinjen er uændret.
