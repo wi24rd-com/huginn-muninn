@@ -3,6 +3,9 @@
 
 *Security isn't something you buy. It's something you understand.*
 
+### [⬇ Download Huginn and Muninn 1.0.0 for macOS](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
+Signed and notarised by Apple · Apple silicon · macOS 11 or newer · open the zip and drag the app to Applications
+
 A desktop app (Tauri) that shows you what is actually happening against **your own** Cloudflare domains — in plain language, across all your zones, with a local history that outlives Cloudflare's 31 days.
 
 - **Huginn (thought):** what is happening now — the attacks, what was stopped and how.
@@ -10,7 +13,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 
 **Privacy:** the app talks only to `api.cloudflare.com` with your own read-only API Token, stored in your OS keychain. Nothing is sent to Wi24rd. No telemetry.
 
-**Status:** version 1.0.0 for macOS (Apple silicon), signed with Developer ID and notarised by Apple. Download it from [Releases](../../releases). There is no version for Windows or Linux yet.
+**Status:** version 1.0.0 for macOS (Apple silicon), signed with Developer ID and notarised by Apple. Download it from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). There is no version for Windows or Linux yet.
 
 **User guide:** [English](docs/manual/en/00-index.md) · [Dansk](docs/manual/da/00-index.md)
 
@@ -79,7 +82,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - macOS asks for permission the first time a notification is shown. **To turn them off completely:** System Settings → Notifications → Huginn and Muninn.
 
 ## Install
-Download `Huginn-Muninn-1.0.0.zip` from [Releases](../../releases), open it, and drag **Huginn and Muninn** to your Applications folder. Requires macOS 11 or newer and a Mac with Apple silicon. See [Installation](docs/manual/en/20-installation.md) and [Uninstalling](docs/manual/en/90-afinstallation.md).
+Download `Huginn-Muninn-1.0.0.zip` from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest), open it, and drag **Huginn and Muninn** to your Applications folder. Requires macOS 11 or newer and a Mac with Apple silicon. See [Installation](docs/manual/en/20-installation.md) and [Uninstalling](docs/manual/en/90-afinstallation.md).
 
 ## Build (development)
 ```

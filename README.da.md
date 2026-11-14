@@ -3,6 +3,9 @@
 
 *Sikkerhed er ikke noget, man køber. Det er noget, man forstår.*
 
+### [⬇ Hent Huginn and Muninn 1.0.0 til macOS](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
+Signeret og notariseret af Apple · Apple silicon · macOS 11 eller nyere · åbn zip-filen, og træk programmet til Programmer
+
 Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne** Cloudflare-domæner — i klart sprog, på tværs af alle dine zoner og med en lokal historik, der rækker længere end Cloudflares 31 dage.
 
 - **Huginn (tanke):** det, der sker nu — angrebene, hvad der blev stoppet og hvordan.
@@ -10,7 +13,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 
 **Privatliv:** programmet taler kun med `api.cloudflare.com` med dit eget API Token, der kun kan læse, gemt i styresystemets nøglering. Intet sendes til Wi24rd. Ingen telemetri.
 
-**Status:** version 1.0.0 til macOS (Apple silicon), signeret med Developer ID og notariseret af Apple. Hent den under [Releases](../../releases). Der findes endnu ingen udgave til Windows eller Linux.
+**Status:** version 1.0.0 til macOS (Apple silicon), signeret med Developer ID og notariseret af Apple. Hent den under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). Der findes endnu ingen udgave til Windows eller Linux.
 
 **Brugervejledning:** [Dansk](docs/manual/da/00-index.md) · [English](docs/manual/en/00-index.md)
 
@@ -79,7 +82,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - macOS spørger om lov første gang, en notifikation vises. **Slå dem helt fra:** Systemindstillinger → Notifikationer → Huginn and Muninn.
 
 ## Installation
-Hent `Huginn-Muninn-1.0.0.zip` under [Releases](../../releases), åbn den, og træk **Huginn and Muninn** til din Programmer-mappe. Kræver macOS 11 eller nyere og en Mac med Apple silicon. Se [Installation](docs/manual/da/20-installation.md) og [Afinstallation](docs/manual/da/90-afinstallation.md).
+Hent `Huginn-Muninn-1.0.0.zip` under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest), åbn den, og træk **Huginn and Muninn** til din Programmer-mappe. Kræver macOS 11 eller nyere og en Mac med Apple silicon. Se [Installation](docs/manual/da/20-installation.md) og [Afinstallation](docs/manual/da/90-afinstallation.md).
 
 ## Byg (udvikling)
 ```

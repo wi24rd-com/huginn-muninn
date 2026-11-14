@@ -9,6 +9,7 @@ Posterne står efter dato, nyeste først.
 - **Vejledningen** (`docs/manual/`, dansk og engelsk) beskriver nu programmet, som det er: guiden ved første start, Indstillinger bag tandhjulet, dialogerne Domæner, Notifikationer pr. domæne og Om, fanerne, båndet og fodlinjen. Installationen beskriver den signerede og notariserede udgave.
 - Alle skærmbilleder i vejledningen er taget på ny, og der er kommet billeder af guidens fire trin og de tre dialoger.
 - **README** (dansk og engelsk) har status 1.0.0, et afsnit om installation og link til vejledningen.
+- **README** har øverst et tydeligt link til at hente den nyeste udgave.
 - Skærmbillederne i vejledningen viser nu programmets egen version i fodlinjen (før et fast prøvetal), så de passer til den udgave, de beskriver.
 
 ## [1.0.0] — 2026-11-14
