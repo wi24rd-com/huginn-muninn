@@ -7,7 +7,7 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 - **Huginn (thought)** is what is happening now: the attacks, what was stopped and how.
 - **Muninn (memory)** is what has happened: every finished day is kept locally.
 
-> **Status:** early prototype. Development builds on macOS. The program is not released yet, and this guide follows the version in the source code today.
+> **Status:** version 1.0.0 for macOS (Apple silicon). The program is signed with Developer ID and notarised by Apple. This guide follows that version.
 
 ## How the guide is organised
 
@@ -18,7 +18,7 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 | [Setup](30-opsaetning.md) | need to connect the program to Cloudflare and choose domains |
 | [Create an API Token at Cloudflare](31-cloudflare.md) | want to see step by step, with screenshots, what to do in Cloudflare's dashboard |
 | [The views](40-visninger/overblik.md) | use the program day to day: Overview, Since last time, Attacks, Robots, Login, your country, Visitors, Technology |
-| [Settings](50-indstillinger.md) | want to change language, appearance, domains, notifications or the API Token |
+| [Settings](50-indstillinger.md) | want to change language, appearance, notifications or the API Token, or choose domains |
 | [Notifications and background](60-notifikationer.md) | want to understand when the program speaks up, and what happens when the window is closed |
 | [Data and history](70-data.md) | want to know where the figures live, for how long, and how to reset |
 | [Troubleshooting](80-fejlfinding.md) | see an error text in the program |
@@ -29,9 +29,9 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 
 ## The short version
 
-1. Install the program and open it.
-2. Create an API Token at Cloudflare with the two read permissions the program asks for, and paste it.
-3. Under **Settings → Domains**, choose which domains Huginn should fetch and show.
+1. Install the program and open it. A guide with four steps opens by itself.
+2. Create an API Token at Cloudflare with the two read permissions the program asks for, and paste it in step 2 of the guide.
+3. In step 3, choose which domains Huginn should fetch and show. Later you change it on **Overview** with the button **Choose domains**.
 4. Close the window. The program stays in the menu bar, fetches in the background and tells you when a domain needs action.
 
 The rest is for those who want to understand more. Everything in the program that has figures behind it can be clicked, so you can see what the figure is made of.

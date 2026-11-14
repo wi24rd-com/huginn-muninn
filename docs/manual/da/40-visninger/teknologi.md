@@ -1,6 +1,6 @@
 # Teknologi pr. domæne
 
-Ingen genvej. Du kommer dertil fra **Indstillinger → Domæner → Teknologi pr. domæne →** eller fra **Ret teknologier** i Angreb.
+Ingen genvej og ingen fane. Du kommer dertil med **Ret teknologier** i båndet på **Angreb**. **Tilbage til Angreb** i båndet fører tilbage.
 
 ## Hvad viser den?
 
@@ -29,7 +29,7 @@ Fanen **Alle teknologier**: kataloget i grupper med søgning og antal angreb på
 
 - **… du ikke ved, hvad sitet kører?** Lad **Ved ikke** stå, eller spørg din webmand. Programmet gætter ikke for dig.
 - **… status siger Hold øje på grund af et hul i noget, du ikke bruger?** Sæt **Bruger ikke**. Så fylder det mindre i status fremover.
-- **… du vil nulstille alt?** **Indstillinger → Domæner → Nulstil for alle domæner**. Programmet spørger først.
+- **… du vil nulstille alt?** **Nulstil for alle domæner** i båndet. Programmet spørger først: **Nulstil teknologi-valg?**
 
 ## Klik videre
 

@@ -12,7 +12,7 @@ Alt, programmet gemmer, ligger i én SQLite-fil, `huginn-muninn.sqlite`, i progr
 
 API Tokenet ligger **ikke** i filen. Det ligger i din computers nøglering (macOS Nøglering eller Windows Credential Manager) under navnet `com.wi24rd.huginn-muninn`.
 
-Størrelsen står under **Indstillinger → Data → Lokal database**.
+Størrelsen står under **Indstillinger** › **Data** › **Lokal database**.
 
 ## Hvad der gemmes
 
@@ -27,7 +27,7 @@ Det, der **ikke** gemmes: IP-adresser (hentes aldrig), forespørgselsdelen af st
 
 - Cloudflare gemmer **sikkerhedshændelser i en måned** og **trafiktal i et år**. Det er det, programmet kan hente.
 - Programmet gemmer **alt, det har hentet, så længe du vil**. Intet slettes af sig selv. Så efter et år har du et års sikkerhedshændelser, selv om Cloudflare kun har en måned.
-- **Hvad der findes** under Indstillinger → Data siger, hvor langt tilbage hver slags tal rækker, og **Ældste dag** er den første dag med tal.
+- **Hvad der findes** under Indstillinger › Data siger, hvor langt tilbage hver slags tal rækker, og **Ældste dag** er den første dag med tal.
 
 ## Huller
 
@@ -35,7 +35,7 @@ Et hul er en dag, programmet aldrig har hentet, typisk fordi computeren var sluk
 
 - Var programmet slukket **kortere end en måned**, henter det de manglende dage selv, når det starter igen. Overblik siger "Huginn var ikke tændt fra … til …. Cloudflare havde stadig tallene, så intet mangler."
 - Var det slukket **længere**, er de ældste dage væk hos Cloudflare og kan ikke hentes. Overblik siger, hvor mange dage der mangler for altid.
-- **Indstillinger → Data → Huller** viser antallet, og et klik viser listen.
+- **Indstillinger** › **Data** › **Huller** viser antallet, og et klik viser listen.
 
 Derfor er **Start ved login** slået til som standard. Med den starter programmet også selv én gang om dagen og henter, så der ikke kommer huller, selv om du har valgt **Afslut**. Og derfor siger programmet, at du bør åbne det mindst hver tredje uge, hvis du slår det fra.
 
@@ -43,10 +43,10 @@ Derfor er **Start ved login** slået til som standard. Med den starter programme
 
 - Programmet spørger om i dag og i går, én dag ad gangen, så Cloudflare ikke skal sample over en lang periode. Ældre dage hentes kun, hvis de mangler.
 - Antallet af afviste er Cloudflares estimat: hver hændelse i stikprøven oplyser, hvor mange den står for, og programmet lægger det sammen. Første gang programmet starter efter opdateringen 8. november 2026, henter det de sidste 30 dage igen i det normale tempo, så tallene kan sammenlignes. Ældre dage kan Cloudflare ikke levere igen; de beholder de talte rækker.
-- Højst to kald ad gangen og mindst 1,1 sekund imellem, for alle domæner tilsammen. Beder Cloudflare det vente, holder programmet pause og siger "Prøver igen kl. …" i statuspillen.
+- Højst to kald ad gangen og mindst 1,1 sekund imellem, for alle domæner tilsammen. Beder Cloudflare det vente, holder programmet pause og siger "Prøver igen kl. …" i fodlinjen nederst i vinduet.
 - Tallene til Login og "stoppet ved Edge" pr. robot hentes bagefter i langsomt tempo og kun for færdige dage.
 - Til **Besøgende** hentes unikke besøgende med årets trafiktal og besøg pr. land til sidst, ét kald pr. domæne. Besøg pr. land findes en måned tilbage hos Cloudflare; programmet gemmer dagene, så historikken vokser derfra. Første gang programmet starter efter opdateringen 9. november 2026, henter det året én gang til for de dage, det allerede har, så de får unikke besøgende. Kun det tal skrives; de andre tal for dagene ændres ikke. Første start efter opdateringen med Kendte robotter gør det samme én gang for IP-klasserne (art `h_ipklasse`); kun de skrives. Kendte robotter (art `b_robot`) og de mest besøgte sider (arterne `b_side`, `b_side_b` og `b_side_bytes`: visninger, besøg og svarenes bytes i alt pr. dag og sti) hentes hver med sit eget kald for de samme dage som besøgene, også for dage, hvis besøg allerede er hentet. Bytes bruges kun til at skille stier, der svarer med forsiden, fra rigtige sider. Første start efter opdateringen 10. november 2026 henter siderne for den seneste måned én gang til, så de får bytes; ældre dage beholder deres tal uden. Afviser Cloudflare et af kaldene, står det som "ikke tilgængelig" ved det afsnit, og resten virker.
-- **Kvote hos Cloudflare** under Indstillinger → Data viser, hvor mange kald Cloudflare tillader, og hvor mange programmet brugte i sidste runde.
+- **Kvote hos Cloudflare** under Indstillinger › Data viser, hvor mange kald Cloudflare tillader, og hvor mange programmet brugte i sidste runde.
 - **Hent nu** (⌘R, Windows Ctrl+R eller F5) starter en hentning med det samme.
 
 ## Eksport
@@ -55,13 +55,13 @@ Programmet har ingen eksportfunktion endnu. Databasen er en almindelig SQLite-fi
 
 ## Nulstil historik
 
-**Indstillinger → Data → Nulstil historik…** sletter alle tal på din computer og henter dem forfra. Programmet spørger først og siger, hvilke datoer der forsvinder for altid, og hvor mange dage det er: Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år, så alt ældre kan ikke hentes igen.
+**Indstillinger** › **Data** › **Nulstil historik…** sletter alle tal på din computer og henter dem forfra. Programmet spørger først og siger, hvilke datoer der forsvinder for altid, og hvor mange dage det er: Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år, så alt ældre kan ikke hentes igen.
 
 Det, der bliver: dine indstillinger, zonelisten, domænevalget, notifikationsvalget pr. domæne, login-stierne og teknologi-valgene. Filen selv bliver også; pladsen frigives.
 
 ## Glem API Tokenet
 
-**Indstillinger → Forbindelse → Glem API Token…** sletter API Tokenet fra nøgleringen og dine valg pr. domæne (domænevalg, notifikationer pr. domæne, login-stier, teknologi-valg). Historikken bliver, så du kan forbinde igen senere uden at miste den.
+**Indstillinger** › **Forbindelse** › **Glem API Token…** sletter API Tokenet fra nøgleringen og dine valg pr. domæne (domænevalg, notifikationer pr. domæne, login-stier, teknologi-valg). Historikken bliver, så du kan forbinde igen senere uden at miste den.
 
 ## Nyere database
 

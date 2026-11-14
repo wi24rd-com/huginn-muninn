@@ -1,6 +1,6 @@
 # Your country now and the World
 
-Shortcut: ⌘6 (Windows: Ctrl+6). The name in the sidebar follows the country you have chosen, for example **Denmark now**.
+Shortcut: ⌘6 (Windows: Ctrl+6). The name on the tab follows the country you have chosen, for example **Denmark now**.
 
 ## What does it show?
 
@@ -39,7 +39,7 @@ A source country alone cannot be trusted: the attack may come through a VPN or r
 
 ## Changing country
 
-The selector in the blue band and **Settings → General → Country** save your choice. Both show only countries Cloudflare Radar has had figures for as a target in the last 30 days, and only countries that were among the 100 most targeted on at least 15 of the 30 days: for a country with only a few scattered days, the page would show almost nothing. There are no exceptions, not even for a country you chose before. The **Switch to** suggestion also only covers countries with figures. The list follows the Radar figures the program already fetches. The country is taken from your time zone the first time, then from the system language. If at least half of your visitors clearly come from another country, Settings offers **Switch to** that country; robots and traffic spikes do not count. If another view points at a country, the heading shows **Back to …**, and your saved country is not changed.
+The selector **Country** in the band and **Settings** › **Date and country** › **Country** save your choice. Both show only countries Cloudflare Radar has had figures for as a target in the last 30 days, and only countries that were among the 100 most targeted on at least 15 of the 30 days: for a country with only a few scattered days, the page would show almost nothing. There are no exceptions, not even for a country you chose before. The **Switch to** suggestion also only covers countries with figures. The list follows the Radar figures the program already fetches. The country is taken from your time zone the first time, then from the system language. If at least half of your visitors clearly come from another country, Settings offers **Switch to** that country; robots and traffic spikes do not count. If another view points at a country, the heading shows **Back to …**, and your saved country is not changed.
 
 ## Click on
 

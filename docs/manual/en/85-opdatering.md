@@ -5,7 +5,7 @@
 ## How to update now
 
 1. Choose **Quit** in the menu at the raven icon (or ⌘Q while the window is open), so the program is closed completely.
-2. Build or download the new version, and replace **Huginn and Muninn.app** in your Applications folder.
+2. Download the new version, and replace **Huginn and Muninn** in your Applications folder.
 3. Open the program again.
 
 Your history, your settings and your API Token stay where they are. The update does not touch the database or the keychain.
@@ -16,4 +16,4 @@ If you open an older version of the program after having run a newer one, the pr
 
 ## Which version do I have?
 
-**Settings → About** shows the version. Releases are listed in `CHANGELOG.md` in the source code.
+The **i** button at the top right (**About Huginn and Muninn**) shows the version. It is also shown at the bottom right of the window. Releases are listed in `CHANGELOG.md` in the source code.

@@ -4,10 +4,10 @@ Genvej: ⌘3 (Windows: Ctrl+3)
 
 ## Hvad viser den?
 
-Angreb viser på én side, hvad Cloudflares **Edge – første forsvarslinje** holdt ude fra dit domæne: hvor meget der blev afvist, hvordan det blev stoppet, hvilke regler og huller angrebene gik efter, og hvor i verden de kom fra. Overskriften siger, hvad du ser, fx **Angreb · wi24rd.com**. Du ser ét domæne ad gangen (domænevælgeren i det blå bånd skifter) eller alle valgte domæner samlet (**Angreb for alle** i Overblik, eller **Samlet** i vælgeren).
+Angreb viser på én side, hvad Cloudflares **Edge – første forsvarslinje** holdt ude fra dit domæne: hvor meget der blev afvist, hvordan det blev stoppet, hvilke regler og huller angrebene gik efter, og hvor i verden de kom fra. Overskriften siger, hvad du ser, fx **Angreb · wi24rd.com**. Du ser ét domæne ad gangen (listen **Domæner** til venstre skifter) eller alle valgte domæner samlet (**Angreb for alle** i Overblik, eller **Alle domæner** i listen).
 
 ![Angreb for ét domæne](../../img/angreb--light-da-1200x860.webp)
-*Overskriften, 7 dage og 30 dage, datovælgeren, **Vis** og fliserne. Under dem står fordelingen, og længere nede verdenskortet.*
+*Båndet med Periode, Vis, Filtre, Teknologi og Egne datoer, listen Domæner til venstre og fliserne. Under dem står fordelingen, og længere nede verdenskortet.*
 
 ![Angreb for alle valgte domæner samlet](../../img/angreb-samlet--light-da-1200x860.webp)
 *Samlet: de valgte domæner står som chips under overskriften, og tallene er lagt sammen. Den grønne prik viser det ældste hentetidspunkt blandt de valgte.*
@@ -48,11 +48,13 @@ Den grønne prik øverst ("Hentet fra Cloudflare …") siger, hvornår tallene s
 
 ## Periode og filtre
 
-Siden har altid de samme vælgere:
+Båndet øverst har altid de samme valg:
 
-- **7 dage** (standard) og **30 dage** øverst til højre.
-- Datovælgeren **Fra** og **Til**, og **Nulstil** til hele historikken. Trafiktal rækker et år tilbage; sikkerhedshændelser begynder, hvor Cloudflare begynder, og det står tydeligt.
+- **Periode**: **7 dage** (standard), **30 dage** og **Hele historikken**.
+- **Egne datoer**: **Fra** og **Til**. Trafiktal rækker et år tilbage; sikkerhedshændelser begynder, hvor Cloudflare begynder, og det står tydeligt.
 - **Vis**: **Alt**, **Kun angreb** eller **Kun rutine**, så du kan se egentlige angreb uden Cloudflares rutine, eller omvendt.
+- **Filtre**: **Nulstil** fjerner de filtre, du har lagt på. Er der ingen, er knappen grå.
+- **Teknologi**: **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md).
 
 Et klik på et tal, et land, en regel eller en sti lægger et filter på samme side. Filtrene står som chips under overskriften, fx "Et kendt hul i React ×": × fjerner ét, og **Nulstil** ved siden af fjerner alle filtre og perioden. Der kan højst være ét filter pr. slags (ét land, én regel, én sti …).
 
@@ -85,7 +87,7 @@ Klikker du på en dag med **usædvanlig meget trafik** (fra Overblik, en notifik
 
 ## Klik videre
 
-Alt med data bag sig lægger et filter eller en periode på samme side: fliserne, fordelingen, lande, ringe og buer på kortet, søjler, lister, regelkortene, "Hvad de ledte efter" og "De seneste". Tilbage og frem i det blå bånd (⌘[ og ⌘]) går ét trin ad gangen, også gennem filtre. Et klik på et CVE-nummer åbner CVE'ens side på cve.org i din browser; programmet henter intet derfra. **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md).
+Alt med data bag sig lægger et filter eller en periode på samme side: fliserne, fordelingen, lande, ringe og buer på kortet, søjler, lister, regelkortene, "Hvad de ledte efter" og "De seneste". Tilbage og frem øverst til højre (⌘[ og ⌘]) går ét trin ad gangen, også gennem filtre. Et klik på et CVE-nummer åbner CVE'ens side på cve.org i din browser; programmet henter intet derfra. **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md).
 
 Tastatur: kortet er ét Tab-stop; piletasterne flytter mellem landene og ringene, og Enter eller mellemrum åbner det valgte.
 

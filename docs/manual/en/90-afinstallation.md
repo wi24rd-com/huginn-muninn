@@ -6,7 +6,7 @@ The program puts five things on your computer: the application itself, two autos
 
 ### 1. Turn Start at login off in the program
 
-Open the program and turn **Settings → General → Start at login** off. That removes the files `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` and `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist`.
+Open the program and turn **Start at login** off under **Settings** (the gear) in the group **Start-up**. That removes the files `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` and `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist`.
 
 If you forget, the files are left behind and point to an application that no longer exists. They can also be deleted by hand:
 
@@ -17,7 +17,7 @@ rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist
 
 ### 2. Forget the API Token
 
-Choose **Settings → Connection → Forget API Token…** and confirm with **Forget**. That deletes the API Token from macOS Keychain.
+Choose **Settings** › **Connection** › **Forget API Token…** and confirm with **Forget**. That deletes the API Token from macOS Keychain.
 
 To do it by hand: open macOS's keychain application (Keychain Access), search for `com.wi24rd.huginn-muninn`, and delete the item.
 

@@ -6,7 +6,7 @@ Programmet lægger fem ting på din computer: programmet selv, to autostart-post
 
 ### 1. Slå Start ved login fra i programmet
 
-Åbn programmet, og slå **Indstillinger → Generelt → Start ved login** fra. Det fjerner filerne `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` og `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist`.
+Åbn programmet, og slå **Start ved login** fra under **Indstillinger** (tandhjulet) i gruppen **Start**. Det fjerner filerne `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` og `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist`.
 
 Glemmer du det, bliver filerne liggende og peger på et program, der ikke findes længere. De kan også slettes i hånden:
 
@@ -17,7 +17,7 @@ rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist
 
 ### 2. Glem API Tokenet
 
-Vælg **Indstillinger → Forbindelse → Glem API Token…** og bekræft med **Glem**. Det sletter API Tokenet fra macOS Nøglering.
+Vælg **Indstillinger** › **Forbindelse** › **Glem API Token…** og bekræft med **Glem**. Det sletter API Tokenet fra macOS Nøglering.
 
 Vil du gøre det i hånden: åbn macOS' nøgleringsprogram (Keychain Access), søg efter `com.wi24rd.huginn-muninn`, og slet posten.
 

@@ -25,7 +25,6 @@ De tre tal kommer fra hver sin kilde og lægges aldrig sammen, heller ikke i teg
 - **Egne stier**: skriv stien under **Tilføj din egen login-sti**, fx `/min-side/`. Højst 20 egne stier pr. domæne.
 - **Forslag fra dine data**: en sti foreslås kun, hvis dens navn har et login-ord som helt ord (`login`, `oauth`, `password` og lignende), eller Cloudflares tjek har set et kodeord på den, og den har fået POST med svar 200, 302, 401 eller 403 på mindst 3 forskellige dage. Stier, der bare ligner et login, fx `admin-ajax.php`, foreslås ikke, og en sti fra en kendt regels hændelser foreslås aldrig.
 
-Stierne kan også rettes under **Indstillinger → Notifikationer → Login-stier pr. domæne**.
 
 ## Hvad skal jeg gøre, når …
 

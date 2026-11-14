@@ -4,10 +4,10 @@ Shortcut: ⌘3 (Windows: Ctrl+3)
 
 ## What does it show?
 
-Attacks shows on one page what Cloudflare's **Edge – first line of defence** kept away from your domain: how much was refused, how it was stopped, which rules and holes the attacks went for, and where in the world they came from. The heading says what you are looking at, for example **Attacks · wi24rd.com**. You see one domain at a time (the domain picker in the blue band switches) or all chosen domains together (**Attacks for all** in Overview, or **All** in the picker).
+Attacks shows on one page what Cloudflare's **Edge – first line of defence** kept away from your domain: how much was refused, how it was stopped, which rules and holes the attacks went for, and where in the world they came from. The heading says what you are looking at, for example **Attacks · wi24rd.com**. You see one domain at a time (the list **Domains** on the left switches) or all chosen domains together (**Attacks for all** in Overview, or **All domains** in the list).
 
 ![Attacks for one domain](../../img/angreb--light-en-1200x860.webp)
-*The heading, 7 days and 30 days, the date picker, **Show** and the tiles. Below them is the breakdown, and further down the world map.*
+*The band with Period, Show, Filters, Technology and Own dates, the list Domains on the left and the tiles. Below them is the breakdown, and further down the world map.*
 
 ![Attacks for all chosen domains together](../../img/angreb-samlet--light-en-1200x860.webp)
 *All together: the chosen domains are chips under the heading, and the figures are added up. The green dot shows the oldest fetch time among those chosen.*
@@ -48,11 +48,13 @@ The green dot at the top ("Fetched from Cloudflare …") says when the figures w
 
 ## Period and filters
 
-The page always has the same controls:
+The band at the top always has the same choices:
 
-- **7 days** (the default) and **30 days** at the top right.
-- The date picker **From** and **To**, and **Reset** for all history. Traffic figures reach a year back; security events begin where Cloudflare's begin, and that is stated clearly.
+- **Period**: **7 days** (the default), **30 days** and **All history**.
+- **Own dates**: **From** and **To**. Traffic figures reach a year back; security events begin where Cloudflare's begin, and that is stated clearly.
 - **Show**: **All**, **Attacks only** or **Routine only**, so you can see real attacks without Cloudflare's routine, or the other way round.
+- **Filters**: **Reset** removes the filters you have added. If there are none, the button is grey.
+- **Technology**: **Edit technologies** opens [Technology by domain](teknologi.md).
 
 Clicking a figure, a country, a rule or a path adds a filter on the same page. The filters are chips under the heading, for example "A known hole in React ×": × removes one, and **Reset** beside them removes all filters and the period. There can be at most one filter of each kind (one country, one rule, one path …).
 
@@ -85,7 +87,7 @@ If you click a day with **unusually much traffic** (from Overview, a notificatio
 
 ## Click on
 
-Everything with data behind it adds a filter or a period on the same page: the tiles, the breakdown, countries, rings and arcs on the map, bars, lists, the rule cards, "What they were looking for" and "The latest". Back and forward in the blue band (⌘[ and ⌘]) go one step at a time, also through filters. Clicking a CVE number opens the CVE's page on cve.org in your browser; the program fetches nothing from there. **Edit technologies** opens [Technology by domain](teknologi.md).
+Everything with data behind it adds a filter or a period on the same page: the tiles, the breakdown, countries, rings and arcs on the map, bars, lists, the rule cards, "What they were looking for" and "The latest". Back and forward at the top right (⌘[ and ⌘]) go one step at a time, also through filters. Clicking a CVE number opens the CVE's page on cve.org in your browser; the program fetches nothing from there. **Edit technologies** opens [Technology by domain](teknologi.md).
 
 Keyboard: the map is one Tab stop; the arrow keys move between the countries and rings, and Enter or Space opens the chosen one.
 

@@ -6,7 +6,7 @@ Shortcut: ⌘7 (Windows: Ctrl+7)
 
 Visitors shows how many people visit your site, where from, how many of the visits are known robots, and which pages are viewed. You see one domain at a time or all of them together, for 7 days, 30 days, one year or a period you choose yourself (at most one year).
 
-At the top are the tiles under the heading **The last days**. They are fixed: they always show yesterday, the last 7 and 30 days and the last year, whatever period you have chosen. Below them is the selector (7 days, 30 days, One year, From and To), and below that the heading **Selected period: 11 Oct – 9 Nov 2026**. Everything under that heading follows the period: the chart, the countries, the robots and the pages.
+At the top are the tiles under the heading **The last days**. They are fixed: they always show yesterday, the last 7 and 30 days and the last year, whatever period you have chosen. You choose the period in the band (**7 days**, **30 days**, **One year**, or **From** and **To** under **Own dates**), and below the tiles is the heading **Selected period: 11 Oct – 9 Nov 2026**. Everything under that heading follows the period: the chart, the countries, the robots and the pages.
 
 The tiles:
 
@@ -44,9 +44,9 @@ That is why **Answered with the site’s ordinary page** is below the 404 list: 
 
 ## How to
 
-1. Click **Visitors** in the sidebar (or press ⌘7, Windows Ctrl+7).
-2. Choose a domain in the selector at the top, or **All** for all of them.
-3. Choose **7 days**, **30 days** or **One year** below the tiles, or choose **From** and **To**. **Reset** shows one year. The heading **Selected period** shows the dates.
+1. Click the tab **Visitors** (or press ⌘7, Windows Ctrl+7).
+2. Choose a domain in the list **Domains** on the left, or **All domains** for all of them combined.
+3. Choose **7 days**, **30 days** or **One year** in the band, or choose **From** and **To**. **Reset** shows one year. The heading **Selected period** shows the dates.
 
 ## Click further
 
@@ -66,6 +66,6 @@ That is why **Answered with the site’s ordinary page** is below the 404 list: 
 - **Known robots and scanners** (the share of the traffic in the last year) is based on Cloudflare's [IP classes](../99-ordliste.md): search engines, monitoring, scanners, Tor and known bad addresses. It is requests, not visits.
 - **Views** is the number of html responses for a path. **Visits from outside** is Cloudflare's visits to the path. Robots count. The path is shown without a query string, and long codes are hidden. The 50 most viewed pages are saved per day.
 - Visits per country, known robots and pages exist a month back at Cloudflare. The program saves the days, so the history grows from there.
-- **All** adds the domains together, so the same visitor on two domains counts twice.
+- **All domains** adds the domains together, so the same visitor on two domains counts twice.
 - The figures are per day in UTC, from the figures saved on your computer. No IP addresses or user agents are saved, only the figures.
 - The page gives no notifications and does not change the status in the Overview.

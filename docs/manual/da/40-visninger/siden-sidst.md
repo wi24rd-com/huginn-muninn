@@ -9,7 +9,7 @@ Siden sidst er status for i går på alle dine domæner, én linje hver, med det
 ![Siden sidst](../../img/siden-sidst--light-da-1200x860.webp)
 *Ét kort pr. domæne, der kræver opmærksomhed, med forklaringen i klart sprog. Domæner, hvor alt er roligt, samles i én linje.*
 
-Visningen åbner af sig selv, når du klikker på en notifikation eller vælger **Siden sidst** i menuen ved ravne-ikonet i menulinjen. Tallet ved **Siden sidst** i sidebjælken viser, hvor mange domæner der står med Handl.
+Visningen åbner af sig selv, når du klikker på en notifikation eller vælger **Siden sidst** i menuen ved ravne-ikonet i menulinjen. Tallet på fanen **Siden sidst** viser, hvor mange domæner der står med Handl.
 
 Om natten (til kl. 03 UTC), før i går er hentet færdigt, viser den status for i forgårs og siger det.
 

@@ -12,7 +12,7 @@ Everything the program keeps is in one SQLite file, `huginn-muninn.sqlite`, in t
 
 The API Token is **not** in the file. It is in your computer's keychain (macOS Keychain or Windows Credential Manager) under the name `com.wi24rd.huginn-muninn`.
 
-The size is shown under **Settings → Data → Local database**.
+The size is shown under **Settings** › **Data** › **Local database**.
 
 ## What is kept
 
@@ -27,7 +27,7 @@ What is **not** kept: IP addresses (never fetched), the query part of paths, lon
 
 - Cloudflare keeps **security events for a month** and **traffic figures for a year**. That is what the program can fetch.
 - The program keeps **everything it has fetched, for as long as you like**. Nothing is deleted by itself. So after a year you have a year of security events, even though Cloudflare only has a month.
-- **What is available** under Settings → Data says how far back each kind of figure reaches, and **Oldest day** is the first day with figures.
+- **What is available** under Settings › Data says how far back each kind of figure reaches, and **Oldest day** is the first day with figures.
 
 ## Gaps
 
@@ -35,7 +35,7 @@ A gap is a day the program never fetched, typically because the computer was off
 
 - If the program was off for **less than a month**, it fetches the missing days itself when it starts again. The Overview says "Huginn was not on from … to …. Cloudflare still had the figures, so nothing is missing."
 - If it was off for **longer**, the oldest days are gone at Cloudflare and cannot be fetched. The Overview says how many days are missing for good.
-- **Settings → Data → Gaps** shows the number, and a click shows the list.
+- **Settings** › **Data** › **Gaps** shows the number, and a click shows the list.
 
 That is why **Start at login** is on by default. With it, the program also starts by itself once a day and fetches, so gaps do not appear even if you have chosen **Quit**. And that is why the program says you should open it at least every three weeks if you turn it off.
 
@@ -43,10 +43,10 @@ That is why **Start at login** is on by default. With it, the program also start
 
 - The program asks for today and yesterday, one day at a time, so Cloudflare does not have to sample a long period. Older days are only fetched if they are missing.
 - The number refused is Cloudflare's estimate: each event in the sample states how many it stands for, and the program adds that up. The first time the program starts after the update of 8 November 2026, it fetches the last 30 days again at the normal pace, so the figures can be compared. Older days cannot be delivered again by Cloudflare; they keep the counted rows.
-- At most two calls at a time and at least 1.1 seconds apart, for all domains together. If Cloudflare asks it to wait, the program pauses and says "Trying again at …" in the status pill.
+- At most two calls at a time and at least 1.1 seconds apart, for all domains together. If Cloudflare asks it to wait, the program pauses and says "Trying again at …" in the footer at the bottom of the window.
 - The figures for Login and "stopped at the Edge" per robot are fetched afterwards at a slow pace and only for finished days.
 - For **Visitors**, unique visitors are fetched with the year's traffic figures, and visits per country last, one call per domain. Visits per country go back a month at Cloudflare; the program saves the days, so the history grows from there. The first time the program starts after the update of 9 November 2026, it fetches the year once more for the days it already has, so they get unique visitors. Only that figure is written; the other figures for those days do not change. The first start after the update with Known robots does the same once for the IP classes (kind `h_ipklasse`); only they are written. Known robots (kind `b_robot`) and the most visited pages (kinds `b_side`, `b_side_b` and `b_side_bytes`: views, visits and the total bytes of the answers per day and path) are each fetched with their own call for the same days as the visits, also for days whose visits were already fetched. The bytes are only used to tell paths that answer with the front page from real pages. The first start after the update of 10 November 2026 fetches the pages for the last month once more, so they get bytes; older days keep their figures without. If Cloudflare refuses one of the calls, it says "not available" at that section, and the rest works.
-- **Quota at Cloudflare** under Settings → Data shows how many calls Cloudflare allows, and how many the program used in the last round.
+- **Quota at Cloudflare** under Settings › Data shows how many calls Cloudflare allows, and how many the program used in the last round.
 - **Fetch now** (⌘R, Windows Ctrl+R or F5) starts a fetch at once.
 
 ## Export
@@ -55,13 +55,13 @@ The program has no export function yet. The database is an ordinary SQLite file 
 
 ## Reset history
 
-**Settings → Data → Reset history…** deletes all figures on your computer and fetches them again. The program asks first and says which dates are lost for good, and how many days that is: Cloudflare only has security events for the last month and traffic figures for the last year, so anything older cannot be fetched again.
+**Settings** › **Data** › **Reset history…** deletes all figures on your computer and fetches them again. The program asks first and says which dates are lost for good, and how many days that is: Cloudflare only has security events for the last month and traffic figures for the last year, so anything older cannot be fetched again.
 
 What stays: your settings, the zone list, the domain choice, the notification choice per domain, the login paths and the technology choices. The file itself stays too; the space is released.
 
 ## Forget the API Token
 
-**Settings → Connection → Forget API Token…** deletes the API Token from the keychain and your per-domain choices (domain choice, notifications per domain, login paths, technology choices). The history stays, so you can connect again later without losing it.
+**Settings** › **Connection** › **Forget API Token…** deletes the API Token from the keychain and your per-domain choices (domain choice, notifications per domain, login paths, technology choices). The history stays, so you can connect again later without losing it.
 
 ## Newer database
 

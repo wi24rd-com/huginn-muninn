@@ -25,7 +25,6 @@ The three figures come from separate sources and are never added up, not even in
 - **Your own paths**: enter the path under **Add your own login path**, for example `/my-login/`. At most 20 paths of your own per domain.
 - **Suggestions from your data**: a path is suggested only if its name has a login word as a whole word (`login`, `oauth`, `password` and the like), or Cloudflare's check saw a password on it, and it got POST with response 200, 302, 401 or 403 on at least 3 different days. Paths that merely resemble a login, such as `admin-ajax.php`, are not suggested, and a path from a known rule's events is never suggested.
 
-The paths can also be edited under **Settings → Notifications → Login paths per domain**.
 
 ## What do I do when …
 

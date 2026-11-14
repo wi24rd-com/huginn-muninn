@@ -4,6 +4,12 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-14 23:30 — Vejledningen og README følger version 1.0.0
+#### Ændret
+- **Vejledningen** (`docs/manual/`, dansk og engelsk) beskriver nu programmet, som det er: guiden ved første start, Indstillinger bag tandhjulet, dialogerne Domæner, Notifikationer pr. domæne og Om, fanerne, båndet og fodlinjen. Installationen beskriver den signerede og notariserede udgave.
+- Alle skærmbilleder i vejledningen er taget på ny, og der er kommet billeder af guidens fire trin og de tre dialoger.
+- **README** (dansk og engelsk) har status 1.0.0, et afsnit om installation og link til vejledningen.
+
 ## [1.0.0] — 2026-11-14
 
 Første offentlige udgave til macOS: signeret med Developer ID og notariseret af Apple.

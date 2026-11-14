@@ -1,9 +1,14 @@
 # Setup
 
-Setup has three steps: create an API Token at Cloudflare, paste it into the program, and choose the domains Huginn should watch. It takes a few minutes.
+The first time you open the program, a guide with four steps opens: **Welcome**, **Your API Token**, **Your domains** and **Notifications**. It takes a few minutes. The steps are listed on the left of the guide, and at the bottom are **Skip**, **Back** and **Next**.
 
-![Connect to Cloudflare](../img/opsaetning--light-en-1200x860.webp)
-*Setup is shown in the window until you have pasted an API Token. The button **Create API Token at Cloudflare** opens Cloudflare's page with the name and permissions filled in.*
+![The guide, step 1: Welcome](../img/guide-1--light-en-1200x860.webp)
+*Step 1 tells you what to expect. Click **Next**.*
+
+If you skip the guide, the window shows a calm page with the heading **Connect to Cloudflare** and the button **Open the guide**. You can also always open the guide again under **Settings** (the gear at the top right) in the group **First start** with **Show the guide again**.
+
+![Without an API Token: Open the guide](../img/opsaetning--light-en-1200x860.webp)
+*This is how the window looks when the guide has been skipped and no API Token is saved. The tabs cannot be used yet.*
 
 ## Step 1 – Create an API Token at Cloudflare
 
@@ -31,9 +36,12 @@ Each step is shown with screenshots in [Create an API Token at Cloudflare – st
 
 ## Step 2 – Paste the API Token
 
-1. Paste the API Token into the field **API Token (read only)**. The field hides the characters.
-2. Under **Notifications**, choose when you want to be told. The default is **When serious (recommended)**. You can change it later under Settings; see [Notifications and background](60-notifikationer.md).
-3. Click **Save and connect**.
+![The guide, step 2: Your API Token](../img/guide-2--light-en-1200x860.webp)
+*Step 2 with the button to Cloudflare and the instructions unfolded. The field for the API Token is below the instructions; scroll down.*
+
+1. Paste the API Token into the field **API Token (read only)** in step 2 of the guide. The field hides the characters.
+2. Click **Save and connect**.
+3. Click **Next**. The button is grey, and it says "Save an API Token that works before you continue.", until the API Token is saved and works.
 
 The program checks the API Token with Cloudflare and stores it in your computer's keychain (macOS Keychain or Windows Credential Manager). It never leaves the program's Rust part, and the window cannot read it back.
 
@@ -43,16 +51,34 @@ If you get an error text, it is explained in [Troubleshooting](80-fejlfinding.md
 
 Once you have connected, **no domains are chosen** yet. There is one exception: if the API Token can see exactly one domain, it is chosen for you.
 
-1. Open **Settings → Domains**.
-2. Turn on the domains Huginn should fetch and show. **Choose all** and **Clear all** do it in one go.
-3. Go back to **Overview**. The program starts fetching at once; the status pill in the blue band shows, for example, "Fetching 2 of 3".
+![The guide, step 3: Your domains](../img/guide-3--light-en-1200x860.webp)
+*Step 3: one switch per domain. A domain that is new on the account is marked **NEW**.*
+
+1. Turn on the domains Huginn should fetch and show. **Choose all** and **Clear all** do it in one go.
+2. Click **Next**.
+
+Later you change the choice on **Overview** with the button **Choose domains** in the band. It opens the same list in the dialog **Domains**.
+
+![The dialog Domains](../img/domaener-dialog--light-en-1200x860.webp)
+*Overview › **Choose domains**: the same list as in the guide.*
 
 ![Overview with no domains chosen](../img/alle-fra--light-en-1200x860.webp)
-*As long as no domains are chosen, the Overview shows the welcome and a pointer to Settings.*
+*As long as no domains are chosen, the Overview shows the welcome and the button **Choose domains**.*
 
 A domain you clear is no longer fetched, is not shown anywhere and gives no notifications. Its figures stay, and if you choose it again, what is missing is fetched, at most the last 30 days.
 
 If a new domain appears on your Cloudflare account later, it is not chosen by itself. The Overview shows a discreet line: "1 new domain on your Cloudflare account: … – **Choose** · **Not now**". There is no notification about it.
+
+## Step 4 – Notifications and start-up
+
+![The guide, step 4: Notifications](../img/guide-4--light-en-1200x860.webp)
+*Step 4: when you want to be told, and whether the program should start at login.*
+
+1. Under **Notifications**, choose when you want to be told. The default is **When serious (recommended)**. See [Notifications and background](60-notifikationer.md).
+2. Leave **Start at login** on if the program should fetch in the background.
+3. Click **Done**. The guide closes, and the Overview opens. The program starts fetching at once; the footer at the bottom of the window shows, for example, "Fetching 2 of 3".
+
+Both choices can be changed later under **Settings**.
 
 ## The first fetch
 
@@ -62,4 +88,4 @@ The program asks for today and yesterday one day at a time, at most two calls at
 
 ## Your country
 
-The country in **… now** (⌘6) is taken from your time zone the first time, then from the system language. You can change it in the blue band or under **Settings → General → Country**. If at least half of your visitors clearly come from another country, Settings offers **Switch to** that country.
+The country in **… now** (⌘6) is taken from your time zone the first time, then from the system language. You can change it in the band on the tab **… now** (the group **Country**) or under **Settings** in the group **Date and country**. If at least half of your visitors clearly come from another country, Settings offers **Switch to** that country.

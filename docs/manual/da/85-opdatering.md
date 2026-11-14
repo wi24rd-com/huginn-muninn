@@ -5,7 +5,7 @@
 ## Sådan opdaterer du nu
 
 1. Vælg **Afslut** i menuen ved ravne-ikonet (eller ⌘Q, mens vinduet er åbent), så programmet er lukket helt.
-2. Byg eller hent den nye udgave, og erstat **Huginn and Muninn.app** i din Programmer-mappe.
+2. Hent den nye udgave, og erstat **Huginn and Muninn** i din Programmer-mappe.
 3. Åbn programmet igen.
 
 Din historik, dine indstillinger og dit API Token bliver, hvor de er. Databasen og nøgleringen rører opdateringen ikke.
@@ -16,4 +16,4 @@ Din historik, dine indstillinger og dit API Token bliver, hvor de er. Databasen 
 
 ## Hvilken udgave har jeg?
 
-**Indstillinger → Om** viser versionen. Udgivelser står i `CHANGELOG.md` i kildekoden.
+Knappen **i** øverst til højre (**Om Huginn and Muninn**) viser versionen. Den står også nederst til højre i vinduet. Udgivelser står i `CHANGELOG.md` i kildekoden.

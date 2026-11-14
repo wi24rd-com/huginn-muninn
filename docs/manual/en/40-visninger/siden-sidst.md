@@ -9,7 +9,7 @@ Since last time is yesterday's status for all your domains, one line each, with 
 ![Since last time](../../img/siden-sidst--light-en-1200x860.webp)
 *One card per domain that needs attention, with the explanation in plain language. Domains where everything is calm are gathered in one line.*
 
-The view opens by itself when you click a notification or choose **Since last time** in the menu at the raven icon in the menu bar. The number next to **Since last time** in the sidebar shows how many domains are at Act.
+The view opens by itself when you click a notification or choose **Since last time** in the menu at the raven icon in the menu bar. The number on the tab **Since last time** shows how many domains are at Act.
 
 At night (until 03:00 UTC), before yesterday is fully fetched, it shows the status for the day before yesterday and says so.
 

@@ -1,10 +1,12 @@
 # Indstillinger
 
-Genvej: ⌘, (Windows: Ctrl+,). Indstillinger kan også åbnes, før du har forbundet med Cloudflare.
+Åbn Indstillinger med tandhjulet øverst til højre eller med ⌘, (Windows: Ctrl+,). Indstillinger er et vindue oven på den visning, du står i, og kan også åbnes, før du har forbundet med Cloudflare. **Luk** står fast nederst; Esc lukker også.
 
 Alle valg gemmes med det samme på din computer. Der er ingen Gem-knap, bortset fra ved API Tokenet.
 
-## Generelt
+Vinduet har syv grupper: **Udseende og sprog**, **Dato og land**, **Start**, **Notifikationer**, **Forbindelse**, **Data** og **Første start**. Tre ting ligger ikke her, men hvor du bruger dem: [Domæner](#domæner), [Notifikationer pr. domæne](#notifikationer-pr-domæne) og [Om](#om).
+
+## Udseende og sprog, Dato og land, Start
 
 | Felt | Valg | Standard | Hvad det gør |
 |---|---|---|---|
@@ -17,21 +19,11 @@ Alle valg gemmes med det samme på din computer. Der er ingen Gem-knap, bortset 
 
 Er **Start ved login** slået fra, står der en gul linje øverst: "Programmet starter ikke ved login. Så henter Huginn kun, når programmet er åbent. Åbn det mindst hver tredje uge, ellers kommer der huller i historikken." Knappen **Slå Start ved login til** slår det til igen. Slå det til og fra her i programmet. Slår du Huginn fra under Login-emner i Systemindstillinger, kan kontakten her stadig stå på til.
 
-![Generelt og Domæner](../img/indstillinger--light-da-1200x860.webp)
-*Øverst i Indstillinger: Generelt med **Start ved login** og under det Domæner med en kontakt pr. domæne.*
+![Indstillinger fra toppen](../img/indstillinger--light-da-1200x860.webp)
+*Øverst i Indstillinger: Udseende og sprog, Dato og land og Start med **Start ved login**.*
 
 ![Udseende: mørkt tema](../img/overblik--dark-da-1200x860.webp)
 *Overblik i mørkt tema.*
-
-## Domæner
-
-| Felt | Hvad det gør |
-|---|---|
-| **Vis i Huginn** – én kontakt pr. domæne | Vælg de domæner, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere, vises ingen steder og giver ingen notifikationer; dets tal bliver liggende, og vælger du det igen, hentes det, der mangler, højst de seneste 30 dage. Et domæne, der er nyt på kontoen, er mærket **NY**. |
-| **Vælg alle** / **Fravælg alle** | Alle kontakter på én gang. |
-| Linjen "API Tokenet ser N domæner" | Hvor mange domæner API Tokenet kan se. Ser det præcis ét, er det valgt for dig. |
-| **Teknologi pr. domæne →** | Åbner [Teknologi pr. domæne](40-visninger/teknologi.md). Linjen siger, hvor mange valg hvert domæne har. |
-| **Nulstil for alle domæner** | Sletter alle teknologi-valg. Programmet spørger først: **Nulstil teknologi-valg?** |
 
 ## Notifikationer
 
@@ -40,15 +32,13 @@ Er **Start ved login** slået fra, står der en gul linje øverst: "Programmet s
 | **Hvornår vil du have besked?** | Kun alvorligt, højst én gang om dagen · Ved alvorligt (anbefalet) · Også når et domæne skal holdes øje med | Ved alvorligt (anbefalet) | Det samlede niveau. Beskeden kommer fra din egen computer, aldrig fra en server. |
 | **Giv besked, når et domæne kræver handling** | Kontakt | Til | Slår beskeden ved **Handl** fra, hvis du kun vil se det i programmet. |
 | **Giv besked ved »Ligner rekognoscering«** | Kontakt | Fra | Fra som standard: de fleste er automatiske scannere. Gælder også »Ligner DNS-rekognoscering«. Mærket vises altid i Overblik og Siden sidst. |
-| **Pr. domæne** – ét valg pr. domæne | Følg standard · Alvorligt og hold øje · Kun alvorligt · Aldrig | Følg standard | Overstyrer det samlede niveau for ét domæne. |
-| **Login-stier pr. domæne** | Vælg domæne, og slå stier til | Ingen stier valgt | Samme liste som i [Login](40-visninger/login.md): startlisten, dine egne stier (højst 20 pr. domæne) og forslag fra dine data. |
 
-Nederst står: "Du kan også slå notifikationerne helt fra i Systemindstillinger → Notifikationer → Huginn and Muninn." Hvad hver notifikation betyder, står i [Notifikationer og baggrund](60-notifikationer.md).
+Nederst står: "Du kan også slå notifikationerne helt fra i Systemindstillinger → Notifikationer → Huginn and Muninn." Hvad hver notifikation betyder, står i [Notifikationer og baggrund](60-notifikationer.md). Besked for ét bestemt domæne vælger du under [Notifikationer pr. domæne](#notifikationer-pr-domæne). Login-stier retter du i [Login](40-visninger/login.md) med **Ret stier**.
 
 ## Forbindelse
 
-![Forbindelse og Data](../img/indstillinger-forbindelse--light-da-1200x860.webp)
-*Status, API Token med **Skift API Token…** og **Glem API Token…**, og afsnittet Data.*
+![Forbindelse](../img/indstillinger-forbindelse--light-da-1200x860.webp)
+*Status og API Token med **Skift API Token…** foldet ud.*
 
 | Felt | Hvad det gør |
 |---|---|
@@ -74,6 +64,43 @@ Nederst står: "Du kan også slå notifikationerne helt fra i Systemindstillinge
 | **Hent nye tal nu** – **Hent nu** | Samme som **Hent nu** i båndet. |
 | **Nulstil historik…** | Sletter alle tal på din computer og henter dem forfra. Programmet spørger først og siger, hvilke datoer der forsvinder for altid, og hvor mange dage det er. Dine indstillinger, domænevalg, notifikationer og login-stier bliver. Se [Data og historik](70-data.md). |
 
+## Første start
+
+| Felt | Hvad det gør |
+|---|---|
+| **Guiden** – **Vis guiden igen** | Åbner guiden fra første start igen. Se [Opsætning](30-opsaetning.md). Dine valg og dit API Token ændres ikke af, at du åbner den. |
+
+## Domæner
+
+Åbn dialogen med **Vælg domæner** i båndet på **Overblik**.
+
+![Dialogen Domæner](../img/domaener-dialog--light-da-1200x860.webp)
+*Én kontakt pr. domæne.*
+
+| Felt | Hvad det gør |
+|---|---|
+| **Vis i Huginn** – én kontakt pr. domæne | Vælg de domæner, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere, vises ingen steder og giver ingen notifikationer; dets tal bliver liggende, og vælger du det igen, hentes det, der mangler, højst de seneste 30 dage. Et domæne, der er nyt på kontoen, er mærket **NY**. |
+| **Vælg alle** / **Fravælg alle** | Alle kontakter på én gang. |
+| Linjen "API Tokenet ser N domæner" | Hvor mange domæner API Tokenet kan se. Ser det præcis ét, er det valgt for dig. |
+
+Hvad dit site bruger af teknologi, siger du i [Teknologi pr. domæne](40-visninger/teknologi.md), som du åbner med **Ret teknologier** i båndet på **Angreb**.
+
+## Notifikationer pr. domæne
+
+Åbn dialogen med **Notifikationer** (klokken) i båndet på **Overblik**.
+
+![Dialogen Notifikationer pr. domæne](../img/besked-dialog--light-da-1200x860.webp)
+*Ét valg pr. valgt domæne.*
+
+| Felt | Valg | Standard | Hvad det gør |
+|---|---|---|---|
+| Ét valg pr. domæne | Følg standard · Alvorligt og hold øje · Kun alvorligt · Aldrig | Følg standard | Overstyrer det samlede niveau for ét domæne. **Følg standard** bruger valget under Indstillinger › Notifikationer. |
+
 ## Om
 
-Version, linjen "Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd", skrifter og kortdata (Inter og JetBrains Mono under SIL Open Font License 1.1; world-countries under ODbL og Natural Earth, public domain), varemærkelinjen om Cloudflare og et link til kildekoden.
+Åbn dialogen med knappen **i** ved siden af tandhjulet (**Om Huginn and Muninn**).
+
+![Dialogen Om](../img/om-dialog--light-da-1200x860.webp)
+*Version, licens og knappen til denne vejledning.*
+
+Version, linjen "Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd", skrifter og kortdata (Inter og JetBrains Mono under SIL Open Font License 1.1; world-countries under ODbL og Natural Earth, public domain), varemærkelinjen om Cloudflare og knappen **Åbn vejledningen**, der åbner vejledningen i din browser.

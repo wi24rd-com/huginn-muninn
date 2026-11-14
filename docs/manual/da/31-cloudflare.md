@@ -6,7 +6,7 @@ Dette kapitel viser med skærmbilleder, hvordan du opretter det API Token, progr
 
 ## Trin 1 – Åbn Cloudflares side med felterne udfyldt
 
-Klik på **Opret API Token hos Cloudflare** i programmet (i opsætningen eller under **Indstillinger → Forbindelse**). Det åbner Cloudflares side **My Profile › API Tokens** i din browser med navn og de to rettigheder udfyldt på forhånd. Er du ikke logget ind hos Cloudflare, logger du ind først; siden åbner bagefter.
+Klik på **Opret API Token hos Cloudflare** i programmet (i guidens trin 2 eller under **Indstillinger** › **Forbindelse**). Det åbner Cloudflares side **My Profile › API Tokens** i din browser med navn og de to rettigheder udfyldt på forhånd. Er du ikke logget ind hos Cloudflare, logger du ind først; siden åbner bagefter.
 
 ![Create Token med navn og politik udfyldt](../img/cf-01-create-token.webp)
 *Siden **Create Token**. Navnet står under **Token name**, og under **Policies** står én zone-politik med **Include · All zones**. Tallene til højre viser, at der er valgt 1 rettighed under DNS & Zones og 1 under Analytics & Logs.*

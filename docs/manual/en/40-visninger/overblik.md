@@ -26,12 +26,12 @@ The columns:
 - **… the status is Calm?** Nothing. Cloudflare handles what comes.
 - **… the status is Watch?** Read the explanation under Why. Typically everything was stopped, but the pattern is unusual. Click **What do I do?** for advice, such as "ask your web person to check that the site is up to date".
 - **… the status is Act?** There were unusually many attacks yesterday compared with the week before, or something got through. Click the row to see the attacks, and follow the advice under **What do I do?**.
-- **… the status is Unknown?** The program has no figures for the domain yet, typically because it was just chosen. Wait for the fetch; the status pill in the band shows how far it is.
+- **… the status is Unknown?** The program has no figures for the domain yet, typically because it was just chosen. Wait for the fetch; the footer at the bottom of the window shows how far it is.
 - **… it says "updating …" next to the status?** At night (until 03:00 UTC), before yesterday is fully fetched, the status uses the day before.
 
 ## Labels on top of the status
 
-Some domains get a label next to the status: **Looks targeted**, **Looks like reconnaissance** or **Looks like DNS reconnaissance**. The labels say something about the pattern, not the amount, and always as "looks", never as a certain verdict. What they mean is in the [Glossary](../99-ordliste.md) and in the advice behind **What does it mean? →**.
+Some domains get a label next to the status: **Looks targeted**, **Looks like reconnaissance** or **Looks like DNS reconnaissance**. The labels say something about the pattern, not the amount, and always as "looks", never as a certain verdict. In the overview the last two are shown short as **Recon** and **DNS recon**; elsewhere the name is written in full. What they mean is in the [Glossary](../99-ordliste.md) and in the advice behind **What does it mean? →**.
 
 The Overview can also tell you that a domain is paused at Cloudflare, not active, suspected of phishing or in Development Mode, and that your server is not answering (errors 520–527). Under Why it may say "Follows the global trend" or "The world was normal yesterday, so the rise is yours"; that compares with the whole world and does not change the status.
 
@@ -49,11 +49,13 @@ If a new domain appears on your Cloudflare account, the Overview shows a discree
 |---|---|
 | The rest of a row (or Enter on the row) | [Attacks](vaernet.md) for the domain |
 | A figure under Refused or Attacks | [Attacks](vaernet.md) with that very figure as filter |
-| **Attacks for all** (the button at the top right) | [Attacks](vaernet.md) for all chosen domains combined |
+| **Attacks for all** (in the band) | [Attacks](vaernet.md) for all chosen domains combined |
+| **Choose domains** (in the band) | The dialog **Domains**; see [Settings](../50-indstillinger.md) |
+| **Notifications** (the bell in the band) | The dialog **Notifications per domain** |
 | **What do I do?** / **What does it mean? →** | Plain-language advice for that very situation |
 | **more** | The rest of the explanation |
 | A CVE number in the explanation | The CVE's page on cve.org in your browser |
-| The line at the bottom about cleared domains | **Settings → Domains** |
+| The line at the bottom about cleared domains | The dialog **Domains** |
 
 Nothing without figures behind it looks clickable.
 

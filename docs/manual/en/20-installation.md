@@ -1,29 +1,34 @@
 # Installation
 
-> **Status today:** The program is not released. There are no finished installation packages to download yet, and it has only been built and tried on macOS. This chapter describes what applies now and what is planned. It will be updated when the first version is released.
+> **Status today:** Version 1.0.0 is available for macOS on a Mac with Apple silicon. There is no version for Windows or Linux yet.
 
 ## macOS
 
-### Today: build the program yourself
+Requires macOS 11 or newer and a Mac with Apple silicon.
 
-You need Rust (installed with rustup) and Node 20 or newer. Then, in a copy of the source code:
+1. Download `Huginn-Muninn-1.0.0.zip` from the release on GitHub.
+2. Open the zip file. It unpacks **Huginn and Muninn**.
+3. Drag **Huginn and Muninn** to your Applications folder (`/Applications`).
+4. Open the program.
+
+The program is signed with Developer ID and notarised by Apple. macOS therefore opens it without the warning about an unknown developer. The first time, macOS may ask whether you want to open an application downloaded from the internet.
+
+### Build the program yourself
+
+You can also build the program from the source code. You need Rust (installed with rustup) and Node 20 or newer. In a copy of the source code:
 
 ```
 npm install
 npm run tauri build
 ```
 
-The result is the application **Huginn and Muninn.app**. Drag it to your Applications folder (`/Applications`) and open it like any other application.
+The result is **Huginn and Muninn.app**. A version you build yourself is not signed unless you sign it with your own Developer ID.
 
-If you only want to try the program without building a finished version, you can run `npm run tauri dev`. It then starts in development mode; in that mode the program does not turn **Start at login** on (see below).
-
-### Planned: a finished package
-
-When the program is released, it will come as a package you download and open. Signing with Apple (notarisation) is planned but not in place yet. Until then, macOS will warn if you open a package downloaded from the internet, because it is not signed.
+If you only want to try the program, you can run `npm run tauri dev`. It then starts in development mode; in that mode the program does not turn **Start at login** on (see below).
 
 ## Windows
 
-The program is built to run on Windows (the same shortcuts with Ctrl, the notification area instead of the menu bar, Credential Manager instead of the Keychain), but there is no Windows version yet, and it has not been tried. Signing on Windows is planned.
+The program is built to run on Windows (the same shortcuts with Ctrl, the notification area instead of the menu bar, Credential Manager instead of the Keychain), but there is no Windows version yet, and it has not been tried.
 
 ## Linux
 
@@ -31,8 +36,8 @@ A Linux version is planned but does not exist yet.
 
 ## What happens the first time you open the program
 
-1. The program shows **Connect to Cloudflare**, because no API Token is saved. Only **Settings** can be opened in the sidebar until you have connected. See [Setup](30-opsaetning.md).
-2. The first time a built version starts, the program turns **Start at login** on. That means the program starts without a window, only in the menu bar, when you log in to the computer, and fetches your figures in the background. You can turn it off under **Settings → General → Start at login**; the program never turns it back on by itself.
+1. A guide with four steps opens: **Welcome**, **Your API Token**, **Your domains** and **Notifications**. The tabs at the top cannot be used until an API Token is saved. See [Setup](30-opsaetning.md).
+2. The first time a built version starts, the program turns **Start at login** on. That means the program starts without a window, only in the menu bar, when you log in to the computer, and fetches your figures in the background. You can turn it off in step 4 of the guide or under **Settings** (the gear at the top right) in the group **Start-up**; the program never turns it back on by itself.
 3. The program creates its data folder and the local database. See [Data and history](70-data.md).
 4. The first time the program shows a notification, macOS asks whether it may. See [Notifications and background](60-notifikationer.md).
 

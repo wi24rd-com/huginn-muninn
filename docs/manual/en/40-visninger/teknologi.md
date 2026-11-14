@@ -1,6 +1,6 @@
 # Technology by domain
 
-No shortcut. You get there from **Settings → Domains → Technology by domain →** or from **Edit technologies** in Attacks.
+No shortcut and no tab. You get there with **Edit technologies** in the band on **Attacks**. **Back to Attacks** in the band takes you back.
 
 ## What does it show?
 
@@ -29,7 +29,7 @@ The **All technologies** tab: the catalogue in groups with search and the number
 
 - **… you do not know what the site runs?** Leave **Don't know**, or ask your web person. The program does not guess for you.
 - **… the status says Watch because of a hole in something you do not use?** Set **Does not use**. It then weighs less in the status from now on.
-- **… you want to reset everything?** **Settings → Domains → Reset for all domains**. The program asks first.
+- **… you want to reset everything?** **Reset for all domains** in the band. The program asks first: **Reset technology choices?**
 
 ## Click on
 

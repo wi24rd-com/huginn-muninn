@@ -7,7 +7,7 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 - **Huginn (tanke)** er det, der sker nu: angrebene, hvad der blev stoppet og hvordan.
 - **Muninn (hukommelse)** er det, der er sket: hver færdig dag gemmes lokalt.
 
-> **Status:** tidlig prototype. Udviklingsbuilds på macOS. Programmet er ikke udgivet endnu, og denne vejledning følger den udgave, der ligger i kildekoden i dag.
+> **Status:** version 1.0.0 til macOS (Apple silicon). Programmet er signeret med Developer ID og notariseret af Apple. Denne vejledning følger den udgave.
 
 ## Sådan er vejledningen bygget op
 
@@ -18,7 +18,7 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 | [Opsætning](30-opsaetning.md) | skal forbinde programmet med Cloudflare og vælge domæner |
 | [Opret API Token hos Cloudflare](31-cloudflare.md) | vil se trin for trin med skærmbilleder, hvad du gør i Cloudflares dashboard |
 | [Visningerne](40-visninger/overblik.md) | bruger programmet i hverdagen: Overblik, Siden sidst, Angreb, Robotter, Login, dit land, Besøgende, Teknologi |
-| [Indstillinger](50-indstillinger.md) | vil ændre sprog, udseende, domæner, notifikationer eller API Token |
+| [Indstillinger](50-indstillinger.md) | vil ændre sprog, udseende, notifikationer eller API Token, eller vælge domæner |
 | [Notifikationer og baggrund](60-notifikationer.md) | vil forstå, hvornår programmet siger til, og hvad der sker, når vinduet er lukket |
 | [Data og historik](70-data.md) | vil vide, hvor tallene ligger, hvor længe, og hvordan du nulstiller |
 | [Fejlfinding](80-fejlfinding.md) | ser en fejltekst i programmet |
@@ -29,9 +29,9 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 
 ## Den korte version
 
-1. Installér programmet, og åbn det.
-2. Opret et API Token hos Cloudflare med de to læse-rettigheder, programmet beder om, og indsæt det.
-3. Vælg under **Indstillinger → Domæner**, hvilke domæner Huginn skal hente og vise.
+1. Installér programmet, og åbn det. En guide med fire trin åbner af sig selv.
+2. Opret et API Token hos Cloudflare med de to læse-rettigheder, programmet beder om, og indsæt det i guidens trin 2.
+3. Vælg i trin 3, hvilke domæner Huginn skal hente og vise. Senere ændrer du det på **Overblik** med knappen **Vælg domæner**.
 4. Luk vinduet. Programmet bliver i menulinjen, henter i baggrunden og siger til, når et domæne kræver handling.
 
 Resten er for dig, der vil forstå mere. Alt i programmet, der har tal bag sig, kan klikkes, så du kan se, hvad tallet består af.

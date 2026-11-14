@@ -1,13 +1,20 @@
-# Indstillinger (visningen)
+# Indstillinger, Domæner, Notifikationer og Om
 
-Genvej: ⌘, (Windows: Ctrl+,)
+Indstillinger er ikke en fane, men et vindue oven på den visning, du står i. Det, du bruger, mens du arbejder, står som knapper, hvor det bruges:
 
-Indstillinger er den eneste visning, der kan åbnes, før du har forbundet med Cloudflare. Den har seks afsnit: **Generelt**, **Domæner**, **Notifikationer**, **Forbindelse**, **Data** og **Om**.
+| Det vil du | Sådan åbner du det |
+|---|---|
+| Sprog, udseende, dato, land, start ved login, notifikationer, API Token, data | Tandhjulet øverst til højre, eller ⌘, (Windows: Ctrl+,) |
+| Vælge domæner | **Overblik** › **Vælg domæner** i båndet |
+| Vælge besked pr. domæne | **Overblik** › **Notifikationer** (klokken) i båndet |
+| Sige, hvad dit site bruger | **Angreb** › **Ret teknologier** i båndet |
+| Rette login-stier | **Login** › **Ret stier** i båndet |
+| Version, licens og varemærke | Knappen **i** ved siden af tandhjulet |
 
-Hvert felt og hver kontakt er beskrevet i [Indstillinger](../50-indstillinger.md).
+Indstillinger kan åbnes, før du har forbundet med Cloudflare. Hvert felt og hver kontakt er beskrevet i [Indstillinger](../50-indstillinger.md).
 
 ![Indstillinger fra toppen](../../img/indstillinger--light-da-1200x860.webp)
-*Øverst: Generelt og Domæner.*
+*Øverst: Udseende og sprog, Dato og land og Start. Indholdet ruller, og **Luk** står fast nederst.*
 
-![Indstillinger, afsnittet Forbindelse og Data](../../img/indstillinger-forbindelse--light-da-1200x860.webp)
-*Længere nede: Forbindelse og Data.*
+![Indstillinger, Forbindelse](../../img/indstillinger-forbindelse--light-da-1200x860.webp)
+*Længere nede: Forbindelse med **Skift API Token…** foldet ud.*

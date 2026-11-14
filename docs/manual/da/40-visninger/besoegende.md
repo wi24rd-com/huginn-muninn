@@ -6,7 +6,7 @@ Genvej: ⌘7 (Windows: Ctrl+7)
 
 Besøgende viser, hvor mange der besøger dit site, hvorfra, hvor mange af besøgene der er kendte robotter, og hvilke sider der bliver set. Du ser ét domæne ad gangen eller alle samlet, for 7 dage, 30 dage, et år eller en periode, du selv vælger (højst et år).
 
-Øverst står fliserne under overskriften **De seneste dage**. De er faste: de viser altid i går, de sidste 7 og 30 dage og det sidste år, uanset hvilken periode du har valgt. Under dem står vælgeren (7 dage, 30 dage, Et år, Fra og Til), og under den overskriften **Valgt periode: 11. okt. – 9. nov. 2026**. Alt under den overskrift følger perioden: grafen, landene, robotterne og siderne.
+Øverst står fliserne under overskriften **De seneste dage**. De er faste: de viser altid i går, de sidste 7 og 30 dage og det sidste år, uanset hvilken periode du har valgt. Perioden vælger du i båndet (**7 dage**, **30 dage**, **Et år**, eller **Fra** og **Til** under **Egne datoer**), og under fliserne står overskriften **Valgt periode: 11. okt. – 9. nov. 2026**. Alt under den overskrift følger perioden: grafen, landene, robotterne og siderne.
 
 Fliserne:
 
@@ -44,9 +44,9 @@ Derfor står der under 404-listen **Svarede med sidens almindelige side**: stier
 
 ## Sådan gør du
 
-1. Klik på **Besøgende** i sidebjælken (eller tryk ⌘7, Windows Ctrl+7).
-2. Vælg domæne i vælgeren øverst, eller **Samlet** for alle.
-3. Vælg **7 dage**, **30 dage** eller **Et år** under fliserne, eller vælg **Fra** og **Til**. **Nulstil** viser et år. Overskriften **Valgt periode** viser datoerne.
+1. Klik på fanen **Besøgende** (eller tryk ⌘7, Windows Ctrl+7).
+2. Vælg domæne i listen **Domæner** til venstre, eller **Alle domæner** for alle samlet.
+3. Vælg **7 dage**, **30 dage** eller **Et år** i båndet, eller vælg **Fra** og **Til**. **Nulstil** viser et år. Overskriften **Valgt periode** viser datoerne.
 
 ## Klik videre
 
@@ -66,6 +66,6 @@ Derfor står der under 404-listen **Svarede med sidens almindelige side**: stier
 - **Kendte robotter og scannere** (andelen af trafikken det seneste år) bygger på Cloudflares [IP-klasser](../99-ordliste.md): søgemaskiner, overvågning, scannere, Tor og kendte dårlige adresser. Det er forespørgsler, ikke besøg.
 - **Visninger** er antallet af html-svar for en sti. **Besøg udefra** er Cloudflares besøg på stien. Robotter tæller med. Stien vises uden forespørgselsstreng, og lange koder er skjult. De 50 mest viste sider gemmes pr. dag.
 - Besøg pr. land, kendte robotter og sider findes en måned tilbage hos Cloudflare. Programmet gemmer dagene, så historikken vokser derfra.
-- **Samlet** lægger domænerne sammen, så den samme besøgende på to domæner tæller to gange.
+- **Alle domæner** lægger domænerne sammen, så den samme besøgende på to domæner tæller to gange.
 - Tallene er pr. dag i UTC, fra de tal, der er gemt på din computer. Ingen IP-adresser eller brugeragenter gemmes, kun tallene.
 - Siden giver ingen notifikationer og ændrer ikke status i Overblik.

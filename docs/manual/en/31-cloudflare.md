@@ -6,7 +6,7 @@ This chapter shows with screenshots how to create the API Token the program need
 
 ## Step 1 – Open Cloudflare's page with the fields filled in
 
-Click **Create API Token at Cloudflare** in the program (in setup or under **Settings → Connection**). It opens Cloudflare's page **My Profile › API Tokens** in your browser with the name and the two permissions filled in. If you are not logged in at Cloudflare, log in first; the page opens afterwards.
+Click **Create API Token at Cloudflare** in the program (in step 2 of the guide or under **Settings** › **Connection**). It opens Cloudflare's page **My Profile › API Tokens** in your browser with the name and the two permissions filled in. If you are not logged in at Cloudflare, log in first; the page opens afterwards.
 
 ![Create Token with name and policy filled in](../img/cf-01-create-token.webp)
 *The **Create Token** page. The name is under **Token name**, and under **Policies** there is one zone policy with **Include · All zones**. The numbers on the right show that 1 permission is chosen under DNS & Zones and 1 under Analytics & Logs.*

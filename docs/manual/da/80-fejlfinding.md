@@ -9,7 +9,7 @@ Programmet viser kun sine egne fejltekster i klart sprog, aldrig rå tekniske fe
 | **Ingen forbindelse til Cloudflare. Tjek din internetforbindelse.** | Computeren kan ikke nå `api.cloudflare.com`. | Tjek nettet. Programmet prøver selv igen og viser **Prøv igen nu**. |
 | **Ingen forbindelse til Cloudflare, så … kunne ikke hentes. Prøver igen af sig selv.** (i båndet: **Ingen forbindelse · prøver igen**) | Et eller flere domæner kunne ikke hentes, fordi der ikke var net, fx lige efter, at Mac'en har sovet. | Ingenting. Programmet prøver en ny runde af sig selv efter 2 minutter, og straks når det opdager, at maskinen har sovet. **Hent nu** prøver med det samme. |
 | **Cloudflare svarer ikke lige nu.** | Cloudflare svarede ikke, eller svarede med en serverfejl. | Vent. Programmet prøver igen af sig selv. |
-| **Cloudflare beder os vente lidt (for mange forespørgsler).** | Cloudflare har en grænse for, hvor mange kald der må komme. | Ingenting. Programmet holder pause og siger "Prøver igen kl. …" i statuspillen. |
+| **Cloudflare beder os vente lidt (for mange forespørgsler).** | Cloudflare har en grænse for, hvor mange kald der må komme. | Ingenting. Programmet holder pause og siger "Prøver igen kl. …" i fodlinjen nederst i vinduet. |
 | **Cloudflare Radar svarer ikke lige nu.** | Kun landevisningen er ramt. | Dine egne tal virker stadig. Programmet prøver igen. |
 | **Cloudflare svarede med HTTP …** / **Cloudflare svarede med en fejl: …** / **Uventet svar fra Cloudflare.** | Et svar, programmet ikke kunne bruge. | Prøv **Hent nu**. Sker det igen og igen, er det værd at melde som fejl. |
 | **Cloudflare kunne ikke levere tallene for …** | Én dag kunne ikke hentes. | Dagen bliver et hul, og programmet prøver igen senere, så længe Cloudflare stadig har dagen. |
@@ -22,12 +22,12 @@ Programmet viser kun sine egne fejltekster i klart sprog, aldrig rå tekniske fe
 |---|---|---|
 | **Feltet er tomt. Indsæt dit API Token.** | Du klikkede Gem og forbind uden noget i feltet. | Indsæt API Tokenet. |
 | **Det indsatte ligner ikke et API Token fra Cloudflare (kun bogstaver, tal og tegn uden mellemrum).** | Der kom noget andet med, fx et mellemrum eller et linjeskift. | Kopiér API Tokenet igen fra Cloudflare, uden andet omkring. |
-| **Cloudflare afviste API Tokenet. Det kan være udløbet eller mangle rettigheder.** | Cloudflare kender ikke tokenet, eller det er udløbet. | Opret et nyt API Token efter [Opsætning](30-opsaetning.md), og indsæt det under **Indstillinger → Forbindelse → Skift API Token…**. |
+| **Cloudflare afviste API Tokenet. Det kan være udløbet eller mangle rettigheder.** | Cloudflare kender ikke tokenet, eller det er udløbet. | Opret et nyt API Token efter [Opsætning](30-opsaetning.md), og indsæt det under **Indstillinger** (tandhjulet) › **Forbindelse** › **Skift API Token…**. |
 | **API Tokenet er ikke aktivt (status: …). Opret et nyt API Token, der kun kan læse.** | Tokenet er deaktiveret eller udløbet hos Cloudflare. | Opret et nyt. |
 | **API Tokenet kan ikke se nogen domæner: det mangler rettigheden Zone › Read, eller domænet står ikke under Include · All zones eller Specific zone.** | Tokenet må ikke se zonelisten, eller ingen zoner er inkluderet. | Ret tokenet hos Cloudflare: under **Policies** skal **DNS & Zones** have **Zone › Read**, og **Include** skal dække domænet (**All zones** eller **Specific zone**). |
 | **API Tokenet mangler rettigheden Analytics › Read, så programmet kan ikke læse tallene.** | Tokenet må se zoner, men ikke tal. | Tilføj **Analytics › Read** under **Analytics & Logs** hos Cloudflare. |
 | **Der er ikke gemt noget API Token. Indsæt dit API Token under Forbind med Cloudflare.** | Nøgleringen har ikke noget token (fx efter **Glem API Token**). | Forbind igen. |
-| **Zonen findes ikke, eller API Tokenet har ikke adgang til den.** | Et domæne er fjernet fra kontoen, eller tokenet ser det ikke længere. | Fravælg domænet under **Indstillinger → Domæner**, eller ret tokenet. |
+| **Zonen findes ikke, eller API Tokenet har ikke adgang til den.** | Et domæne er fjernet fra kontoen, eller tokenet ser det ikke længere. | Fravælg domænet med **Vælg domæner** på Overblik, eller ret tokenet. |
 
 ## Fejltekster om computeren
 
@@ -57,4 +57,4 @@ Programmet viser kun sine egne fejltekster i klart sprog, aldrig rå tekniske fe
 
 ## Meld en fejl
 
-Programmet er open source. Fejl meldes i kildekodens repo (linket står under **Indstillinger → Om**, når det er udgivet). Skriv aldrig dit API Token, account-id eller zone-id i en fejlmelding.
+Programmet er open source. Fejl meldes i kildekodens repo på GitHub. Skriv aldrig dit API Token, account-id eller zone-id i en fejlmelding.

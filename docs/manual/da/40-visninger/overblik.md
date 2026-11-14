@@ -26,12 +26,12 @@ Kolonnerne:
 - **… status er Roligt?** Ingenting. Cloudflare håndterer det, der kommer.
 - **… status er Hold øje?** Læs forklaringen under Hvorfor. Typisk er alt stoppet, men mønsteret er usædvanligt. Klik på **Hvad gør jeg?** for et råd, fx "bed din webmand tjekke, at sitet er opdateret".
 - **… status er Handl?** Der var usædvanligt mange angreb i går i forhold til ugen før, eller noget slap igennem. Klik på rækken for at se angrebene, og følg rådet under **Hvad gør jeg?**.
-- **… status er Ukendt?** Programmet har ingen tal for domænet endnu, typisk fordi det lige er valgt. Vent på hentningen; statuspillen i båndet viser, hvor langt den er.
+- **… status er Ukendt?** Programmet har ingen tal for domænet endnu, typisk fordi det lige er valgt. Vent på hentningen; fodlinjen nederst i vinduet viser, hvor langt den er.
 - **… der står "opdateres …" ved status?** Om natten (til kl. 03 UTC), før i går er hentet færdigt, bruger status dagen før.
 
 ## Mærker oven på status
 
-Nogle domæner får et mærke ved siden af status: **Ligner målrettet**, **Ligner rekognoscering** eller **Ligner DNS-rekognoscering**. Mærkerne siger noget om mønsteret, ikke om mængden, og altid som "ligner", aldrig som en sikker dom. Hvad de betyder, står i [Ordlisten](../99-ordliste.md) og i rådet bag **Hvad betyder det? →**.
+Nogle domæner får et mærke ved siden af status: **Ligner målrettet**, **Ligner rekognoscering** eller **Ligner DNS-rekognoscering**. Mærkerne siger noget om mønsteret, ikke om mængden, og altid som "ligner", aldrig som en sikker dom. I oversigten står de to sidste kort som **Recon** og **DNS-recon**; andre steder står navnet fuldt ud. Hvad de betyder, står i [Ordlisten](../99-ordliste.md) og i rådet bag **Hvad betyder det? →**.
 
 Overblik kan også fortælle, at et domæne er sat på pause hos Cloudflare, ikke er aktivt, er mistænkt for phishing eller står i udviklertilstand, og at din server ikke svarer (fejl 520–527). I Hvorfor kan der stå "Følger den globale tendens" eller "Verden var normal i går, så stigningen er din egen"; det sammenligner med hele verden og ændrer ikke status.
 
@@ -49,11 +49,13 @@ Kommer der et nyt domæne på din Cloudflare-konto, viser Overblik en diskret li
 |---|---|
 | Resten af en række (eller Enter på rækken) | [Angreb](vaernet.md) for domænet |
 | Et tal under Afvist eller Angreb | [Angreb](vaernet.md) med netop det tal som filter |
-| **Angreb for alle** (knappen øverst til højre) | [Angreb](vaernet.md) for alle valgte domæner samlet |
+| **Angreb for alle** (i båndet) | [Angreb](vaernet.md) for alle valgte domæner samlet |
+| **Vælg domæner** (i båndet) | Dialogen **Domæner**; se [Indstillinger](../50-indstillinger.md) |
+| **Notifikationer** (klokken i båndet) | Dialogen **Notifikationer pr. domæne** |
 | **Hvad gør jeg?** / **Hvad betyder det? →** | Et råd i klart sprog til netop den situation |
 | **mere** | Resten af forklaringen |
 | Et CVE-nummer i forklaringen | CVE'ens side på cve.org i din browser |
-| Linjen nederst om fravalgte domæner | **Indstillinger → Domæner** |
+| Linjen nederst om fravalgte domæner | Dialogen **Domæner** |
 
 Intet uden tal bag sig ser klikbart ud.
 

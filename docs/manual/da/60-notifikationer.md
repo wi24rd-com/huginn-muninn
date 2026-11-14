@@ -16,7 +16,7 @@ Menuen ved ravne-ikonet i menulinjen:
 
 **⌘Q**, mens vinduet er åbent, lukker også programmet helt. Et klik på det røde lukkeikon lukker kun vinduet.
 
-**Start ved login** (under **Indstillinger → Generelt**) gør, at programmet starter uden vindue, kun i menulinjen, når du logger ind på computeren. Det slås til første gang en færdigbygget udgave starter, og programmet slår det aldrig til igen af sig selv, hvis du slår det fra. Så længe det er til, starter programmet også selv én gang om dagen, kl. 12, uden vindue, henter og lukker igen, hvis det ikke kørte i forvejen. Er det fra, henter programmet kun, mens det er åbent; åbn det mindst hver tredje uge, ellers kommer der huller i historikken, fordi Cloudflare kun gemmer en måned.
+**Start ved login** (under **Indstillinger** i gruppen **Start**) gør, at programmet starter uden vindue, kun i menulinjen, når du logger ind på computeren. Det slås til første gang en færdigbygget udgave starter, og programmet slår det aldrig til igen af sig selv, hvis du slår det fra. Så længe det er til, starter programmet også selv én gang om dagen, kl. 12, uden vindue, henter og lukker igen, hvis det ikke kørte i forvejen. Er det fra, henter programmet kun, mens det er åbent; åbn det mindst hver tredje uge, ellers kommer der huller i historikken, fordi Cloudflare kun gemmer en måned.
 
 ## Hvor notifikationerne kommer fra
 
@@ -28,7 +28,7 @@ Et klik på en notifikation åbner **Siden sidst**.
 
 ## Hvornår du får besked
 
-Det samlede niveau vælger du i opsætningen og under **Indstillinger → Notifikationer**:
+Det samlede niveau vælger du i opsætningen og under **Indstillinger** i gruppen **Notifikationer**:
 
 | Niveau | Hvornår |
 |---|---|

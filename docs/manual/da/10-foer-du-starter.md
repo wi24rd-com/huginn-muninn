@@ -27,7 +27,7 @@ Et IT-firma kan oprette ét API Token pr. kunde, der kun ser kundens domæne, og
 | **Cloudflare** | En Cloudflare-konto med mindst ét domæne (en zone). Alle planer, også Free, kan bruges. |
 | **Rettigheder** | Et API Token med præcis to rettigheder: **Zone › Read** og **Analytics › Read**. Programmet beder ikke om mere. |
 | **Internet** | Programmet henter fra Cloudflare, mens det kører. Det kører kun, når computeren er tændt. |
-| **Plads** | Den lokale database er lille (få megabyte efter en måned med få domæner). Du kan se størrelsen under **Indstillinger → Data**. |
+| **Plads** | Den lokale database er lille (få megabyte efter en måned med få domæner). Du kan se størrelsen under **Indstillinger** › **Data**. |
 
 Nogle tal kræver mere hos Cloudflare: tallene for **Mails sendt i dit domænes navn** kræver, at DMARC Management er slået til i Cloudflare, og nogle felter findes ikke på alle planer. Mangler de, står der "ikke tilgængelig", og resten virker.
 

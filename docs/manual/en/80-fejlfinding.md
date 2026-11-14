@@ -9,7 +9,7 @@ The program only shows its own error texts in plain language, never raw technica
 | **No connection to Cloudflare. Check your internet connection.** | The computer cannot reach `api.cloudflare.com`. | Check the network. The program tries again by itself and shows **Try again now**. |
 | **No connection to Cloudflare, so … could not be fetched. Trying again by itself.** (in the band: **No connection · trying again**) | One or more domains could not be fetched because there was no network, for example right after the Mac has been asleep. | Nothing. The program starts a new round by itself after 2 minutes, and at once when it notices that the machine has been asleep. **Fetch now** tries straight away. |
 | **Cloudflare is not answering right now.** | Cloudflare did not answer, or answered with a server error. | Wait. The program tries again by itself. |
-| **Cloudflare asks us to wait a little (too many requests).** | Cloudflare has a limit on how many calls may come. | Nothing. The program pauses and says "Trying again at …" in the status pill. |
+| **Cloudflare asks us to wait a little (too many requests).** | Cloudflare has a limit on how many calls may come. | Nothing. The program pauses and says "Trying again at …" in the footer at the bottom of the window. |
 | **Cloudflare Radar is not answering right now.** | Only the country view is affected. | Your own figures still work. The program tries again. |
 | **Cloudflare answered with HTTP …** / **Cloudflare answered with an error: …** / **Unexpected answer from Cloudflare.** | An answer the program could not use. | Try **Fetch now**. If it keeps happening, it is worth reporting as a bug. |
 | **Cloudflare could not deliver the figures for …** | One day could not be fetched. | The day becomes a gap, and the program tries again later, as long as Cloudflare still has the day. |
@@ -22,12 +22,12 @@ The program only shows its own error texts in plain language, never raw technica
 |---|---|---|
 | **The field is empty. Paste your API Token.** | You clicked Save and connect with nothing in the field. | Paste the API Token. |
 | **What was pasted does not look like a Cloudflare API Token (only letters, digits and symbols without spaces).** | Something else came along, such as a space or a line break. | Copy the API Token again from Cloudflare, with nothing around it. |
-| **Cloudflare rejected the API Token. It may have expired or lack permissions.** | Cloudflare does not know the token, or it has expired. | Create a new API Token following [Setup](30-opsaetning.md), and paste it under **Settings → Connection → Change API Token…**. |
+| **Cloudflare rejected the API Token. It may have expired or lack permissions.** | Cloudflare does not know the token, or it has expired. | Create a new API Token following [Setup](30-opsaetning.md), and paste it under **Settings** (the gear) › **Connection** › **Change API Token…**. |
 | **The API Token is not active (status: …). Create a new read-only API Token.** | The token is disabled or expired at Cloudflare. | Create a new one. |
 | **The API Token cannot see any domains: it lacks the permission Zone › Read, or the domain is not under Include · All zones or Specific zone.** | The token may not see the zone list, or no zones are included. | Fix the token at Cloudflare: under **Policies**, **DNS & Zones** must have **Zone › Read**, and **Include** must cover the domain (**All zones** or **Specific zone**). |
 | **The API Token lacks the permission Analytics › Read, so the program cannot read the figures.** | The token may see zones, but not figures. | Add **Analytics › Read** under **Analytics & Logs** at Cloudflare. |
 | **No API Token is saved. Paste your API Token under Connect to Cloudflare.** | The keychain has no token (for example after **Forget API Token**). | Connect again. |
-| **The zone does not exist, or the API Token has no access to it.** | A domain has been removed from the account, or the token no longer sees it. | Clear the domain under **Settings → Domains**, or fix the token. |
+| **The zone does not exist, or the API Token has no access to it.** | A domain has been removed from the account, or the token no longer sees it. | Clear the domain with **Choose domains** on the Overview, or fix the token. |
 
 ## Error texts about the computer
 
@@ -57,4 +57,4 @@ The program only shows its own error texts in plain language, never raw technica
 
 ## Report a bug
 
-The program is open source. Bugs are reported in the source code's repository (the link is under **Settings → About** once it is released). Never write your API Token, account ID or zone ID in a bug report.
+The program is open source. Bugs are reported in the source code's repository on GitHub. Never write your API Token, account ID or zone ID in a bug report.

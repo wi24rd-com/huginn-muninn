@@ -2865,7 +2865,7 @@ const DOMV = (fravalgte = [], x) => {
   await sov(70);
   tjek('T3 ingen nye: ingen linje', n6.d.getElementById('nye-domaener').hidden);
   tjek('Natten: de gamle ord er væk', !/verden er flad|world is flat/i.test(ui('assets/sprog.js') + fs.readFileSync(path.join(repo, 'README.md'), 'utf8') + fs.readFileSync(path.join(repo, 'README.da.md'), 'utf8')));
-  tjek('README: Domæner på begge sprog', fs.readFileSync(path.join(repo, 'README.da.md'), 'utf8').includes('Indstillinger → Domæner') && fs.readFileSync(path.join(repo, 'README.md'), 'utf8').includes('Settings → Domains'));
+  tjek('README: Domæner på begge sprog (V-INDST.1: knappen Vælg domæner, ikke den gamle sti)', (d => d.includes('**Vælg domæner**') && !d.includes('Indstillinger → Domæner'))(fs.readFileSync(path.join(repo, 'README.da.md'), 'utf8')) && (e => e.includes('**Choose domains**') && !e.includes('Settings → Domains'))(fs.readFileSync(path.join(repo, 'README.md'), 'utf8')));
 }
 
 // ── Velkomsten ──
