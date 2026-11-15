@@ -1,0 +1,90 @@
+# CI for Huginn and Muninn: the tests that exist in the repository and need no signing keys.
+# Signing and notarisation are local only (tools/signer.sh) and never run here.
+# This workflow has no secrets, writes nothing to the repository and creates no commits.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Read-only token for every job. Nothing here needs more.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-macos:
+    name: Tests (macOS, Apple silicon)
+    # The app is released for macOS on Apple silicon, and test:signer needs macOS tools (plutil, ditto, stat -f).
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tool versions
+        run: |
+          sw_vers
+          node --version
+          npm --version
+          rustc --version
+          cargo --version
+
+      - name: Install npm packages (lockfile only, no install scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Fetch crates (lockfile only)
+        # test:ui reads a file from tauri-plugin-notification in Cargo's registry.
+        working-directory: src-tauri
+        run: cargo fetch --locked
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --locked
+
+      - name: UI smoke test
+        run: npm run test:ui
+
+      - name: Signing script test (stubs only, signs nothing)
+        run: npm run test:signer
+
+      - name: UI kit copies match the package manifest
+        run: npm run kit:tjek
+
+  check-linux:
+    name: Format and kit check (Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Rust formatting
+        working-directory: src-tauri
+        run: cargo fmt --check
+
+      - name: UI kit copies match the package manifest
+        run: npm run kit:tjek
