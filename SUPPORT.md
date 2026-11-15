@@ -10,10 +10,10 @@ Wi24rd Huginn and Muninn is a spare-time open source project with one maintainer
 
 ## Where to write
 
-- **Something does not work, or you have a wish:** open an [issue](https://github.com/wi24rd-com/huginn-muninn/issues/new/choose). Search the existing issues first.
+- **Something does not work, or you have a wish:** open an [issue](https://github.com/wi24rd-com/huginn-muninn/issues/new/choose). Search the existing issues first. If you do not use GitHub, write through the contact form on wi24rd.com: [English](https://wi24rd.com/en/contact/) · [Dansk](https://wi24rd.com/kontakt/).
 - **A security problem:** privately, see [SECURITY.md](SECURITY.md).
 
-Never paste your Cloudflare API Token, zone IDs, account IDs or the names of your domains anywhere on GitHub. If an API Token has been shown to others, delete it at Cloudflare and create a new one.
+Never paste your Cloudflare API Token, zone IDs or account IDs anywhere, and never the names of your domains on GitHub. If an API Token has been shown to others, delete it at Cloudflare and create a new one.
 
 ## What this project cannot help with
 

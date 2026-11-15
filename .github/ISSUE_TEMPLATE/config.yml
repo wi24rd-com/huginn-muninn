@@ -6,3 +6,6 @@ contact_links:
   - name: User guide
     url: https://wi24rd.com/en/documentation/huginn-muninn/
     about: Installation, setup, every view, troubleshooting and uninstalling.
+  - name: Contact form on wi24rd.com
+    url: https://wi24rd.com/en/contact/
+    about: For those who would rather not write on GitHub. The message is not public.

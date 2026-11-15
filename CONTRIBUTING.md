@@ -4,7 +4,7 @@ Thank you for wanting to help. Wi24rd Huginn and Muninn is a spare-time open sou
 
 ## Before you start
 
-- **A bug or a wish:** open an [issue](https://github.com/wi24rd-com/huginn-muninn/issues/new/choose). For anything larger than a small fix, please open an issue before you write code, so you do not spend time on something that will not be taken in.
+- **A bug or a wish:** open an [issue](https://github.com/wi24rd-com/huginn-muninn/issues/new/choose), or write through the [contact form](https://wi24rd.com/en/contact/) on wi24rd.com. For anything larger than a small fix, please open an issue before you write code, so you do not spend time on something that will not be taken in.
 - **A security problem:** report it privately, see [SECURITY.md](SECURITY.md). Never in a public issue.
 - **Never share** a Cloudflare API Token, zone ID, account ID or real domain names in issues, pull requests, tests or screenshots. Test data uses `wi24rd.com` and made-up subdomains only.
 

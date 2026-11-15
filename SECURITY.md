@@ -7,7 +7,7 @@ Wi24rd Huginn and Muninn is a spare-time open source project with one maintainer
 Please report it privately. Do not open a public issue for a security problem.
 
 1. Go to the repository's **Security** tab and choose **Report a vulnerability** ([direct link](https://github.com/wi24rd-com/huginn-muninn/security/advisories/new)). The report is visible only to you and the maintainer.
-2. If that button is not available to you, open an ordinary issue that only says you would like to report a security problem. Leave out every detail, and a private channel will be arranged.
+2. If you do not use GitHub, write through the contact form on wi24rd.com: [English](https://wi24rd.com/en/contact/) · [Dansk](https://wi24rd.com/kontakt/). The message is not public.
 
 A useful report says:
 
@@ -20,7 +20,7 @@ A useful report says:
 ## What to expect
 
 - Reports are read and handled by one person in his spare time. There is no guaranteed response time and no bug bounty.
-- You will get an answer in the advisory thread when the report has been read, and again when there is a fix or a decision.
+- You will get an answer when the report has been read, and again when there is a fix or a decision: in the advisory thread, or by e-mail if you used the contact form.
 - Fixes are released as a new version. Only the latest release is maintained; older versions get no fixes.
 - If you want credit in the release notes, say so in the report.
 
