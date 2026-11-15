@@ -4,6 +4,15 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-15 23:30 — Repoet på GitHub: CI, sikkerhedspolitik og skabeloner
+#### Tilføjet
+- **CI** (`.github/workflows/ci.yml`): Rust-testene, UI-røgtesten, testen af signeringsscriptet og kit-tjekket kører på GitHub ved hvert push til `main` og ved pull requests. Kun læserettigheder, ingen hemmeligheder, og de brugte actions er låst til en bestemt commit. Signering og notarisering sker stadig kun lokalt.
+- **Dependabot** (`.github/dependabot.yml`): én samlet pull request om måneden for Cargo, npm og GitHub Actions. Intet flettes automatisk.
+- **SECURITY.md**, **SUPPORT.md**, **CONTRIBUTING.md** og **RELEASING.md** (på engelsk): hvordan en sårbarhed meldes privat, hvor man finder hjælp, hvordan man bidrager og tester, og hvordan en udgivelse laves med kladde først og kontrolsum.
+- **Skabeloner** til fejl, ønsker og pull requests, som beder om programmets version og macOS-version og advarer mod at indsætte API Token, zone-id eller domæner.
+#### Ændret
+- **README** (dansk og engelsk) har fået fire mærker øverst og to nye afsnit: hvad programmet sender og hvorhen, og hvordan man tjekker kontrolsum, signatur og notarisering på det, man har hentet.
+
 ### 2026-11-14 23:30 — Vejledningen og README følger version 1.0.0
 #### Ændret
 - **Vejledningen** (`docs/manual/`, dansk og engelsk) beskriver nu programmet, som det er: guiden ved første start, Indstillinger bag tandhjulet, dialogerne Domæner, Notifikationer pr. domæne og Om, fanerne, båndet og fodlinjen. Installationen beskriver den signerede og notariserede udgave.

@@ -4,6 +4,11 @@
 
 *Sikkerhed er ikke noget, man køber. Det er noget, man forstår.*
 
+[![CI](https://github.com/wi24rd-com/huginn-muninn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wi24rd-com/huginn-muninn/actions/workflows/ci.yml)
+[![Nyeste udgivelse](https://img.shields.io/github/v/release/wi24rd-com/huginn-muninn?label=udgivelse)](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
+[![Licens: Apache-2.0](https://img.shields.io/badge/licens-Apache--2.0-blue)](LICENSE)
+![macOS på Apple silicon](https://img.shields.io/badge/macOS-Apple%20silicon-lightgrey)
+
 ### [⬇ Hent Huginn and Muninn 1.0.0 til macOS](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
 Signeret og notariseret af Apple · Apple silicon · macOS 11 eller nyere · åbn zip-filen, og træk programmet til Programmer
 
@@ -87,16 +92,55 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 ## Installation
 Hent `Huginn-Muninn-1.0.0.zip` under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest), åbn den, og træk **Huginn and Muninn** til din Programmer-mappe. Kræver macOS 11 eller nyere og en Mac med Apple silicon. Se [Installation](docs/manual/da/20-installation.md) og [Afinstallation](docs/manual/da/90-afinstallation.md).
 
+
+## Hvad programmet sender, og hvorhen
+- **Til Cloudflare og ingen andre steder:** programmet laver selv kun netværkskald til én vært, `api.cloudflare.com`. Det dækker dine zoner, tallene for dine valgte domæner, Cloudflares egne fund og Cloudflare Radar. Hvert kald har dit API Token og navnet `huginn-muninn/<version>` med.
+- **Dit API Token** gemmes i styresystemets nøglering, aldrig i en fil, og sendes kun til Cloudflare. Giv det kun læserettigheder; vejledningen viser [de to rettigheder, det skal have](docs/manual/da/31-cloudflare.md).
+- **Intet til Wi24rd:** ingen telemetri, ingen fejlrapporter, ingen konto og intet tjek for opdateringer. Programmet leder ikke selv efter nye udgaver.
+- **Links åbner i din browser, og kun når du klikker:** et CVE-nummer (cve.org), kildelinjen under Radar-tal (radar.cloudflare.com), **Opret API Token hos Cloudflare** og Cloudflares egne fund (dash.cloudflare.com) og **Vejledning** (wi24rd.com). Programmet henter ikke selv noget fra de sider.
+- **På din computer:** tallene ligger i én SQLite-fil i `~/Library/Application Support/com.wi24rd.huginn-muninn/`. Se [Data og historik](docs/manual/da/70-data.md).
+- **Tjek det selv:** den eneste adresse i koden står i `src-tauri/src/cf.rs`, og vinduets content security policy i `src-tauri/tauri.conf.json` lader siden tale med programmet selv og intet andet. En netværksovervågning som Little Snitch eller LuLu skal vise `api.cloudflare.com` og intet andet.
+
+## Verificér det, du har hentet
+Du kan tjekke, at den fil, du har hentet, er den, der blev udgivet, og at programmet er signeret af udvikleren og notariseret af Apple. Kør kommandoerne i Terminal.
+
+**1. Zip-filens kontrolsum**
+```
+shasum -a 256 ~/Downloads/Huginn-Muninn-1.0.0.zip
+```
+Linjen skal begynde med den SHA-256, der står i [udgivelsesteksten](https://github.com/wi24rd-com/huginn-muninn/releases/latest). GitHub viser samme værdi ved filen under **Assets**. For 1.0.0 er den:
+```
+f599bac0d5c61ad4a9355880979d583c8bea246712327f2ca35b0c342a5bb70b
+```
+
+**2. Programmets signatur og notarisering**
+```
+codesign --verify --deep --strict --verbose=2 "/Applications/Huginn and Muninn.app"
+spctl -a -vv "/Applications/Huginn and Muninn.app"
+```
+Den første skal svare `valid on disk` og `satisfies its Designated Requirement`. Den anden skal svare `accepted`, `source=Notarized Developer ID` og `origin=Developer ID Application: Jan Tingsvad (5DAVNFA355)`.
+
+Er kontrolsummen eller udviklerens navn anderledes, så åbn ikke programmet, og meld det gerne (se [SECURITY.md](SECURITY.md)).
+
 ## Byg (udvikling)
 ```
 npm install
 npm run tauri dev
+(cd src-tauri && cargo test)  # Rust-testene
 npm run test:ui              # UI-røgtesten (jsdom)
 npm run kit:tjek             # kopierne i ui/assets/kit2/ er som pakken Wi24rd UI Kit 2
 npm run test:signer          # signeringsscriptet prøvet med stubbe (macOS; signerer intet)
 sh tools/signer.sh proeve    # macOS: debug-bygning signeret med din egen Developer ID, uden notarisering
 ```
 Kræver Rust (rustup) og Node 20+.
+
+
+## Hjælp, sikkerhed og bidrag
+- **Hjælp:** [SUPPORT.md](SUPPORT.md). Projektet kommer uden support; brugervejledningen og issues er stederne at kigge.
+- **Sikkerhedsproblemer** meldes privat: [SECURITY.md](SECURITY.md).
+- **Bidrag:** [CONTRIBUTING.md](CONTRIBUTING.md). Sådan laves en udgivelse: [RELEASING.md](RELEASING.md).
+
+SECURITY.md, SUPPORT.md, CONTRIBUTING.md og RELEASING.md er på engelsk.
 
 ## Licens
 Apache-2.0 — se [LICENSE](LICENSE) og [NOTICE](NOTICE). Tredjepartskomponenter: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).

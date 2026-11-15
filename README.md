@@ -4,6 +4,11 @@
 
 *Security isn't something you buy. It's something you understand.*
 
+[![CI](https://github.com/wi24rd-com/huginn-muninn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wi24rd-com/huginn-muninn/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/wi24rd-com/huginn-muninn?label=release)](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
+[![Licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue)](LICENSE)
+![macOS on Apple silicon](https://img.shields.io/badge/macOS-Apple%20silicon-lightgrey)
+
 ### [⬇ Download Huginn and Muninn 1.0.0 for macOS](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
 Signed and notarised by Apple · Apple silicon · macOS 11 or newer · open the zip and drag the app to Applications
 
@@ -87,16 +92,53 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 ## Install
 Download `Huginn-Muninn-1.0.0.zip` from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest), open it, and drag **Huginn and Muninn** to your Applications folder. Requires macOS 11 or newer and a Mac with Apple silicon. See [Installation](docs/manual/en/20-installation.md) and [Uninstalling](docs/manual/en/90-afinstallation.md).
 
+
+## What the app sends, and where
+- **To Cloudflare, and nowhere else:** the app itself makes network requests to one host only, `api.cloudflare.com`. That covers your zones, the figures for your chosen domains, Cloudflare's own findings and Cloudflare Radar. Each request carries your API Token and the name `huginn-muninn/<version>`.
+- **Your API Token** is stored in the operating system's keychain, never in a file, and is sent only to Cloudflare. Give it read permissions only; the guide shows [the two permissions it needs](docs/manual/en/31-cloudflare.md).
+- **Nothing to Wi24rd:** no telemetry, no crash reports, no account and no update check. The app does not look for new versions by itself.
+- **Links open in your browser, only when you click:** a CVE number (cve.org), the source line under Radar figures (radar.cloudflare.com), **Create API Token at Cloudflare** and Cloudflare's own findings (dash.cloudflare.com), and **Guide** (wi24rd.com). The app fetches nothing from those sites itself.
+- **On your computer:** the figures are kept in one SQLite file in `~/Library/Application Support/com.wi24rd.huginn-muninn/`. See [Data and history](docs/manual/en/70-data.md).
+- **Check it yourself:** the only address in the code is in `src-tauri/src/cf.rs`, and the window's content security policy in `src-tauri/tauri.conf.json` lets the page talk to nothing but the app itself. A network monitor such as Little Snitch or LuLu should show `api.cloudflare.com` and nothing else.
+
+## Verify your download
+You can check that the file you downloaded is the one that was published, and that the app is signed by the developer and notarised by Apple. Run the commands in Terminal.
+
+**1. The checksum of the zip file**
+```
+shasum -a 256 ~/Downloads/Huginn-Muninn-1.0.0.zip
+```
+The line must begin with the SHA-256 stated in the [release notes](https://github.com/wi24rd-com/huginn-muninn/releases/latest). GitHub shows the same value next to the file under **Assets**. For 1.0.0 it is:
+```
+f599bac0d5c61ad4a9355880979d583c8bea246712327f2ca35b0c342a5bb70b
+```
+
+**2. The signature and the notarisation of the app**
+```
+codesign --verify --deep --strict --verbose=2 "/Applications/Huginn and Muninn.app"
+spctl -a -vv "/Applications/Huginn and Muninn.app"
+```
+The first must say `valid on disk` and `satisfies its Designated Requirement`. The second must say `accepted`, `source=Notarized Developer ID` and `origin=Developer ID Application: Jan Tingsvad (5DAVNFA355)`.
+
+If the checksum or the developer's name is different, do not open the app, and please report it (see [SECURITY.md](SECURITY.md)).
+
 ## Build (development)
 ```
 npm install
 npm run tauri dev
+(cd src-tauri && cargo test)  # the Rust tests
 npm run test:ui              # the UI smoke test (jsdom)
 npm run kit:tjek             # the copies in ui/assets/kit2/ match the Wi24rd UI Kit 2 package
 npm run test:signer          # the signing script tested with stubs (macOS; signs nothing)
 sh tools/signer.sh proeve    # macOS: debug build signed with your own Developer ID, no notarisation
 ```
 Requires Rust (rustup) and Node 20+.
+
+
+## Help, security and contributing
+- **Help:** [SUPPORT.md](SUPPORT.md). The project comes without support; the user guide and the issues are the places to look.
+- **Security problems** are reported privately: [SECURITY.md](SECURITY.md).
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md). How a release is made: [RELEASING.md](RELEASING.md).
 
 ## Licence
 Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party components: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
