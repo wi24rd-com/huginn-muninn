@@ -1,0 +1,47 @@
+name: Bug report
+description: Something in the app does not work as the user guide says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before you write:** never paste your Cloudflare API Token, zone IDs, account IDs or the names of your domains. Blur them in screenshots. This page is public.
+        A security problem is reported privately, not here: see the [security policy](https://github.com/wi24rd-com/huginn-muninn/security/policy).
+  - type: input
+    id: version
+    attributes:
+      label: Version of Huginn and Muninn
+      description: Shown in the footer and under About (the i at the top right).
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac
+      description: Apple menu › About This Mac.
+      placeholder: "macOS 15.1, MacBook Air M2"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: Which view were you in, what did you click, and what did the app show?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to see it again
+      placeholder: |
+        1. Open Attacks for one domain
+        2. Choose 30 days
+        3. ...
+  - type: checkboxes
+    id: clean
+    attributes:
+      label: No secrets
+      options:
+        - label: The text and pictures contain no API Token, zone ID, account ID or domain name.
+          required: true

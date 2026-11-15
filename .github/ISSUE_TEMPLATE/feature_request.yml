@@ -1,0 +1,30 @@
+name: Wish
+description: Something you would like the app to show or do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before you write:** never paste your Cloudflare API Token, zone IDs, account IDs or the names of your domains. This page is public.
+        The app only reads from Cloudflare. Wishes that need it to change something at Cloudflare are outside what it does.
+  - type: textarea
+    id: need
+    attributes:
+      label: What would you like to be able to see or do?
+      description: Describe the situation you are in, not only the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you manage today?
+  - type: input
+    id: version
+    attributes:
+      label: Version of Huginn and Muninn
+      placeholder: "1.0.0"
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "macOS 15.1"
