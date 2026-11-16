@@ -10,7 +10,7 @@ Alt, programmet gemmer, ligger i én SQLite-fil, `huginn-muninn.sqlite`, i progr
 | Windows | `%APPDATA%\com.wi24rd.huginn-muninn\` |
 | Linux | `~/.local/share/com.wi24rd.huginn-muninn/` (eller `$XDG_DATA_HOME`, hvis den er sat) |
 
-API Tokenet ligger **ikke** i filen. Det ligger i din computers nøglering (macOS Nøglering eller Windows Credential Manager) under navnet `com.wi24rd.huginn-muninn`.
+API Tokens ligger **ikke** i filen. De ligger i din computers nøglering (macOS Nøglering eller Windows Credential Manager) under navnet `com.wi24rd.huginn-muninn`, ét pr. forbindelse. Posternes navne står i [Afinstallation](90-afinstallation.md).
 
 Størrelsen står under **Indstillinger** › **Data** › **Lokal database**.
 
@@ -18,6 +18,7 @@ Størrelsen står under **Indstillinger** › **Data** › **Lokal database**.
 
 - **Hver færdig dag** pr. valgt domæne som optællinger: afviste forespørgsler fordelt på regel, land, netværk, sti, datacenter, handling og robot; trafiktal; robotter; login-tal; DMARC-tal; DNS-tal; unikke besøgende (ét tal pr. dag, ingen IP-adresser); forespørgsler pr. IP-klasse; besøg pr. land; besøg pr. kendt robot (Cloudflares kategori); de 50 mest viste sider pr. dag (stien uden forespørgselsstreng, med svarkode, visninger og besøg).
 - **Dine indstillinger**: sprog, datoformat, land, udseende, tekststørrelse, notifikationsvalg, domænevalg, login-stier, teknologi-valg.
+- **Dine forbindelser**: kontoens navn hos Cloudflare, dit eget navn, hvor mange konti API Tokenet ser, hvornår forbindelsen blev oprettet, og hvilke domæner hver forbindelse ser. Aldrig selve API Tokenet.
 - **Hvad der er meldt**: hvilke domæner der har fået en notifikation for hvilket døgn, så det samme ikke meldes to gange. Den liste rydder sig selv.
 - **Radar-tal** for dit land og verden.
 
@@ -59,10 +60,14 @@ Programmet har ingen eksportfunktion endnu. Databasen er en almindelig SQLite-fi
 
 Det, der bliver: dine indstillinger, zonelisten, domænevalget, notifikationsvalget pr. domæne, login-stierne og teknologi-valgene. Filen selv bliver også; pladsen frigives.
 
-## Glem API Tokenet
+## Glem en forbindelse
 
-**Indstillinger** › **Forbindelse** › **Glem API Token…** sletter API Tokenet fra nøgleringen og dine valg pr. domæne (domænevalg, notifikationer pr. domæne, login-stier, teknologi-valg). Historikken bliver, så du kan forbinde igen senere uden at miste den.
+Med én forbindelse: **Indstillinger** › **Forbindelse** › **Glem API Token…** sletter API Tokenet fra nøgleringen og dine valg pr. domæne (domænevalg, notifikationer pr. domæne, login-stier, teknologi-valg). Historikken bliver, så du kan forbinde igen senere uden at miste den.
+
+Med flere forbindelser: **Indstillinger** › **Forbindelser** › **Glem…** i forbindelsens række sletter kun dens API Token fra nøgleringen. Kun domæner, som ingen anden forbindelse ser, mister deres valg. De andre forbindelser henter videre, og historikken bliver. Den sidste forbindelse glemmer du med **Glem API Token…** som ovenfor.
 
 ## Nyere database
 
-Åbner du en database, der er lavet af en nyere udgave af programmet, siger programmet "Den lokale database er fra en nyere version af programmet". Opdatér programmet; filen røres ikke.
+Åbner du en database, der er lavet af en nyere udgave af programmet, siger programmet "Den lokale database er fra en nyere version af programmet (skema …)". Opdatér programmet; filen røres ikke.
+
+Udgaven med flere forbindelser opgraderer databasen første gang, den starter. Bagefter kan version 1.0.0 ikke åbne den og siger "(skema 19)". Vil du kunne gå tilbage, så tag en kopi af filen først; se [Opdatering](85-opdatering.md).

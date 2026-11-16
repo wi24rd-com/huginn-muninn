@@ -4121,7 +4121,8 @@ const DOMV = (fravalgte = [], x) => {
       const ud = [], sider = [];
       for (const h of H) {
         if (h.hash !== undefined) { location.hash = h.hash; await sov(900); }
-        if (h.aabn) { for (const s of h.aabn) { const e = document.querySelector(s); if (e) { e.click(); await sov(300); } } }
+        /* Et trin er en vælger, der klikkes, eller [vælger, tekst] til et felt (som i fotobogen). */
+        if (h.aabn) { for (const s of h.aabn) { const [q, t] = Array.isArray(s) ? s : [s, null], e = document.querySelector(q); if (e) { if (t == null) e.click(); else e.value = t; await sov(t == null ? 300 : 0); } } }
         const rod = h.rod ? document.querySelector(h.rod) : document.body;
         sider.push(mal(rod, h.navn, ud));
         if (h.luk) { const e = document.querySelector(h.luk); if (e) { e.click(); await sov(200); } }
@@ -5016,6 +5017,137 @@ const DOMV = (fravalgte = [], x) => {
   tjek('V-KONTI.1 da/en-paritet: de nye nøgler findes på begge sprog med samme pladsholdere', NYE.every(k => typeof Tda.T[k] === 'string' && typeof Ten.T[k] === 'string' && Tda.T[k] && Ten.T[k] && [...new Set(Tda.T[k].match(/\{\w+/g) || [])].sort().join() === [...new Set(Ten.T[k].match(/\{\w+/g) || [])].sort().join()), NYE.filter(k => !Tda.T[k] || !Ten.T[k]).join());
   tjek('V-KONTI.1 ental og flertal: "1 anden"/"2 andre", "1 API Token"/"2 API Tokens", "1 domæne"', Tda.fmt(Tda.T.forbFlereKonti, { navn: 'A', n: 1 }) === 'A + 1 anden' && Tda.fmt(Tda.T.forbFlereKonti, { navn: 'A', n: 2 }) === 'A + 2 andre' && Tda.fmt(Tda.T.pilleAfvist, { n: 1 }) === '1 API Token afvist' && Tda.fmt(Tda.T.pilleAfvist, { n: 2 }) === '2 API Tokens afvist' && Ten.fmt(Ten.T.pilleAfvist, { n: 2 }) === '2 API Tokens rejected' && Tda.fmt(Tda.T.domaenerSerFlere, { n: 1, m: 2 }) === '2 API Tokens ser 1 domæne i alt');
   tjek('V-KONTI.1 sikkerhedsporten: de fem kommandoer er tilladt, token_set og token_delete er væk (capabilities, build.rs, handleren)', ['forbindelser_hent', 'forbindelse_tilfoej', 'forbindelse_skift', 'forbindelse_omdoeb', 'forbindelse_glem', 'token_status'].every(c => cap.permissions.includes('allow-' + c.replace(/_/g, '-')) && fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8').includes(`"${c}"`)) && !['allow-token-set', 'allow-token-delete'].some(c => cap.permissions.includes(c)) && !/"token_(set|delete)"/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8')) && !/generate_handler!\[[^\]]*\btoken_(set|delete)\b/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'lib.rs'), 'utf8')) && !/token_(set|delete)/.test(ui('assets/ramme.js') + ui('assets/visning-indstillinger.js')));
+}
+
+// ── V-KONTI.1 FIX 1: delte domæner i Domæner (F2), ens navne (F1), samme API Token to gange (V1), fokus efter Omdøb (F3) og feltet ved kanten (V3) ──
+{
+  const $ = (s, id) => s.d.getElementById(id);
+  const aabnIndst = async s => { $(s, 'indst-knap').click(); await sov(20); };
+  const ENS = "test@wi24rd.com's Account";
+  // Jans forsøg: forbindelse 1 ser hele kontoen, forbindelse 2 er et API Token til ét af dens domæner (z2). Ejeren er 1 (D3).
+  const FS = [{ id: 1, cf_navn: 'Eksempel ApS', eget_navn: null, konti: 1, domaener: 2, afvist: false, hentet: true }, { id: 2, cf_navn: 'Kunde B', eget_navn: null, konti: 1, domaener: 1, afvist: false, hentet: true }];
+  let dom = [{ id: 'z1', navn: 'wi24rd.com', til: true, ny: false, forbindelse: 1, forbindelser: [1] }, { id: 'z2', navn: 'abe.wi24rd.com', til: false, ny: false, forbindelse: 1, forbindelser: [1, 2] }];
+  const delt = side('#overblik', B2({ forbindelser_hent: () => JSON.parse(JSON.stringify(FS)), domaener_hent: () => JSON.parse(JSON.stringify(dom)), domaener_saet: a => { dom = dom.map(d => ({ ...d, til: a.valgte.includes(d.id) })); return null; } }));
+  await sov(80);
+  delt.w.hmIndst.domaener(2); await sov(20);
+  const grp = id => delt.d.querySelector(`#domaener-grupper [data-forbindelse="${id}"]`);
+  const raekkerI = id => [...grp(id).querySelectorAll('tbody tr')].map(r => [r.querySelector('th .dom') ? r.querySelector('th .dom').textContent : r.querySelector('th')?.firstChild?.textContent, r.querySelector('.dom-hentes')?.textContent || ''].join('|'));
+  const navnI = r => r.querySelector('th').textContent;
+  tjek('V-KONTI.1 FIX 1 F2: et delt domæne står i begge grupper; noten "Hentes med «…»" kun i den, der ikke ejer det', aaben(delt.d, 'domaener') && grp(1).querySelectorAll('tbody tr').length === 2 && grp(2).querySelectorAll('tbody tr').length === 1 && !grp(1).querySelector('.dom-hentes') && grp(2).querySelector('.dom-hentes')?.textContent === 'Hentes med «Eksempel ApS»' && navnI(grp(2).querySelector('tbody tr')).startsWith('abe.wi24rd.com'), [...delt.d.querySelectorAll('#domaener-grupper tbody tr')].map(navnI).join(' | '));
+  tjek('V-KONTI.1 FIX 1 F2: noten er ikke klikbar', !grp(2).querySelector('.dom-hentes').closest('button, a') && !grp(2).querySelector('.dom-hentes').querySelector('button, a'));
+  tjek('V-KONTI.1 FIX 1 F2: "N API Tokens ser M domæner i alt" tæller hvert domæne én gang', $(delt, 'domaener-ser').textContent === '2 API Tokens ser 2 domæner i alt', $(delt, 'domaener-ser').textContent);
+  tjek('V-KONTI.1 FIX 1 F2: gruppe 2\'s Vælg alle / Ingen gælder dens ene række (Vælg alle til, Ingen fra)', !grp(2).querySelectorAll('.raekke-knapper .btn')[0].disabled && grp(2).querySelectorAll('.raekke-knapper .btn')[1].disabled);
+  const k2 = () => [1, 2].map(id => grp(id).querySelector('input[data-zone="z2"]'));
+  const kontakt = k2()[1];
+  kontakt.focus(); kontakt.checked = true; kontakt.dispatchEvent(new delt.w.Event('change', { bubbles: true }));
+  const straks = k2().map(k => k.checked).join();
+  await sov(40);
+  tjek('V-KONTI.1 FIX 1 F2: kontakten i gruppe 2 vælger domænet; begge rækker følger med straks og efter omtegningen, og fokus bliver på kontakten', straks === 'true,true' && JSON.stringify(delt.kald.filter(k => k[0] === 'domaener_saet').pop()?.[1].valgte?.sort()) === '["z1","z2"]' && k2().every(k => k.checked) && delt.d.activeElement === grp(2).querySelector('input[data-zone="z2"]'), `${straks} → ${k2().map(k => k.checked).join()} ${delt.d.activeElement?.dataset?.fokus}`);
+  grp(1).querySelector('input[data-zone="z2"]').click(); await sov(40);
+  tjek('V-KONTI.1 FIX 1 F2: fra i gruppe 1 slår det også fra i gruppe 2 (ét valg pr. domæne)', k2().every(k => !k.checked) && JSON.stringify(delt.kald.filter(k => k[0] === 'domaener_saet').pop()?.[1].valgte) === '["z1"]');
+  grp(2).querySelectorAll('.raekke-knapper .btn')[0].click(); await sov(40);
+  tjek('V-KONTI.1 FIX 1 F2: Vælg alle i gruppe 2 vælger kun de rækker, gruppen viser', JSON.stringify(delt.kald.filter(k => k[0] === 'domaener_saet').pop()?.[1].valgte?.sort()) === '["z1","z2"]');
+
+  // Tom gruppe: "står her, når zonelisten er hentet" kun før listen er hentet; bagefter "ser ingen domæner" (da og en).
+  for (const [sp, foer, efter] of [['da', 'Domænerne står her, når zonelisten er hentet.', 'Dette API Token ser ingen domæner.'], ['en', 'The domains appear here once the zone list is fetched.', 'This API Token sees no domains.']]) {
+    let hentet = false;
+    const tom = side('#overblik', B2({ forbindelser_hent: () => [FS[0], { id: 3, cf_navn: null, eget_navn: null, konti: 0, domaener: 0, afvist: false, hentet }], domaener_hent: [{ id: 'z1', navn: 'wi24rd.com', til: true, ny: false, forbindelse: 1, forbindelser: [1] }] }), sp);
+    await sov(80);
+    tom.w.hmIndst.domaener(3); await sov(20);
+    const tekst = () => tom.d.querySelector('#domaener-grupper [data-forbindelse="3"] tbody td.note')?.textContent;
+    const t1 = tekst();
+    hentet = true;
+    await tom.w.hmRamme.hentForbindelser(); await sov(10);
+    tjek(`V-KONTI.1 FIX 1 F2 (${sp}): tom gruppe før og efter den hentede zoneliste`, t1 === foer && tekst() === efter, `${t1} → ${tekst()}`);
+  }
+
+  // F1: en ny forbindelse med samme navn som en anden åbner Omdøb med noten; Domæner (mere end ét domæne) kommer bagefter. Annullér lader navnet stå.
+  {
+    let fs3 = [{ ...FS[0], cf_navn: ENS }];
+    const ny = side('#overblik', B2({ forbindelser_hent: () => JSON.parse(JSON.stringify(fs3)), domaener_hent: [], domaener_saet: null, forbindelse_tilfoej: () => { fs3 = [...fs3, { id: 3, cf_navn: ENS, eget_navn: null, konti: 1, domaener: 2, afvist: false, hentet: true }]; return 3; } }));
+    await sov(80);
+    await aabnIndst(ny);
+    $(ny, 'forb-tilfoej').click(); await sov(5);
+    $(ny, 'skift-felt').value = 'api-token-nr-3'; $(ny, 'skift-form').dispatchEvent(new ny.w.Event('submit', { cancelable: true, bubbles: true })); await sov(120);
+    tjek('V-KONTI.1 FIX 1 F1: samme viste navn efter den hentede zoneliste → Omdøb åbner for den nye med noten; Domæner venter', aaben(ny.d, 'omdoeb') && !aaben(ny.d, 'domaener') && !$(ny, 'omdoeb-ens').hidden && $(ny, 'omdoeb-ens').textContent === 'To forbindelser hedder det samme. Giv denne et navn, så du kan kende dem fra hinanden.' && $(ny, 'omdoeb-dialog').getAttribute('aria-describedby') === 'omdoeb-ens' && $(ny, 'omdoeb-felt').placeholder === ENS && ny.d.activeElement === $(ny, 'omdoeb-felt'), aabneDialoger(ny.d));
+    $(ny, 'omdoeb-nej').click(); await sov(20);
+    tjek('V-KONTI.1 FIX 1 F1: Annullér lader navnet stå, og derefter åbner Domæner ved den nye gruppe', !ny.kald.some(k => k[0] === 'forbindelse_omdoeb') && !aaben(ny.d, 'omdoeb') && aaben(ny.d, 'domaener') && ny.d.activeElement === $(ny, 'dom-gruppe-3-h'), aabneDialoger(ny.d) + ' ' + ny.d.activeElement?.id);
+    ny.w.hmIndst.lukAlle(); await sov(5);
+    ny.w.hmIndst.aabn(); await sov(10);
+    $(ny, 'forb-3-omdoeb').click(); await sov(5);
+    tjek('V-KONTI.1 FIX 1 F1: Omdøb… fra rækken har ikke noten', aaben(ny.d, 'omdoeb') && $(ny, 'omdoeb-ens').hidden && !$(ny, 'omdoeb-dialog').hasAttribute('aria-describedby'));
+  }
+
+  // V1: samme domæner som en forbindelse, der findes → fejlkoden med id; UI'et skriver navnet (da og en). Intet er tilføjet, og zones kaldes ikke.
+  for (const [sp, tekst] of [['da', 'Dette API Token ser de samme domæner som «Eksempel ApS». Det er ikke tilføjet.'], ['en', 'This API Token sees the same domains as “Eksempel ApS”. It was not added.']]) {
+    const v1 = side('#overblik', B2({ forbindelser_hent: () => JSON.parse(JSON.stringify(FS)), domaener_hent: [], forbindelse_tilfoej: () => { throw { kode: 'allerede_forbundet', detalje: '1' }; } }), sp);
+    await sov(80);
+    await aabnIndst(v1);
+    $(v1, 'forb-tilfoej').click(); await sov(5);
+    const zonesFoer = v1.kald.filter(k => k[0] === 'zones').length;
+    $(v1, 'skift-felt').value = 'samme-api-token'; $(v1, 'skift-form').dispatchEvent(new v1.w.Event('submit', { cancelable: true, bubbles: true })); await sov(60);
+    tjek(`V-KONTI.1 FIX 1 V1 (${sp}): allerede_forbundet viser forbindelsens navn; formularen står, og zonelisten hentes ikke`, $(v1, 'skift-status').textContent === tekst && $(v1, 'skift-status').classList.contains('fejl') && !$(v1, 'skift-form').hidden && v1.kald.filter(k => k[0] === 'zones').length === zonesFoer && v1.d.querySelectorAll('#forb-liste .forb-raekke').length === 2, $(v1, 'skift-status').textContent);
+  }
+
+  // F3: efter Omdøb (Gem, Annullér, Esc) har "Omdøb…" på rækken fokus, og "Navnet er gemt." står i rækken (role="status"), ikke øverst.
+  {
+    let fs4 = JSON.parse(JSON.stringify(FS));
+    const f3 = side('#overblik', B2({ forbindelser_hent: () => JSON.parse(JSON.stringify(fs4)), domaener_hent: [], forbindelse_omdoeb: a => { fs4.find(f => f.id === a.id).eget_navn = a.navn; return null; } }));
+    await sov(80);
+    await aabnIndst(f3);
+    $(f3, 'forb-2-omdoeb').focus(); $(f3, 'forb-2-omdoeb').click(); await sov(5);
+    $(f3, 'omdoeb-felt').value = 'Kunden'; $(f3, 'omdoeb-gem').click(); await sov(40);
+    const st = $(f3, 'forb-status');
+    tjek('V-KONTI.1 FIX 1 F3: Gem → fokus på "Omdøb…" i den omdøbte (omtegnede) række, og beskeden står i rækken', !aaben(f3.d, 'omdoeb') && aaben(f3.d, 'indst') && f3.d.activeElement === $(f3, 'forb-2-omdoeb') && st.closest('[data-forbindelse="2"]') && st.textContent === 'Navnet er gemt.' && st.getAttribute('role') === 'status' && $(f3, 'indst-status').textContent === '' && f3.d.querySelector('[data-forbindelse="2"] .forb-navn').textContent === 'Kunden', `${f3.d.activeElement?.id} ${st.parentElement?.closest('[data-forbindelse]')?.dataset.forbindelse} "${st.textContent}"`);
+    $(f3, 'forb-1-omdoeb').focus(); $(f3, 'forb-1-omdoeb').click(); await sov(5);
+    const tomNu = st.textContent;
+    $(f3, 'omdoeb-nej').click(); await sov(10);
+    tjek('V-KONTI.1 FIX 1 F3: Annullér → fokus tilbage på "Omdøb…" på rækken; den gamle besked er væk', f3.d.activeElement === $(f3, 'forb-1-omdoeb') && tomNu === '' && !f3.kald.some(k => k[0] === 'forbindelse_omdoeb' && k[1].id === 1), f3.d.activeElement?.id);
+    $(f3, 'forb-1-omdoeb').click(); await sov(5);
+    $(f3, 'indst-h').focus();
+    $(f3, 'omdoeb-dialog').dispatchEvent(new f3.w.Event('cancel')); $(f3, 'omdoeb-dialog').close(); await sov(10);
+    tjek('V-KONTI.1 FIX 1 F3: Esc → fokus på "Omdøb…" på rækken (også når noget andet havde fokus før)', f3.d.activeElement === $(f3, 'forb-1-omdoeb'), f3.d.activeElement?.id);
+    // Med én forbindelse: knappen i kassen og beskeden i rækken med API Tokenet.
+    const en = side('#overblik', B2({ forbindelser_hent: () => [FS[0]], domaener_hent: [], forbindelse_omdoeb: null }));
+    await sov(80);
+    await aabnIndst(en);
+    $(en, 'forb-omdoeb').click(); await sov(5);
+    $(en, 'omdoeb-gem').click(); await sov(40);
+    tjek('V-KONTI.1 FIX 1 F3: med én forbindelse får "Omdøb…" fokus, og beskeden står i rækken med API Tokenet', en.d.activeElement === $(en, 'forb-omdoeb') && $(en, 'forb-status').closest('#forb-noegle-raekke') && $(en, 'forb-status').textContent === 'Navnet er gemt.', en.d.activeElement?.id);
+    en.w.hmIndst.lukAlle(); await sov(5);
+    tjek('V-KONTI.1 FIX 1 F3: når popuppen lukkes, ryddes beskeden', $(en, 'forb-status').textContent === '' && $(en, 'forb-status').closest('#forb-hjem'));
+  }
+
+  // V3: "Skift API Token…" fra banneret: feltet har fokus (rul og kant prøves i fotobogen, konti-afvist-skift med fokus).
+  {
+    const KOE = { zone: null, navn: null, zoner_i_alt: 3, zoner_faerdige: 3, doegn_i_alt: 93, doegn_faerdige: 93, zoner_fejl: 0, tilstand: 'faerdig', afviste: [2] };
+    const v3 = side('#overblik', B2({ forbindelser_hent: () => FS.map(f => ({ ...f, afvist: f.id === 2 })), domaener_hent: [], koe_status: KOE }));
+    await sov(120);
+    v3.d.querySelector('#afvist-linjer .ban button')?.click(); await sov(20);
+    tjek('V-KONTI.1 FIX 1 V3: Skift fra banneret: formularen står under rækken, og feltet har fokus', aaben(v3.d, 'indst') && v3.d.querySelector('#forb-liste [data-forbindelse="2"]')?.nextElementSibling === $(v3, 'skift-form') && v3.d.activeElement === $(v3, 'skift-felt'), v3.d.activeElement?.id);
+    const fotoSide = SIDER.find(x => x.id === 'konti-afvist-skift');
+    tjek('V-KONTI.1 FIX 1 V3: fotobogen ruller ikke selv på siden og kræver fokus i feltet inden for kanten', fotoSide && !fotoSide.rul && fotoSide.fokus === '#skift-felt');
+  }
+
+  // Formularen overlever en omtegning af listen, mens den står åben (den hentes ikke med id efter omtegningen).
+  {
+    let navn1 = null;
+    const om = side('#overblik', B2({ forbindelser_hent: () => FS.map(f => ({ ...f, eget_navn: f.id === 1 ? navn1 : null })), domaener_hent: [] }));
+    await sov(80);
+    await aabnIndst(om);
+    $(om, 'forb-2-skift').click(); await sov(5);
+    const foerRaekke = om.d.querySelector('#forb-liste [data-forbindelse="2"]');
+    navn1 = 'Kunden';
+    await om.w.hmRamme.hentForbindelser(); await sov(10);
+    const r2 = om.d.querySelector('#forb-liste [data-forbindelse="2"]');
+    tjek('V-KONTI.1 FIX 1: en omtegning af listen med formularen åben lægger den samme formular under rækken igen', r2 !== foerRaekke && om.d.getElementById('skift-form') && r2.nextElementSibling === om.d.getElementById('skift-form') && !om.d.getElementById('skift-form').hidden && ![...om.d.getElementById('forb-liste').childNodes].some(n => n.nodeType === 3), `${r2 !== foerRaekke} ${Boolean(om.d.getElementById('skift-form'))} ${r2?.nextElementSibling?.id} ${om.d.getElementById('skift-form').hidden}`);
+  }
+
+  // da/en-paritet for de nye nøgler, og fejlkoden findes i Rust og på begge sprog.
+  const Tda = side('', B2(), 'da').w.hmSprog, Ten = side('', B2(), 'en').w.hmSprog;
+  const NYE = ['domHentesMed', 'domIngenSer', 'forbNavnEns'];
+  tjek('V-KONTI.1 FIX 1 da/en-paritet: de nye nøgler og fejlteksten findes på begge sprog med samme pladsholdere', [...NYE.map(k => [Tda.T[k], Ten.T[k]]), [Tda.T.fejl.allerede_forbundet, Ten.T.fejl.allerede_forbundet]].every(([a, b]) => typeof a === 'string' && typeof b === 'string' && a && b && a !== b && [...new Set(a.match(/\{\w+/g) || [])].sort().join() === [...new Set(b.match(/\{\w+/g) || [])].sort().join()) && /"allerede_forbundet"/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'cf.rs'), 'utf8')));
+  tjek('V-KONTI.1 FIX 1 sikkerhedsporten: ingen nye kommandoer eller tilladelser (de fem fra B1, token_status og aabn_api_token)', JSON.stringify(cap.permissions.filter(p => /forbindels|token/.test(p)).sort()) === JSON.stringify(['allow-aabn-api-token', 'allow-forbindelse-glem', 'allow-forbindelse-omdoeb', 'allow-forbindelse-skift', 'allow-forbindelse-tilfoej', 'allow-forbindelser-hent', 'allow-token-status']), JSON.stringify(cap.permissions.filter(p => /forbindels|token/.test(p))));
 }
 
 console.log(`\n${ok} bestået, ${fejl} fejlet`);

@@ -739,7 +739,9 @@
       await vis();
       return ny == null ? true : ny;
     } catch (e) {
-      status(st, S.fejl(e), 'fejl');
+      /* V1: samme domæner som en forbindelse, der findes. Rust giver kun dens id (detalje); navnet slås op her. */
+      const navn = e && e.kode === 'allerede_forbundet' ? vistNavn(tilstand.forbindelser.find(f => String(f.id) === String(e.detalje)) || { id: Number(e.detalje) }) : null;
+      status(st, S.fejl(navn == null ? e : { ...e, navn }), 'fejl');
       /* En manglende rettighed: fejlen siger hvilken, og trinene står lige ved siden af. */
       if (e && /^mangler_/.test(e.kode)) { const trin = felt.closest('section').querySelector('.token-trin'); if (trin) st.append(' ', visTrin(trin)); }
       return false;

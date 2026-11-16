@@ -11,11 +11,18 @@ Posterne står efter dato, nyeste først.
 - **Domæner** viser med flere forbindelser én liste pr. forbindelse, hver med sit eget Vælg alle / Ingen.
 - **Et afvist API Token** stopper kun sin egen forbindelse. Overblik viser et banner med forbindelsens navn og **Skift API Token…**, og fodlinjen og menulinjen nævner det. Er alle afvist, stopper hentningen som før.
 - Guiden siger i trinnet Dit API Token, at flere konti tilføjes bagefter under Indstillinger.
+- **Et domæne, flere forbindelser ser,** står i Domæner under hver af dem, med "Hentes med «navn»" under dem, der ikke henter det. Det er ét valg: kontakten følger med alle steder. Overblik og de andre visninger viser det stadig én gang.
+- **To forbindelser med samme navn:** hedder en ny forbindelse det samme som en anden, åbner Omdøb med en note, så du kan give den et navn.
+- **Samme API Token to gange** tilføjes ikke. Ser et nyt API Token præcis de samme domæner som en forbindelse, du har, siger formularen det med forbindelsens navn. Et API Token til færre domæner på samme konto kan godt tilføjes.
 #### Ændret
 - **Den lokale database opgraderes** ved første start. Intet går tabt: et gemt API Token bliver den første forbindelse med alle sine valg. Version 1.0.0 kan ikke åbne databasen bagefter; tag en kopi af den først, hvis du vil kunne gå tilbage.
 - Hver forbindelse har sin egen post i nøgleringen. Den første bruger samme post som 1.0.0.
+- Efter **Omdøb** står "Navnet er gemt." i forbindelsens række, og fokus går tilbage til **Omdøb…**.
+- Vejledningens kapitel om data beskriver nu flere forbindelser: Glem en forbindelse, nøgleringen og databasen efter opgraderingen.
 #### Rettet
 - Et nyt API Token fra en anden Cloudflare-konto fjernede de første domæner, deres valg og teknologisvar. Nu tilføjes det som en ny forbindelse, og **Skift API Token…** siger i formularen, at en konto mere skal tilføjes.
+- En forbindelse, hvis domæner alle også ses af en ældre forbindelse, havde en tom liste i Domæner med teksten "Domænerne står her, når zonelisten er hentet." Den tekst står nu kun, før listen er hentet; ser API Tokenet ingen domæner, står der det.
+- **Skift API Token…** fra banneret i Overblik viser feltet med fokus, også i et lavt vindue.
 
 ### 2026-11-15 23:30 — Repoet på GitHub: CI, sikkerhedspolitik og skabeloner
 #### Tilføjet

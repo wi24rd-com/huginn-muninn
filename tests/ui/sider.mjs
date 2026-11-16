@@ -195,5 +195,22 @@ SIDER.push(
   { id: 'konti-glem', navn: 'Glem en forbindelse (navnet i overskriften)', hash: 'overblik', aabn: ['#indst-knap', '#forb-2-glem'], rod: '#glem-dialog', luk: '#glem-nej', ekstra: KONTI },
   { id: 'konti-domaener', navn: 'Domæner i to grupper', hash: 'overblik', aabn: ['#vaelg-dom'], rod: '#domaener-grupper', luk: '#domaener-luk', ekstra: KONTI },
   { id: 'konti-afvist', navn: 'Overblik med banneret om et afvist API Token', hash: 'overblik', rod: '#afvist-linjer .ban', ekstra: KONTI_AFVIST },
-  { id: 'konti-afvist-skift', navn: 'Skift API Token… fra banneret (rækken med den røde chip)', hash: 'overblik', aabn: ['#afvist-linjer .ban button'], rul: indstForb, rod: '#skift-form', luk: '#indst-luk', ekstra: KONTI_AFVIST },
+  /* FIX 1 (V3): ingen rul her; billedet viser, hvor programmet selv lægger formularen, og feltet skal have fokus og stå inden for kanten. */
+  { id: 'konti-afvist-skift', navn: 'Skift API Token… fra banneret (rækken med den røde chip)', hash: 'overblik', aabn: ['#afvist-linjer .ban button'], rod: '#skift-form', fokus: '#skift-felt', luk: '#indst-luk', ekstra: KONTI_AFVIST },
+);
+
+/* V-KONTI.1 FIX 1: Jans forsøg. Forbindelse 1 ser hele kontoen (tre domæner), forbindelse 2 er et API Token til ét af dem på samme konto. Begge hedder
+   kontoens navn hos Cloudflare (D5). Det delte domæne står i begge grupper, med noten i forbindelse 2's (F2). Tilføj af en tredje med samme navn åbner
+   Omdøb med noten (F1). Omdøb og Gem: beskeden står i rækken, og "Omdøb…" har fokus (F3). */
+const ENS = "test@wi24rd.com's Account";
+export const KONTI_DELT = [{ id: 1, cf_navn: ENS, eget_navn: null, konti: 1, domaener: 3, afvist: false, hentet: true }, { id: 2, cf_navn: ENS, eget_navn: null, konti: 1, domaener: 1, afvist: false, hentet: true }];
+const deltDomaener = zoner.map((z, i) => ({ ...z, til: i !== 2, ny: false, forbindelse: 1, forbindelser: i === 1 ? [1, 2] : [1] }));
+/* siden_sidst.vis er falsk som i fotobogens stub: kontrasttesten (K7) bruger svar uden det, og så springer rammen til Siden sidst efter Tilføj. */
+const DELT = { forbindelser_hent: KONTI_DELT, domaener_hent: deltDomaener, siden_sidst: { vis: false, nye: [], raekker: [] } };
+const DELT_TILFOEJ = { ...DELT, forbindelser_hent: [...KONTI_DELT, { id: 3, cf_navn: ENS, eget_navn: null, konti: 1, domaener: 1, afvist: false, hentet: true }], forbindelse_tilfoej: 3 };
+SIDER.push(
+  { id: 'konti-delt-forbindelser', navn: 'Indstillinger: to forbindelser med samme navn (samme konto)', hash: 'overblik', aabn: ['#indst-knap'], rul: indstForb, rod: '#forb-liste', luk: '#indst-luk', ekstra: DELT },
+  { id: 'konti-delt-domaener', navn: 'Domæner: et delt domæne i begge grupper med noten', hash: 'overblik', aabn: ['#vaelg-dom'], rod: '#domaener-grupper [data-forbindelse="2"]', luk: '#domaener-luk', ekstra: DELT },
+  { id: 'konti-ens-omdoeb', navn: 'Tilføj API Token… med samme navn: Omdøb med noten', hash: 'overblik', aabn: ['#indst-knap', '#forb-tilfoej', ['#skift-felt', 'x'.repeat(40)], '#skift-gem'], rod: '#omdoeb-dialog', fokus: '#omdoeb-felt', luk: '#omdoeb-nej', ekstra: DELT_TILFOEJ },
+  { id: 'konti-omdoeb-gemt', navn: 'Omdøb og Gem: beskeden i rækken og fokus på Omdøb…', hash: 'overblik', aabn: ['#indst-knap', '#forb-2-omdoeb', '#omdoeb-gem'], rod: '#forb-liste [data-forbindelse="2"]', fokus: '#forb-2-omdoeb', luk: '#indst-luk', ekstra: DELT },
 );

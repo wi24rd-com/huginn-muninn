@@ -1421,6 +1421,23 @@ impl Store {
         rk.collect::<Result<_, _>>().map_err(lagerfejl)
     }
 
+    /// Zone → alle de forbindelser, der ser den, laveste id først (som `forbindelser_for`, men for alle zoner i ét kald). Afviste er med (V-KONTI.1 FIX 1).
+    pub fn seere(&self) -> Result<HashMap<String, Vec<i64>>, Fejl> {
+        let mut st = self
+            .db
+            .prepare("SELECT zone, forbindelse FROM zone_forbindelse ORDER BY zone, forbindelse")
+            .map_err(lagerfejl)?;
+        let rk = st
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+            .map_err(lagerfejl)?;
+        let mut ud: HashMap<String, Vec<i64>> = HashMap::new();
+        for par in rk {
+            let (zone, f) = par.map_err(lagerfejl)?;
+            ud.entry(zone).or_default().push(f);
+        }
+        Ok(ud)
+    }
+
     /// Zone → den forbindelse, den hører til (D3): lavest id blandt dem, der ser den, og hvis token ikke er afvist. En zone, kun afviste ser, er ikke med.
     pub fn ejere(&self, afviste: &HashSet<i64>) -> Result<HashMap<String, i64>, Fejl> {
         let mut st = self

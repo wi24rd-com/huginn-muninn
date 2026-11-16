@@ -71,7 +71,7 @@ Each connection has its own row. Below the rows is **Add API Token…**.
 
 If you forget the last connection, it is exactly as with one connection: the program asks **Forget the API Token?**, setup and the guide are shown again, and the history stays.
 
-If two connections see the same domain, it is shown once and belongs to the oldest connection. If that one is forgotten or rejected, the other takes over.
+If two connections see the same domain (for example an API Token for the whole account and one for one of its domains), it is shown once in the Overview and the other views. It is fetched only with the oldest connection's API Token. If that one is forgotten or rejected, the next one takes over. In the dialog [Domains](#domains), the domain stands under each connection that sees it.
 
 ### Change and add
 
@@ -79,11 +79,15 @@ If two connections see the same domain, it is shown once and belongs to the olde
 
 The new connection's domains are not chosen by themselves. If it sees exactly one domain the program did not know, that one is chosen for you. If it sees more, the dialog **Domains** opens at the connection's group so you can choose.
 
+If the new connection has the same name as another (two API Tokens for the same account both have the account's name), **Rename the connection** opens with the note "Two connections have the same name. Give this one a name, so you can tell them apart." **Cancel** leaves the name as it is. If the dialog **Domains** is to open too, it comes afterwards.
+
+If the API Token sees exactly the same domains as a connection you already have, it is not added. The form says "This API Token sees the same domains as “name”. It was not added." An API Token that sees fewer domains on the same account (for example one API Token per customer) can be added.
+
 **Change API Token…** only replaces the API Token on its own connection. The form says: "Do you have another account? Use Add API Token… instead. Change replaces the API Token on this connection." If the new API Token belongs to a different Cloudflare account, the old account's domains disappear from the list, and the choices for the connection start over. The figures already fetched and the history stay.
 
 ### The name
 
-**Rename…** opens the dialog **Rename the connection** with one field, **Name**, and the note "Empty: the name from Cloudflare." Save with **Save**. If you empty the field, the name from Cloudflare is shown again.
+**Rename…** opens the dialog **Rename the connection** with one field, **Name**, and the note "Empty: the name from Cloudflare." Save with **Save**. If you empty the field, the name from Cloudflare is shown again. Afterwards "The name is saved." stands in the connection's row, and **Rename…** has the focus again.
 
 The program shows:
 
@@ -124,7 +128,9 @@ Open the dialog with **Choose domains** in the band on **Overview**.
 | **Show in Huginn** – one switch per domain | Choose the domains Huginn should fetch and show. A domain you clear is no longer fetched, is not shown anywhere and gives no notifications; its figures stay, and if you choose it again, what is missing is fetched, at most the last 30 days. A domain that is new on the account is marked **NEW**. |
 | **Choose all** / **Clear all** | All switches at once. |
 | The line "The API Token sees N domains" | How many domains the API Token can see. If it sees exactly one, it is chosen for you. |
-| With more than one connection: one heading and one list per connection | The heading is the connection's name. Each list has its own **Select all** and **None**; the shared **Choose all** and **Clear all** buttons are then not shown. |
+| With more than one connection: one heading and one list per connection | The heading is the connection's name. Each list has its own **Select all** and **None**, which apply to the domains the list shows; the shared **Choose all** and **Clear all** buttons are then not shown. |
+| A domain under two connections, with "Fetched with “name”" | If more than one connection sees the domain, it stands under each of them. Under the connections that do not fetch it, "Fetched with “name”" names the connection that does. It is the same choice everywhere: if you switch it on or off under one, the other follows. |
+| "This API Token sees no domains." | The connection's zone list is fetched, but the API Token sees no domains. Before the list is fetched, it says "The domains appear here once the zone list is fetched." |
 | The line "M API Tokens can see N domains in total" | Shown with more than one connection instead of the line above. |
 
 What technology your site uses, you say in [Technology by domain](40-visninger/teknologi.md), which you open with **Edit technologies** in the band on **Attacks**.

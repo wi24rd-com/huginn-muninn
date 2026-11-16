@@ -85,6 +85,9 @@ pub enum Fejl {
     NyereDatabase(i64),
     /// Start ved login kunne ikke læses eller ændres (LaunchAgent / Run-nøglen).
     Autostart,
+    /// `forbindelse_tilfoej`: det nye token ser præcis de samme domæner som forbindelsen med dette id (V-KONTI.1 FIX 1, V1). Detaljen er kun id'et;
+    /// navnet slås op i UI'et.
+    AlleredeForbundet(i64),
     Intern,
 }
 
@@ -115,6 +118,7 @@ impl Fejl {
             Fejl::Lager => "lager",
             Fejl::NyereDatabase(_) => "nyere_database",
             Fejl::Autostart => "autostart",
+            Fejl::AlleredeForbundet(_) => "allerede_forbundet",
             Fejl::Intern => "intern",
         }
     }
@@ -130,7 +134,7 @@ impl Fejl {
     fn detalje(&self) -> Option<String> {
         match self {
             Fejl::Api(d) | Fejl::GraphQl { detalje: d, .. } | Fejl::TokenInaktiv(d) => Some(rens_fejl(d)),
-            Fejl::NyereDatabase(v) => Some(v.to_string()),
+            Fejl::NyereDatabase(v) | Fejl::AlleredeForbundet(v) => Some(v.to_string()),
             _ => None,
         }
     }

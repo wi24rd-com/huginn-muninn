@@ -24,6 +24,7 @@ Programmet viser kun sine egne fejltekster i klart sprog, aldrig rå tekniske fe
 | **Det indsatte ligner ikke et API Token fra Cloudflare (kun bogstaver, tal og tegn uden mellemrum).** | Der kom noget andet med, fx et mellemrum eller et linjeskift. | Kopiér API Tokenet igen fra Cloudflare, uden andet omkring. |
 | **Cloudflare afviste API Tokenet. Det kan være udløbet eller mangle rettigheder.** | Cloudflare kender ikke tokenet, eller det er udløbet. Afviser Cloudflare alle dine forbindelser, er det som med én: hentningen stopper, og status er rød. | Opret et nyt API Token efter [Opsætning](30-opsaetning.md), og indsæt det under **Indstillinger** (tandhjulet) › **Forbindelse** › **Skift API Token…**. |
 | **Cloudflare afviste API Tokenet «navn». Dens domæner hentes ikke.** (rød linje på Overblik med knappen **Skift API Token…**; i fodlinjen: **1 API Token afvist**) | Du har flere forbindelser, og Cloudflare afviser API Tokenet på den forbindelse, der står i teksten. Det er slettet, udløbet, eller rettighederne er skåret ned. De andre forbindelser henter videre. Menuen ved ravne-ikonet nævner det også. | Opret et nyt API Token hos Cloudflare efter [Opsætning](30-opsaetning.md). Klik **Skift API Token…** i den røde linje; det åbner **Indstillinger** ved forbindelsens række. Indsæt det nye API Token, og klik **Gem og forbind**. |
+| **Dette API Token ser de samme domæner som «navn». Det er ikke tilføjet.** | Du brugte **Tilføj API Token…** (eller guiden) med et API Token, der ser præcis de samme domæner som forbindelsen «navn», typisk det samme API Token en gang til. | Intet. Forbindelsen findes allerede. Skal API Tokenet erstatte det gamle, så brug **Skift API Token…** i forbindelsens række. |
 | **API Tokenet er ikke aktivt (status: …). Opret et nyt API Token, der kun kan læse.** | Tokenet er deaktiveret eller udløbet hos Cloudflare. | Opret et nyt. |
 | **API Tokenet kan ikke se nogen domæner: det mangler rettigheden Zone › Read, eller domænet står ikke under Include · All zones eller Specific zone.** | Tokenet må ikke se zonelisten, eller ingen zoner er inkluderet. | Ret tokenet hos Cloudflare: under **Policies** skal **DNS & Zones** have **Zone › Read**, og **Include** skal dække domænet (**All zones** eller **Specific zone**). |
 | **API Tokenet mangler rettigheden Analytics › Read, så programmet kan ikke læse tallene.** | Tokenet må se zoner, men ikke tal. | Tilføj **Analytics › Read** under **Analytics & Logs** hos Cloudflare. |
@@ -56,6 +57,12 @@ I version 1.0.0 kunne programmet kun have ét API Token. Brugte du **Skift API T
 Nu får hver konto sin egen forbindelse. Til en konto mere bruger du **Tilføj API Token…** under **Indstillinger** › **Forbindelse**. **Skift API Token…** erstatter stadig API Tokenet på én forbindelse, og formularen siger det: "Har du en konto mere? Brug Tilføj API Token… i stedet."
 
 Har du allerede skiftet, tilføjer du den første konto igen med **Tilføj API Token…**. Har du ikke API Tokenet længere, opretter du et nyt hos Cloudflare. Vælg derefter domænerne i dialogen **Domæner**. Deres tal er der stadig.
+
+## Et domæne står under to forbindelser i Domæner
+
+Har du et API Token til hele kontoen og et til ét af dens domæner, ser begge forbindelser det domæne. I dialogen **Domæner** står det under begge, og under den nyeste står "Hentes med «navn»": det hentes kun med den ældste forbindelses API Token. Det er ét valg; slår du det fra under den ene, er det fra under begge.
+
+Hedder de to forbindelser det samme (begge har kontoens navn hos Cloudflare), åbner programmet **Omdøb forbindelsen**, når den nye er tilføjet. Giv den et navn, du kan kende den på, fx kundens.
 
 ## Det er ikke en fejl
 

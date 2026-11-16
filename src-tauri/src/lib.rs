@@ -63,6 +63,8 @@ struct Tilstand {
     laek_uden_filter: AtomicBool,
     /// Startet af den daglige start og lukker selv, når køen er færdig. Et vindue slår det fra (`aabn_vindue`): så bliver programmet.
     dagligt: AtomicBool,
+    /// Forbindelser, hvis zoneliste er hentet, mens programmet kører (`zones`), også når den var tom (V-KONTI.1 FIX 1, F2). Se `ForbindelseUd::hentet`.
+    zoner_hentet: Mutex<HashSet<i64>>,
 }
 
 /// Fejl til webvisningen er en fejlkode (`{kode, status?, dag?, detalje?}`, se `cf::Fejl`); teksten vælges i UI'et.
@@ -236,37 +238,74 @@ async fn glem_en(tilstand: &Tilstand, id: i64) -> Result<(), Fejl> {
     blokerende(move || token::slet(id)).await?;
     tilstand.token.glem(id);
     tilstand.koe.ryd_afvist(id);
+    if let Ok(mut h) = tilstand.zoner_hentet.lock() {
+        h.remove(&id);
+    }
     laas(tilstand)?.slet_zoner(id)
 }
 
-/// En forbindelse til webvisningen: id, Cloudflares navn, brugerens navn, antal konti og domæner, og om tokenet er afvist. Aldrig et token, et konto-id
-/// eller et token-id. Det viste navn dannes i UI'et (D5).
+/// En forbindelse til webvisningen: id, Cloudflares navn, brugerens navn, antal konti og domæner, om tokenet er afvist, og om zonelisten er hentet. Aldrig
+/// et token, et konto-id eller et token-id. Det viste navn dannes i UI'et (D5).
 #[derive(Serialize)]
 struct ForbindelseUd {
     #[serde(flatten)]
     f: store::Forbindelse,
     afvist: bool,
+    /// Zonelisten er hentet: forbindelsen ser domæner (gemt), eller `zones` har hentet dens liste, mens programmet kører, også en tom (F2). `false`: en ny
+    /// forbindelse, hvis liste ikke er hentet endnu (UI'et skriver "Domænerne står her, når zonelisten er hentet.").
+    hentet: bool,
+}
+
+/// Se `ForbindelseUd`. Ren funktion.
+fn forbindelser_ud(fs: Vec<store::Forbindelse>, afviste: &HashSet<i64>, hentede: &HashSet<i64>) -> Vec<ForbindelseUd> {
+    fs.into_iter()
+        .map(|f| ForbindelseUd {
+            afvist: afviste.contains(&f.id),
+            hentet: f.domaener > 0 || hentede.contains(&f.id),
+            f,
+        })
+        .collect()
 }
 
 #[tauri::command]
 async fn forbindelser_hent(tilstand: State<'_, Tilstand>) -> Svar<Vec<ForbindelseUd>> {
     let afviste = tilstand.koe.afviste();
-    Ok(laas(&tilstand)?
-        .forbindelser()?
-        .into_iter()
-        .map(|f| ForbindelseUd {
-            afvist: afviste.contains(&f.id),
-            f,
-        })
-        .collect())
+    let hentede = tilstand.zoner_hentet.lock().map(|h| h.clone()).unwrap_or_default();
+    Ok(forbindelser_ud(laas(&tilstand)?.forbindelser()?, &afviste, &hentede))
+}
+
+/// V1 (V-KONTI.1 FIX 1): den forbindelse, der ser præcis de samme domæner som `nye` (samme, ikke-tomme mængde zone-id'er); laveste id først. En tom liste
+/// og en del- eller overmængde er ikke den samme (IT-firmaet: ét API Token pr. kunde på samme konto).
+fn samme_domaener(lager: &Store, nye: &[Zone]) -> Result<Option<i64>, Fejl> {
+    if nye.is_empty() {
+        return Ok(None);
+    }
+    let nye: HashSet<&str> = nye.iter().map(|z| z.id.as_str()).collect();
+    for id in lager.forbindelse_ider()? {
+        let egne = lager.zoner_for(id)?;
+        if egne.len() == nye.len() && egne.iter().all(|z| nye.contains(z.as_str())) {
+            return Ok(Some(id));
+        }
+    }
+    Ok(None)
 }
 
 /// En ny forbindelse med et godkendt token; dens id. Verificerer tokenet hos Cloudflare og gemmer det kun, hvis det er gyldigt (`Klient::godkend`).
 /// Returnerer aldrig tokenet. Den første forbindelse er id 1 (nøgleringens oprindelige post). Zonelisten hentes af `zones` bagefter.
+/// Findes der forbindelser, hentes det nye tokens zoneliste først: ser det præcis de samme domæner som en af dem, oprettes intet, og intet gemmes i
+/// nøgleringen (`Fejl::AlleredeForbundet` med den forbindelses id, V1). En fejl i den hentning stopper også tilføjelsen.
 #[tauri::command]
 async fn forbindelse_tilfoej(token: Hemmelig, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<i64> {
     token::tjek_form(&token)?;
     tilstand.klient.godkend(&token, nu_ms()).await?;
+    let findes = !laas(&tilstand)?.forbindelse_ider()?.is_empty();
+    if findes {
+        let l = tilstand.klient.zoner(&token).await?;
+        let samme = samme_domaener(&*laas(&tilstand)?, &l.zoner)?;
+        if let Some(id) = samme {
+            return Err(Fejl::AlleredeForbundet(id));
+        }
+    }
     let id = laas(&tilstand)?.ny_forbindelse(&vaern::iso(nu_ms()))?;
     gem_token(&tilstand, &app, id, true, token).await?;
     Ok(id)
@@ -331,6 +370,9 @@ async fn zones(tilstand: State<'_, Tilstand>) -> Svar<Vec<Zone>> {
                         let mut lager = laas(&tilstand)?;
                         lager.gem_zoner(id, &l.zoner, &vaern::iso(nu_ms()))?;
                         lager.gem_cf_navn(id, l.konto_navn.as_deref(), l.konti)?;
+                        if let Ok(mut h) = tilstand.zoner_hentet.lock() {
+                            h.insert(id);
+                        }
                         nogen = true;
                     }
                     Err(e) => {
@@ -792,16 +834,25 @@ struct DomaeneValg {
     ny: bool,
     /// Den forbindelse, domænet hører til (D3; V-KONTI.1). `null`, hvis kun afviste forbindelser ser det.
     forbindelse: Option<i64>,
+    /// Alle de forbindelser, der ser domænet, laveste id først, også afviste (V-KONTI.1 FIX 1, F2): Domæner viser det i hver af deres grupper. Kun id'er.
+    forbindelser: Vec<i64>,
 }
 
-/// Hele zonelisten med kontakten pr. domæne og forbindelsen (Indstillinger → Domæner). Ren funktion.
-fn domaener_ud(zoner: Vec<Zone>, valgte: &HashSet<String>, nye: &HashSet<String>, ejere: &HashMap<String, i64>) -> Vec<DomaeneValg> {
+/// Hele zonelisten med kontakten pr. domæne, ejeren og alle, der ser det (Indstillinger → Domæner). Ren funktion.
+fn domaener_ud(
+    zoner: Vec<Zone>,
+    valgte: &HashSet<String>,
+    nye: &HashSet<String>,
+    ejere: &HashMap<String, i64>,
+    seere: &HashMap<String, Vec<i64>>,
+) -> Vec<DomaeneValg> {
     zoner
         .into_iter()
         .map(|z| DomaeneValg {
             til: valgte.contains(&z.id),
             ny: nye.contains(&z.id),
             forbindelse: ejere.get(&z.id).copied(),
+            forbindelser: seere.get(&z.id).cloned().unwrap_or_default(),
             id: z.id,
             navn: z.navn,
         })
@@ -817,6 +868,7 @@ async fn domaener_hent(tilstand: State<'_, Tilstand>) -> Svar<Vec<DomaeneValg>> 
         &lager.valgte()?,
         &lager.nye()?,
         &lager.ejere(&afviste)?,
+        &lager.seere()?,
     ))
 }
 
@@ -2066,6 +2118,7 @@ pub fn run() {
                 uden_asn: Mutex::default(),
                 laek_uden_filter: AtomicBool::new(false),
                 dagligt: AtomicBool::new(dagligt::startet_dagligt(setup_args.iter().cloned())),
+                zoner_hentet: Mutex::default(),
             });
             app.manage(agent::Agent::byg(app.handle(), sprog, paa_menu)?);
             #[cfg(target_os = "macos")]
@@ -2294,6 +2347,7 @@ mod tests {
             &s.valgte().unwrap(),
             &s.nye().unwrap(),
             &s.ejere(&HashSet::new()).unwrap(),
+            &s.seere().unwrap(),
         );
         assert_eq!(
             ud.iter().map(|d| (d.til, d.ny, d.forbindelse)).collect::<Vec<_>>(),
@@ -2345,6 +2399,94 @@ mod tests {
         s.slet_zoner(1).unwrap();
         assert_eq!(s.forbindelse_ider().unwrap(), [to]);
         assert_eq!(s.valg().unwrap(), ["z2"]);
+    }
+
+    /// V1 (V-KONTI.1 FIX 1): `forbindelse_tilfoej` afviser et API Token, der ser præcis de samme domæner som en forbindelse, der findes (samme, ikke-tomme
+    /// mængde), med den forbindelses id. En delmængde (IT-firmaet: ét API Token til ét af kontoens domæner) og en tom liste tilføjes.
+    #[test]
+    fn samme_api_token_to_gange_afvises_delmaengde_og_tom_tilfoejes() {
+        let mut s = Store::i_hukommelse().unwrap();
+        assert_eq!(s.ny_forbindelse("t").unwrap(), 1);
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        // Ens mængde, i en anden rækkefølge: afvist med forbindelsens id; fejlen har kun id'et.
+        let ens = [zone("z2", "b.wi24rd.com"), zone("z1", "a.wi24rd.com")];
+        assert_eq!(samme_domaener(&s, &ens).unwrap(), Some(1), "samme domæner som forbindelse 1");
+        let f = Fejl::AlleredeForbundet(1);
+        assert_eq!(
+            serde_json::to_value(&f).unwrap(),
+            serde_json::json!({ "kode": "allerede_forbundet", "detalje": "1" })
+        );
+        // Delmængde: tilføjes.
+        assert_eq!(samme_domaener(&s, &[zone("z2", "b.wi24rd.com")]).unwrap(), None, "delmængde");
+        // Overmængde: tilføjes også (ikke "præcis de samme").
+        let mere = [zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")];
+        assert_eq!(samme_domaener(&s, &mere).unwrap(), None, "overmængde");
+        // Tom liste: tilføjes (den sammenlignes aldrig, heller ikke med en forbindelse uden domæner).
+        let to = s.ny_forbindelse("t").unwrap();
+        assert_eq!(samme_domaener(&s, &[]).unwrap(), None, "tom liste, også når en forbindelse er tom");
+        // Med to forbindelser findes den, der ser det samme; ens med den nye delmængde er nu forbindelse 2.
+        s.gem_zoner(to, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        assert_eq!(samme_domaener(&s, &[zone("z2", "b.wi24rd.com")]).unwrap(), Some(to));
+        assert_eq!(samme_domaener(&s, &ens).unwrap(), Some(1));
+    }
+
+    /// F2 (V-KONTI.1 FIX 1): et delt domæne har alle de forbindelser, der ser det (også afviste), og ejeren er stadig den laveste ikke-afviste (D3).
+    #[test]
+    fn domaener_hent_giver_alle_forbindelser_for_et_delt_domaene() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let (a, b) = (s.ny_forbindelse("t").unwrap(), s.ny_forbindelse("t").unwrap());
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_valgte(&["z2".into()]).unwrap();
+        let ud = |afviste: &HashSet<i64>| {
+            domaener_ud(
+                s.zoner().unwrap().0,
+                &s.valgte().unwrap(),
+                &s.nye().unwrap(),
+                &s.ejere(afviste).unwrap(),
+                &s.seere().unwrap(),
+            )
+            .into_iter()
+            .map(|d| (d.id, d.til, d.forbindelse, d.forbindelser))
+            .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            ud(&HashSet::new()),
+            [
+                ("z1".to_string(), false, Some(a), vec![a]),
+                ("z2".to_string(), true, Some(a), vec![a, b]),
+            ],
+            "det delte domæne har begge; ét valg"
+        );
+        assert_eq!(
+            ud(&HashSet::from([a]))[1],
+            ("z2".to_string(), true, Some(b), vec![a, b]),
+            "afvist ejer: den næste ejer det, og begge står stadig"
+        );
+        assert_eq!(s.forbindelser_for("z2").unwrap(), [a, b], "samme som forbindelser_for");
+    }
+
+    /// F2: `hentet` er sand, når forbindelsen ser domæner, eller når dens liste er hentet (også tom); ellers falsk.
+    #[test]
+    fn forbindelsen_er_hentet_med_domaener_eller_efter_zones() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let (a, b, c) = (
+            s.ny_forbindelse("t").unwrap(),
+            s.ny_forbindelse("t").unwrap(),
+            s.ny_forbindelse("t").unwrap(),
+        );
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(b, &[], "t").unwrap();
+        let ud = forbindelser_ud(s.forbindelser().unwrap(), &HashSet::new(), &HashSet::from([b]));
+        assert_eq!(
+            ud.iter().map(|f| (f.f.id, f.f.domaener, f.hentet)).collect::<Vec<_>>(),
+            [(a, 1, true), (b, 0, true), (c, 0, false)]
+        );
+        let j = serde_json::to_value(&ud[2]).unwrap();
+        assert_eq!(j["hentet"], false);
+        assert!(j.get("token").is_none() && j.get("konto").is_none(), "ingen hemmeligheder");
     }
 
     #[test]

@@ -71,7 +71,7 @@ Hver forbindelse har sin egen række. Under rækkerne står **Tilføj API Token�
 
 Glemmer du den sidste forbindelse, er det præcis som med én forbindelse: programmet spørger **Glem API Tokenet?**, opsætningen og guiden vises igen, og historikken bliver.
 
-Ser to forbindelser det samme domæne, vises det én gang og hører til den ældste forbindelse. Bliver den glemt eller afvist, overtager den anden.
+Ser to forbindelser det samme domæne (fx et API Token til hele kontoen og et til ét af dens domæner), vises det én gang i Overblik og de andre visninger. Det hentes kun med den ældste forbindelses API Token. Bliver den glemt eller afvist, overtager den næste. I dialogen [Domæner](#domæner) står domænet under hver forbindelse, der ser det.
 
 ### Skift og tilføj
 
@@ -79,11 +79,15 @@ Ser to forbindelser det samme domæne, vises det én gang og hører til den æld
 
 Den nye forbindelses domæner er ikke valgt af sig selv. Ser den præcis ét domæne, programmet ikke kendte, vælges det for dig. Ser den flere, åbner dialogen **Domæner** ved forbindelsens gruppe, så du kan vælge.
 
+Hedder den nye forbindelse det samme som en anden (to API Tokens til samme konto hedder begge kontoens navn), åbner **Omdøb forbindelsen** med noten "To forbindelser hedder det samme. Giv denne et navn, så du kan kende dem fra hinanden." **Annullér** lader navnet stå. Skal dialogen **Domæner** også åbne, kommer den bagefter.
+
+Ser API Tokenet præcis de samme domæner som en forbindelse, du allerede har, tilføjes det ikke. Formularen siger "Dette API Token ser de samme domæner som «navn». Det er ikke tilføjet." Et API Token, der ser færre domæner på samme konto (fx ét API Token pr. kunde), kan godt tilføjes.
+
 **Skift API Token…** erstatter kun API Tokenet på sin egen forbindelse. I formularen står: "Har du en konto mere? Brug Tilføj API Token… i stedet. Skift erstatter API Tokenet på denne forbindelse." Hører det nye API Token til en anden Cloudflare-konto, forsvinder den gamle kontos domæner fra listen, og valgene for forbindelsen begynder forfra. Tallene, der allerede er hentet, og historikken bliver.
 
 ### Navnet
 
-**Omdøb…** åbner dialogen **Omdøb forbindelsen** med ét felt, **Navn**, og noten "Tomt felt: navnet fra Cloudflare." Gem med **Gem**. Tømmer du feltet, vises navnet fra Cloudflare igen.
+**Omdøb…** åbner dialogen **Omdøb forbindelsen** med ét felt, **Navn**, og noten "Tomt felt: navnet fra Cloudflare." Gem med **Gem**. Tømmer du feltet, vises navnet fra Cloudflare igen. Bagefter står "Navnet er gemt." i forbindelsens række, og **Omdøb…** har fokus igen.
 
 Programmet viser:
 
@@ -124,7 +128,9 @@ Programmet viser:
 | **Vis i Huginn** – én kontakt pr. domæne | Vælg de domæner, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere, vises ingen steder og giver ingen notifikationer; dets tal bliver liggende, og vælger du det igen, hentes det, der mangler, højst de seneste 30 dage. Et domæne, der er nyt på kontoen, er mærket **NY**. |
 | **Vælg alle** / **Fravælg alle** | Alle kontakter på én gang. |
 | Linjen "API Tokenet ser N domæner" | Hvor mange domæner API Tokenet kan se. Ser det præcis ét, er det valgt for dig. |
-| Med flere forbindelser: én overskrift og én liste pr. forbindelse | Overskriften er forbindelsens navn. Hver liste har sine egne **Vælg alle** og **Ingen**; de fælles knapper **Vælg alle** og **Fravælg alle** står da ikke. |
+| Med flere forbindelser: én overskrift og én liste pr. forbindelse | Overskriften er forbindelsens navn. Hver liste har sine egne **Vælg alle** og **Ingen**, som gælder de domæner, listen viser; de fælles knapper **Vælg alle** og **Fravælg alle** står da ikke. |
+| Et domæne under to forbindelser, med "Hentes med «navn»" | Ser flere forbindelser domænet, står det under hver af dem. Under de forbindelser, der ikke henter det, står "Hentes med «navn»" med navnet på den forbindelse, der gør. Det er det samme valg alle steder: slår du kontakten til eller fra under den ene, følger den anden med. |
+| "Dette API Token ser ingen domæner." | Forbindelsens zoneliste er hentet, men API Tokenet ser ingen domæner. Før listen er hentet, står der "Domænerne står her, når zonelisten er hentet." |
 | Linjen "M API Tokens ser N domæner i alt" | Står med flere forbindelser i stedet for linjen ovenfor. |
 
 Hvad dit site bruger af teknologi, siger du i [Teknologi pr. domæne](40-visninger/teknologi.md), som du åbner med **Ret teknologier** i båndet på **Angreb**.

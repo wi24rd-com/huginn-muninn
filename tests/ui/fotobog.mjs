@@ -2,6 +2,7 @@
 // Brug: npm run test:foto. Matrix: tema × sprog × størrelse; HM_FOTO_MATRIX=lille giver kun light/da/1200×860.
 // Output: tests/ui/out/<dato>/fotobog/<id>--<tema>-<sprog>-<BxH>.png + manifest.json. HM_FOTO_UD overstyrer mappen.
 // HM_FOTO_SIDER vælger sider efter id, kommasepareret; * til sidst er et præfiks (fx HM_FOTO_SIDER='konti-*').
+// En side kan have fokus: en vælger, der skal have fokus og stå helt inden for sin dialogs rulleflade, når billedet tages.
 // HM_CHROME peger på Chrome, HM_REPO på en anden kopi af repoet, HM_NU sætter uret (som i ui-roeg.mjs).
 // Hver visning hentes to gange: første gang tager billedet, anden gang (--dump-dom) henter fejlene ud og prøver luk. Exit 1 ved fejl, eller hvis et billede mangler eller er under 5 KB.
 import fs from 'node:fs';
@@ -51,7 +52,8 @@ const stub = (post, tema, sprog, tjek) => `${UR_STUB.replace(/<\/?script>/g, '')
 const GANG = `addEventListener('load', async () => {
   const sov = ms => new Promise(r => setTimeout(r, ms)), v = window.__HM_POST__, F = window.__HM_FEJL__;
   await sov(350);
-  for (const a of v.aabn || []) { const e = document.querySelector(a); if (e) { e.click(); await sov(120); } else F.push('gennemløb: aabn rammer ikke ' + a); }
+  /* Et trin i aabn er en vælger, der klikkes, eller [vælger, tekst], der skrives i et felt (V-KONTI.1 FIX 1: Tilføj API Token…). */
+  for (const a of v.aabn || []) { const [s, tekst] = Array.isArray(a) ? a : [a, null], e = document.querySelector(s); if (!e) { F.push('gennemløb: aabn rammer ikke ' + s); continue; } if (tekst == null) e.click(); else e.value = tekst; await sov(tekst == null ? 120 : 0); }
   if (v.rul) setTimeout(() => { const e = document.querySelector(v.rul); if (e) e.scrollIntoView({ block: 'start' }); }, 1500);
   if (!window.__HM_TJEK__) return;
   await sov(${VENT});
@@ -60,6 +62,12 @@ const GANG = `addEventListener('load', async () => {
   const set = [...document.querySelectorAll('section.visning:not([hidden])')].map(e => e.dataset.visning).join(), vil = v.visning || v.hash.split('?')[0];
   if (set !== vil) F.push('gennemløb: viser ' + (set || 'ingenting') + ', ikke ' + vil);
   if (v.rod) { const e = document.querySelector(v.rod); if (!e || !e.checkVisibility()) F.push('gennemløb: rod er ikke synlig: ' + v.rod); }
+  /* fokus: elementet har fokus og står helt inden for sin dialogs rulleflade (V3: feltet under kanten ved 1100×560). */
+  if (v.fokus) {
+    const e = document.querySelector(v.fokus);
+    if (!e || document.activeElement !== e) F.push('gennemløb: fokus er ikke på ' + v.fokus + ' men på ' + (document.activeElement && (document.activeElement.id || document.activeElement.tagName)));
+    else { const k = (e.closest('.modal-indhold') || document.documentElement).getBoundingClientRect(), r = e.getBoundingClientRect(); if (r.top < k.top || r.bottom > k.bottom) F.push('gennemløb: ' + v.fokus + ' står uden for kanten (' + Math.round(r.top) + '–' + Math.round(r.bottom) + ' i ' + Math.round(k.top) + '–' + Math.round(k.bottom) + ')'); }
+  }
   if (v.luk) { const e = document.querySelector(v.luk); if (e) { e.click(); await sov(120); } else F.push('gennemløb: luk rammer ikke ' + v.luk); }
   document.body.textContent = 'MAALT:' + JSON.stringify(F) + ':SLUT';
 });`;

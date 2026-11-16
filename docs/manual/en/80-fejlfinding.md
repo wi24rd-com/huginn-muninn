@@ -24,6 +24,7 @@ The program only shows its own error texts in plain language, never raw technica
 | **What was pasted does not look like a Cloudflare API Token (only letters, digits and symbols without spaces).** | Something else came along, such as a space or a line break. | Copy the API Token again from Cloudflare, with nothing around it. |
 | **Cloudflare rejected the API Token. It may have expired or lack permissions.** | Cloudflare does not know the token, or it has expired. If Cloudflare rejects all your connections, it is the same as with one: fetching stops, and the status is red. | Create a new API Token following [Setup](30-opsaetning.md), and paste it under **Settings** (the gear) › **Connection** › **Change API Token…**. |
 | **Cloudflare rejected the API Token “name”. Its domains are not fetched.** (red line on the Overview with the button **Change API Token…**; in the footer: **1 API Token rejected**) | You have more than one connection, and Cloudflare rejects the API Token on the connection named in the text. It has been deleted, has expired, or its permissions have been reduced. The other connections keep fetching. The menu at the raven icon names it too. | Create a new API Token at Cloudflare following [Setup](30-opsaetning.md). Click **Change API Token…** in the red line; it opens **Settings** at the connection's row. Paste the new API Token, and click **Save and connect**. |
+| **This API Token sees the same domains as “name”. It was not added.** | You used **Add API Token…** (or the guide) with an API Token that sees exactly the same domains as the connection “name”, typically the same API Token once more. | Nothing. The connection already exists. If the API Token is to replace the old one, use **Change API Token…** in the connection's row. |
 | **The API Token is not active (status: …). Create a new read-only API Token.** | The token is disabled or expired at Cloudflare. | Create a new one. |
 | **The API Token cannot see any domains: it lacks the permission Zone › Read, or the domain is not under Include · All zones or Specific zone.** | The token may not see the zone list, or no zones are included. | Fix the token at Cloudflare: under **Policies**, **DNS & Zones** must have **Zone › Read**, and **Include** must cover the domain (**All zones** or **Specific zone**). |
 | **The API Token lacks the permission Analytics › Read, so the program cannot read the figures.** | The token may see zones, but not figures. | Add **Analytics › Read** under **Analytics & Logs** at Cloudflare. |
@@ -56,6 +57,12 @@ In version 1.0.0 the program could only have one API Token. If you used **Change
 Now each account gets its own connection. For one more account, use **Add API Token…** under **Settings** › **Connection**. **Change API Token…** still replaces the API Token on one connection, and the form says so: "Do you have another account? Use Add API Token… instead."
 
 If you have already changed it, add the first account again with **Add API Token…**. If you no longer have the API Token, create a new one at Cloudflare. Then choose the domains in the dialog **Domains**. Their figures are still there.
+
+## A domain stands under two connections in Domains
+
+If you have an API Token for the whole account and one for one of its domains, both connections see that domain. In the dialog **Domains** it stands under both, and under the newest one it says "Fetched with “name”": it is only fetched with the oldest connection's API Token. It is one choice; if you switch it off under one, it is off under both.
+
+If the two connections have the same name (both have the account's name at Cloudflare), the program opens **Rename the connection** when the new one is added. Give it a name you can recognise it by, for example the customer's.
 
 ## It is not an error
 
