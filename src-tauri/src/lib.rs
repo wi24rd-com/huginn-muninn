@@ -60,9 +60,10 @@ struct Tilstand {
     siden_sidst: AtomicBool,
     /// Domæner, hvor Cloudflare afviste et felt i `ADGANG_QUERY`: de hentes uden `clientAsn`, mens programmet kører.
     uden_asn: Mutex<HashSet<String>>,
-    /// Domæner, hvor Cloudflare afviste hovedforespørgslen med værtsfeltet (V-SUBDOM.1 B2, trin 0): de hentes uden `clientRequestHTTPHost` på `fw`, mens
-    /// programmet kører. Domænets egne tal er som før; døgnene får intet `v_fw`, og `subdomaener` melder `angreb_afvist`.
-    uden_vaert: Mutex<HashSet<String>>,
+    /// Domæner, hvor Cloudflare afviste hovedforespørgslen med værtsfeltet (V-SUBDOM.1 B2, trin 0), med tidspunktet (ms): de hentes uden
+    /// `clientRequestHTTPHost` på `fw` til næste UTC-døgn, højst 24 timer (`vaert::uden_gaelder`, FIX 1). Domænets egne tal er som før; døgnene får intet `v_fw`,
+    /// og `subdomaener` melder `angreb_afvist`, når perioden ingen tal pr. vært har for angrebene.
+    uden_vaert: Mutex<HashMap<String, i64>>,
     /// Cloudflare har afvist filteret i `LAEK_QUERY`: resten af kørslen hentes uden det.
     laek_uden_filter: AtomicBool,
     /// Startet af den daglige start og lukker selv, når køen er færdig. Et vindue slår det fra (`aabn_vindue`): så bliver programmet.
@@ -450,16 +451,20 @@ async fn hent_zone(
                 if let Some(f) = kendt {
                     return Err(f);
                 }
-                // V-SUBDOM.1 B2 (trin 0): afviser Cloudflare værtsfeltet, hentes domænets tal uden det, og domænet noteres til programmet starter igen.
+                // V-SUBDOM.1 B2 (trin 0): afviser Cloudflare værtsfeltet, hentes domænets tal uden det, og domænet noteres til næste UTC-døgn (FIX 1, V1).
                 let variabler = sti200::variabler(zone, &dag)?;
-                let uden = uden_vaert.lock().map_err(|_| Fejl::Lager)?.contains(zone);
+                let uden = uden_vaert
+                    .lock()
+                    .map_err(|_| Fejl::Lager)?
+                    .get(zone)
+                    .is_some_and(|t| vaert::uden_gaelder(*t, nu_ms()));
                 let (svar, afvist) = vaert::hent_hoved(&sti200::hoved_query(), uden, |q: String| {
                     let v = variabler.clone();
                     async move { klient.graphql(token, &q, v).await }
                 })
                 .await;
                 if afvist {
-                    uden_vaert.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string());
+                    uden_vaert.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string(), nu_ms());
                 }
                 vaern::doegn_fra_svar(&svar.map_err(|e| e.for_dag(&dag))?)
             };
@@ -1210,7 +1215,15 @@ async fn besoegende(
     if vaert.is_some() && spoerg.zoner.len() != 1 {
         return Err(Fejl::UgyldigtFilter);
     }
-    let mut laest = besoeg::laes(&*laas(&tilstand)?, &spoerg.zoner)?;
+    let mut laest = {
+        let lager = laas(&tilstand)?;
+        let mut l = besoeg::laes(&lager, &spoerg.zoner)?;
+        // V-SUBDOM.1 FIX 1: med et filter pr. vært er lande og robotter værtens (`v_land`, `v_robot`), aldrig domænets.
+        if let (Some(v), [zone]) = (vaert.as_deref(), spoerg.zoner.as_slice()) {
+            besoeg::med_vaert_lr(&mut l, vaert::laes_lr(&lager, zone, v)?);
+        }
+        l
+    };
     laest.med_vaert = spoerg.zoner.len() == 1;
     laest.vaert = vaert;
     Ok(besoeg::regn(&spoerg.periode, filter.as_ref(), &laest, nu_ms()))
@@ -1223,8 +1236,13 @@ async fn subdomaener(zone: String, fra: String, til: String, tilstand: State<'_,
     let zone = vaern::tjek_zone(&zone)?;
     vaert::tjek_periode(&fra, &til)?;
     let mut laest = vaert::laes(&*laas(&tilstand)?, &zone, &fra)?;
-    // Hovedhentningen afviste værtsfeltet for domænet (trin 0): angrebene pr. vært er ikke tilgængelige.
-    laest.angreb_afvist |= tilstand.uden_vaert.lock().map_err(|_| Fejl::Lager)?.contains(&zone);
+    // Hovedhentningen afviste værtsfeltet for domænet i dag (trin 0, FIX 1): uden tal pr. vært for angrebene i perioden er de ikke tilgængelige.
+    laest.uden_vaert = tilstand
+        .uden_vaert
+        .lock()
+        .map_err(|_| Fejl::Lager)?
+        .get(&zone)
+        .is_some_and(|t| vaert::uden_gaelder(*t, nu_ms()));
     Ok(vaert::regn(&laest, &fra, &til))
 }
 
@@ -2186,6 +2204,8 @@ pub fn run() {
                 &vaern::dag_noegle(nu_ms()),
                 &vaern::dag_noegle(nu_ms() - besoeg::BESOEG_DAGE * vaern::DOEGN_MS),
             );
+            // V-SUBDOM.1 FIX 1: én gang hentes trafikkens døgn pr. vært i hentevinduet igen, nu med lande og robotter pr. vært. Ét kald pr. domæne.
+            let _ = lager.vaert_land_en_gang(&vaern::dag_noegle(nu_ms() - besoeg::BESOEG_DAGE * vaern::DOEGN_MS));
             let sprog = sprog_fra(&lager);
             app.manage(Tilstand {
                 lager: Mutex::new(lager),

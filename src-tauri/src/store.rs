@@ -177,6 +177,9 @@ pub const BESOEG_ARTER: &[&str] = &["b_total", "b_land", "b_robot", "b_side", "b
 pub const SIDE_BYTES_V1: &str = "side_bytes_v1";
 /// `indstillinger`: sat, når sidernes døgn i hentevinduet én gang er sat til at blive hentet igen med værten i nøglen (`side_vaert_en_gang`, V-SUBDOM.1).
 pub const SIDE_VAERT_V1: &str = "side_vaert_v1";
+/// `indstillinger`: sat, når trafikkens døgn pr. vært i hentevinduet én gang er sat til at blive hentet igen med lande og robotter pr. vært
+/// (`vaert_land_en_gang`, V-SUBDOM.1 FIX 1). Værdien er den første dag, døgnene i `hentet_vaert` har `v_land` og `v_robot` fra.
+pub const VAERT_LAND_V1: &str = "vaert_land_v1";
 /// Som `BESOEG_FEJL` for trafik og angreb pr. vært (V-SUBDOM.1, `vaert.rs`). Hver koster kun sit eget; domænets egne tal og besøgene er uberørte.
 pub const VAERT_FEJL: &str = "vaert_fejl:";
 pub const VAERT_FW_FEJL: &str = "vaert_fw_fejl:";
@@ -680,6 +683,30 @@ impl Store {
         .map_err(lagerfejl)?;
         tx.commit().map_err(lagerfejl)?;
         Ok(true)
+    }
+
+    /// Én gang (`VAERT_LAND_V1`, V-SUBDOM.1 FIX 1): trafikkens døgn pr. vært fra og med `fra_dag` (højst `HENT_DAGE` tilbage) glemmes i `hentet_vaert`, så
+    /// køen henter dem igen med lande og robotter pr. vært (ét kald pr. domæne). Tallene står, til de nye erstatter dem for døgnet. `fra_dag` gemmes som den
+    /// første dag med lande og robotter pr. vært (`vaert_land_fra`); ældre døgn har dem ikke. `true`: det skete nu.
+    pub fn vaert_land_en_gang(&mut self, fra_dag: &str) -> Result<bool, Fejl> {
+        if self.indstilling(VAERT_LAND_V1)?.is_some() {
+            return Ok(false);
+        }
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        tx.execute("DELETE FROM hentet_vaert WHERE dag >= ?1", [fra_dag])
+            .map_err(lagerfejl)?;
+        tx.execute(
+            "INSERT OR REPLACE INTO indstillinger (noegle, vaerdi) VALUES (?1, ?2)",
+            [VAERT_LAND_V1, fra_dag],
+        )
+        .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)?;
+        Ok(true)
+    }
+
+    /// Den første dag med lande og robotter pr. vært (`vaert_land_en_gang`). `None`: genhentningen er ikke sat i gang.
+    pub fn vaert_land_fra(&self) -> Result<Option<String>, Fejl> {
+        self.indstilling(VAERT_LAND_V1)
     }
 
     /// Noterer (`afskaaret`) døgnene `fra`…`til` som afskåret for de mest besøgte sider (lagt sammen med dem, der stod), eller rydder mærket, når et svar under
@@ -1198,9 +1225,19 @@ impl Store {
     /// Alle rækker for zonen fra og med `fra_dag`, i den rækkefølge de blev gemt (som D1 i W). Uden årstallene, besøgene og tallene pr. vært (`vaert::ALLE_ARTER`):
     /// Overblik, Angreb og notifikationerne regner præcis som før V-SUBDOM.1.
     pub fn raekker(&self, zone: &str, fra_dag: &str) -> Result<Vec<Raekke>, Fejl> {
+        // Arterne er konstanter i koden (ingen brugerdata i SQL'en); listen følger `vaert::ALLE_ARTER`, så en ny art pr. vært aldrig når Overblik.
+        let uden = ["h_total", "h_land", "h_status", "h_ipklasse"]
+            .iter()
+            .chain(BESOEG_ARTER)
+            .chain(crate::vaert::ALLE_ARTER)
+            .map(|a| format!("'{a}'"))
+            .collect::<Vec<_>>()
+            .join(", ");
         let mut st = self
             .db
-            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status', 'h_ipklasse', 'b_total', 'b_land', 'b_robot', 'b_side', 'b_side_b', 'b_side_bytes', 'v_alle', 'v_besoeg', 'v_afskaaret', 'v_fw', 'v_fw_afskaaret') ORDER BY rowid")
+            .prepare(&format!(
+                "SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ({uden}) ORDER BY rowid"
+            ))
             .map_err(lagerfejl)?;
         let rk = st
             .query_map(params![zone, fra_dag], |r| {
@@ -1221,7 +1258,7 @@ impl Store {
             return Ok(Vec::new());
         }
         let sql = format!(
-            "SELECT zone, dag, art, noegle, n FROM vagt_dag WHERE dag >= ?1 AND zone IN ({}) AND art NOT IN ('v_alle', 'v_besoeg', 'v_afskaaret', 'v_fw', 'v_fw_afskaaret') ORDER BY rowid",
+            "SELECT zone, dag, art, noegle, n FROM vagt_dag WHERE dag >= ?1 AND zone IN ({}) AND art NOT IN ('v_alle', 'v_besoeg', 'v_afskaaret', 'v_fw', 'v_fw_afskaaret', 'v_land', 'v_robot', 'v_land_afskaaret', 'v_robot_afskaaret') ORDER BY rowid",
             vec!["?"; zoner.len()].join(", ")
         );
         let mut st = self.db.prepare(&sql).map_err(lagerfejl)?;

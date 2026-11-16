@@ -40,7 +40,13 @@ Tabellen har kolonnerne **Subdomæne**, **Besøg**, **Forespørgsler**, **Angreb
 
 Tabellen følger den valgte periode. Programmet har tal pr. subdomæne fra ca. 30 dage før opdateringen til denne version. Når perioden går længere tilbage, står **Pr. subdomæne fra {dato}.** under tabellen, og tallene gælder kun dagene derfra. Under tabellen står altid: **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.** Et navn, hvor skyen er grå i Cloudflares DNS, går ikke gennem Cloudflare, så Cloudflare har ingen tal for det.
 
-Klik på et subdomæne (navnet eller tallene), og Besøgende viser kun det. Øverst står chippen **Subdomæne: shop.wi24rd.com**. Fliserne og graferne viser besøg og forespørgsler pr. dag på subdomænet, og **Mest besøgte sider** viser kun subdomænets sider. Unikke besøgende, lande, kendte robotter og IP-klasserne findes ikke pr. subdomæne hos Cloudflare. De står med **Ikke pr. subdomæne**, aldrig med hele domænets tal.
+Klik på et subdomæne (navnet, **Besøg** eller **Forespørgsler**), og Besøgende viser kun det. Øverst står chippen **Subdomæne: shop.wi24rd.com**. Fliserne og graferne viser besøg og forespørgsler pr. dag på subdomænet. **Hvor besøgene kom fra** og **Kendte robotter** viser subdomænets egne tal, med samme tabel og klik som for domænet: et land viser besøgene fra det land pr. dag på subdomænet. **Mest besøgte sider** viser kun subdomænets sider. Har subdomænet ingen tal for et afsnit i perioden, står afsnittet ikke.
+
+Unikke besøgende og IP-klasserne findes ikke pr. subdomæne hos Cloudflare. De står slet ikke, aldrig med hele domænets tal. En linje under chippen siger det: **Unikke besøgende findes ikke pr. subdomæne. Se dem for hele wi24rd.com.** Et klik på **hele wi24rd.com** fjerner filteret, ligesom **×** på chippen.
+
+Tallet under **Angreb** i tabellen åbner [Angreb](vaernet.md) for subdomænet med samme periode (**Et år** bliver **Hele historikken**). Et tal, der er 0, kan ikke klikkes.
+
+Lande og kendte robotter pr. subdomæne findes fra opdateringen til denne version og ca. 30 dage tilbage. Programmet henter de dage én gang igen pr. domæne.
 
 I **Mest besøgte sider** er samme sti på to subdomæner to rækker. Rækken for et subdomæne har navnet ved stien, fx `/` med `shop.wi24rd.com`. Dage, der er gemt før opdateringen og er ældre end ca. 30 dage, kan ikke skilles ad og tæller som domænet selv. Sendte Cloudflare det højeste antal rækker for en dag, står noten **Kun de mest besøgte sider er med: Cloudflare sendte højst 10.000 rækker.**
 
@@ -52,7 +58,7 @@ I **Mest besøgte sider** er samme sti på to subdomæner to rækker. Rækken fo
 - **… /admin eller /wp-login.php står øverst under Sider, der ikke findes?** Det er næsten altid scannere, der prøver kendte adresser. Cloudflare svarede 404; du behøver ikke gøre noget.
 - **… `.env`-filer eller `wp-config.php` står under Svarede med sidens almindelige side?** Det er scannere, der prøver kendte adresser, og sitet svarede med forsiden, ikke med filen. Vil du være sikker, så åbn adressen i din browser: ser du forsiden, er filen der ikke.
 - **… der står "ikke tilgængelige"?** Cloudflare svarede ikke på de tal for det domæne. Resten af siden virker. Programmet spørger igen, næste gang det starter.
-- **… et subdomæne har mange angreb eller forespørgsler?** Klik på det under **Subdomæner**. Så ser du det pr. dag og hvilke sider der blev set. Angrebene pr. dag ser du på [Angreb](vaernet.md) for samme subdomæne.
+- **… et subdomæne har mange angreb eller forespørgsler?** Klik på det under **Subdomæner**. Så ser du det pr. dag, hvor besøgene kom fra, og hvilke sider der blev set. Klik på tallet under **Angreb**, så ser du angrebene pr. dag på [Angreb](vaernet.md) for samme subdomæne.
 - **… mit subdomæne står der ikke?** Er det «DNS only» (grå sky) i Cloudflares DNS, har Cloudflare ingen tal for det. Ellers havde det ingen trafik i perioden. Se [Fejlfinding](../80-fejlfinding.md).
 - **… der står "Ingen tal endnu" eller "ikke hentet endnu"?** Programmet henter i baggrunden efter de andre tal. Første gang efter opdateringen kan det tage lidt tid.
 
@@ -69,10 +75,11 @@ I **Mest besøgte sider** er samme sti på to subdomæner to rækker. Rækken fo
 - Et **land i tabellen** lægger et filter på Besøgende: grafen viser besøg fra det land pr. dag, og landet står som en chip øverst.
 - En **gruppe under Kendte robotter** lægger et filter: grafen viser besøg fra den gruppe pr. dag.
 - En **sti under Mest besøgte sider**, **Sider, der ikke findes** eller **Svarede med sidens almindelige side** lægger et filter: grafen viser visninger af siden pr. dag, og flisen Besøg følger siden.
-- Et **subdomæne under Subdomæner** (navnet eller Besøg, Forespørgsler og Angreb) viser Besøgende for det subdomæne, med chippen **Subdomæne: …**. Filteret står i adressen, så tilbage og frem virker, og det nulstilles, når du vælger et andet domæne.
-- En **sti på et subdomæne** under Mest besøgte sider viser visningerne af stien på det subdomæne. Det er det eneste filter, der kan stå sammen med et subdomæne.
+- Et **subdomæne under Subdomæner** (navnet, **Besøg** eller **Forespørgsler**) viser Besøgende for det subdomæne, med chippen **Subdomæne: …**. Tallet under **Angreb** viser Angreb for subdomænet med samme periode. Filteret står i adressen, så tilbage og frem virker, og det nulstilles, når du vælger et andet domæne.
+- En **sti på et subdomæne** under Mest besøgte sider viser visningerne af stien på det subdomæne. Med et subdomæne valgt kan et land, en robotgruppe eller en sti stå sammen med det; tallene er subdomænets.
+- **hele {domæne}** i linjen under chippen fjerner filteret pr. subdomæne.
 - Der er ellers højst ét filter ad gangen. **×** på chippen fjerner det.
-- En flise uden tal, en dag uden tal eller med 0, tallene og andelene i tabellerne, procentlinjerne og noterne fører ingen steder hen og ser ikke klikbare ud. Det gælder også **Andel**, **Andre (n)**, rækkerne **Kaldt med IP-adresse**, **Andet navn** og **Ugyldigt navn**, og noterne under Subdomæner.
+- En flise uden tal, en dag uden tal eller med 0, tallene og andelene i tabellerne, procentlinjerne og noterne fører ingen steder hen og ser ikke klikbare ud. Det gælder også **Andel**, **Andre (n)**, rækkerne **Kaldt med IP-adresse**, **Andet navn** og **Ugyldigt navn**, et tal under Subdomæner, der er 0, og noterne under Subdomæner.
 
 ## Tal og begreber
 

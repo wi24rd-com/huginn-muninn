@@ -149,7 +149,7 @@ const aarDage = Array.from({ length: 365 }, (_, i) => { const dag = besDag('2026
 const ugerAf = dage => dage.reduce((u, d) => { const ms = Date.parse(d.dag + 'T00:00:00Z'), man = new Date(ms - ((new Date(ms).getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10); const sidst = u[u.length - 1]; const x = sidst && sidst.dag === man ? sidst : (u.push({ dag: man, fra: d.dag, til: d.dag, n: null, med: 0, dage: 0 }), u[u.length - 1]); x.til = d.dag; x.dage++; if (d.n !== null) { x.n = (x.n || 0) + d.n; x.med++; } return u; }, []);
 export const BESOEG_AAR = { ...BESOEG_UD, periode: { ...BESOEG_UD.periode, fra: '2025-11-06', dage: 365, med: 336 }, dage: aarDage, uger: ugerAf(aarDage), lande_med: 30 };
 /* Stubbene vælger svaret efter kaldet (som dyk_regel): land, sti, et år, ellers 7 dage. */
-export const BES_NOEGLE = "c==='subdomaener'&&a.zone!=='z1'?'subdomaener_en':c==='besoegende'&&a.vaert!=null&&!a.sti?'besoegende_vaert':c==='besoegende'&&a.land?'besoegende_land':c==='besoegende'&&a.sti?'besoegende_side':c==='besoegende'&&a.periode==='alt'?'besoegende_aar':c";
+export const BES_NOEGLE = "c==='subdomaener'&&a.zone!=='z1'?'subdomaener_en':c==='besoegende'&&a.vaert==='api'?'besoegende_vaert_tom':c==='besoegende'&&a.vaert!=null&&!a.sti?'besoegende_vaert':c==='besoegende'&&a.land?'besoegende_land':c==='besoegende'&&a.sti?'besoegende_side':c==='besoegende'&&a.periode==='alt'?'besoegende_aar':c";
 
 /* V-SUBDOM.1 B2: svaret fra subdomaener. Værterne er labels under domænet ("" = domænet selv) med tal pr. dag: [vært, forespørgsler, besøg, angreb, afviste]
    pr. dag, så summerne passer til dagene. Kun opdigtede navne under wi24rd.com. huller: dage uden tal (null, ikke 0). */
@@ -223,14 +223,21 @@ SIDER.push(
    Siderne hedder subdom-…; HM_FOTO_SIDER='subdom-*' tager kun dem. Tallene gælder 5. oktober–5. november, så de dækker både Besøgendes og Angrebs perioder. */
 const SUB_PERIODE = ['2026-10-05', '2026-11-05'];
 export const BES_VAERT = { ...BESOEG_UD, sider: BES_SIDER_VAERT, sider_i_alt: BES_SIDER_VAERT.reduce((a, x) => a + x.n, 0), sider_404: [{ sti: '/admin', n: 310, besoeg: 0, vaert: '' }, { sti: '/.env', n: 44, besoeg: 0, vaert: 'api' }], sider_forside: [] };
-export const BES_SHOP = { ...BES_VAERT, sider: BES_SIDER_VAERT.filter(x => x.vaert === 'shop'), sider_i_alt: BES_SIDER_VAERT.filter(x => x.vaert === 'shop').reduce((a, x) => a + x.n, 0), sider_404: [] };
-const SUB = { subdomaener: subSvar(...SUB_PERIODE, SUB_FIRE, { sider_afskaaret: true }), subdomaener_en: subSvar(...SUB_PERIODE, SUB_EN), besoegende: BES_VAERT, besoegende_vaert: BES_SHOP };
+/* FIX 1: med et filter pr. subdomæne er lande og robotter værtens (Rust, v_land og v_robot): shop har 3 besøg pr. dag i SUB_FIRE, 21 på 7 dage. IP-klasserne
+   og domænets noter findes ikke pr. vært. api har ingen besøg udefra og derfor hverken lande eller robotter (afsnittene står ikke). */
+export const BES_SHOP_LANDE = [['DK', 14], ['US', 5], ['DE', 2]].map(([kode, n]) => ({ kode, n }));
+export const BES_SHOP = { ...BES_VAERT, sider: BES_SIDER_VAERT.filter(x => x.vaert === 'shop'), sider_i_alt: BES_SIDER_VAERT.filter(x => x.vaert === 'shop').reduce((a, x) => a + x.n, 0), sider_404: [], lande: BES_SHOP_LANDE, lande_i_alt: 21, lande_med: 7, besoeg_fra: '2026-10-07', ikke_tilgaengelig: [], robotter: [{ id: 'soegemaskiner', n: 6 }, { id: 'ai-traening', n: 2 }], robot_med: 7, robot_fra: '2026-10-07', robot_ikke: [], ipklasse: null };
+export const BES_API = { ...BES_SHOP, sider: BES_SIDER_VAERT.filter(x => x.vaert === 'api'), sider_i_alt: 60, lande: [], lande_i_alt: 0, robotter: [] };
+/* To dage i perioden stod på Cloudflares loft (V2): noten under tabellen. */
+const SUB = { subdomaener: subSvar(...SUB_PERIODE, SUB_FIRE, { sider_afskaaret: true, trafik_afskaaret: ['2026-11-01'], angreb_afskaaret: ['2026-11-01', '2026-11-02'] }), subdomaener_en: subSvar(...SUB_PERIODE, SUB_EN), besoegende: BES_VAERT, besoegende_vaert: BES_SHOP, besoegende_vaert_tom: BES_API };
 /* Uden subdomæner: kun domænet selv i subdomaener, og Besøgendes almindelige svar (siderne har ingen vært). */
 const SUB_UDEN = { subdomaener_en: subSvar(...SUB_PERIODE, SUB_EN) }, domUden = 'zone=z2&navn=xyz.wi24rd.com';
 SIDER.push(
   { id: 'subdom-besoegende', navn: 'Besøgende: afsnittet Subdomæner', hash: 'besoegende?' + dom, rul: '#besoeg-sub', ekstra: SUB },
   { id: 'subdom-besoegende-sider', navn: 'Besøgende: Mest besøgte sider med subdomænet ved stien', hash: 'besoegende?' + dom, rul: '#besoeg-sider', ekstra: SUB },
   { id: 'subdom-besoegende-filter', navn: 'Besøgende filtreret til shop.wi24rd.com', hash: 'besoegende?' + dom + '&vaert=shop.wi24rd.com', ekstra: SUB },
+  { id: 'subdom-besoegende-filter-lande', navn: 'Besøgende filtreret til shop.wi24rd.com: lande og kendte robotter pr. subdomæne', hash: 'besoegende?' + dom + '&vaert=shop.wi24rd.com', rul: '#besoeg-lande', ekstra: SUB },
+  { id: 'subdom-besoegende-filter-tom', navn: 'Besøgende filtreret til api.wi24rd.com (ingen lande eller robotter: afsnittene står ikke)', hash: 'besoegende?' + dom + '&vaert=api.wi24rd.com', ekstra: SUB },
   { id: 'subdom-angreb', navn: 'Angreb: afsnittet Subdomæner', hash: 'vaernet?' + dom, rul: '#vg-sub', ekstra: SUB },
   { id: 'subdom-angreb-filter', navn: 'Angreb filtreret til shop.wi24rd.com', hash: 'vaernet?' + dom + '&periode=30&vaert=shop.wi24rd.com', ekstra: SUB },
   { id: 'subdom-besoegende-uden', navn: 'Besøgende for et domæne uden subdomæner (uændret)', hash: 'besoegende?' + domUden, ekstra: SUB_UDEN },

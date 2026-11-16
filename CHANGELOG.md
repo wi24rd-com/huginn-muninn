@@ -7,13 +7,15 @@ Posterne står efter dato, nyeste først.
 ### 2026-11-16 23:30 — Subdomæner i Besøgende og Angreb
 #### Tilføjet
 - **Subdomæner i Besøgende og Angreb:** har et domæne trafik på mindst to navne (fx `wi24rd.com`, `www.wi24rd.com` og `shop.wi24rd.com`), står afsnittet **Subdomæner** med besøg, forespørgsler, angreb og andel pr. subdomæne i den valgte periode. Det står kun, når ét domæne er valgt; et domæne uden subdomæner ser ud som før. Flere end 20 navne samles i **Andre (n)**, og opslag med en IP-adresse, et andet navn eller et ugyldigt navn står for sig og kan ikke åbnes.
-- **Filter pr. subdomæne:** et klik på et subdomæne viser samme visning for det, med chippen **Subdomæne: …**. Besøgende viser besøg og forespørgsler pr. dag og subdomænets mest besøgte sider; Angreb viser angreb og afviste pr. dag. Det, der ikke findes pr. subdomæne (unikke besøgende, lande, robotter, regler, stier, De seneste, Cloudflares egne fund), står med **Ikke pr. subdomæne**. Filteret står i adressen og nulstilles, når et andet domæne vælges.
-- Noterne **Pr. subdomæne fra …**, **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.** og **Cloudflare svarede ikke på subdomænerne for dette domæne.**
+- **Filter pr. subdomæne:** et klik på et subdomæne viser samme visning for det, med chippen **Subdomæne: …**. Besøgende viser besøg og forespørgsler pr. dag, hvor besøgene kom fra, kendte robotter og subdomænets mest besøgte sider; Angreb viser angreb og afviste pr. dag. Det, der ikke findes pr. subdomæne (unikke besøgende, IP-klasserne, regler, lande og stier i Angreb, De seneste, Cloudflares egne fund), står ikke; en linje under chippen siger det og fører til hele domænet. Et afsnit uden tal for subdomænet i perioden står heller ikke. Filteret står i adressen og nulstilles, når et andet domæne vælges.
+- **Hvert tal i tabellen Subdomæner åbner det, det tæller:** Angreb åbner Angreb for subdomænet, Besøg og Forespørgsler Besøgende, med samme periode. Navnet åbner den visning, tabellen står i. Et tal, der er 0, kan ikke klikkes.
+- **Lande og kendte robotter pr. subdomæne** hentes i samme kald som trafikken pr. subdomæne (intet ekstra kald pr. dag). De sidste ca. 30 dage hentes én gang igen pr. domæne ved første start.
+- Noterne **Pr. subdomæne fra …**, **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.**, **Cloudflare svarede ikke på subdomænerne for dette domæne.** og **{n} dage er ikke med: Cloudflare sendte flere rækker, end programmet kan hente på én gang.**
 #### Ændret
 - **Den lokale database opgraderes endnu et trin** (skema 20) ved første start: to nye tabeller over, hvilke dage der er hentet pr. subdomæne. Ingen gemte tal ændres. Version 1.0.0 siger bagefter "(skema 20)".
 - **Mest besøgte sider skelner mellem subdomæner:** samme sti på to subdomæner står som to rækker, med subdomænet ved stien, og et klik viser stien på det subdomæne. Står svaret på Cloudflares loft, siger en note, at kun de mest besøgte sider er med.
 - **Historik pr. subdomæne fra ca. 30 dage før opgraderingen:** første start henter de sidste ca. 30 dage én gang pr. domæne. Ældre dage har ingen tal pr. subdomæne.
-- Afviser Cloudflare subdomænets navn i hentningen af angrebene, hentes domænets tal uden det, som før, til programmet starter igen.
+- Afviser Cloudflare subdomænets navn i hentningen af angrebene, hentes domænets tal uden det, som før, resten af døgnet (UTC); næste døgn prøves der med navnet igen.
 - Vejledningen beskriver subdomænerne i Besøgende, Angreb, Data og historik, Fejlfinding og ordlisten. API Tokenet skal ikke have flere rettigheder.
 
 ### 2026-11-16 23:30 — Flere API Tokens side om side

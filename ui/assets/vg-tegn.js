@@ -698,8 +698,10 @@
   const subVis = (s, afvist) => Boolean(s) && Boolean(afvist || subRigtige(s).length >= 2);
   /* Den første dag med tal pr. subdomæne: den seneste af trafik og angreb, for tabellen har begge. */
   const subFra = s => [s.trafik_fra, s.angreb_fra].filter(Boolean).sort().pop() || null;
-  /* o: domaene, afvist, intro, aria (skabelon med {vaert}), maal(navn) → mål, fra (periodens første dag), id. Tabellen er kittets (laeseTabel). Navnet og
-     tallene Besøg, Forespørgsler og Angreb åbner det samme (navnet er Tab-stoppet; tallene er der til musen). Andel og noterne har intet bag sig. */
+  /* o: domaene, afvist, intro, aria (skabelon med {vaert}), maal(navn) → mål, maalBes(navn) og maalAng(navn) → mål i Besøgende og Angreb med samme periode,
+     fra (periodens første dag), id. Tabellen er kittets (laeseTabel). Navnet åbner visningen, tabellen står i (o.maal); et tal åbner det, tallet tæller
+     (V-SUBDOM.1 FIX 1, F2): Besøg og Forespørgsler Besøgende, Angreb Angreb, filtreret til subdomænet. Navnet er Tab-stoppet; tallene er der til musen. Et tal,
+     der er 0, fører ingen steder hen. Andel og noterne har intet bag sig. */
   function subAfsnit(s, o) {
     const U = T.sub, dele = [];
     if (o.afvist) dele.push(el('p', { className: 'vg-advarsel vg-gul sub-ikke-tilg', textContent: U.ikkeTilg }));
@@ -709,12 +711,20 @@
       const celle = t => el('td', { className: 'tal-kol', textContent: t });
       const th = (t, k) => { const e = el('th', { textContent: t, className: k || '' }); e.setAttribute('scope', 'col'); return e; };
       const hoved = () => [th(U.th), th(U.thBesoeg, 'tal-kol'), th(U.thForesp, 'tal-kol'), th(U.thAngreb, 'tal-kol'), th(U.thAndel, 'tal-kol')];
+      /* aria-label og title siger, hvor knappen fører hen. */
+      const medTitel = (b, label) => { b.title = label; return b; };
       const raekke = v => {
-        const tre = [v.besoeg, v.foresp, v.angreb].map(n => tal(n));
-        if (erKat(v.vaert)) return el('tr', { className: 'sub-kat' }, el('th', { scope: 'row', textContent: U[SUB_KAT[v.vaert]] || U.ugyldig }), ...tre.map(celle), celle(andel(v.foresp)));
-        const navn = subHost(v.vaert, o.domaene), maal = o.maal(navn), label = fmt(o.aria, { vaert: navn });
-        const tk = t => { const b = knap(t, maal, 'link dyk-celle sub-tal', label); b.tabIndex = -1; return el('td', { className: 'tal-kol' }, b); };
-        const tr = el('tr', { className: 'sub-raekke' }, el('th', { scope: 'row' }, knap(domaene(navn), maal, 'link dyk-celle sub-navn', label)), ...tre.map(tk), celle(andel(v.foresp)));
+        const tre = [v.besoeg, v.foresp, v.angreb];
+        if (erKat(v.vaert)) return el('tr', { className: 'sub-kat' }, el('th', { scope: 'row', textContent: U[SUB_KAT[v.vaert]] || U.ugyldig }), ...tre.map(n => celle(tal(n))), celle(andel(v.foresp)));
+        const navn = subHost(v.vaert, o.domaene), label = fmt(o.aria, { vaert: navn });
+        const bes = [o.maalBes(navn), fmt(U.ariaBes, { vaert: navn })], ang = [o.maalAng(navn), fmt(U.ariaAng, { vaert: navn })];
+        const tk = (n, [maal, lbl], k) => {
+          if (!n) return el('td', { className: 'tal-kol' }, String(tal(n)));
+          const b = medTitel(knap(tal(n), maal, `link dyk-celle sub-tal sub-tal-${k}`, lbl), lbl);
+          b.tabIndex = -1;
+          return el('td', { className: 'tal-kol' }, b);
+        };
+        const tr = el('tr', { className: 'sub-raekke' }, el('th', { scope: 'row' }, medTitel(knap(domaene(navn), o.maal(navn), 'link dyk-celle sub-navn', label), label)), tk(v.besoeg, bes, 'besoeg'), tk(v.foresp, bes, 'foresp'), tk(v.angreb, ang, 'angreb'), celle(andel(v.foresp)));
         tr.dataset.vaert = navn;
         return tr;
       };
@@ -728,6 +738,9 @@
         d.dataset.noegle = 'sub-flere';
         dele.push(d);
       }
+      /* V-SUBDOM.1 FIX 1 (V2): døgn, hvor Cloudflare sendte flere rækker, end programmet kan hente på én gang, har ingen tal pr. subdomæne. */
+      const afsk = new Set([...(s.trafik_afskaaret || []), ...(s.angreb_afskaaret || [])]).size;
+      if (afsk) dele.push(el('p', { className: 'vg-note sub-afskaaret', textContent: fmt(U.afskDage, { n: tal(afsk) }) }));
       const fra = subFra(s);
       if (fra && fra > o.fra) dele.push(el('p', { className: 'vg-note sub-fra', textContent: fmt(U.fra, { dato: datoLang(fra) }) }));
     }
@@ -736,8 +749,26 @@
     b.id = o.id;
     return b;
   }
-  /* Et afsnit, der ikke findes pr. subdomæne: overskriften og "Ikke pr. subdomæne" (aldrig domænets tal under et subdomænes navn). Intet er klikbart. */
-  const subIkke = (h, id) => { const b = blok(h, '', tomt(T.sub.ikke, 'sub-ikke')); if (id) b.id = id; return b; };
+  /* Én linje under chippen i det filtrerede (V-SUBDOM.1 FIX 1, F1): hvad der ikke er med pr. subdomæne. {link} er "hele {domæne}", der fjerner filteret
+     pr. subdomæne (samme mål som chippens ×). Afsnit uden tal pr. subdomæne står slet ikke. */
+  function subUden(tekst, dom, maal, klasse) {
+    const [foer, efter] = tekst.split('{link}'), hele = fmt(T.sub.hele, { domaene: dom });
+    const b = knap(hele, maal, 'link sub-hele', fmt(T.sub.heleAria, { domaene: dom }));
+    b.title = b.getAttribute('aria-label');
+    return el('p', { className: `vg-note sub-uden ${klasse || ''}`.trim() }, foer, b, efter || '');
+  }
+  /* Perioden oversat mellem Besøgende (ingen = 7 dage, periode=30|aar, fra/til) og Angreb (periode=7|30|alt, dag, fra/til). Besøgendes "Et år" er Angrebs
+     "Hele historikken" og omvendt (det nærmeste: Besøgende går højst et år tilbage); én dag i Angreb er Fra = Til i Besøgende. */
+  function subPeriodeAng(p) {
+    if (p.has('fra') && p.has('til')) return p.get('fra') === p.get('til') ? { dag: p.get('fra') } : { fra: p.get('fra'), til: p.get('til') };
+    return { periode: { 30: '30', aar: 'alt' }[p.get('periode')] || '7' };
+  }
+  function subPeriodeBes(p) {
+    if (p.has('dag')) return { fra: p.get('dag'), til: p.get('dag') };
+    if (p.has('fra') && p.has('til')) return { fra: p.get('fra'), til: p.get('til') };
+    const v = { 30: '30', alt: 'aar' }[p.get('periode')];
+    return v ? { periode: v } : {};
+  }
 
-  window.hmTegn = { subAfsnit, subIkke, subNoegle, subSpaend, subVis, subHost, subFra, angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, fjernChip, tomt, laeseTabel, tabelRul, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
+  window.hmTegn = { subAfsnit, subUden, subPeriodeAng, subPeriodeBes, subNoegle, subSpaend, subVis, subHost, subFra, angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, fjernChip, tomt, laeseTabel, tabelRul, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
 })();

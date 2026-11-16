@@ -318,6 +318,32 @@ pub fn laes(lager: &Store, zoner: &[String]) -> Result<Laest, Fejl> {
     Ok(l)
 }
 
+/// V-SUBDOM.1 FIX 1: filteret pr. vært. Domænets lande, robotter og besøg (`b_land`, `b_robot`, `b_total`) byttes ud med værtens (`vaert::VaertLr`) i
+/// samme form, så lande, robotter og filtrene land og robot regnes som for domænet: `b_total` er værtens besøg på dagene med lande (summen af dens lande, så
+/// andelene passer). Dagene med tal er værtens. IP-klasserne og noterne om, at Cloudflare ikke svarede for domænet, findes ikke pr. vært og tømmes. Siderne
+/// og unikke besøgende bliver (siderne filtreres af `Laest::vaert`; unikke besøgende vises ikke pr. vært). Ren funktion.
+pub fn med_vaert_lr(l: &mut Laest, v: crate::vaert::VaertLr) {
+    l.besoeg.retain(|r| !matches!(r.art.as_str(), "b_total" | "b_land" | "b_robot"));
+    let mut total: BTreeMap<String, i64> = v.land_hentet.iter().map(|d| (d.clone(), 0)).collect();
+    for r in &v.land {
+        *total.entry(r.dag.clone()).or_default() += r.n;
+    }
+    let som = |rk: Vec<Raekke>, art: &'static str| rk.into_iter().map(move |r| Raekke { art: art.to_string(), ..r });
+    l.besoeg.extend(som(v.land, "b_land"));
+    l.besoeg.extend(som(v.robot, "b_robot"));
+    l.besoeg.extend(total.into_iter().map(|(dag, n)| Raekke {
+        dag,
+        art: "b_total".into(),
+        noegle: "besoeg".into(),
+        n,
+    }));
+    l.besoeg_hentet = v.land_hentet;
+    l.robot_hentet = v.robot_hentet;
+    l.ipklasse.clear();
+    l.ikke_tilgaengelig.clear();
+    l.robot_ikke.clear();
+}
+
 /// En flise: summen af dagstallene i dagene, hvor mange dage der har tal (`med`), og hvor mange dage den dækker.
 #[derive(Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct Sum7 {

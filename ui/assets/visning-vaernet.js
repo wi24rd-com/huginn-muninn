@@ -11,8 +11,9 @@
    Ingen IP-adresser; stierne er renset i Rust og sættes altid som tekst. Bygges med createElement. Dage i uhentet er huller: de tegnes ikke som 0.
    start(params)/stop(): et skift stopper alt fra det forrige (lyttere, ure, genforsøg), og svar, der kommer for sent, kasseres (gen).
    V-SUBDOM.1 B2: for ét domæne uden filtre står afsnittet "Subdomæner" (kommandoen subdomaener, kun fra cachen), når domænet har tal på mindst to værter i
-   perioden. vaert=<navn> er filteret pr. subdomæne (tegnVaert): angreb og afviste pr. dag for værten; regler, lande, stier, "De seneste" og Cloudflares egne
-   fund findes ikke pr. subdomæne og siger det. Det står ikke sammen med andre filtre og nulstilles, når et andet domæne vælges. Værtsnavne kun som tekst. */
+   perioden. vaert=<navn> er filteret pr. subdomæne (tegnVaert): angreb og afviste pr. dag for værten. Regler, lande, stier, "De seneste" og Cloudflares egne
+   fund findes ikke pr. subdomæne: de står ikke, og én linje under chippen siger det og fører til hele domænet (V-SUBDOM.1 FIX 1). Det står ikke sammen med
+   andre filtre og nulstilles, når et andet domæne vælges. Værtsnavne kun som tekst. */
 (function () {
   'use strict';
   const S = window.hmSprog, T = S.T, L = T.ang, R = window.hmRamme, V = window.hmTegn;
@@ -548,7 +549,9 @@
   /* Afsnittet "Subdomæner": kun for ét domæne uden filtre, og kun med tal på mindst to værter (eller når Cloudflare afviste forespørgslen). */
   function subBlok(d, sub) {
     if (samlet() || !zone() || filtre().length || har('slags') || erRobot() || !V.subVis(sub, sub && sub.angreb_afvist)) return [];
-    return [V.subAfsnit(sub, { domaene, afvist: sub.angreb_afvist, intro: T.sub.pAng, aria: T.sub.ariaAng, maal: n => medVaert(n), fra: d.periode.fra, id: 'vg-sub' })];
+    /* Navnet og Angreb åbner Angreb for subdomænet; Besøg og Forespørgsler Besøgende med samme periode (FIX 1, F2). */
+    const besQ = n => ({ gaa: 'besoegende?' + new URLSearchParams({ zone: zone(), navn: domaene, ...V.subPeriodeBes(params), vaert: n }) });
+    return [V.subAfsnit(sub, { domaene, afvist: sub.angreb_afvist, intro: T.sub.pAng, aria: T.sub.ariaAng, maal: n => medVaert(n), maalBes: besQ, maalAng: n => medVaert(n), fra: d.periode.fra, id: 'vg-sub' })];
   }
   function tegn(d, trafik, sub) {
     const liste = filtre(), g = gen, skjult = [], et = !samlet() && Boolean(zone());
@@ -601,7 +604,7 @@
   }
   /* ── filteret pr. subdomæne ── */
   /* Angreb for ét subdomæne (vaert=<navn>): fliser og søjler for angreb og afviste pr. dag fra subdomaener. Et døgn uden tal pr. vært er et hul, ikke 0. Det,
-     der ikke findes pr. vært, står med overskriften og "Ikke pr. subdomæne" (aldrig domænets tal under et subdomænes navn). */
+     der ikke findes pr. vært, står ikke (aldrig domænets tal under et subdomænes navn); linjen under chippen siger det og fører til hele domænet. */
   const SUB_SERIER = [{ felt: 'angreb', klasse: 'vg-s-edge' }, { felt: 'afvist', klasse: 'vg-s-server' }];
   function tegnVaert(d, sub) {
     const U = T.sub, host = vaertHost(), v = sub && sub.vaerter.find(x => x.vaert === vaertN()), pr = new Map(v ? v.dage.map(x => [x.dag, x]) : []);
@@ -617,7 +620,9 @@
     const bjaelke = el('div', { className: 'vg-bjaelke' }, el('p', { className: 'vg-status', textContent: stat.tekst }));
     const dage = d.dage.map(x => { const y = pr.get(x.dag); return { dag: x.dag, angreb: y ? y.angreb : null, afvist: y ? y.afvist : null, hentet: Boolean(y) && y.angreb !== null }; });
     const med = dage.filter(x => x.hentet).length, sum = k => dage.reduce((a, x) => a + (x[k] || 0), 0);
-    const dele = [bjaelke, vaelger];
+    /* Samme mål som chippens ×: er subdomænet det eneste filter, siden uden filtre. */
+    const hele = har('dag') || har('fra') ? udenFilter('vaert') : { gaa: oversigt(udenFilter('vaert')) };
+    const dele = [bjaelke, V.subUden(U.udenAng, domaene, hele, 'ang-sub-uden'), vaelger];
     if (!sub || sub.angreb_afvist) dele.push(el('p', { className: 'vg-advarsel vg-gul sub-ikke-tilg', textContent: U.ikkeTilg }));
     /* Fliserne fører til søjlerne (én dag har ingen søjler, og så fører de ingen steder hen). */
     const under = med < dage.length ? fmt(T.dagMed, { m: tal(med), n: tal(dage.length) }) : periodeTekst();
@@ -634,7 +639,6 @@
     }
     if (sub && sub.angreb_fra && sub.angreb_fra > d.periode.fra) dele.push(el('p', { className: 'vg-note sub-fra', textContent: fmt(U.fra, { dato: V.datoLang(sub.angreb_fra) }) }));
     dele.push(el('p', { className: 'vg-note sub-dns', textContent: U.dnsOnly }));
-    dele.push(...[U.hRegler, T.dykLister.land, T.dykLister.sti, T.dykSenesteH, T.cfH].map(h => V.subIkke(h)));
     dele.push(el('p', { className: 'vg-note', textContent: T.dykNote }));
     rod.replaceChildren(...dele);
     tegnMoenster();

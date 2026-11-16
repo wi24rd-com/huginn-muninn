@@ -745,3 +745,385 @@ async fn valideringsfejl_paa_vaertsfeltet_giver_tallene_som_uden_feltet() {
         "intet v_fw"
     );
 }
+
+// ── FIX 1: lande og robotter pr. vært, noteringens udløb ────────────────────────────────────────────────────────────
+/// Kendte robotter pr. rå vært: (vært, kategori, besøg). Tom kategori = ikke en kendt robot.
+fn raa_robot() -> Vec<(String, &'static str, i64)> {
+    vaerter()
+        .into_iter()
+        .enumerate()
+        .flat_map(|(i, v)| {
+            let i = i as i64;
+            [
+                (v.clone(), "Search Engine Crawler", 3 + i % 5),
+                (v.clone(), "AI Crawler", 1 + i % 2),
+                (v, "", 9 + i),
+            ]
+        })
+        .collect()
+}
+
+/// `vaert_svar` med `vl` (vært × land, fra `raa_trafik`) og `vr` (vært × kategori, fra `raa_robot`).
+fn vaert_svar_lr(dag: &str) -> Value {
+    let mut s = vaert_svar(dag);
+    let z = &mut s["viewer"]["zones"][0];
+    z["vl"] = json!(raa_trafik()
+        .into_iter()
+        .map(|(h, l, _, _, b)| json!({ "sum": { "visits": b }, "dimensions": { "date": dag, "clientRequestHTTPHost": h, "clientCountryName": l } }))
+        .collect::<Vec<_>>());
+    z["vr"] = json!(raa_robot()
+        .into_iter()
+        .map(|(h, k, b)| json!({ "count": b * 3, "sum": { "visits": b }, "dimensions": { "date": dag, "clientRequestHTTPHost": h, "verifiedBotCategory": k } }))
+        .collect::<Vec<_>>());
+    s
+}
+
+/// Forespørgslen har de to nye aliaser med eyeball, værten og landet/kategorien, og stadig kun zone og tider som variabler.
+#[test]
+fn vaertsforespoergslen_har_lande_og_robotter() {
+    for (alias, felt) in [("vl:", "clientCountryName"), ("vr:", "verifiedBotCategory")] {
+        let linje = VAERT_QUERY.lines().find(|l| l.trim_start().starts_with(alias)).unwrap();
+        assert!(
+            linje.contains("requestSource:\"eyeball\"") && linje.contains("clientRequestHTTPHost") && linje.contains(felt),
+            "{linje}"
+        );
+        assert!(linje.contains("sum { visits }") && linje.contains("limit:10000"), "{linje}");
+    }
+    assert!(VAERT_QUERY.contains("vr: httpRequestsAdaptiveGroups") && VAERT_QUERY.matches("httpRequestsAdaptiveGroups").count() == 4);
+    for f in ["clientIP", "userAgent", "clientRequestPath", "$zone:", "$dag"] {
+        assert!(!VAERT_QUERY.contains(f), "{f}");
+    }
+}
+
+/// Summen over værterne pr. land er domænets `b_land` for døgnet, og pr. kategori domænets `b_robot` (uden "ikke en kendt robot"); `v_land` og `v_robot`
+/// har samme værter som `v_alle` (top 20 og `[andre]`), og `v_alle`/`v_besoeg` er bit for bit som uden de nye aliaser.
+#[test]
+fn lande_og_robotter_pr_vaert_summer_til_domaenets() {
+    let dag = "2026-11-05".to_string();
+    let dage = std::slice::from_ref(&dag);
+    let (rk, afskaaret) = trafik_raekker(&vaert_svar_lr(&dag), dage, Z).unwrap();
+    assert!(!afskaaret);
+    let (uden, _) = trafik_raekker(&vaert_svar(&dag), dage, Z).unwrap();
+    let kun = |rk: &[Raekke4], arter: &[&str]| rk.iter().filter(|r| arter.contains(&r.1.as_str())).cloned().collect::<Vec<_>>();
+    assert_eq!(kun(&rk, &[V_ALLE, V_BESOEG]), uden, "v_alle og v_besoeg er uændrede");
+    // Domænets egne tal for samme døgn (besoeg::BESOEG_QUERY og ROBOT_QUERY lægger værterne sammen).
+    let mut lande: BTreeMap<&str, i64> = BTreeMap::new();
+    for r in raa_trafik() {
+        *lande.entry(r.1).or_default() += r.4;
+    }
+    let besoeg = json!({ "viewer": { "zones": [{ "besoeg": lande.iter().map(|(l, n)| json!({ "sum": { "visits": n }, "dimensions": { "date": dag, "clientCountryName": l } })).collect::<Vec<_>>() }] } });
+    let b_land: BTreeMap<String, i64> = crate::besoeg::raekker(&besoeg, dage)
+        .unwrap()
+        .into_iter()
+        .filter(|r| r.1 == "b_land")
+        .map(|r| (r.2, r.3))
+        .collect();
+    let mut kat: BTreeMap<&str, i64> = BTreeMap::new();
+    for r in raa_robot() {
+        *kat.entry(r.1).or_default() += r.2;
+    }
+    let robot = json!({ "viewer": { "zones": [{ "robot": kat.iter().map(|(k, n)| json!({ "count": n, "sum": { "visits": n }, "dimensions": { "date": dag, "verifiedBotCategory": k } })).collect::<Vec<_>>() }] } });
+    let b_robot: BTreeMap<String, i64> = crate::besoeg::robot_raekker(&robot, dage)
+        .unwrap()
+        .into_iter()
+        .filter(|r| !r.2.is_empty())
+        .map(|r| (r.2, r.3))
+        .collect();
+    let pr = |art: &str| -> BTreeMap<String, i64> {
+        let mut m = BTreeMap::new();
+        for r in rk.iter().filter(|r| r.1 == art) {
+            *m.entry(r.2.split_once('\t').unwrap().1.to_string()).or_default() += r.3;
+        }
+        m
+    };
+    assert_eq!(pr(V_LAND), b_land, "summen pr. land = b_land");
+    assert_eq!(pr(V_ROBOT), b_robot, "summen pr. kategori = b_robot (kendte robotter)");
+    let alle: HashSet<&str> = rk.iter().filter(|r| r.1 == V_ALLE).map(|r| r.2.as_str()).collect();
+    for r in rk.iter().filter(|r| r.1 == V_LAND || r.1 == V_ROBOT) {
+        let (v, k) = r.2.split_once('\t').unwrap();
+        assert!(alle.contains(v), "{v:?} har ingen v_alle");
+        assert!(!k.is_empty() && !v.contains("wi24rd") && !v.contains(':'), "{:?}", r.2);
+    }
+    assert!(
+        rk.iter().any(|r| r.1 == V_LAND && r.2.starts_with("[andre]\t")),
+        "de mindste værter er [andre]"
+    );
+    assert!(!rk.iter().any(|r| r.1.ends_with("_afskaaret")));
+}
+
+/// Regel S4: står `vl` eller `vr` på loftet, gemmes ingen tal for den art for døgnene, kun mærket; de andre arter er uberørte, og der spørges ikke døgn
+/// for døgn (ingen ekstra kald).
+#[test]
+fn alias_paa_loftet_giver_ingen_tal_for_arten() {
+    let dage: Vec<String> = ["2026-11-04", "2026-11-05"].iter().map(|d| d.to_string()).collect();
+    let mange = |felt: &str| -> Vec<Value> {
+        (0..LOFT)
+            .map(|i| json!({ "count": 1, "sum": { "visits": 1 }, "dimensions": { "date": "2026-11-05", "clientRequestHTTPHost": "wi24rd.com", felt: format!("K{i}") } }))
+            .collect()
+    };
+    for (alias, felt, art, maerke, anden) in [
+        ("vl", "clientCountryName", V_LAND, V_LAND_AFSKAARET, V_ROBOT),
+        ("vr", "verifiedBotCategory", V_ROBOT, V_ROBOT_AFSKAARET, V_LAND),
+    ] {
+        let mut svar = vaert_svar_lr("2026-11-05");
+        svar["viewer"]["zones"][0][alias] = json!(mange(felt));
+        let (rk, afskaaret) = trafik_raekker(&svar, &dage, Z).unwrap();
+        assert!(!afskaaret, "{alias}: ikke døgn for døgn");
+        assert!(!rk.iter().any(|r| r.1 == art), "{alias}: intet tal for arten");
+        let m: Vec<&Raekke4> = rk.iter().filter(|r| r.1 == maerke).collect();
+        assert_eq!(m.len(), 2, "{alias}: mærket for hvert døgn");
+        assert!(m.iter().all(|r| r.2.is_empty() && r.3 == LOFT));
+        assert!(rk.iter().any(|r| r.1 == anden), "{alias}: den anden art er uberørt");
+        let (uden, _) = trafik_raekker(&vaert_svar("2026-11-05"), &dage, Z).unwrap();
+        assert_eq!(
+            rk.iter().filter(|r| r.1 == V_ALLE || r.1 == V_BESOEG).cloned().collect::<Vec<_>>(),
+            uden
+        );
+    }
+}
+
+/// `b_land`, `b_robot` og `b_total` og hele Besøgende uden filter pr. vært er de samme med og uden de nye arter i databasen, og ingen af arterne pr. vært
+/// når Overblik, Angreb og notifikationerne (`Store::raekker`).
+#[test]
+fn domaenets_besoeg_er_uaendrede_med_vaertsarterne() {
+    let z = "0123456789abcdef0123456789abcdef";
+    let d = |i: i64| dag_noegle(nu() - i * DOEGN_MS);
+    let dage: Vec<String> = (1..=5).map(d).collect();
+    let byg = |med_v: bool| {
+        let mut s = Store::i_hukommelse().unwrap();
+        s.gem_zoner(
+            1,
+            &[Zone {
+                id: z.into(),
+                navn: Z.into(),
+            }],
+            "t",
+        )
+        .unwrap();
+        let b: Vec<Raekke4> = dage
+            .iter()
+            .flat_map(|x| [rk(x, "b_land", "DK", 7), rk(x, "b_land", "US", 3), rk(x, "b_total", "besoeg", 10)])
+            .collect();
+        s.gem_besoeg(z, &dage, &b, "t").unwrap();
+        s.gem_robot(
+            z,
+            &dage,
+            &dage.iter().map(|x| rk(x, "b_robot", "AI Crawler", 2)).collect::<Vec<_>>(),
+            "t",
+        )
+        .unwrap();
+        if med_v {
+            let v: Vec<Raekke4> = dage
+                .iter()
+                .flat_map(|x| {
+                    [
+                        rk(x, V_ALLE, "shop", 50),
+                        rk(x, V_LAND, "shop\tDK", 4),
+                        rk(x, V_ROBOT, "shop\tAI Crawler", 1),
+                        rk(x, V_LAND_AFSKAARET, "", LOFT),
+                        rk(x, V_ROBOT_AFSKAARET, "", LOFT),
+                    ]
+                })
+                .collect();
+            s.gem_vaert(z, &dage, &v, "t").unwrap();
+        }
+        s
+    };
+    let (uden, med) = (byg(false), byg(true));
+    let zoner = [z.to_string()];
+    for art in ["b_land", "b_robot", "b_total"] {
+        assert_eq!(
+            uden.raekker_art(&zoner, &[art], "0000-00-00").unwrap(),
+            med.raekker_art(&zoner, &[art], "0000-00-00").unwrap(),
+            "{art}"
+        );
+    }
+    let regn_b = |s: &Store| {
+        let mut l = crate::besoeg::laes(s, &zoner).unwrap();
+        l.med_vaert = true;
+        crate::besoeg::regn(&crate::dyk::Periode::D7, None, &l, nu())
+    };
+    assert_eq!(regn_b(&uden), regn_b(&med), "Besøgende uden filter pr. vært");
+    assert!(
+        med.raekker(z, "0000-00-00").unwrap().is_empty(),
+        "ingen art pr. vært i Store::raekker"
+    );
+    assert_eq!(med.raekker_art(&zoner, ALLE_ARTER, "0000-00-00").unwrap().len(), 25);
+}
+
+/// Genhentningen én gang (`VAERT_LAND_V1`): døgnene i hentevinduet glemmes i `hentet_vaert` (ét kald pr. domæne: `besoeg::mangler` dækker dem i ét
+/// spænd), ældre døgn og alle tal bliver, og det sker kun én gang. Den første dag med lande gemmes.
+#[test]
+fn lande_og_robotter_hentes_igen_en_gang() {
+    let mut s = Store::i_hukommelse().unwrap();
+    let d = |i: i64| dag_noegle(nu() - i * DOEGN_MS);
+    let alle: Vec<String> = (1..=40).map(d).collect();
+    s.gem_vaert("z1", &alle, &alle.iter().map(|x| rk(x, V_ALLE, "", 9)).collect::<Vec<_>>(), "t")
+        .unwrap();
+    assert_eq!(s.vaert_land_fra().unwrap(), None);
+    let fra = d(HENT_DAGE);
+    assert!(s.vaert_land_en_gang(&fra).unwrap());
+    let hentet = s.hentet_vaert("z1").unwrap();
+    assert_eq!(hentet.len(), 10, "kun døgn før vinduet står som hentet");
+    assert!(hentet.keys().all(|x| *x < fra));
+    assert_eq!(
+        s.raekker_art(&["z1".into()], &[V_ALLE], "0000-00-00").unwrap().len(),
+        40,
+        "tallene står"
+    );
+    assert_eq!(s.vaert_land_fra().unwrap().as_deref(), Some(fra.as_str()));
+    assert_eq!(
+        crate::besoeg::mangler(&hentet, nu()),
+        Some((d(crate::besoeg::BESOEG_DAGE), d(1))),
+        "ét spænd = ét kald pr. domæne"
+    );
+    s.gem_vaert("z1", &[d(1)], &[], "t").unwrap();
+    assert!(!s.vaert_land_en_gang(&d(HENT_DAGE - 1)).unwrap(), "kun én gang");
+    assert!(s.hentet_vaert("z1").unwrap().contains_key(&d(1)));
+    assert_eq!(s.vaert_land_fra().unwrap().as_deref(), Some(fra.as_str()));
+}
+
+/// Værtens lande og robotter: kun dage hentet fra og med genhentningen, ikke dage på loftet (hele svaret eller artens alias), og kun værtens rækker.
+#[test]
+fn lande_og_robotter_for_en_vaert() {
+    let r = |dag: &str, art: &str, k: &str, n: i64| Raekke {
+        dag: dag.into(),
+        art: art.into(),
+        noegle: k.into(),
+        n,
+    };
+    let rk = vec![
+        r("2026-10-01", V_LAND, "shop\tDK", 99),
+        r("2026-11-01", V_LAND, "shop\tDK", 5),
+        r("2026-11-01", V_LAND, "\tDK", 70),
+        r("2026-11-01", V_ROBOT, "shop\tAI Crawler", 2),
+        r("2026-11-02", V_LAND_AFSKAARET, "", LOFT),
+        r("2026-11-02", V_ROBOT, "shop\tAI Crawler", 3),
+        r("2026-11-03", V_AFSKAARET, "", LOFT),
+        r("2026-11-04", V_LAND, "shop\tSE", 1),
+    ];
+    let hentet: HashSet<String> = ["2026-10-01", "2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04"]
+        .iter()
+        .map(|d| d.to_string())
+        .collect();
+    let v = lr(&rk, &hentet, Some("2026-10-20"), "shop");
+    let dage = |m: &HashSet<String>| m.iter().cloned().collect::<BTreeSet<_>>();
+    assert_eq!(
+        dage(&v.land_hentet),
+        ["2026-11-01", "2026-11-04"].iter().map(|d| d.to_string()).collect()
+    );
+    assert_eq!(
+        dage(&v.robot_hentet),
+        ["2026-11-01", "2026-11-02", "2026-11-04"].iter().map(|d| d.to_string()).collect()
+    );
+    assert_eq!(v.land, [r("2026-11-01", V_LAND, "DK", 5), r("2026-11-04", V_LAND, "SE", 1)]);
+    assert_eq!(v.robot.iter().map(|x| x.n).sum::<i64>(), 5);
+    assert_eq!(
+        lr(&rk, &hentet, Some("2026-10-20"), "").land,
+        [r("2026-11-01", V_LAND, "DK", 70)],
+        "domænet selv"
+    );
+    assert_eq!(lr(&rk, &hentet, None, "shop"), VaertLr::default(), "uden genhentning: ingen dage");
+}
+
+/// Besøgende med filter pr. vært: lande, robotter og filtrene land og robot er værtens; IP-klasserne og domænets noter er væk.
+#[test]
+fn besoegende_med_vaert_har_vaertens_lande_og_robotter() {
+    use crate::besoeg::{regn as b_regn, Filter, Laest as BLaest};
+    let d = |i: i64| dag_noegle(nu() - i * DOEGN_MS);
+    let r = |dag: &str, art: &str, k: &str, n: i64| Raekke {
+        dag: dag.into(),
+        art: art.into(),
+        noegle: k.into(),
+        n,
+    };
+    let mut l = BLaest {
+        besoeg: (1..=7)
+            .flat_map(|i| {
+                [
+                    r(&d(i), "b_land", "DK", 100),
+                    r(&d(i), "b_total", "besoeg", 100),
+                    r(&d(i), "b_robot", "AI Crawler", 9),
+                ]
+            })
+            .collect(),
+        besoeg_hentet: (1..=7).map(d).collect(),
+        robot_hentet: (1..=7).map(d).collect(),
+        ipklasse: vec![r(&d(1), "h_ipklasse", "x", 5)],
+        ikke_tilgaengelig: vec![Z.into()],
+        ..BLaest::default()
+    };
+    let v = VaertLr {
+        land: vec![r(&d(1), V_LAND, "SE", 4), r(&d(1), V_LAND, "DK", 6), r(&d(2), V_LAND, "SE", 2)],
+        robot: vec![r(&d(2), V_ROBOT, "Search Engine Crawler", 3)],
+        land_hentet: [d(1), d(2), d(3)].into_iter().collect(),
+        robot_hentet: [d(2)].into_iter().collect(),
+    };
+    crate::besoeg::med_vaert_lr(&mut l, v);
+    l.med_vaert = true;
+    l.vaert = Some("shop".into());
+    let u = b_regn(&crate::dyk::Periode::D7, None, &l, nu());
+    assert_eq!(
+        u.lande.iter().map(|x| (x.kode.as_str(), x.n)).collect::<Vec<_>>(),
+        [("SE", 6), ("DK", 6)]
+            .iter()
+            .map(|(k, n)| (*k, *n))
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect::<Vec<_>>()
+    );
+    assert_eq!((u.lande_i_alt, u.lande_med), (12, 3), "andelene er af værtens lande");
+    assert_eq!(u.robotter.len(), 1);
+    assert_eq!((u.robot_med, u.ipklasse.clone(), u.ikke_tilgaengelig.len()), (1, None, 0));
+    let f = b_regn(&crate::dyk::Periode::D7, Some(&Filter::Land("SE".into())), &l, nu());
+    let n = |i: i64| f.dage.iter().find(|x| x.dag == d(i)).unwrap().n;
+    assert_eq!(
+        (n(1), n(2), n(3), n(4)),
+        (Some(4), Some(2), Some(0), None),
+        "landet pr. dag for værten; en dag uden tal er et hul"
+    );
+    assert_eq!(f.besoeg30.n, 6);
+    let g = b_regn(&crate::dyk::Periode::D7, Some(&Filter::Robot("soeg".into())), &l, nu());
+    assert_eq!(g.periode.med, 1, "robotgruppen har værtens dage");
+}
+
+/// V1: noteringen gælder til næste UTC-døgn, højst 24 timer.
+#[test]
+fn noteringen_udloeber_ved_doegnskift() {
+    let t = parse_iso("2026-11-05T22:00:00Z").unwrap();
+    assert!(uden_gaelder(t, t) && uden_gaelder(t, t + 3_599_999));
+    assert!(!uden_gaelder(t, t + 2 * 3_600_000), "næste UTC-døgn");
+    let morgen = parse_iso("2026-11-05T00:10:00Z").unwrap();
+    assert!(uden_gaelder(morgen, morgen + 23 * 3_600_000));
+    assert!(!uden_gaelder(morgen, morgen + DOEGN_MS), "højst 24 timer");
+    assert!(!uden_gaelder(t, t - 1), "uret gik baglæns");
+}
+
+/// V1: noteringen giver kun `angreb_afvist`, når perioden ingen `v_fw` har; har den tal, vises de. Det gemte afslag (`VAERT_FW_FEJL`) gælder som før.
+#[test]
+fn angreb_afvist_kun_uden_tal_pr_vaert() {
+    let s = lager_til_visning();
+    let zone = "0123456789abcdef0123456789abcdef";
+    let mut l = laes(&s, zone, "2026-11-01").unwrap();
+    l.uden_vaert = true;
+    let med_tal = regn(&l, "2026-11-03", "2026-11-05");
+    assert!(!med_tal.angreb_afvist && med_tal.vaerter.iter().any(|v| v.angreb > 0));
+    assert!(regn(&l, "2026-11-05", "2026-11-05").angreb_afvist, "ingen v_fw i perioden");
+    l.uden_vaert = false;
+    assert!(!regn(&l, "2026-11-05", "2026-11-05").angreb_afvist, "uden notering");
+    l.angreb_afvist = true;
+    assert!(regn(&l, "2026-11-03", "2026-11-05").angreb_afvist, "det gemte afslag");
+}
+
+/// Fejl i de nye aliaser nævner aldrig værten.
+#[test]
+fn en_fejl_i_lande_og_robotter_indeholder_aldrig_en_vaert() {
+    let dage = ["2026-11-05".to_string()];
+    for alias in ["vl", "vr"] {
+        let d = json!({ "viewer": { "zones": [{ alias: [{ "sum": { "visits": "x" }, "dimensions": { "date": "2026-11-05", "clientRequestHTTPHost": "hemmelig.wi24rd.com" } }] }] } });
+        let e = trafik_raekker(&d, &dage, Z).unwrap_err();
+        let t = format!("{e} {e:?} {}", serde_json::to_string(&e).unwrap_or_default());
+        assert!(!t.contains("hemmelig"), "{t}");
+    }
+}

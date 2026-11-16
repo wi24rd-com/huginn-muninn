@@ -8,9 +8,10 @@
    klikbart. Søjlerne er blå (--info-mark), så de ikke læses som angreb. Tegnes igen, når køen eller de ekstra tal melder nyt, højst hvert 3. sekund; svar,
    der kommer for sent, kasseres (gen). Bygges med createElement.
    V-SUBDOM.1 B2: for ét domæne står afsnittet "Subdomæner" (kommandoen subdomaener, kun fra cachen), når domænet har tal på mindst to værter i perioden, og
-   kun uden filter. vaert=<navn> er filteret pr. subdomæne: fliser og grafer for besøg og forespørgsler pr. dag og Mest besøgte sider for værten; unikke
-   besøgende, lande, robotter og IP-klasser findes ikke pr. subdomæne og siger det. Det kan stå sammen med sti (siderne på værten), ikke med land eller robot,
-   og nulstilles, når et andet domæne vælges. Værtsnavnene sættes kun som tekst. */
+   kun uden filter. vaert=<navn> er filteret pr. subdomæne: fliser og grafer for besøg og forespørgsler pr. dag, lande, kendte robotter og Mest besøgte sider
+   for værten (V-SUBDOM.1 FIX 1: lande og robotter pr. vært fra Rust). Unikke besøgende og IP-klasserne findes ikke pr. subdomæne: de står ikke, og én linje
+   under chippen siger det og fører til hele domænet. Et afsnit uden tal for værten i perioden står ikke. Det kan stå sammen med sti, land eller robot
+   (et klik på et land eller en robotgruppe beholder værten) og nulstilles, når et andet domæne vælges. Værtsnavnene sættes kun som tekst. */
 (function () {
   'use strict';
   const S = window.hmSprog, T = S.T, B = T.bes, R = window.hmRamme, V = window.hmTegn;
@@ -39,7 +40,8 @@
   const medPeriode = v => kopi(p => { ['periode', 'fra', 'til'].forEach(k => p.delete(k)); if (v) p.set('periode', v); });
   const medInterval = (a, b) => kopi(p => { ['periode', 'fra', 'til'].forEach(k => p.delete(k)); p.set('fra', a); p.set('til', b); });
   /* Højst ét filter: tallene kommer fra hvert sit kald hos Cloudflare og kan ikke deles på hinanden. */
-  const medFilter = (navn, v) => kopi(p => { FILTRE.forEach(k => p.delete(k)); p.delete('vaert'); if (v) p.set(navn, v); });
+  /* Et land eller en robotgruppe beholder filteret pr. subdomæne (FIX 1: tallene er værtens). */
+  const medFilter = (navn, v) => kopi(p => { FILTRE.forEach(k => p.delete(k)); if (vaertHost() === null) p.delete('vaert'); if (v) p.set(navn, v); });
   const udenFilter = k => kopi(p => p.delete(k));
   const medVaert = host => kopi(p => { FILTRE.forEach(k => p.delete(k)); p.set('vaert', host); });
   /* En sti åbner visningerne pr. dag. Står siderne pr. vært (V-SUBDOM.1), åbner rækken stien på sin vært, så tallene passer til rækken. */
@@ -59,12 +61,13 @@
   }
   /* En lille linje under flisen (ren tekst: ingen data bag). */
   const linje = (f, tekst, klasse) => { f.append(el('span', { className: 'sflise-under besoeg-linje ' + klasse, textContent: tekst })); return f; };
-  /* Filteret pr. subdomæne: unikke besøgende findes ikke pr. vært (aldrig domænets tal under et subdomænes navn); besøg og forespørgsler på værten de seneste 30
-     dage er kommandoen subdomaener for de dage (sub30). */
+  /* Filteret pr. subdomæne: unikke besøgende findes ikke pr. vært og står ikke (aldrig domænets tal under et subdomænes navn; linjen under chippen siger det).
+     Besøg og forespørgsler på værten de seneste 30 dage er kommandoen subdomaener for de dage (sub30); med en sti eller et land er det besøgene på stien eller
+     fra landet på værten (Rust). */
   function fliserVaert(d, sub30) {
     const boks = el('div', { className: 'sfliser vg-fliser besoeg-fliser' }), host = vaertHost();
-    boks.append(...[B.fIGaar, B.f7, B.f30, B.fAar].map(t => V.fliseTekst('–', t, U.ikke)));
     if (sti()) boks.append(flise(d.besoeg30, fmt(B.fBesoegSti, { sti: sti() }), medPeriode('30'), d.side_ikke.length ? B.ikkeTilgKort : B.ingenTal));
+    else if (land()) boks.append(flise(d.besoeg30, fmt(B.fBesoegLand, { land: V.land(land()) }), medPeriode('30')));
     else {
       const v = sub30 && sub30.vaerter.find(x => x.vaert === vaertN());
       const sum = k => (v ? { n: v[k], med: v.dage.filter(x => x[k] !== null).length, dage: v.dage.length } : null);
@@ -97,9 +100,10 @@
     if (robot()) return [fmt(B.grafRobotH, { gruppe: gruppeNavn(robot()) }), fmt(B.grafRobotUgeH, { gruppe: gruppeNavn(robot()) })];
     return [B.grafH, B.grafUgeH];
   }
+  /* Med et filter pr. subdomæne og et land eller en robotgruppe viser et klik på en dag dagen her med samme filtre (som værtens egne grafer). */
   function graf(d) {
-    const [hDag, hUge] = filterH();
-    return grafBlok(d.dage, d.uger, d.periode, hDag, hUge, B.grafP, dagQ, 'besoeg-graf');
+    const [hDag, hUge] = filterH(), her = vaertHost() !== null && (land() || robot());
+    return grafBlok(d.dage, d.uger, d.periode, hDag, hUge, her ? U.grafP : B.grafP, her ? (dag => gaa(medInterval(dag, dag))) : dagQ, 'besoeg-graf');
   }
   /* Grafen pr. dag, eller pr. uge for perioder over 90 dage (uger fra Rust, eller regnet her for et subdomæne ud fra de samme uger). */
   function grafBlok(dageL, ugerL, periode, hDag, hUge, pDag, dykDag, id) {
@@ -159,8 +163,9 @@
     return dele;
   }
   const ikkeLinje = (liste, en, flere, klasse) => (liste.length ? [el('p', { className: `vg-advarsel vg-gul ${klasse}`, textContent: samlet() ? fmt(flere, { d: liste.join(', ') }) : en })] : []);
+  /* Med et filter pr. subdomæne er tallene værtens (Rust), og afsnittet står kun, når værten har tal i perioden. */
   function lande(d) {
-    if (vaertHost() !== null) return V.subIkke(B.landeH, 'besoeg-lande');
+    if (vaertHost() !== null && !d.lande.length) return null;
     const dele = [], ikke = d.ikke_tilgaengelig;
     dele.push(...ikkeLinje(ikke, B.ikkeTilg, B.ikkeTilgFlere, 'besoeg-ikke'));
     if (!d.lande.length) {
@@ -175,9 +180,9 @@
     return s;
   }
   function robotter(d) {
-    if (vaertHost() !== null) return V.subIkke(B.robotH, 'besoeg-robotter');
+    if (vaertHost() !== null && !d.robotter.length) return null;
     const dele = [...ikkeLinje(d.robot_ikke, fmt(B.robotIkkeTilg, { d: domaene }), B.robotIkkeTilg, 'besoeg-robot-ikke')];
-    if (d.ipklasse && d.ipklasse.i_alt) {
+    if (d.ipklasse && d.ipklasse.i_alt && vaertHost() === null) {
       const tekst = fmt(B.klasseLinje, { p: procent(d.ipklasse.n, d.ipklasse.i_alt) }) + (d.ipklasse.med < 365 ? ' ' + fmt(B.klasseDage, { m: tal(d.ipklasse.med) }) : '');
       dele.push(el('p', { className: 'besoeg-klasse', textContent: tekst }));
     }
@@ -238,10 +243,17 @@
     if (sti()) chip(sti(), 'besoeg-sti-chip', 'sti');
     if (robot()) chip(gruppeNavn(robot()), 'besoeg-robot-chip', 'robot');
     if (chips.length) dele.push(el('div', { className: 'login-stier besoeg-chips' }, ...chips));
-    dele.push(...(vaert && !sti() ? grafVaert(d, sub) : [graf(d)]));
-    /* Subdomæner: kun for ét domæne, uden filter, og kun med tal på mindst to værter (eller når Cloudflare afviste forespørgslen). */
-    if (!samlet() && !vaert && !land() && !sti() && !robot() && V.subVis(sub, sub && sub.trafik_afvist)) dele.push(V.subAfsnit(sub, { domaene, afvist: sub.trafik_afvist, intro: U.pBes, aria: U.ariaBes, maal: n => gaa(medVaert(n)), fra: d.periode.fra, id: 'besoeg-sub' }));
-    dele.push(lande(d), robotter(d), sider(d, sub));
+    /* Én linje under chippen: det, der ikke findes pr. subdomæne, og vejen til hele domænet (samme mål som chippens ×). */
+    if (vaert) dele.push(V.subUden(U.udenBes, domaene, gaa(udenFilter('vaert')), 'besoeg-sub-uden'));
+    dele.push(...(vaert && !sti() && !land() && !robot() ? grafVaert(d, sub) : [graf(d)]));
+    /* Subdomæner: kun for ét domæne, uden filter, og kun med tal på mindst to værter (eller når Cloudflare afviste forespørgslen). Navnet åbner Besøgende
+       for subdomænet, Besøg og Forespørgsler også, Angreb Angreb (samme periode). */
+    if (!samlet() && !vaert && !land() && !sti() && !robot() && V.subVis(sub, sub && sub.trafik_afvist)) {
+      const zq = { zone: params.get('zone') || '', navn: domaene };
+      const angQ = n => new URLSearchParams({ ...zq, ...V.subPeriodeAng(params), vaert: n }).toString();
+      dele.push(V.subAfsnit(sub, { domaene, afvist: sub.trafik_afvist, intro: U.pBes, aria: U.ariaBes, maal: n => gaa(medVaert(n)), maalBes: n => gaa(medVaert(n)), maalAng: angQ, fra: d.periode.fra, id: 'besoeg-sub' }));
+    }
+    dele.push(...[lande(d), robotter(d)].filter(Boolean), sider(d, sub));
     dele.push(el('p', { className: 'vg-note besoeg-note', textContent: B.note + (samlet() ? ' ' + B.noteSamlet : '') }));
     rod.removeAttribute('aria-busy');
     rod.replaceChildren(...dele);
@@ -290,7 +302,7 @@
       let sub = null, sub30 = null;
       if (!samlet()) {
         const spm = (fra, til) => invoke('subdomaener', { zone: omfang.zone, ...V.subSpaend(fra, til) }).catch(() => null);
-        [sub, sub30] = await Promise.all([spm(d.periode.fra, d.periode.til), vaertHost() !== null && !sti() ? spm(dagFoer(d.i_gaar_dag, 29), d.i_gaar_dag) : null]);
+        [sub, sub30] = await Promise.all([spm(d.periode.fra, d.periode.til), vaertHost() !== null && !sti() && !land() ? spm(dagFoer(d.i_gaar_dag, 29), d.i_gaar_dag) : null]);
       }
       if (g === gen) tegn(d, sub, sub30);
     }

@@ -8,6 +8,9 @@
 //!   fra `VAERT_FW_QUERY` (døgn, der mangler i `hentet_vaert_fw`). Angreb og afviste regnes som i Overblik (`RUTINE`, `er_afvist`).
 //! - `v_afskaaret` og `v_fw_afskaaret` (nøgle "", n = loftet): Cloudflare sendte 10.000 rækker for døgnet, så der er ingen tal pr. vært for det (hellere intet
 //!   tal end et for lavt).
+//! - `v_land` ("vært\tland" → besøg, eyeball) og `v_robot` ("vært\tkategori" → besøg fra en kendt robot, eyeball) (V-SUBDOM.1 FIX 1): to aliaser mere i
+//!   `VAERT_QUERY`, så det er samme kald. Står et af dem på loftet, gemmes ingen tal for den art for døgnene, kun mærket `v_land_afskaaret`/`v_robot_afskaaret`.
+//!   Døgn hentet før FIX 1 har ingen (`store::VAERT_LAND_V1`: fra den dag har døgnene i `hentet_vaert` dem).
 //!
 //! Ingen af arterne læses af Overblik, Angreb eller notifikationerne (`Store::raekker` udelader dem), og et værtsnavn står aldrig i en `Fejl`. Visningens tal
 //! regnes her (`laes`, `regn`), kun fra cachen.
@@ -43,18 +46,41 @@ pub const V_BESOEG: &str = "v_besoeg";
 pub const V_AFSKAARET: &str = "v_afskaaret";
 pub const V_FW: &str = "v_fw";
 pub const V_FW_AFSKAARET: &str = "v_fw_afskaaret";
+/// Besøg pr. vært og land, og pr. vært og robotkategori (V-SUBDOM.1 FIX 1), med deres mærker for loftet.
+pub const V_LAND: &str = "v_land";
+pub const V_ROBOT: &str = "v_robot";
+pub const V_LAND_AFSKAARET: &str = "v_land_afskaaret";
+pub const V_ROBOT_AFSKAARET: &str = "v_robot_afskaaret";
 /// Arterne fra `VAERT_QUERY`: dem, `Store::gem_vaert` erstatter.
-pub const ARTER: &[&str] = &[V_ALLE, V_BESOEG, V_AFSKAARET];
+pub const ARTER: &[&str] = &[V_ALLE, V_BESOEG, V_AFSKAARET, V_LAND, V_ROBOT, V_LAND_AFSKAARET, V_ROBOT_AFSKAARET];
+/// Arterne, tabellen "Subdomæner" regner med (`laes`).
+pub const TABEL_ARTER: &[&str] = &[V_ALLE, V_BESOEG, V_AFSKAARET, V_FW, V_FW_AFSKAARET];
+/// Arterne til lande og robotter pr. vært i Besøgende (`laes_lr`).
+pub const LR_ARTER: &[&str] = &[V_AFSKAARET, V_LAND, V_ROBOT, V_LAND_AFSKAARET, V_ROBOT_AFSKAARET];
 /// Arterne for angreb pr. vært: dem, `Store::gem_vaert_fw` erstatter, og som står i `store::DOEGN_ARTER`.
 pub const FW_ARTER: &[&str] = &[V_FW, V_FW_AFSKAARET];
-/// Alle arterne pr. vært (til visningen og til `Store::raekker`, som udelader dem).
-pub const ALLE_ARTER: &[&str] = &[V_ALLE, V_BESOEG, V_AFSKAARET, V_FW, V_FW_AFSKAARET];
+/// Alle arterne pr. vært (`Store::raekker` udelader dem).
+pub const ALLE_ARTER: &[&str] = &[
+    V_ALLE,
+    V_BESOEG,
+    V_AFSKAARET,
+    V_FW,
+    V_FW_AFSKAARET,
+    V_LAND,
+    V_ROBOT,
+    V_LAND_AFSKAARET,
+    V_ROBOT_AFSKAARET,
+];
 
 /// Trafik pr. dag og vært: `v` = besøg udefra (eyeball; `count` og `sum { visits }`), `va` = forespørgsler fra alle kilder (`count`, samme tal som art `alle`).
+/// V-SUBDOM.1 FIX 1: `vl` = besøg pr. vært og land og `vr` = besøg pr. vært og robotkategori (eyeball, som `besoeg::BESOEG_QUERY` og `besoeg::ROBOT_QUERY`
+/// med værten; målt i fase A, INVESTIGATION Q3). Samme kald: ingen ekstra kald pr. dag.
 /// Kun zone og tider er variabler (`besoeg::variabler`). Ingen IP-adresser, stier eller brugeragenter.
 pub const VAERT_QUERY: &str = r#"query Vaert($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
     v: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}, orderBy:[count_DESC]) { count sum { visits } dimensions { date clientRequestHTTPHost } }
     va: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[count_DESC]) { count dimensions { date clientRequestHTTPHost } }
+    vl: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}) { sum { visits } dimensions { date clientRequestHTTPHost clientCountryName } }
+    vr: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}) { count sum { visits } dimensions { date clientRequestHTTPHost verifiedBotCategory } }
   } } }"#;
 
 /// Kun værten, vægten, kilden og handlingen for hændelserne: til døgn, der blev hentet uden værten (før V-SUBDOM.1). Skriver kun art `v_fw`, aldrig `fw`.
@@ -77,7 +103,13 @@ pub fn vaertsfelt_maaske_afvist(e: &Fejl) -> bool {
     matches!(e, Fejl::GraphQl { .. }) && !e.uden_for_opbevaring()
 }
 
-/// Henter ét døgn med hovedforespørgslen `q`. `uden`: domænet har afvist værtsfeltet, siden programmet startede, så der spørges uden det. Ellers: fejler
+/// Gælder noteringen "domænet afviste værtsfeltet" (noteret `noteret`, ms) stadig ved `nu`? Kun til næste UTC-døgn og højst 24 timer (V-SUBDOM.1 FIX 1, V1):
+/// en forbigående fejl må ikke koste tallene pr. vært, så længe programmet kører i menulinjen. Ren funktion.
+pub fn uden_gaelder(noteret: i64, nu: i64) -> bool {
+    nu >= noteret && nu - noteret < DOEGN_MS && dag_noegle(noteret) == dag_noegle(nu)
+}
+
+/// Henter ét døgn med hovedforespørgslen `q`. `uden`: domænet har afvist værtsfeltet i dette UTC-døgn (`uden_gaelder`), så der spørges uden det. Ellers: fejler
 /// kaldet med en GraphQL-fejl (`vaertsfelt_maaske_afvist`), prøves det én gang uden feltet. Lykkes det, er det andet tal `true`, og den, der kalder, noterer
 /// domænet. Fejler også det, er svaret den første fejl, som før sikringen. Ren bortset fra `graphql`.
 pub async fn hent_hoved<G, Fut>(q: &str, uden: bool, graphql: G) -> (Result<Value, Fejl>, bool)
@@ -171,6 +203,12 @@ struct VDim {
     date: String,
     #[serde(default, deserialize_with = "tom_ved_null", rename = "clientRequestHTTPHost")]
     vaert: String,
+    /// Kun i `vl` (tomt land er `XX`, som `besoeg::raekker`).
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "clientCountryName")]
+    land: String,
+    /// Kun i `vr` (tom = ikke en kendt robot; den gemmes ikke).
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "verifiedBotCategory")]
+    kategori: String,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -195,19 +233,26 @@ struct VSvar {
     v: Vec<VGruppe>,
     #[serde(default, deserialize_with = "tom_ved_null")]
     va: Vec<VGruppe>,
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    vl: Vec<VGruppe>,
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    vr: Vec<VGruppe>,
 }
 
-/// `VAERT_QUERY`-svaret som (dag, `v_alle`/`v_besoeg`, vært, n) for døgnene `dage` (kun n > 0), og om et af aliaserne står på loftet (så er rækkerne ikke
+/// `VAERT_QUERY`-svaret som (dag, `v_alle`/`v_besoeg`, vært, n) for døgnene `dage` (kun n > 0), og om `v` eller `va` står på loftet (så er rækkerne ikke
 /// til at stole på, og `hent_opdelt` spørger døgn for døgn). Værter, der bliver ens efter rensningen, lægges sammen; top 20 efter forespørgsler. Summen
-/// over værterne er altid svarets sum. Ren funktion.
+/// over værterne er altid svarets sum. V-SUBDOM.1 FIX 1: `v_land` ("vært\tland") og `v_robot` ("vært\tkategori") med samme top 20 som `v_alle`. Står `vl`
+/// eller `vr` på loftet (regel S4), får hvert døgn i `dage` kun mærket for den art, ingen tal; de andre arter er uberørte, og der spørges ikke igen. Ren funktion.
 pub fn trafik_raekker(data: &Value, dage: &[String], zone: &str) -> Result<(Vec<Raekke4>, bool), Fejl> {
     let z = data.pointer("/viewer/zones/0").ok_or(Fejl::ZoneUkendt)?;
     let svar = VSvar::deserialize(z).map_err(|_| Fejl::Svar)?;
     let afskaaret = svar.v.len() as i64 >= LOFT || svar.va.len() as i64 >= LOFT;
+    let (land_loft, robot_loft) = (svar.vl.len() as i64 >= LOFT, svar.vr.len() as i64 >= LOFT);
+    let dag_af = |g: &VGruppe| dage.iter().find(|d| **d == g.dimensions.date).map(String::as_str);
     // dag → vært → (forespørgsler, besøg)
     let mut tal: BTreeMap<&str, HashMap<String, (i64, i64)>> = BTreeMap::new();
     for (g, besoeg) in svar.va.iter().map(|g| (g, false)).chain(svar.v.iter().map(|g| (g, true))) {
-        let Some(dag) = dage.iter().find(|d| **d == g.dimensions.date) else {
+        let Some(dag) = dag_af(g) else {
             continue;
         };
         let x = tal.entry(dag).or_default().entry(ren_vaert(&g.dimensions.vaert, zone)).or_default();
@@ -216,6 +261,30 @@ pub fn trafik_raekker(data: &Value, dage: &[String], zone: &str) -> Result<(Vec<
         } else {
             x.0 += g.count;
         }
+    }
+    // dag → (vært, land eller kategori) → besøg. Værterne kommer med i top 20-opgørelsen (med 0, hvis `va` ikke har dem).
+    let mut pr_land: BTreeMap<&str, HashMap<(String, String), i64>> = BTreeMap::new();
+    let mut pr_robot: BTreeMap<&str, HashMap<(String, String), i64>> = BTreeMap::new();
+    for (g, land) in svar.vl.iter().map(|g| (g, true)).chain(svar.vr.iter().map(|g| (g, false))) {
+        let Some(dag) = dag_af(g) else {
+            continue;
+        };
+        if (land && land_loft) || (!land && (robot_loft || g.dimensions.kategori.is_empty())) || g.sum.visits <= 0 {
+            continue;
+        }
+        let vaert = ren_vaert(&g.dimensions.vaert, zone);
+        tal.entry(dag).or_default().entry(vaert.clone()).or_default();
+        let (m, k) = if land {
+            let l = if g.dimensions.land.is_empty() {
+                "XX"
+            } else {
+                g.dimensions.land.as_str()
+            };
+            (&mut pr_land, l.to_string())
+        } else {
+            (&mut pr_robot, g.dimensions.kategori.clone())
+        };
+        *m.entry(dag).or_default().entry((vaert, k)).or_default() += g.sum.visits;
     }
     let mut ud = Vec::new();
     for (dag, vaerter) in tal {
@@ -233,6 +302,18 @@ pub fn trafik_raekker(data: &Value, dage: &[String], zone: &str) -> Result<(Vec<
             if b > 0 {
                 ud.push((dag.to_string(), V_BESOEG.to_string(), k, b));
             }
+        }
+        for (art, m) in [(V_LAND, &mut pr_land), (V_ROBOT, &mut pr_robot)] {
+            let mut samlet: BTreeMap<String, i64> = BTreeMap::new();
+            for ((v, k), n) in m.remove(dag).unwrap_or_default() {
+                *samlet.entry(format!("{}\t{k}", noegle[&v])).or_default() += n;
+            }
+            ud.extend(samlet.into_iter().map(|(k, n)| (dag.to_string(), art.to_string(), k, n)));
+        }
+    }
+    for (loft, maerke) in [(land_loft, V_LAND_AFSKAARET), (robot_loft, V_ROBOT_AFSKAARET)] {
+        if loft {
+            ud.extend(dage.iter().map(|d| (d.clone(), maerke.to_string(), String::new(), LOFT)));
         }
     }
     Ok((ud, afskaaret))
@@ -390,12 +471,15 @@ pub struct Laest {
     pub sider_afskaaret: Option<(String, String)>,
     pub trafik_afvist: bool,
     pub angreb_afvist: bool,
+    /// Hovedhentningen afviste værtsfeltet for domænet i dag (`uden_gaelder`, sat af kommandoen). Det giver kun `angreb_afvist`, når perioden ingen `v_fw` har.
+    pub uden_vaert: bool,
 }
 
 pub fn laes(lager: &Store, zone: &str, fra: &str) -> Result<Laest, Fejl> {
     Ok(Laest {
+        uden_vaert: false,
         raekker: lager
-            .raekker_art(&[zone.to_string()], ALLE_ARTER, fra)?
+            .raekker_art(&[zone.to_string()], TABEL_ARTER, fra)?
             .into_iter()
             .map(|(_, r)| r)
             .collect(),
@@ -494,8 +578,70 @@ pub fn regn(l: &Laest, fra: &str, til: &str) -> SubdomaenerUd {
             .as_ref()
             .is_some_and(|(a, b)| a.as_str() <= til && b.as_str() >= fra),
         trafik_afvist: l.trafik_afvist,
-        angreb_afvist: l.angreb_afvist,
+        // V-SUBDOM.1 FIX 1 (V1): noteringen fra hovedhentningen giver kun et afslag, når perioden ingen tal pr. vært har for angrebene; har den, vises de.
+        angreb_afvist: l.angreb_afvist || (l.uden_vaert && !i_perioden.iter().any(|r| r.art == V_FW)),
     }
+}
+
+// ── Lande og robotter pr. vært i Besøgende (V-SUBDOM.1 FIX 1) ──────────────────────────────────────────────────────────
+/// Én værts lande og robotter: rækkerne med nøglen uden værten (`land` eller `kategori`) som `b_land` og `b_robot`, og dagene med tal for hver.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct VaertLr {
+    pub land: Vec<Raekke>,
+    pub robot: Vec<Raekke>,
+    pub land_hentet: HashSet<String>,
+    pub robot_hentet: HashSet<String>,
+}
+
+/// Lande og robotter for værten `vaert` (labelen; `""` = domænet selv) ud fra rækkerne `rk` (`LR_ARTER`), de hentede døgn `hentet` (`hentet_vaert`) og den
+/// første dag med lande og robotter pr. vært (`fra`, `store::VAERT_LAND_V1`; `None`: ingen). Et døgn har tal for en art, når det er hentet fra og med `fra`,
+/// og hverken hele svaret (`v_afskaaret`) eller artens alias (`v_land_afskaaret`/`v_robot_afskaaret`) stod på loftet. Ren funktion.
+pub fn lr(rk: &[Raekke], hentet: &HashSet<String>, fra: Option<&str>, vaert: &str) -> VaertLr {
+    let dage: BTreeSet<&str> = hentet.iter().map(String::as_str).filter(|d| fra.is_some_and(|f| *d >= f)).collect();
+    let maerket = |art: &str| -> HashSet<&str> {
+        rk.iter()
+            .filter(|r| r.art == art || r.art == V_AFSKAARET)
+            .map(|r| r.dag.as_str())
+            .collect()
+    };
+    let (uden_land, uden_robot) = (maerket(V_LAND_AFSKAARET), maerket(V_ROBOT_AFSKAARET));
+    let med = |uden: &HashSet<&str>| {
+        dage.iter()
+            .filter(|d| !uden.contains(*d))
+            .map(|d| d.to_string())
+            .collect::<HashSet<_>>()
+    };
+    let (land_hentet, robot_hentet) = (med(&uden_land), med(&uden_robot));
+    let af = |art: &str, hentet: &HashSet<String>| -> Vec<Raekke> {
+        rk.iter()
+            .filter(|r| r.art == art && hentet.contains(&r.dag))
+            .filter_map(|r| {
+                let (v, k) = r.noegle.split_once('\t')?;
+                (v == vaert).then(|| Raekke {
+                    dag: r.dag.clone(),
+                    art: art.to_string(),
+                    noegle: k.to_string(),
+                    n: r.n,
+                })
+            })
+            .collect()
+    };
+    VaertLr {
+        land: af(V_LAND, &land_hentet),
+        robot: af(V_ROBOT, &robot_hentet),
+        land_hentet,
+        robot_hentet,
+    }
+}
+
+pub fn laes_lr(lager: &Store, zone: &str, vaert: &str) -> Result<VaertLr, Fejl> {
+    let rk: Vec<Raekke> = lager
+        .raekker_art(&[zone.to_string()], LR_ARTER, "0000-00-00")?
+        .into_iter()
+        .map(|(_, r)| r)
+        .collect();
+    let hentet: HashSet<String> = lager.hentet_vaert(zone)?.into_keys().collect();
+    Ok(lr(&rk, &hentet, lager.vaert_land_fra()?.as_deref(), vaert))
 }
 
 #[cfg(test)]

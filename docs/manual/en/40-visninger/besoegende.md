@@ -40,7 +40,13 @@ The table has the columns **Subdomain**, **Visits**, **Requests**, **Attacks** a
 
 The table follows the selected period. The program has figures per subdomain from about 30 days before the update to this version. When the period goes further back, **Per subdomain from {date}.** is shown below the table, and the figures only cover the days from then. Below the table it always says: **Only traffic through Cloudflare. A subdomain set to “DNS only” has no numbers here.** A name with a grey cloud in Cloudflare’s DNS does not go through Cloudflare, so Cloudflare has no figures for it.
 
-Click a subdomain (the name or the figures), and Visitors shows only that one. The chip **Subdomain: shop.wi24rd.com** is shown at the top. The tiles and graphs show visits and requests per day on the subdomain, and **Most visited pages** shows only the subdomain’s pages. Unique visitors, countries, known robots and the IP classes do not exist per subdomain at Cloudflare. They are shown with **Not per subdomain**, never with the whole domain’s figures.
+Click a subdomain (the name, **Visits** or **Requests**), and Visitors shows only that one. The chip **Subdomain: shop.wi24rd.com** is shown at the top. The tiles and graphs show visits and requests per day on the subdomain. **Where the visits came from** and **Known robots** show the subdomain’s own figures, with the same table and clicks as for the domain: a country shows the visits from that country per day on the subdomain. **Most visited pages** shows only the subdomain’s pages. If the subdomain has no figures for a section in the period, the section is not shown.
+
+Unique visitors and the IP classes do not exist per subdomain at Cloudflare. They are not shown at all, never with the whole domain’s figures. A line below the chip says so: **Unique visitors are not available per subdomain. See them for all of wi24rd.com.** Clicking **all of wi24rd.com** removes the filter, like **×** on the chip.
+
+The figure under **Attacks** in the table opens [Attacks](vaernet.md) for the subdomain with the same period (**A year** becomes **All history**). A figure that is 0 cannot be clicked.
+
+Countries and known robots per subdomain exist from the update to this version and about 30 days back. The program fetches those days once more per domain.
 
 In **Most visited pages**, the same path on two subdomains is two rows. The row for a subdomain has the name next to the path, e.g. `/` with `shop.wi24rd.com`. Days saved before the update that are older than about 30 days cannot be told apart and count as the domain itself. If Cloudflare sent the highest number of rows for a day, the note **Only the most visited pages are included: Cloudflare sent at most 10,000 rows.** is shown.
 
@@ -52,7 +58,7 @@ In **Most visited pages**, the same path on two subdomains is two rows. The row 
 - **… /admin or /wp-login.php is at the top of Pages that do not exist?** That is almost always scanners trying well-known addresses. Cloudflare answered 404; you do not need to do anything.
 - **… `.env` files or `wp-config.php` are under Answered with the site’s ordinary page?** Those are scanners trying well-known addresses, and the site answered with its front page, not the file. To be sure, open the address in your browser: if you see the front page, the file is not there.
 - **… it says "not available"?** Cloudflare did not answer for those figures for that domain. The rest of the page works. The program asks again the next time it starts.
-- **… a subdomain has many attacks or requests?** Click it under **Subdomains**. Then you see it per day and which pages were viewed. The attacks per day are on [Attacks](vaernet.md) for the same subdomain.
+- **… a subdomain has many attacks or requests?** Click it under **Subdomains**. Then you see it per day, where the visits came from, and which pages were viewed. Click the figure under **Attacks** to see the attacks per day on [Attacks](vaernet.md) for the same subdomain.
 - **… my subdomain is not there?** If it is “DNS only” (grey cloud) in Cloudflare’s DNS, Cloudflare has no figures for it. Otherwise it had no traffic in the period. See [Troubleshooting](../80-fejlfinding.md).
 - **… it says "No figures yet" or "not been fetched yet"?** The program fetches in the background after the other figures. The first time after the update it can take a while.
 
@@ -69,10 +75,11 @@ In **Most visited pages**, the same path on two subdomains is two rows. The row 
 - A **country in the table** puts a filter on Visitors: the chart shows visits from that country per day, and the country stands as a chip at the top.
 - A **group under Known robots** puts a filter: the chart shows visits from that group per day.
 - A **path under Most visited pages**, **Pages that do not exist** or **Answered with the site’s ordinary page** puts a filter: the chart shows views of the page per day, and the Visits tile follows the page.
-- A **subdomain under Subdomains** (the name or Visits, Requests and Attacks) shows Visitors for that subdomain, with the chip **Subdomain: …**. The filter is in the address, so back and forward work, and it is reset when you choose another domain.
-- A **path on a subdomain** under Most visited pages shows the views of the path on that subdomain. It is the only filter that can be combined with a subdomain.
+- A **subdomain under Subdomains** (the name, **Visits** or **Requests**) shows Visitors for that subdomain, with the chip **Subdomain: …**. The figure under **Attacks** shows Attacks for the subdomain with the same period. The filter is in the address, so back and forward work, and it is reset when you choose another domain.
+- A **path on a subdomain** under Most visited pages shows the views of the path on that subdomain. With a subdomain chosen, a country, a robot group or a path can be combined with it; the figures are the subdomain’s.
+- **all of {domain}** in the line below the chip removes the subdomain filter.
 - Otherwise there is at most one filter at a time. **×** on the chip removes it.
-- A tile without figures, a day without figures or with 0, the figures and shares in the tables, the percentage lines and the notes lead nowhere and do not look clickable. This also applies to **Share**, **Other (n)**, the rows **Called by IP address**, **Other name** and **Invalid name**, and the notes under Subdomains.
+- A tile without figures, a day without figures or with 0, the figures and shares in the tables, the percentage lines and the notes lead nowhere and do not look clickable. This also applies to **Share**, **Other (n)**, the rows **Called by IP address**, **Other name** and **Invalid name**, a figure under Subdomains that is 0, and the notes under Subdomains.
 
 ## Figures and terms
 
