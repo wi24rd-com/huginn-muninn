@@ -675,5 +675,69 @@
   const paaKortet = p => Boolean(p) && iBilledet(p, VIEW.verden);
   const udenPlads = v => [...v.lande.filter(l => !paaKortet((verden.lande || {})[l.kode])).map(l => land(l.kode)), ...v.colos.filter(c => !paaKortet(xyColo(c.kode))).map(c => colo(c.kode))];
 
-  window.hmTegn = { angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, fjernChip, tomt, laeseTabel, tabelRul, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
+  /* ── Subdomæner (V-SUBDOM.1 B2): afsnittet i Besøgende og Angreb ud fra kommandoen subdomaener. Værtsnavnene er delvis angriberstyrede (klienten
+     skriver Host); Rust har renset dem, og her sættes de kun som tekst. vaert er labelen under domænet ("" = domænet selv, "www", "shop"); kategorierne
+     ([ip], [anden], [ugyldig] og [andre]) er ikke navne og kan ikke åbnes. ── */
+  const SUB_TOP = 20, SUB_KAT = { '[ip]': 'ip', '[anden]': 'anden', '[ugyldig]': 'ugyldig' };
+  const erKat = v => String(v).startsWith('[');
+  /* Det fulde navn: domænet selv står som sit eget navn, www som www.<domæne>. */
+  const subHost = (vaert, dom) => (vaert === '' ? dom : `${vaert}.${dom}`);
+  /* Værten i adressen (vaert=<navn>): domænet selv eller et navn under det med de tegn, Rust gemmer (vaert::ren_vaert). Svarer med labelen, ellers null. */
+  function subNoegle(host, dom) {
+    const h = String(host || '').toLowerCase();
+    if (!h || !dom || h.length > 253) return null;
+    if (h === dom) return '';
+    if (!h.endsWith('.' + dom)) return null;
+    const l = h.slice(0, -dom.length - 1);
+    return /^[a-z0-9_-]{1,63}(\.[a-z0-9_-]{1,63})*$/.test(l) ? l : null;
+  }
+  /* Perioden til kommandoen: højst et år (Rust afviser mere), regnet bagud fra til. */
+  const subSpaend = (fra, til) => { const f = flytDag(til, -364); return { fra: fra < f ? f : fra, til }; };
+  /* Afsnittet står, når domænet har tal på mindst to rigtige værter i perioden (kategorierne tæller ikke), eller når Cloudflare afviste forespørgslen. */
+  const subRigtige = s => (s && Array.isArray(s.vaerter) ? s.vaerter.filter(v => !erKat(v.vaert)) : []);
+  const subVis = (s, afvist) => Boolean(s) && Boolean(afvist || subRigtige(s).length >= 2);
+  /* Den første dag med tal pr. subdomæne: den seneste af trafik og angreb, for tabellen har begge. */
+  const subFra = s => [s.trafik_fra, s.angreb_fra].filter(Boolean).sort().pop() || null;
+  /* o: domaene, afvist, intro, aria (skabelon med {vaert}), maal(navn) → mål, fra (periodens første dag), id. Tabellen er kittets (laeseTabel). Navnet og
+     tallene Besøg, Forespørgsler og Angreb åbner det samme (navnet er Tab-stoppet; tallene er der til musen). Andel og noterne har intet bag sig. */
+  function subAfsnit(s, o) {
+    const U = T.sub, dele = [];
+    if (o.afvist) dele.push(el('p', { className: 'vg-advarsel vg-gul sub-ikke-tilg', textContent: U.ikkeTilg }));
+    else {
+      const alle = s.vaerter.filter(v => v.vaert !== '[andre]'), synlige = alle.slice(0, SUB_TOP), rest = [...alle.slice(SUB_TOP), ...s.vaerter.filter(v => v.vaert === '[andre]')];
+      const iAlt = s.vaerter.reduce((a, v) => a + v.foresp, 0), andel = n => (iAlt ? `${(100 * n / iAlt).toLocaleString(loc, { maximumFractionDigits: 1 })} %` : '–');
+      const celle = t => el('td', { className: 'tal-kol', textContent: t });
+      const th = (t, k) => { const e = el('th', { textContent: t, className: k || '' }); e.setAttribute('scope', 'col'); return e; };
+      const hoved = () => [th(U.th), th(U.thBesoeg, 'tal-kol'), th(U.thForesp, 'tal-kol'), th(U.thAngreb, 'tal-kol'), th(U.thAndel, 'tal-kol')];
+      const raekke = v => {
+        const tre = [v.besoeg, v.foresp, v.angreb].map(n => tal(n));
+        if (erKat(v.vaert)) return el('tr', { className: 'sub-kat' }, el('th', { scope: 'row', textContent: U[SUB_KAT[v.vaert]] || U.ugyldig }), ...tre.map(celle), celle(andel(v.foresp)));
+        const navn = subHost(v.vaert, o.domaene), maal = o.maal(navn), label = fmt(o.aria, { vaert: navn });
+        const tk = t => { const b = knap(t, maal, 'link dyk-celle sub-tal', label); b.tabIndex = -1; return el('td', { className: 'tal-kol' }, b); };
+        const tr = el('tr', { className: 'sub-raekke' }, el('th', { scope: 'row' }, knap(domaene(navn), maal, 'link dyk-celle sub-navn', label)), ...tre.map(tk), celle(andel(v.foresp)));
+        tr.dataset.vaert = navn;
+        return tr;
+      };
+      const rk = synlige.map(raekke), sum = k => rest.reduce((a, v) => a + v[k], 0);
+      if (rest.length) rk.push(el('tr', { className: 'sub-andre' }, el('th', { scope: 'row', textContent: fmt(U.andre, { n: tal(rest.length) }) }), ...['besoeg', 'foresp', 'angreb'].map(k => celle(tal(sum(k)))), celle(andel(sum('foresp')))));
+      dele.push(tabelRul(laeseTabel('sub-tabel', hoved(), rk), U.h));
+      /* Navnene i "Andre" kan stadig åbnes: de står i en liste under tabellen. */
+      const flere = rest.filter(v => !erKat(v.vaert));
+      if (flere.length) {
+        const d = el('details', { className: 'dyk-flere sub-flere' }, el('summary', { textContent: fmt(U.visAndre, { n: tal(flere.length) }) }), tabelRul(laeseTabel('sub-tabel', hoved(), flere.map(raekke)), U.h));
+        d.dataset.noegle = 'sub-flere';
+        dele.push(d);
+      }
+      const fra = subFra(s);
+      if (fra && fra > o.fra) dele.push(el('p', { className: 'vg-note sub-fra', textContent: fmt(U.fra, { dato: datoLang(fra) }) }));
+    }
+    dele.push(el('p', { className: 'vg-note sub-dns', textContent: U.dnsOnly }));
+    const b = blok(U.h, o.afvist ? '' : o.intro, ...dele);
+    b.id = o.id;
+    return b;
+  }
+  /* Et afsnit, der ikke findes pr. subdomæne: overskriften og "Ikke pr. subdomæne" (aldrig domænets tal under et subdomænes navn). Intet er klikbart. */
+  const subIkke = (h, id) => { const b = blok(h, '', tomt(T.sub.ikke, 'sub-ikke')); if (id) b.id = id; return b; };
+
+  window.hmTegn = { subAfsnit, subIkke, subNoegle, subSpaend, subVis, subHost, subFra, angrebsTrin, kortSkala, chip, moensterChip, tekKort, rettetMod, vurderingBoks, interval, datoVaelger, moensterKnap, dato, daekning, svg, regelKort, klar, land, landeKoder, tidszoneLand, radarKilde, kurver, colo, robotNavn, robotValg, ROBOT_SLAGS, blok, segment, soejlerSerier, datoKort, datoLang, typeTekst, regelVis, regelTitel, stort, domaene, sti, knap, maal: maalPaa, fjernChip, tomt, laeseTabel, tabelRul, flise, fliseTekst, bredde, cveKnap, bogAfsnit, liste, listeFlere, husk, senesteTabel, soejler, HIT_UGE, kort, udenPlads, ark };
 })();

@@ -64,6 +64,14 @@ If you have an API Token for the whole account and one for one of its domains, b
 
 If the two connections have the same name (both have the account's name at Cloudflare), the program opens **Rename the connection** when the new one is added. Give it a name you can recognise it by, for example the customer's.
 
+## Subdomains
+
+| The text | Means | Do |
+|---|---|---|
+| **Cloudflare did not return subdomains for this domain.** (under **Subdomains** in Visitors or Attacks) | Cloudflare refused the query per subdomain for the domain, e.g. because the plan does not have the field. The domain’s own figures are fetched and shown as before, just not per subdomain. | Nothing. If Cloudflare refused the name in the main fetch of the attacks, the program asks again without the name until the next time it starts. |
+
+**My subdomain is not there.** The section **Subdomains** only shows names with traffic in the chosen period, and only traffic that goes through Cloudflare. Check in Cloudflare’s DNS whether the name has the orange cloud. If it is “DNS only” (grey cloud), the traffic goes straight to the server, and Cloudflare has no figures for it. If the domain only has traffic on one name, the section is not shown at all. The program has figures per subdomain from about 30 days before the update; older days have no figures per subdomain, and then **Per subdomain from …** is shown.
+
 ## It is not an error
 
 - **Status "Unknown"** or **"No figures yet – fetching"**: the domain was just chosen. Wait for the fetch.

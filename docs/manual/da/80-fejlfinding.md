@@ -64,6 +64,14 @@ Har du et API Token til hele kontoen og et til ét af dens domæner, ser begge f
 
 Hedder de to forbindelser det samme (begge har kontoens navn hos Cloudflare), åbner programmet **Omdøb forbindelsen**, når den nye er tilføjet. Giv den et navn, du kan kende den på, fx kundens.
 
+## Subdomænerne
+
+| Teksten | Betyder | Gør |
+|---|---|---|
+| **Cloudflare svarede ikke på subdomænerne for dette domæne.** (under **Subdomæner** i Besøgende eller Angreb) | Cloudflare afviste forespørgslen pr. subdomæne for domænet, fx fordi planen ikke har feltet. Domænets egne tal hentes og vises som før, bare ikke pr. subdomæne. | Ingenting. Afviste Cloudflare navnet i hovedhentningen af angrebene, spørger programmet igen uden navnet, til det starter næste gang. |
+
+**Mit subdomæne står der ikke.** Afsnittet **Subdomæner** viser kun navne med trafik i den valgte periode, og kun trafik, der går gennem Cloudflare. Tjek i Cloudflares DNS, om navnet har orange sky. Står det som «DNS only» (grå sky), går trafikken direkte til serveren, og Cloudflare har ingen tal for det. Har domænet kun trafik på ét navn, står afsnittet slet ikke. Programmet har tal pr. subdomæne fra ca. 30 dage før opdateringen; ældre dage har ingen tal pr. subdomæne, og så står der **Pr. subdomæne fra …**.
+
 ## Det er ikke en fejl
 
 - **Status "Ukendt"** eller **"Ingen tal endnu – henter"**: domænet er lige valgt. Vent på hentningen.

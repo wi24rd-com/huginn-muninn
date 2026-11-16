@@ -65,13 +65,45 @@ pub const VAERT_FW_QUERY: &str = r#"query VaertFw($zoneTag: string!, $since: Tim
 /// (dag, art, nøgle, n), som `Store::gem_vaert` og `Store::gem_vaert_fw` gemmer dem.
 pub type Raekke4 = (String, String, String, i64);
 
+// ── Sikringen af hovedhentningen (B2, trin 0) ──────────────────────────────────────────────────────────────────────
+/// Hovedforespørgslen `q` uden værtsfeltet på `fw`: som før V-SUBDOM.1. Feltet står sidst på `fw` (`vaern::DOEGN_QUERY`).
+pub fn uden_vaertsfelt(q: &str) -> String {
+    q.replacen(" clientRequestHTTPHost }", " }", 1)
+}
+
+/// Skal hovedforespørgslen prøves igen uden værtsfeltet? Et ukendt eller afvist felt er en valideringsfejl for hele forespørgslen (`Fejl::GraphQl`), og
+/// Cloudflares tekst nævner ikke altid feltet, så alle GraphQL-fejl tæller, undtagen et døgn uden for Cloudflares opbevaring (det svar er det samme uden feltet).
+pub fn vaertsfelt_maaske_afvist(e: &Fejl) -> bool {
+    matches!(e, Fejl::GraphQl { .. }) && !e.uden_for_opbevaring()
+}
+
+/// Henter ét døgn med hovedforespørgslen `q`. `uden`: domænet har afvist værtsfeltet, siden programmet startede, så der spørges uden det. Ellers: fejler
+/// kaldet med en GraphQL-fejl (`vaertsfelt_maaske_afvist`), prøves det én gang uden feltet. Lykkes det, er det andet tal `true`, og den, der kalder, noterer
+/// domænet. Fejler også det, er svaret den første fejl, som før sikringen. Ren bortset fra `graphql`.
+pub async fn hent_hoved<G, Fut>(q: &str, uden: bool, graphql: G) -> (Result<Value, Fejl>, bool)
+where
+    G: Fn(String) -> Fut,
+    Fut: Future<Output = Result<Value, Fejl>>,
+{
+    if uden {
+        return (graphql(uden_vaertsfelt(q)).await, false);
+    }
+    match graphql(q.to_string()).await {
+        Err(e) if vaertsfelt_maaske_afvist(&e) => match graphql(uden_vaertsfelt(q)).await {
+            Ok(v) => (Ok(v), true),
+            Err(_) => (Err(e), false),
+        },
+        svar => (svar, false),
+    }
+}
+
 // ── Rensning ───────────────────────────────────────────────────────────────────────────────────────────────────────
 fn er_port(p: &str) -> bool {
     (1..=5).contains(&p.len()) && p.bytes().all(|b| b.is_ascii_digit())
 }
 
 /// Kun `a-z 0-9 - _` i labels af 1–63 tegn, højst 253 i alt. Punycode (`xn--…`) er det samme.
-fn gyldigt_navn(v: &str) -> bool {
+pub(crate) fn gyldigt_navn(v: &str) -> bool {
     v.len() <= 253
         && v.split('.').all(|l| {
             (1..=63).contains(&l.len())

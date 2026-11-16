@@ -592,3 +592,156 @@ fn en_fejl_indeholder_aldrig_en_vaert() {
     }
     assert!(trafik_raekker(&daarlige[0], &dage, Z).is_err() && fw_dag_raekker(&daarlige[1], &dage, Z).is_err());
 }
+
+// ── B2, trin 0: sikringen af hovedhentningen ────────────────────────────────────────────────────────────────────────
+/// Et helt svar på hovedforespørgslen uden værtsfeltet (som før V-SUBDOM.1): samme hændelser som `fw_doegn(false)`.
+fn hoved_svar_uden_vaert() -> Value {
+    let fw: Vec<Value> = (0..300).map(|i| haendelse(i, None, 1 + (i % 3) as i64)).collect();
+    json!({ "viewer": { "zones": [{ "fw": fw, "alle": [{ "count": 5000, "dimensions": { "date": "2026-11-05" } }] }] } })
+}
+
+/// Cloudflares valideringsfejl for et felt, zonen ikke må spørge om (som `cf.rs` læser den: `Fejl::GraphQl`).
+fn valideringsfejl() -> Fejl {
+    Fejl::GraphQl {
+        dag: None,
+        detalje: "unknown field \"clientRequestHTTPHost\" on type \"ZoneFirewallEventsAdaptive\"".into(),
+    }
+}
+
+/// Uden værtsfeltet er hovedforespørgslen præcis den fra før V-SUBDOM.1: feltet står kun én gang, sidst på `fw`.
+#[test]
+fn hovedforespoergslen_uden_vaertsfelt() {
+    let q = crate::sti200::hoved_query();
+    let uden = uden_vaertsfelt(&q);
+    assert_eq!(q.matches("clientRequestHTTPHost").count(), 1);
+    assert!(!uden.contains("clientRequestHTTPHost"));
+    assert_eq!(uden, q.replace(" clientRequestHTTPHost", ""));
+    assert!(uden.contains("datetime sampleInterval }"), "resten af fw er uændret");
+}
+
+/// Hvornår der prøves igen: kun ved en GraphQL-fejl, der ikke er "uden for opbevaring"; og hvad der kommer ud.
+#[tokio::test]
+async fn hent_hoved_proever_en_gang_uden_feltet() {
+    let q = crate::sti200::hoved_query();
+    let kald: RefCell<Vec<bool>> = RefCell::default();
+    // Med feltet: valideringsfejl. Uden: svaret.
+    let afviser = |s: String| {
+        let med = s.contains("clientRequestHTTPHost");
+        kald.borrow_mut().push(med);
+        async move {
+            if med {
+                Err(valideringsfejl())
+            } else {
+                Ok(hoved_svar_uden_vaert())
+            }
+        }
+    };
+    let (svar, afvist) = hent_hoved(&q, false, &afviser).await;
+    assert!(svar.is_ok() && afvist);
+    assert_eq!(*kald.borrow(), vec![true, false], "først med feltet, så én gang uden");
+    kald.borrow_mut().clear();
+    let (svar, afvist) = hent_hoved(&q, true, &afviser).await;
+    assert!(svar.is_ok() && !afvist);
+    assert_eq!(*kald.borrow(), vec![false], "et noteret domæne spørges kun uden feltet");
+    // Andre fejl prøves ikke igen: ikke en GraphQL-fejl, og et døgn uden for opbevaringen.
+    for f in [
+        Fejl::Svar,
+        Fejl::GraphQl {
+            dag: None,
+            detalje: "cannot request data older than 31 days".into(),
+        },
+    ] {
+        kald.borrow_mut().clear();
+        let fejler = |s: String| {
+            kald.borrow_mut().push(s.contains("clientRequestHTTPHost"));
+            let f = f.clone();
+            async move { Err::<Value, Fejl>(f) }
+        };
+        let (svar, afvist) = hent_hoved(&q, false, fejler).await;
+        assert!(svar.is_err() && !afvist);
+        assert_eq!(*kald.borrow(), vec![true], "{f}");
+    }
+    // Fejler også forsøget uden feltet, er svaret den første fejl, og domænet noteres ikke.
+    kald.borrow_mut().clear();
+    let begge = |s: String| {
+        let med = s.contains("clientRequestHTTPHost");
+        kald.borrow_mut().push(med);
+        async move {
+            Err::<Value, Fejl>(if med {
+                valideringsfejl()
+            } else {
+                Fejl::GraphQl {
+                    dag: None,
+                    detalje: "andet".into(),
+                }
+            })
+        }
+    };
+    let (svar, afvist) = hent_hoved(&q, false, begge).await;
+    assert_eq!(svar.unwrap_err().to_string(), valideringsfejl().to_string());
+    assert!(!afvist);
+    assert_eq!(*kald.borrow(), vec![true, false]);
+}
+
+/// Promptens test: et svar med valideringsfejl på feltet giver domænets `fw`, `fwn`, `angreb` og `seneste` som uden feltet, og intet `v_fw`.
+/// Domænet noteres, så de næste døgn kun spørges uden feltet.
+#[tokio::test]
+async fn valideringsfejl_paa_vaertsfeltet_giver_tallene_som_uden_feltet() {
+    let q = crate::sti200::hoved_query();
+    let noteret = RefCell::new(false);
+    let kald: RefCell<Vec<bool>> = RefCell::default();
+    let graphql = |s: String| {
+        let med = s.contains("clientRequestHTTPHost");
+        kald.borrow_mut().push(med);
+        async move {
+            if med {
+                Err(valideringsfejl())
+            } else {
+                Ok(hoved_svar_uden_vaert())
+            }
+        }
+    };
+    let hent = |_: String| {
+        let (q, graphql, noteret) = (&q, &graphql, &noteret);
+        async move {
+            let uden = *noteret.borrow();
+            let (svar, afvist) = hent_hoved(q, uden, graphql).await;
+            if afvist {
+                *noteret.borrow_mut() = true;
+            }
+            crate::vaern::doegn_fra_svar(&svar?)
+        }
+    };
+    let gammel = |_: String| async { crate::vaern::doegn_fra_svar(&hoved_svar_uden_vaert()) };
+    let (sikret, foer) = (lager_med_zone(Some(Z)), lager_med_zone(Some(Z)));
+    let antal = (HENT_DAGE + 1) as usize;
+    assert_eq!(
+        opdater(&sikret, "z1", nu(), &hent, |_, _| {}).await.unwrap(),
+        antal,
+        "alle døgn gemmes"
+    );
+    assert_eq!(opdater(&foer, "z1", nu(), &gammel, |_, _| {}).await.unwrap(), antal);
+    assert!(*noteret.borrow(), "afslaget er noteret ved domænet");
+    let med_felt = kald.borrow().iter().filter(|x| **x).count();
+    assert!(
+        (1..=crate::vaern::SAMTIDIGE).contains(&med_felt) && kald.borrow().len() == antal + med_felt,
+        "kun de første samtidige spørger med feltet: {:?}",
+        kald.borrow()
+    );
+    let (s, f) = (sikret.lock().unwrap(), foer.lock().unwrap());
+    let dag = dag_noegle(nu() - DOEGN_MS);
+    for art in ["fw", "fwn", "angreb", "seneste"] {
+        let a = s.doegn_art("z1", &dag, art).unwrap();
+        assert!(!a.is_empty() || art == "fwn", "{art} har tal i fixturen");
+        assert_eq!(a, f.doegn_art("z1", &dag, art).unwrap(), "{art}");
+    }
+    assert_eq!(
+        s.raekker("z1", "0000-00-00").unwrap(),
+        f.raekker("z1", "0000-00-00").unwrap(),
+        "alle døgnets tal er som uden feltet"
+    );
+    assert!(
+        s.doegn_art("z1", &dag, V_FW).unwrap().is_empty() && s.hentet_vaert_fw("z1").unwrap().is_empty(),
+        "intet v_fw"
+    );
+}

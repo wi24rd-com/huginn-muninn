@@ -108,6 +108,10 @@ If you delete the program, or want to close the access for any other reason, del
 ![Confirm deletion](../img/cf-12-delete-confirm.webp)
 *Cloudflare asks whether you are sure. **Delete** removes the token at once; the program will then say that Cloudflare rejected the API Token.*
 
+## Subdomains need no new permission
+
+The figures per subdomain in Visitors and Attacks come from the same figures that **Analytics › Read** already gives. You do not need to change your API Token. The program does not read your DNS records.
+
 ## More than one account
 
 The program takes one API Token per Cloudflare account. If you have domains on more than one account, create an API Token for each account following steps 1–6. You paste the first one in the guide. You add the others under **Settings** › **Connection** with **Add API Token…**. The domains from all accounts are shown together.

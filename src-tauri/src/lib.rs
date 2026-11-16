@@ -60,6 +60,9 @@ struct Tilstand {
     siden_sidst: AtomicBool,
     /// Domæner, hvor Cloudflare afviste et felt i `ADGANG_QUERY`: de hentes uden `clientAsn`, mens programmet kører.
     uden_asn: Mutex<HashSet<String>>,
+    /// Domæner, hvor Cloudflare afviste hovedforespørgslen med værtsfeltet (V-SUBDOM.1 B2, trin 0): de hentes uden `clientRequestHTTPHost` på `fw`, mens
+    /// programmet kører. Domænets egne tal er som før; døgnene får intet `v_fw`, og `subdomaener` melder `angreb_afvist`.
+    uden_vaert: Mutex<HashSet<String>>,
     /// Cloudflare har afvist filteret i `LAEK_QUERY`: resten af kørslen hentes uden det.
     laek_uden_filter: AtomicBool,
     /// Startet af den daglige start og lukker selv, når køen er færdig. Et vindue slår det fra (`aabn_vindue`): så bliver programmet.
@@ -437,7 +440,7 @@ async fn hent_zone(
         .laase
         .koer(zone, async {
             let nu = nu_ms();
-            let (klient, udenfor) = (&tilstand.klient, &tilstand.udenfor);
+            let (klient, udenfor, uden_vaert) = (&tilstand.klient, &tilstand.udenfor, &tilstand.uden_vaert);
             let hent = move |dag: String| async move {
                 let kendt = udenfor
                     .lock()
@@ -447,11 +450,18 @@ async fn hent_zone(
                 if let Some(f) = kendt {
                     return Err(f);
                 }
-                let data = klient
-                    .graphql(token, &sti200::hoved_query(), sti200::variabler(zone, &dag)?)
-                    .await
-                    .map_err(|e| e.for_dag(&dag))?;
-                vaern::doegn_fra_svar(&data)
+                // V-SUBDOM.1 B2 (trin 0): afviser Cloudflare værtsfeltet, hentes domænets tal uden det, og domænet noteres til programmet starter igen.
+                let variabler = sti200::variabler(zone, &dag)?;
+                let uden = uden_vaert.lock().map_err(|_| Fejl::Lager)?.contains(zone);
+                let (svar, afvist) = vaert::hent_hoved(&sti200::hoved_query(), uden, |q: String| {
+                    let v = variabler.clone();
+                    async move { klient.graphql(token, &q, v).await }
+                })
+                .await;
+                if afvist {
+                    uden_vaert.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string());
+                }
+                vaern::doegn_fra_svar(&svar.map_err(|e| e.for_dag(&dag))?)
             };
             vaern::opdater(&tilstand.lager, zone, nu, hent, |dag, u| {
                 if let Doegnudfald::UdenFor(f) = u {
@@ -1190,11 +1200,19 @@ async fn besoegende(
     land: Option<String>,
     sti: Option<String>,
     robot: Option<String>,
+    vaert: Option<String>,
     tilstand: State<'_, Tilstand>,
 ) -> Svar<besoeg::BesoegUd> {
     let spoerg = dyk::tjek(omfang, Vec::new(), periode, None)?;
     let filter = besoeg::tjek_filter(land, sti, robot)?;
-    let laest = besoeg::laes(&*laas(&tilstand)?, &spoerg.zoner)?;
+    // V-SUBDOM.1 B2: siderne pr. vært, kun for ét domæne; `vaert` (labelen under domænet) tager kun den værts sider.
+    let vaert = besoeg::tjek_vaert(vaert)?;
+    if vaert.is_some() && spoerg.zoner.len() != 1 {
+        return Err(Fejl::UgyldigtFilter);
+    }
+    let mut laest = besoeg::laes(&*laas(&tilstand)?, &spoerg.zoner)?;
+    laest.med_vaert = spoerg.zoner.len() == 1;
+    laest.vaert = vaert;
     Ok(besoeg::regn(&spoerg.periode, filter.as_ref(), &laest, nu_ms()))
 }
 
@@ -1204,7 +1222,9 @@ async fn besoegende(
 async fn subdomaener(zone: String, fra: String, til: String, tilstand: State<'_, Tilstand>) -> Svar<vaert::SubdomaenerUd> {
     let zone = vaern::tjek_zone(&zone)?;
     vaert::tjek_periode(&fra, &til)?;
-    let laest = vaert::laes(&*laas(&tilstand)?, &zone, &fra)?;
+    let mut laest = vaert::laes(&*laas(&tilstand)?, &zone, &fra)?;
+    // Hovedhentningen afviste værtsfeltet for domænet (trin 0): angrebene pr. vært er ikke tilgængelige.
+    laest.angreb_afvist |= tilstand.uden_vaert.lock().map_err(|_| Fejl::Lager)?.contains(&zone);
     Ok(vaert::regn(&laest, &fra, &til))
 }
 
@@ -2176,6 +2196,7 @@ pub fn run() {
                 token: token::Huske::default(),
                 siden_sidst: AtomicBool::new(false),
                 uden_asn: Mutex::default(),
+                uden_vaert: Mutex::default(),
                 laek_uden_filter: AtomicBool::new(false),
                 dagligt: AtomicBool::new(dagligt::startet_dagligt(setup_args.iter().cloned())),
                 zoner_hentet: Mutex::default(),

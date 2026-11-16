@@ -66,6 +66,14 @@ Et klik på et tal, et land, en regel eller en sti lægger et filter på samme s
 
 Alle afsnit følger perioden og filtrene. Et afsnit, der ikke kan følge filtret, står ikke, og en linje nederst på siden siger hvilke. Det gælder fx **Dit sites teknologi**, **Mails sendt i dit domænes navn**, **Følsomme filer, der svarede 200**, **Cloudflares egne fund** og **Hvad de ledte efter**, for de tal har hverken land eller regel. Med et filter eller en valgt periode viser siden de gemte tal og henter intet fra Cloudflare.
 
+## Subdomæner
+
+Har domænet tal på mindst to navne i perioden, fx `wi24rd.com` og `shop.wi24rd.com`, står afsnittet **Subdomæner** efter søjlerne. Det står kun for ét domæne og kun uden filtre; et domæne uden subdomæner ser ud som før. Tabellen er den samme som i [Besøgende](besoegende.md): **Subdomæne**, **Besøg**, **Forespørgsler**, **Angreb** og **Andel** (andelen af forespørgslerne), med **Andre (n)** efter de 20 største, rækkerne **Kaldt med IP-adresse**, **Andet navn** og **Ugyldigt navn**, noten **Pr. subdomæne fra {dato}.**, når perioden går længere tilbage end tallene pr. subdomæne, og noten om «DNS only». **Angreb** tælles som resten af siden: uden Cloudflares rutine.
+
+Klik på et subdomæne, og Angreb viser kun det, med chippen **Subdomæne: shop.wi24rd.com** under overskriften. Så står fliserne **Angreb på …** og **Afviste på …** for perioden, og søjlerne viser angreb og afviste pr. dag. Et klik på en dag viser dagen for samme subdomæne. Reglerne, lande, stier, **De seneste** og **Cloudflares egne fund** findes ikke pr. subdomæne. De står med **Ikke pr. subdomæne**, aldrig med hele domænets tal. Filteret kan ikke stå sammen med andre filtre, det står i adressen (tilbage og frem virker), og det nulstilles, når du vælger et andet domæne.
+
+Afviste Cloudflare forespørgslen pr. subdomæne for domænet, står **Cloudflare svarede ikke på subdomænerne for dette domæne.** i stedet for tabellen. Domænets egne tal er de samme som før.
+
 ## Trafik den …
 
 Klikker du på en dag med **usædvanlig meget trafik** (fra Overblik, en notifikation eller flisen **Forespørgsler i alt**), står afsnittet **Trafik den …** øverst på siden. Det viser forespørgslerne den dag, ikke det, Cloudflare stoppede: antal mod det normale, hvor mange Cloudflare stoppede, hvor de kom fra, svarkoderne og robotterne. Tallene kan sige, hvor trafikken kom fra, men ikke hvad den var. **Trafik** står som chip, og × fjerner afsnittet.
@@ -83,11 +91,12 @@ Klikker du på en dag med **usædvanlig meget trafik** (fra Overblik, en notifik
 - **… en sti dukker op igen og igen?** Klik på stien. Er det `wp-login.php` eller lignende, er det rutine fra scannere; se også [Login](login.md).
 - **… en følsom fil svarede 200?** Se afsnittet **Følsomme filer, der svarede 200**. Står der **Ligner filen**, så åbn adressen i din browser og se, hvad der kommer; **Hvad gør jeg?** giver rådene. Står der **Ligner sidens almindelige side**, svarer sitet med forsiden på alle adresser, og der er ikke noget at gøre.
 - **… Cloudflare har et kritisk fund?** Klik på fundet under **Cloudflares egne fund**. Cloudflare forklarer det i Security Insights; de fleste fund er råd om indstillinger.
+- **… ét subdomæne får de fleste angreb?** Klik på det under **Subdomæner** for at se dagene. Reglerne og stierne bag findes kun for hele domænet; fjern chippen og se dem der.
 - **… en dag skiller sig ud?** Vælg dagen i datovælgeren eller klik på søjlen, og fold **Hvorfor fik dagen (ikke) et mærke?** ud.
 
 ## Klik videre
 
-Alt med data bag sig lægger et filter eller en periode på samme side: fliserne, fordelingen, lande, ringe og buer på kortet, søjler, lister, regelkortene, "Hvad de ledte efter" og "De seneste". Tilbage og frem øverst til højre (⌘[ og ⌘]) går ét trin ad gangen, også gennem filtre. Et klik på et CVE-nummer åbner CVE'ens side på cve.org i din browser; programmet henter intet derfra. **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md).
+Alt med data bag sig lægger et filter eller en periode på samme side: fliserne, fordelingen, lande, ringe og buer på kortet, søjler, lister, regelkortene, "Hvad de ledte efter" og "De seneste". Tilbage og frem øverst til højre (⌘[ og ⌘]) går ét trin ad gangen, også gennem filtre. Et klik på et CVE-nummer åbner CVE'ens side på cve.org i din browser; programmet henter intet derfra. **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md). Et subdomæne under **Subdomæner** (navnet eller tallene) viser Angreb for det subdomæne. **Andel**, **Andre (n)**, rækkerne uden et navn og noterne under tabellen fører ingen steder hen.
 
 Tastatur: kortet er ét Tab-stop; piletasterne flytter mellem landene og ringene, og Enter eller mellemrum åbner det valgte.
 

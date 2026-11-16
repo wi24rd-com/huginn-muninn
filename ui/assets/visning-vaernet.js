@@ -9,7 +9,10 @@
    men kun på siden uden parametre: et filter læser kun det gemte. Det samlede henter ikke selv; køen gør, og siden tegnes igen, når den melder nyt, højst hvert 3. sekund.
    Afsnit, der ikke kan følge et filter, står ikke og nævnes i én linje (skjultLinje), så intet står tomt. Kort, søjler, lister og regelkort står i vg-tegn.js.
    Ingen IP-adresser; stierne er renset i Rust og sættes altid som tekst. Bygges med createElement. Dage i uhentet er huller: de tegnes ikke som 0.
-   start(params)/stop(): et skift stopper alt fra det forrige (lyttere, ure, genforsøg), og svar, der kommer for sent, kasseres (gen). */
+   start(params)/stop(): et skift stopper alt fra det forrige (lyttere, ure, genforsøg), og svar, der kommer for sent, kasseres (gen).
+   V-SUBDOM.1 B2: for ét domæne uden filtre står afsnittet "Subdomæner" (kommandoen subdomaener, kun fra cachen), når domænet har tal på mindst to værter i
+   perioden. vaert=<navn> er filteret pr. subdomæne (tegnVaert): angreb og afviste pr. dag for værten; regler, lande, stier, "De seneste" og Cloudflares egne
+   fund findes ikke pr. subdomæne og siger det. Det står ikke sammen med andre filtre og nulstilles, når et andet domæne vælges. Værtsnavne kun som tekst. */
 (function () {
   'use strict';
   const S = window.hmSprog, T = S.T, L = T.ang, R = window.hmRamme, V = window.hmTegn;
@@ -44,6 +47,10 @@
   /* Til adresser, der ikke går gennem data-dyk: standardperioden står ikke i adressen. */
   const udenStandard = q => { const p = new URLSearchParams(q); if (p.get('periode') === '7') p.delete('periode'); return p.toString(); };
   const omfangQ = () => new URLSearchParams(samlet() ? { samlet: '1' } : { zone: zone(), navn: domaene }).toString();
+  /* Filteret pr. subdomæne: navnet fra adressen (domænet selv eller et navn under det), og labelen, Rust bruger (V.subNoegle). Kun for ét domæne. */
+  const vaertHost = () => (samlet() || !zone() || V.subNoegle(params.get('vaert'), domaene) === null ? null : params.get('vaert').toLowerCase());
+  const vaertN = () => (vaertHost() === null ? null : V.subNoegle(vaertHost(), domaene));
+  const medVaert = host => kopi(p => { FILTRE.forEach(x => p.delete(x)); ['slags', 'trafik'].forEach(x => p.delete(x)); p.set('vaert', host); });
 
   /* ── navne ── */
   function filterNavn(f, d) {
@@ -86,12 +93,13 @@
   /* Ét filter pr. dimension. × fjerner kun det; er det det sidste, er man tilbage på siden uden filtre. Nulstil fjerner alt. */
   function chips(d, liste) {
     const led = liste.map(f => ({ navn: filterNavn(f, d), fjern: udenFilter(f.dim) }));
+    if (vaertHost() !== null) led.unshift({ navn: fmt(T.sub.filter, { vaert: vaertHost() }), fjern: udenFilter('vaert'), klasse: 'ang-vaert-chip' });
     if (erTrafik()) led.push({ navn: L.trafikChip, fjern: kopi(p => p.delete('trafik')) });
     if (har('dag')) led.push({ navn: V.datoLang(params.get('dag')), fjern: kopi(p => { PERIODE.forEach(x => p.delete(x)); p.delete('trafik'); }) });
     if (har('fra') && har('til')) led.push({ navn: V.interval(params.get('fra'), params.get('til')), fjern: kopi(p => { PERIODE.forEach(x => p.delete(x)); p.delete('trafik'); }) });
     /* Hvert aktivt filter er kittets filterchip, der kan fjernes (× og gennemstregning ved hover). */
     const ul = el('ul', { className: 'fchips' });
-    for (const l of led) ul.append(el('li', {}, V.fjernChip(l.navn, led.length === 1 ? { gaa: oversigt(l.fjern) } : l.fjern, 'dyk-filter')));
+    for (const l of led) ul.append(el('li', {}, V.fjernChip(l.navn, led.length === 1 ? { gaa: oversigt(l.fjern) } : l.fjern, 'dyk-filter' + (l.klasse ? ' ' + l.klasse : ''))));
     const nav = $('dyk-filtre'), noget = led.length || har('slags');
     nav.setAttribute('aria-label', T.dykFiltre);
     nav.hidden = !noget;
@@ -537,7 +545,12 @@
   /* Det valg, der havde fokus, da siden skiftede: "Henter …" fjerner det, og det skal have fokus igen bagefter. */
   let valgtFokus = null;
   const fokusNu = () => (document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.fokus : null);
-  function tegn(d, trafik) {
+  /* Afsnittet "Subdomæner": kun for ét domæne uden filtre, og kun med tal på mindst to værter (eller når Cloudflare afviste forespørgslen). */
+  function subBlok(d, sub) {
+    if (samlet() || !zone() || filtre().length || har('slags') || erRobot() || !V.subVis(sub, sub && sub.angreb_afvist)) return [];
+    return [V.subAfsnit(sub, { domaene, afvist: sub.angreb_afvist, intro: T.sub.pAng, aria: T.sub.ariaAng, maal: n => medVaert(n), fra: d.periode.fra, id: 'vg-sub' })];
+  }
+  function tegn(d, trafik, sub) {
     const liste = filtre(), g = gen, skjult = [], et = !samlet() && Boolean(zone());
     S.saetDomaene(domaene, samlet());
     R.titel();
@@ -559,8 +572,8 @@
     if (d.loft) dele.push(el('p', { className: 'vg-advarsel vg-gul vg-loft', textContent: fmt(T.dykLoft, { n: tal(d.sum) }) }));
     /* V-SAMPLE.1: ældre døgn er talte rækker, nyere Cloudflares estimat. Kun når perioden krydser grænsen. */
     if (d.vaegt_fra) dele.push(el('p', { className: 'vg-note vg-vaegt', textContent: fmt(T.dykVaegtGraense, { d: V.datoLang(d.vaegt_fra) }) }));
-    if (d.sum) dele.push(...kortBlok(d), ...lister(d), ...soejleBlok(d), ...reglerBlok(d, liste));
-    else dele.push(el('p', { className: 'vg-status dyk-tom', textContent: T.dykTomt }), ...reglerBlok(d, liste));
+    if (d.sum) dele.push(...kortBlok(d), ...lister(d), ...soejleBlok(d), ...subBlok(d, sub), ...reglerBlok(d, liste));
+    else dele.push(el('p', { className: 'vg-status dyk-tom', textContent: T.dykTomt }), ...subBlok(d, sub), ...reglerBlok(d, liste));
     if (et && !filter) dele.push(...tekBlok(g)); else if (et) skjult.push(T.tekH);
     if (d.sum) dele.push(...rettetBlok(d));
     if (et && !filter) dele.push(...emailBlok(d, g)); else if (et) skjult.push(T.emailH);
@@ -585,6 +598,50 @@
       const maal = $('vg-seneste') || $('vg-regler');
       if (maal && maal.scrollIntoView && !R.genbesoeg()) maal.scrollIntoView({ block: 'start' });
     }
+  }
+  /* ── filteret pr. subdomæne ── */
+  /* Angreb for ét subdomæne (vaert=<navn>): fliser og søjler for angreb og afviste pr. dag fra subdomaener. Et døgn uden tal pr. vært er et hul, ikke 0. Det,
+     der ikke findes pr. vært, står med overskriften og "Ikke pr. subdomæne" (aldrig domænets tal under et subdomænes navn). */
+  const SUB_SERIER = [{ felt: 'angreb', klasse: 'vg-s-edge' }, { felt: 'afvist', klasse: 'vg-s-server' }];
+  function tegnVaert(d, sub) {
+    const U = T.sub, host = vaertHost(), v = sub && sub.vaerter.find(x => x.vaert === vaertN()), pr = new Map(v ? v.dage.map(x => [x.dag, x]) : []);
+    S.saetDomaene(domaene, false);
+    R.titel();
+    visOverskrift();
+    chips(d, []);
+    const p = params.get('periode'), fast = !har('dag') && !har('fra');
+    segment('dyk-periode', T.dykPeriode, [[T.dykP7, medPeriode('periode', '7'), fast && p !== '30' && p !== 'alt'], [T.dykP30, medPeriode('periode', '30'), fast && p === '30'], [T.dykPAlt, medPeriode('periode', 'alt'), fast && p === 'alt']]);
+    R.baandValg('dyk-slags', null);
+    const genaabn = V.husk(rod);
+    const vaelger = V.datoVaelger({ visning: 'vaernet', plads: 'dyk-datoer', tom: fast, periode: d.periode, gaa: (a, b) => R.gaaTil('vaernet', kopi(q => { PERIODE.forEach(x => q.delete(x)); q.set('fra', a); q.set('til', b); })) });
+    const bjaelke = el('div', { className: 'vg-bjaelke' }, el('p', { className: 'vg-status', textContent: stat.tekst }));
+    const dage = d.dage.map(x => { const y = pr.get(x.dag); return { dag: x.dag, angreb: y ? y.angreb : null, afvist: y ? y.afvist : null, hentet: Boolean(y) && y.angreb !== null }; });
+    const med = dage.filter(x => x.hentet).length, sum = k => dage.reduce((a, x) => a + (x[k] || 0), 0);
+    const dele = [bjaelke, vaelger];
+    if (!sub || sub.angreb_afvist) dele.push(el('p', { className: 'vg-advarsel vg-gul sub-ikke-tilg', textContent: U.ikkeTilg }));
+    /* Fliserne fører til søjlerne (én dag har ingen søjler, og så fører de ingen steder hen). */
+    const under = med < dage.length ? fmt(T.dagMed, { m: tal(med), n: tal(dage.length) }) : periodeTekst();
+    const flise = (k, tekst) => (med ? V.flise(sum(k), tekst, under, har('dag') ? '' : { rul: 'sub-dage' }, { label: fmt(U.rulDage, { navn: tekst, n: tal(sum(k)) }) }) : V.fliseTekst('–', tekst, T.bes.ingenTal));
+    dele.push(el('div', { className: 'sfliser vg-fliser sub-fliser' }, flise('angreb', fmt(U.fAngreb, { vaert: host })), flise('afvist', fmt(U.fAfvist, { vaert: host }))));
+    if (!har('dag') && med) {
+      const h = fmt(U.dageH, { vaert: host });
+      const diagram = V.soejlerSerier(dage, SUB_SERIER, { titel: `${h}. ${T.tastatur}`, tekst: x => fmt(U.dag, { d: V.datoLang(x.dag), a: tal(x.angreb || 0), b: tal(x.afvist || 0) }), maal: dag => medPeriode('dag', dag) });
+      const legende = el('ul', { className: 'vg-legende vg-legende-inde' }, el('li', {}, el('i', { className: 'vg-s-edge' }), U.legAngreb), el('li', {}, el('i', { className: 'vg-s-server' }), U.legAfvist));
+      const rul = el('div', { className: 'vg-soejler-rul' }, diagram);
+      rul.setAttribute('role', 'region');
+      rul.setAttribute('aria-label', h);
+      dele.push(afsnit('sub-dage', h, U.dageP, el('div', { className: 'vg-tavle vg-tavle-pad' }, legende, rul)));
+    }
+    if (sub && sub.angreb_fra && sub.angreb_fra > d.periode.fra) dele.push(el('p', { className: 'vg-note sub-fra', textContent: fmt(U.fra, { dato: V.datoLang(sub.angreb_fra) }) }));
+    dele.push(el('p', { className: 'vg-note sub-dns', textContent: U.dnsOnly }));
+    dele.push(...[U.hRegler, T.dykLister.land, T.dykLister.sti, T.dykSenesteH, T.cfH].map(h => V.subIkke(h)));
+    dele.push(el('p', { className: 'vg-note', textContent: T.dykNote }));
+    rod.replaceChildren(...dele);
+    tegnMoenster();
+    genaabn();
+    rod.querySelectorAll('.vg-soejler-rul').forEach(r => { r.scrollLeft = r.scrollWidth; });
+    rod.classList.toggle('vg-henter', stat.henter || Boolean(stat.advarsel));
+    if (stat.henter) rod.setAttribute('aria-busy', 'true'); else rod.removeAttribute('aria-busy');
   }
   function besked(tekst, farve = 'roed') {
     rod.removeAttribute('aria-busy');
@@ -638,14 +695,19 @@
   /* Tallene for perioden og filtrene, kun fra cachen. */
   async function hentTal(g) {
     let d, t = null;
-    const trafik = erTrafik();
+    const vaert = vaertHost() !== null, trafik = erTrafik() && !vaert;
     try {
       [d, t] = await Promise.all([
-        invoke('dyk', { omfang, filtre: filtre(), periode: periodeArg(), slags: params.get('slags'), side: Number(params.get('side')) || undefined }),
+        invoke('dyk', { omfang, filtre: vaert ? [] : filtre(), periode: periodeArg(), slags: vaert ? null : params.get('slags'), side: Number(params.get('side')) || undefined }),
         trafik ? invoke('trafik_dag', { omfang, dag: params.get('dag') || params.get('fra'), til: params.get('til') }) : null,
       ]);
     } catch (e) { if (g === gen) besked(S.fejl(e)); return; }
-    if (g === gen) tegn(d, t);
+    if (g !== gen) return;
+    /* V-SUBDOM.1: tallene pr. subdomæne for perioden, kun for ét domæne uden andre filtre. Et afslag her rører intet andet. */
+    const medSub = !samlet() && zone() && (vaert || (!filtre().length && !har('slags') && !erRobot()));
+    const sub = medSub ? await invoke('subdomaener', { zone: zone(), ...V.subSpaend(d.periode.fra, d.periode.til) }).catch(() => null) : null;
+    if (g !== gen) return;
+    if (vaert) tegnVaert(d, sub); else tegn(d, t, sub);
   }
   /* Én side i "De seneste": samme kald som hentTal med den nye side, men kun afsnittet byttes ud. Fokus bliver på knappen, der blev trykket, eller på
      "Side N af M", når den knap ikke er der mere (første/sidste side). */
@@ -781,10 +843,10 @@
     domaener: true,
     hvad: () => ({ samlet: samlet(), zone: zone(), navn: domaene }),
     titel: () => (erRobot() ? 'robotter' : 'vaernet'),
-    /* Et andet domæne: samme filtre og periode. */
+    /* Et andet domæne: samme filtre og periode, men ikke filteret pr. subdomæne (det hører til domænet). */
     skift(q) {
       const ny = new URLSearchParams(q);
-      for (const [k, v] of params) if (!['zone', 'navn', 'samlet', 'side'].includes(k)) ny.append(k, v);
+      for (const [k, v] of params) if (!['zone', 'navn', 'samlet', 'side', 'vaert'].includes(k)) ny.append(k, v);
       R.gaaTil('vaernet', ny);
     },
     /* #vaernet uden parametre: det sidst viste (eller det samlede). Samme adresse igen (fx efter "Glem"/nyt token): bliv. */

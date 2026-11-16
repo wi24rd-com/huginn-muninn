@@ -108,6 +108,10 @@ Sletter du programmet, eller vil du af andre grunde lukke adgangen, sletter du t
 ![Bekræft sletning](../img/cf-12-delete-confirm.webp)
 *Cloudflare spørger, om du er sikker. **Delete** fjerner tokenet med det samme; programmet vil derefter sige, at Cloudflare afviste API Tokenet.*
 
+## Subdomæner kræver ingen ny rettighed
+
+Tallene pr. subdomæne i Besøgende og Angreb kommer fra de samme tal, som **Analytics › Read** allerede giver. Du skal ikke ændre dit API Token. Programmet læser ikke dine DNS-poster.
+
 ## Flere konti
 
 Programmet tager ét API Token pr. Cloudflare-konto. Har du domæner på flere konti, opretter du et API Token for hver konto efter trin 1–6. Det første indsætter du i guiden. De andre tilføjer du under **Indstillinger** › **Forbindelse** med **Tilføj API Token…**. Domænerne fra alle konti vises samlet.

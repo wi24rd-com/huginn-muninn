@@ -4,6 +4,18 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-16 23:30 — Subdomæner i Besøgende og Angreb
+#### Tilføjet
+- **Subdomæner i Besøgende og Angreb:** har et domæne trafik på mindst to navne (fx `wi24rd.com`, `www.wi24rd.com` og `shop.wi24rd.com`), står afsnittet **Subdomæner** med besøg, forespørgsler, angreb og andel pr. subdomæne i den valgte periode. Det står kun, når ét domæne er valgt; et domæne uden subdomæner ser ud som før. Flere end 20 navne samles i **Andre (n)**, og opslag med en IP-adresse, et andet navn eller et ugyldigt navn står for sig og kan ikke åbnes.
+- **Filter pr. subdomæne:** et klik på et subdomæne viser samme visning for det, med chippen **Subdomæne: …**. Besøgende viser besøg og forespørgsler pr. dag og subdomænets mest besøgte sider; Angreb viser angreb og afviste pr. dag. Det, der ikke findes pr. subdomæne (unikke besøgende, lande, robotter, regler, stier, De seneste, Cloudflares egne fund), står med **Ikke pr. subdomæne**. Filteret står i adressen og nulstilles, når et andet domæne vælges.
+- Noterne **Pr. subdomæne fra …**, **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.** og **Cloudflare svarede ikke på subdomænerne for dette domæne.**
+#### Ændret
+- **Den lokale database opgraderes endnu et trin** (skema 20) ved første start: to nye tabeller over, hvilke dage der er hentet pr. subdomæne. Ingen gemte tal ændres. Version 1.0.0 siger bagefter "(skema 20)".
+- **Mest besøgte sider skelner mellem subdomæner:** samme sti på to subdomæner står som to rækker, med subdomænet ved stien, og et klik viser stien på det subdomæne. Står svaret på Cloudflares loft, siger en note, at kun de mest besøgte sider er med.
+- **Historik pr. subdomæne fra ca. 30 dage før opgraderingen:** første start henter de sidste ca. 30 dage én gang pr. domæne. Ældre dage har ingen tal pr. subdomæne.
+- Afviser Cloudflare subdomænets navn i hentningen af angrebene, hentes domænets tal uden det, som før, til programmet starter igen.
+- Vejledningen beskriver subdomænerne i Besøgende, Angreb, Data og historik, Fejlfinding og ordlisten. API Tokenet skal ikke have flere rettigheder.
+
 ### 2026-11-16 23:30 — Flere API Tokens side om side
 #### Tilføjet
 - **Flere Cloudflare-konti:** under Indstillinger › Forbindelse(r) tilføjer du ét API Token pr. konto med **Tilføj API Token…**. Domænerne fra alle forbindelser vises og hentes samlet, og et domæne, to API Tokens ser, står kun én gang. Hver forbindelse har en række med navn, antal domæner og tilstand, og kan skiftes eller glemmes for sig. Med én forbindelse ser kassen ud som før.

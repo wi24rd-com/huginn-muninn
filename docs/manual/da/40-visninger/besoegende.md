@@ -32,6 +32,18 @@ Med et land som filter hedder flisen **Besøg fra Danmark på 30 dage** (og med 
 
 Derfor står der under 404-listen **Svarede med sidens almindelige side**: stier som `//crm/.env`, hvor svaret var lige så stort som forsiden (højst 25 % fra), og ingen kom udefra. Siden findes sandsynligvis ikke; sitet svarer bare med forsiden. Det er et skøn ud fra svarenes størrelse, samme regel som Følsomme filer på [Angreb](vaernet.md). Forsiden selv står aldrig der. Er forsiden ikke blandt siderne i perioden, deles listen ikke, og en linje siger det. Et site, der svarer 404 på ukendte adresser, får ingen sådan liste.
 
+### Subdomæner
+
+Har domænet trafik på mindst to navne i perioden, fx `wi24rd.com`, `www.wi24rd.com` og `shop.wi24rd.com`, står afsnittet **Subdomæner** under grafen. Det står kun, når ét domæne er valgt, og kun uden filter. Et domæne uden subdomæner ser ud som før.
+
+Tabellen har kolonnerne **Subdomæne**, **Besøg**, **Forespørgsler**, **Angreb** og **Andel** (andelen af forespørgslerne). Domænet selv står med sit eget navn, `www` som `www.<domæne>`. Har domænet flere end 20 navne, står resten i en sidste række **Andre (n)**, og navnene kan åbnes under **Vis n subdomæner mere**. Tre rækker er ikke navne og kan ikke åbnes: **Kaldt med IP-adresse** (nogen kaldte sitet med IP-adressen i stedet for navnet), **Andet navn** (et navn uden for domænet) og **Ugyldigt navn**.
+
+Tabellen følger den valgte periode. Programmet har tal pr. subdomæne fra ca. 30 dage før opdateringen til denne version. Når perioden går længere tilbage, står **Pr. subdomæne fra {dato}.** under tabellen, og tallene gælder kun dagene derfra. Under tabellen står altid: **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.** Et navn, hvor skyen er grå i Cloudflares DNS, går ikke gennem Cloudflare, så Cloudflare har ingen tal for det.
+
+Klik på et subdomæne (navnet eller tallene), og Besøgende viser kun det. Øverst står chippen **Subdomæne: shop.wi24rd.com**. Fliserne og graferne viser besøg og forespørgsler pr. dag på subdomænet, og **Mest besøgte sider** viser kun subdomænets sider. Unikke besøgende, lande, kendte robotter og IP-klasserne findes ikke pr. subdomæne hos Cloudflare. De står med **Ikke pr. subdomæne**, aldrig med hele domænets tal.
+
+I **Mest besøgte sider** er samme sti på to subdomæner to rækker. Rækken for et subdomæne har navnet ved stien, fx `/` med `shop.wi24rd.com`. Dage, der er gemt før opdateringen og er ældre end ca. 30 dage, kan ikke skilles ad og tæller som domænet selv. Sendte Cloudflare det højeste antal rækker for en dag, står noten **Kun de mest besøgte sider er med: Cloudflare sendte højst 10.000 rækker.**
+
 ## Hvad skal jeg gøre, når …
 
 - **… tallet springer op en enkelt dag?** Klik på dagen i grafen. Den åbner trafikken den dag på [Angreb](vaernet.md), hvor du kan se, om det var robotter, et angreb eller rigtige besøgende.
@@ -40,6 +52,8 @@ Derfor står der under 404-listen **Svarede med sidens almindelige side**: stier
 - **… /admin eller /wp-login.php står øverst under Sider, der ikke findes?** Det er næsten altid scannere, der prøver kendte adresser. Cloudflare svarede 404; du behøver ikke gøre noget.
 - **… `.env`-filer eller `wp-config.php` står under Svarede med sidens almindelige side?** Det er scannere, der prøver kendte adresser, og sitet svarede med forsiden, ikke med filen. Vil du være sikker, så åbn adressen i din browser: ser du forsiden, er filen der ikke.
 - **… der står "ikke tilgængelige"?** Cloudflare svarede ikke på de tal for det domæne. Resten af siden virker. Programmet spørger igen, næste gang det starter.
+- **… et subdomæne har mange angreb eller forespørgsler?** Klik på det under **Subdomæner**. Så ser du det pr. dag og hvilke sider der blev set. Angrebene pr. dag ser du på [Angreb](vaernet.md) for samme subdomæne.
+- **… mit subdomæne står der ikke?** Er det «DNS only» (grå sky) i Cloudflares DNS, har Cloudflare ingen tal for det. Ellers havde det ingen trafik i perioden. Se [Fejlfinding](../80-fejlfinding.md).
 - **… der står "Ingen tal endnu" eller "ikke hentet endnu"?** Programmet henter i baggrunden efter de andre tal. Første gang efter opdateringen kan det tage lidt tid.
 
 ## Sådan gør du
@@ -55,8 +69,10 @@ Derfor står der under 404-listen **Svarede med sidens almindelige side**: stier
 - Et **land i tabellen** lægger et filter på Besøgende: grafen viser besøg fra det land pr. dag, og landet står som en chip øverst.
 - En **gruppe under Kendte robotter** lægger et filter: grafen viser besøg fra den gruppe pr. dag.
 - En **sti under Mest besøgte sider**, **Sider, der ikke findes** eller **Svarede med sidens almindelige side** lægger et filter: grafen viser visninger af siden pr. dag, og flisen Besøg følger siden.
-- Der er højst ét filter ad gangen. **×** på chippen fjerner det.
-- En flise uden tal, en dag uden tal eller med 0, tallene og andelene i tabellerne, procentlinjerne og noterne fører ingen steder hen og ser ikke klikbare ud.
+- Et **subdomæne under Subdomæner** (navnet eller Besøg, Forespørgsler og Angreb) viser Besøgende for det subdomæne, med chippen **Subdomæne: …**. Filteret står i adressen, så tilbage og frem virker, og det nulstilles, når du vælger et andet domæne.
+- En **sti på et subdomæne** under Mest besøgte sider viser visningerne af stien på det subdomæne. Det er det eneste filter, der kan stå sammen med et subdomæne.
+- Der er ellers højst ét filter ad gangen. **×** på chippen fjerner det.
+- En flise uden tal, en dag uden tal eller med 0, tallene og andelene i tabellerne, procentlinjerne og noterne fører ingen steder hen og ser ikke klikbare ud. Det gælder også **Andel**, **Andre (n)**, rækkerne **Kaldt med IP-adresse**, **Andet navn** og **Ugyldigt navn**, og noterne under Subdomæner.
 
 ## Tal og begreber
 
@@ -66,6 +82,7 @@ Derfor står der under 404-listen **Svarede med sidens almindelige side**: stier
 - **Kendte robotter og scannere** (andelen af trafikken det seneste år) bygger på Cloudflares [IP-klasser](../99-ordliste.md): søgemaskiner, overvågning, scannere, Tor og kendte dårlige adresser. Det er forespørgsler, ikke besøg.
 - **Visninger** er antallet af html-svar for en sti. **Besøg udefra** er Cloudflares besøg på stien. Robotter tæller med. Stien vises uden forespørgselsstreng, og lange koder er skjult. De 50 mest viste sider gemmes pr. dag.
 - Besøg pr. land, kendte robotter og sider findes en måned tilbage hos Cloudflare. Programmet gemmer dagene, så historikken vokser derfra.
+- **Subdomæner**: besøg og forespørgsler pr. subdomæne er Cloudflares tal for navnet, som besøgende skrev det. Summen over alle rækker er domænets tal. **Angreb** tælles som på Angreb. Et subdomæne, der er «DNS only», har ingen tal.
 - **Alle domæner** lægger domænerne sammen, så den samme besøgende på to domæner tæller to gange.
 - Tallene er pr. dag i UTC, fra de tal, der er gemt på din computer. Ingen IP-adresser eller brugeragenter gemmes, kun tallene.
 - Siden giver ingen notifikationer og ændrer ikke status i Overblik.

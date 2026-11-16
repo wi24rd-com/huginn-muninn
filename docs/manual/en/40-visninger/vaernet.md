@@ -66,6 +66,14 @@ Clicking a figure, a country, a rule or a path adds a filter on the same page. T
 
 All sections follow the period and the filters. A section that cannot follow the filter is left out, and a line at the bottom of the page says which. That applies to **Your site's technology**, **Mail sent in your domain's name**, **Sensitive files that answered 200**, **Cloudflare's own findings** and **What they were looking for**, for example, because those figures have neither country nor rule. With a filter or a chosen period the page shows the saved figures and fetches nothing from Cloudflare.
 
+## Subdomains
+
+If the domain has figures on at least two names in the period, e.g. `wi24rd.com` and `shop.wi24rd.com`, the section **Subdomains** is shown after the bars. It is only shown for one domain and only without filters; a domain without subdomains looks as before. The table is the same as in [Visitors](besoegende.md): **Subdomain**, **Visits**, **Requests**, **Attacks** and **Share** (the share of the requests), with **Other (n)** after the 20 largest, the rows **Called by IP address**, **Other name** and **Invalid name**, the note **Per subdomain from {date}.** when the period goes further back than the figures per subdomain, and the note about “DNS only”. **Attacks** are counted as on the rest of the page: without Cloudflare’s routine.
+
+Click a subdomain, and Attacks shows only that one, with the chip **Subdomain: shop.wi24rd.com** below the heading. Then the tiles **Attacks on …** and **Refused on …** show the period, and the bars show attacks and refused per day. Clicking a day shows the day for the same subdomain. The rules, countries, paths, **The latest** and **Cloudflare’s own findings** do not exist per subdomain. They are shown with **Not per subdomain**, never with the whole domain’s figures. The filter cannot be combined with other filters, it is in the address (back and forward work), and it is reset when you choose another domain.
+
+If Cloudflare refused the query per subdomain for the domain, **Cloudflare did not return subdomains for this domain.** is shown instead of the table. The domain’s own figures are the same as before.
+
 ## Traffic on …
 
 If you click a day with **unusually much traffic** (from Overview, a notification or the tile **Requests in total**), the section **Traffic on …** stands at the top of the page. It shows the requests that day, not what Cloudflare stopped: the count against the normal, how many Cloudflare stopped, where they came from, the status codes and the robots. The figures can say where the traffic came from, but not what it was. **Traffic** is a chip, and × removes the section.
@@ -83,11 +91,12 @@ If you click a day with **unusually much traffic** (from Overview, a notificatio
 - **… a path turns up again and again?** Click the path. If it is `wp-login.php` or similar, it is routine from scanners; see also [Login](login.md).
 - **… a sensitive file answered 200?** See the section **Sensitive files that answered 200**. If it says **Looks like the file**, open the address in your browser and see what comes back; **What do I do?** gives the advice. If it says **Looks like the site's ordinary page**, the site answers with its front page at every address, and there is nothing to do.
 - **… Cloudflare has a critical finding?** Click the finding under **Cloudflare's own findings**. Cloudflare explains it in Security Insights; most findings are advice about settings.
+- **… one subdomain gets most of the attacks?** Click it under **Subdomains** to see the days. The rules and paths behind them only exist for the whole domain; remove the chip and see them there.
 - **… a day stands out?** Choose the day in the date picker or click its bar, and unfold **Why did the day (not) get a label?**.
 
 ## Click on
 
-Everything with data behind it adds a filter or a period on the same page: the tiles, the breakdown, countries, rings and arcs on the map, bars, lists, the rule cards, "What they were looking for" and "The latest". Back and forward at the top right (⌘[ and ⌘]) go one step at a time, also through filters. Clicking a CVE number opens the CVE's page on cve.org in your browser; the program fetches nothing from there. **Edit technologies** opens [Technology by domain](teknologi.md).
+Everything with data behind it adds a filter or a period on the same page: the tiles, the breakdown, countries, rings and arcs on the map, bars, lists, the rule cards, "What they were looking for" and "The latest". Back and forward at the top right (⌘[ and ⌘]) go one step at a time, also through filters. Clicking a CVE number opens the CVE's page on cve.org in your browser; the program fetches nothing from there. **Edit technologies** opens [Technology by domain](teknologi.md). A subdomain under **Subdomains** (the name or the figures) shows Attacks for that subdomain. **Share**, **Other (n)**, the rows without a name and the notes below the table lead nowhere.
 
 Keyboard: the map is one Tab stop; the arrow keys move between the countries and rings, and Enter or Space opens the chosen one.
 

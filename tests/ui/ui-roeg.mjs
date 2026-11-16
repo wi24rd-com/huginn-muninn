@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import http from 'node:http';
 import { spawn, spawnSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
-import { dykFraVaern, SIDER, svar, VURD7, dom, NU_MS, UR_AAR, UR_STUB, flytAar, siderIAar, B2, B2C_HULLER, B2C_TEK, B2C_TRAFIK, B2C_VERDEN, KORT, LAND_UD, BESOEG_AAR, BESOEG_LAND, BESOEG_SIDE, BESOEG_UD, BES_404, BES_NOEGLE, BES_SIDER, LOGIN_STIER, LOGIN_UD, MED_TOKEN, NU_ISO, OVERBLIK, REACT, REGEL_HOVED, ROBOT_UD, SIDEN_RK, dage, dykDage, dykSvar, kortRegel, landDage, loginDage, raekke, vaernUd } from './sider.mjs';
+import { dykFraVaern, SIDER, svar, VURD7, dom, NU_MS, UR_AAR, UR_STUB, flytAar, siderIAar, B2, B2C_HULLER, B2C_TEK, B2C_TRAFIK, B2C_VERDEN, KORT, LAND_UD, BESOEG_AAR, BESOEG_LAND, BESOEG_SIDE, BESOEG_UD, BES_404, BES_NOEGLE, BES_SIDER, LOGIN_STIER, LOGIN_UD, MED_TOKEN, NU_ISO, OVERBLIK, REACT, REGEL_HOVED, ROBOT_UD, SIDEN_RK, dage, dykDage, dykSvar, kortRegel, landDage, loginDage, raekke, vaernUd , subSvar, SUB_FIRE, SUB_EN, BES_VAERT, BES_SHOP } from './sider.mjs';
 const repo = process.env.HM_REPO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 if (!process.env.HM_NOTIF_IIFE) {
   const lock = fs.readFileSync(path.join(repo, 'src-tauri', 'Cargo.lock'), 'utf8');
@@ -4154,7 +4154,7 @@ const DOMV = (fravalgte = [], x) => {
       /* DMARC-afsnittet og den åbne kolonnemenu. */
       const TEK5 = { domaener: [{ zone: 'z1', navn: 'eksempel.wi24rd.com', valg: { react: ['bruger', false] }, antal: { react: 4 } }], katalog: [{ tek: 'react', navn: 'React', gruppe: 'ramme', angreb: 4, set: true, vis: true, ny: false }] };
       const FIX5 = koer('fix5', tema, { email_oversigt: { mails: 1200, fejlet: 41, afsendere: 2, hentede_dage: 30, fejl: null, liste: [{ afsender: 'Ond Afsender', land: 'RU', mails: 40, fejlet: 40 }, { afsender: '', land: '', mails: 9, fejlet: 1 }] }, teknologi_side: TEK5 }, [{ navn: 'Angreb med DMARC', hash: 'vaernet?' + dom }, { navn: '#teknologi med åben kolonnemenu', hash: 'teknologi', aabn: ['.tek-kol-knap'] }]);
-      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [OPS]), koer('guide1', tema, G1.ekstra, [G1]), koer('guide2', tema, G2.ekstra, [G2]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST]), ...[...new Set(SIDER.filter(s => s.id.startsWith('konti-')).map(s => s.ekstra))].map((e, i) => koer('konti' + i, tema, e, SIDER.filter(s => s.ekstra === e)))];
+      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [OPS]), koer('guide1', tema, G1.ekstra, [G1]), koer('guide2', tema, G2.ekstra, [G2]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST]), ...[...new Set(SIDER.filter(s => s.id.startsWith('konti-') || s.id.startsWith('subdom-')).map(s => s.ekstra))].map((e, i) => koer('ekstra' + i, tema, e, SIDER.filter(s => s.ekstra === e)))];
       /* Gradienten er lysest længst mod højre, så båndet måles også i det smalleste vindue og i standardvinduet. */
       const smalle = [1100, 1200].map(b => koer('baand' + b, tema, {}, [{ navn: `skallen ved ${b} px`, hash: 'vaernet?samlet=1' }], b));
       const sider = r.flatMap(x => (x ? x.sider : [])), ud = [...r, ...smalle].flatMap(x => (x ? x.ud : [])), klasser = new Set(sider.flatMap(s => s.klasser));
@@ -5148,6 +5148,140 @@ const DOMV = (fravalgte = [], x) => {
   const NYE = ['domHentesMed', 'domIngenSer', 'forbNavnEns'];
   tjek('V-KONTI.1 FIX 1 da/en-paritet: de nye nøgler og fejlteksten findes på begge sprog med samme pladsholdere', [...NYE.map(k => [Tda.T[k], Ten.T[k]]), [Tda.T.fejl.allerede_forbundet, Ten.T.fejl.allerede_forbundet]].every(([a, b]) => typeof a === 'string' && typeof b === 'string' && a && b && a !== b && [...new Set(a.match(/\{\w+/g) || [])].sort().join() === [...new Set(b.match(/\{\w+/g) || [])].sort().join()) && /"allerede_forbundet"/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'cf.rs'), 'utf8')));
   tjek('V-KONTI.1 FIX 1 sikkerhedsporten: ingen nye kommandoer eller tilladelser (de fem fra B1, token_status og aabn_api_token)', JSON.stringify(cap.permissions.filter(p => /forbindels|token/.test(p)).sort()) === JSON.stringify(['allow-aabn-api-token', 'allow-forbindelse-glem', 'allow-forbindelse-omdoeb', 'allow-forbindelse-skift', 'allow-forbindelse-tilfoej', 'allow-forbindelser-hent', 'allow-token-status']), JSON.stringify(cap.permissions.filter(p => /forbindels|token/.test(p))));
+}
+
+// ── V-SUBDOM.1 B2: afsnittet "Subdomæner" i Besøgende og Angreb, og filteret pr. subdomæne ──
+{
+  const DOM = 'zone=z1&navn=wi24rd.com', sidst = (x, c) => x.kald.filter(k => k[0] === c).pop();
+  /* subdomaener regner for den periode, visningen spørger om (som Rust). */
+  const subFn = (spec, x) => a => subSvar(a.fra, a.til, spec, x);
+  const BESV = x => DYK({ besoegende: a => (a.vaert != null && !a.sti ? BES_SHOP : BES_VAERT), trafik_dag: B2C_TRAFIK, subdomaener: subFn(SUB_FIRE), ...x });
+  const s = side('#besoegende?' + DOM, BESV()), en = side('#besoegende?' + DOM, BESV(), 'en', 'macos');
+  await sov(100);
+  const { d, w } = s, q = x => d.querySelector('#visning-besoegende ' + x), qa = x => [...d.querySelectorAll('#visning-besoegende ' + x)];
+  const sek = q('#besoeg-sub'), rk = sek ? [...sek.querySelectorAll('tbody tr')] : [], navne = rk.map(r => r.querySelector('th').textContent);
+  tjek('SUB Besøgende: afsnittet står efter grafen med kittets tabel og kolonnerne Subdomæne · Besøg · Forespørgsler · Angreb · Andel', sek && sek.querySelector('h2').textContent === 'Subdomæner' && sek.previousElementSibling === q('#besoeg-graf') && sek.querySelector('.tabel') && [...sek.querySelectorAll('thead th')].map(x => x.textContent).join(' · ') === 'Subdomæne · Besøg · Forespørgsler · Angreb · Andel', sek && [...sek.querySelectorAll('thead th')].map(x => x.textContent).join(' · '));
+  tjek('SUB Besøgende: kaldet har zonen og visningens periode; domænet selv står som sit eget navn, www som www.<domæne>, og IP-rækken som tekst', JSON.stringify(sidst(s, 'subdomaener')[1]) === JSON.stringify({ zone: 'z1', fra: '2026-10-30', til: '2026-11-05' }) && navne.join() === 'wi24rd.com,api.wi24rd.com,www.wi24rd.com,shop.wi24rd.com,blog.wi24rd.com,Kaldt med IP-adresse', navne.join());
+  const besoegSum = rk.reduce((a, r) => a + Number(r.querySelectorAll('td')[0].textContent.replace(/\D/g, '')), 0), forvent = 7 * SUB_FIRE.reduce((a, x) => a + x[2], 0);
+  tjek('SUB summen af Besøg i tabellen er domænets besøg for perioden (alle værter)', besoegSum === forvent && forvent === 3549, `${besoegSum} / ${forvent}`);
+  const andel = rk.map(r => r.querySelectorAll('td')[3].textContent);
+  tjek('SUB Andel er andelen af forespørgslerne og er ikke klikbar', andel[0] === '77,9 %' && rk.every(r => !r.querySelectorAll('td')[3].querySelector('button, [data-gaa], [data-dyk]')), andel.join());
+  const ip = rk.find(r => r.textContent.startsWith('Kaldt med IP-adresse'));
+  tjek('SUB [ip]-rækken er ikke klikbar (ingen knap, intet mål)', ip && !ip.querySelector('button, [data-gaa], [data-dyk], [tabindex]'));
+  const shop = rk.find(r => r.querySelector('th').textContent === 'shop.wi24rd.com'), navnKnap = shop && shop.querySelector('th button'), talKnapper = shop ? [...shop.querySelectorAll('td button')] : [];
+  tjek('SUB rækken: navnet er en knap (Tab-stop, Enter/mellemrum) med aria-label "Vis Besøgende for …", og Besøg, Forespørgsler og Angreb åbner det samme uden ekstra Tab-stop', navnKnap && navnKnap.tagName === 'BUTTON' && navnKnap.getAttribute('aria-label') === 'Vis Besøgende for shop.wi24rd.com' && navnKnap.dataset.gaa === `besoegende?${DOM}&vaert=shop.wi24rd.com` && navnKnap.tabIndex === 0 && talKnapper.length === 3 && talKnapper.every(b => b.dataset.gaa === navnKnap.dataset.gaa && b.tabIndex === -1 && b.getAttribute('aria-label') === navnKnap.getAttribute('aria-label')), navnKnap && navnKnap.dataset.gaa);
+  tjek('SUB noterne: DNS only står altid under tabellen; "Pr. subdomæne fra" kun når tallene ikke når hele perioden tilbage', q('#besoeg-sub .sub-dns')?.textContent === 'Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.' && !q('#besoeg-sub .sub-fra') && !q('#besoeg-sub .sub-dns button'));
+  tjek('SUB engelsk: overskrift, kolonner, IP-rækken og aria-label', en.d.querySelector('#besoeg-sub h2')?.textContent === 'Subdomains' && [...en.d.querySelectorAll('#besoeg-sub thead th')].map(x => x.textContent).join() === 'Subdomain,Visits,Requests,Attacks,Share' && en.d.querySelector('#besoeg-sub tbody').textContent.includes('Called by IP address') && en.d.querySelector('#besoeg-sub tbody th button').getAttribute('aria-label') === 'Show Visitors for wi24rd.com');
+
+  // Mest besøgte sider: samme sti på to subdomæner er to rækker, med subdomænet ved stien; klik åbner stien på den vært.
+  const stier = qa('#besoeg-sider .besoeg-sider tbody th button').filter(b => b.textContent.startsWith('/'));
+  const stiAf = b => b.textContent.slice(0, b.textContent.length - (b.querySelector('.besoeg-vaert')?.textContent.length || 0));
+  const skraa = stier.filter(b => stiAf(b) === '/');
+  const shopRod = skraa.find(b => b.querySelector('.besoeg-vaert')?.textContent === 'shop.wi24rd.com');
+  tjek('SUB Mest besøgte sider: "/" på domænet selv, shop og blog er tre rækker; subdomænet står ved stien (som tekst), domænet selv uden', skraa.length === 3 && shopRod && stier.find(b => b.textContent === '/')?.querySelector('.besoeg-vaert') === null && shopRod.getAttribute('aria-label') === 'Vis visninger af / på shop.wi24rd.com pr. dag (320 visninger)', stier.map(b => b.textContent).join(' | '));
+  tjek('SUB et klik på stien på et subdomæne åbner stien på den vært; på domænet selv stien på domænet', shopRod && new URLSearchParams(shopRod.dataset.gaa.split('?')[1]).get('sti') === '/' && new URLSearchParams(shopRod.dataset.gaa.split('?')[1]).get('vaert') === 'shop.wi24rd.com' && new URLSearchParams(stier.find(b => b.textContent === '/').dataset.gaa.split('?')[1]).get('vaert') === 'wi24rd.com');
+
+  // Filteret: klik på rækken sætter vaert og chippen; Ikke pr. subdomæne; × fjerner det; tilbage/frem.
+  await klik(s, navnKnap, 120);
+  const chip = q('.besoeg-vaert-chip');
+  tjek('SUB klik på et subdomæne: adressen og kaldet har værten, og chippen "Subdomæne: shop.wi24rd.com" står', w.location.hash === `#besoegende?${DOM}&vaert=shop.wi24rd.com` && sidst(s, 'besoegende')[1].vaert === 'shop' && chip && chip.textContent === 'Subdomæne: shop.wi24rd.com' && chip.getAttribute('aria-label') === 'Fjern filtret Subdomæne: shop.wi24rd.com' && chip.dataset.gaa === `besoegende?${DOM}`, w.location.hash);
+  const fl = qa('.besoeg-fliser > *').map(x => x.textContent);
+  tjek('SUB filtreret: de fire fliser med unikke besøgende siger "Ikke pr. subdomæne"; besøg og forespørgsler på værten de seneste 30 dage står med tal', fl.filter(t => t.includes('Unikke besøgende') && t.includes('Ikke pr. subdomæne') && t.includes('–')).length === 4 && fl.some(t => t.includes('Besøg på shop.wi24rd.com på 30 dage') && t.includes('90')) && fl.some(t => t.includes('Forespørgsler til shop.wi24rd.com på 30 dage') && t.includes('4.290')) && JSON.stringify(s.kald.filter(k => k[0] === 'subdomaener').slice(-2).map(k => [k[1].fra, k[1].til])) === JSON.stringify([['2026-10-30', '2026-11-05'], ['2026-10-07', '2026-11-05']]), fl.join(' | '));
+  tjek('SUB filtreret: graferne er besøg og forespørgsler pr. dag på værten (7 dage), og et klik på en dag viser dagen med samme filter', q('#besoeg-graf h2')?.textContent === 'Besøg på shop.wi24rd.com pr. dag' && q('#besoeg-graf-foresp h2')?.textContent === 'Forespørgsler til shop.wi24rd.com pr. dag' && qa('#besoeg-graf .dyk-soejle').length === 7 && q('#besoeg-graf .dyk-soejle[data-gaa]')?.dataset.gaa === `besoegende?${DOM}&vaert=shop.wi24rd.com&fra=2026-10-30&til=2026-10-30`, q('#besoeg-graf .dyk-soejle[data-gaa]')?.dataset.gaa);
+  tjek('SUB filtreret: lande og robotter (med IP-klasserne) siger "Ikke pr. subdomæne" og har ingen tal; afsnittet Subdomæner står ikke', q('#besoeg-lande .sub-ikke')?.textContent === 'Ikke pr. subdomæne' && !q('#besoeg-lande table, #besoeg-lande button') && q('#besoeg-robotter .sub-ikke')?.textContent === 'Ikke pr. subdomæne' && !q('#besoeg-robotter .besoeg-klasse, #besoeg-robotter table') && !q('#besoeg-sub'));
+  tjek('SUB filtreret: Mest besøgte sider er værtens (fra Rust), uden navnet ved hver sti', qa('#besoeg-sider .besoeg-sider tbody th button').map(b => b.textContent).join() === '/,/kurv' && !q('#besoeg-sider .besoeg-vaert'));
+  w.history.back(); await sov(150);
+  tjek('SUB tilbage: uden filter, med afsnittet', w.location.hash === `#besoegende?${DOM}` && sidst(s, 'besoegende')[1].vaert === null && q('#besoeg-sub') && !q('.besoeg-vaert-chip'), w.location.hash);
+  w.history.forward(); await sov(150);
+  tjek('SUB frem: filteret igen', w.location.hash === `#besoegende?${DOM}&vaert=shop.wi24rd.com` && sidst(s, 'besoegende')[1].vaert === 'shop' && q('.besoeg-vaert-chip'), w.location.hash);
+  await klik(s, q('.besoeg-vaert-chip'), 120);
+  tjek('SUB × fjerner filteret pr. subdomæne', w.location.hash === `#besoegende?${DOM}` && !q('.besoeg-vaert-chip') && sidst(s, 'besoegende')[1].vaert === null, w.location.hash);
+  // Et andet domæne nulstiller filteret.
+  const sk = side(`#besoegende?${DOM}&periode=30&vaert=shop.wi24rd.com`, BESV());
+  await sov(100);
+  const v = zoneVaelger(sk.d); v.value = 'z2'; v.dispatchEvent(new sk.w.Event('change')); await sov(120);
+  tjek('SUB et andet domæne: samme periode, men intet filter pr. subdomæne', sk.w.location.hash.includes('zone=z2') && sk.w.location.hash.includes('periode=30') && !sk.w.location.hash.includes('vaert='), sk.w.location.hash);
+  // Et navn i adressen uden for domænet (her domænet over xyz.wi24rd.com) eller med ulovlige tegn er intet filter.
+  const ude = side('#besoegende?zone=z2&navn=xyz.wi24rd.com&vaert=wi24rd.com', BESV()), ugyldig = side(`#besoegende?${DOM}&vaert=${encodeURIComponent('<b>.wi24rd.com')}`, BESV());
+  await sov(100);
+  tjek('SUB et navn uden for domænet eller med ulovlige tegn i adressen er intet filter', sidst(ude, 'besoegende')[1].vaert === null && !ude.d.querySelector('.besoeg-vaert-chip') && sidst(ugyldig, 'besoegende')[1].vaert === null && !ugyldig.d.querySelector('.besoeg-vaert-chip') && ugyldig.d.querySelector('#besoeg-sub'));
+
+  // Et domæne med én vært ser ud præcis som før (subdomaener fandtes ikke).
+  const BES1 = x => DYK({ besoegende: BESOEG_UD, trafik_dag: B2C_TRAFIK, ...x });
+  const foer = side('#besoegende?' + DOM, BES1()), efter = side('#besoegende?' + DOM, BES1({ subdomaener: subFn(SUB_EN) })), ipEn = side('#besoegende?' + DOM, BES1({ subdomaener: subFn([...SUB_EN, ['[ip]', 30, 0, 12, 14]]) }));
+  await sov(120);
+  const html = x => x.d.getElementById('besoegende-rod').outerHTML;
+  tjek('SUB et domæne med én vært: Besøgende er uændret (samme DOM som uden kommandoen), også med en IP-række', efter.kald.some(k => k[0] === 'subdomaener') && html(foer) === html(efter) && html(foer) === html(ipEn) && !efter.d.querySelector('#besoeg-sub'));
+  const vfoer = side('#vaernet?' + DOM + '&periode=30', DYK()), vefter = side('#vaernet?' + DOM + '&periode=30', DYK({ subdomaener: subFn(SUB_EN) }));
+  await sov(150);
+  tjek('SUB et domæne med én vært: Angreb er uændret (samme DOM som uden kommandoen)', vefter.kald.some(k => k[0] === 'subdomaener') && vfoer.d.getElementById('vagt').outerHTML === vefter.d.getElementById('vagt').outerHTML && !vefter.d.querySelector('#vg-sub'));
+
+  // Andre (n), Pr. subdomæne fra, afslag, loftet over sider, kun uden filter, og et navn med tegn, der skal undslippes.
+  const mange = [...SUB_FIRE.slice(0, 5), ...Array.from({ length: 18 }, (_, i) => [`s${i + 1}`, 50 - i, 1, 0, 0]), ['[andre]', 5, 1, 0, 0]];
+  const m = side('#besoegende?' + DOM, BESV({ subdomaener: subFn(mange) }));
+  await sov(120);
+  const mr = [...m.d.querySelectorAll('#besoeg-sub .sub-tabel')[0].querySelectorAll('tbody tr')], sidsteR = mr.at(-1);
+  const flere = m.d.querySelector('#besoeg-sub details.sub-flere');
+  tjek('SUB flere end 20 værter: 20 rækker og en sidste "Andre (4)" (3 navne + [andre]), som ikke er klikbar; navnene kan åbnes under "Vis 3 subdomæner mere"', mr.length === 21 && sidsteR.querySelector('th').textContent === 'Andre (4)' && !sidsteR.querySelector('button') && sidsteR.querySelectorAll('td')[0].textContent === String(7 * 4) && flere && flere.querySelector('summary').textContent === 'Vis 3 subdomæner mere' && flere.querySelectorAll('tbody tr th button').length === 3, `${mr.length} ${sidsteR.textContent}`);
+  const fra = side('#besoegende?' + DOM, BESV({ subdomaener: subFn(SUB_FIRE, { trafik_fra: '2026-11-01', angreb_fra: '2026-10-07' }) })), fraEn = side('#besoegende?' + DOM, BESV({ subdomaener: subFn(SUB_FIRE, { trafik_fra: '2026-11-01' }) }), 'en');
+  await sov(120);
+  tjek('SUB "Pr. subdomæne fra {dato}." under tabellen, når tallene ikke når hele perioden tilbage (da/en)', fra.d.querySelector('#besoeg-sub .sub-fra')?.textContent === 'Pr. subdomæne fra 1. november.' && fraEn.d.querySelector('#besoeg-sub .sub-fra')?.textContent === 'Per subdomain from 1 November.', fra.d.querySelector('#besoeg-sub .sub-fra')?.textContent + ' / ' + fraEn.d.querySelector('#besoeg-sub .sub-fra')?.textContent);
+  const afv = side('#besoegende?' + DOM, BESV({ subdomaener: subFn([], { trafik_afvist: true, sider_afskaaret: true }) }));
+  await sov(120);
+  tjek('SUB Cloudflare afviste: teksten i stedet for tabellen, og noten om loftet under Mest besøgte sider', afv.d.querySelector('#besoeg-sub .sub-ikke-tilg')?.textContent === 'Cloudflare svarede ikke på subdomænerne for dette domæne.' && !afv.d.querySelector('#besoeg-sub table') && afv.d.querySelector('#besoeg-sider .besoeg-side-afskaaret')?.textContent === 'Kun de mest besøgte sider er med: Cloudflare sendte højst 10.000 rækker.');
+  const land = side('#besoegende?' + DOM + '&land=DK', BESV({ besoegende: BESOEG_LAND }));
+  await sov(120);
+  tjek('SUB afsnittet står kun uden filter (ikke med et land)', !land.d.querySelector('#besoeg-sub') && land.d.querySelector('#besoeg-lande'));
+  const ond = '"><img src=x onerror=alert(1)>';
+  const esc = side('#besoegende?' + DOM, BESV({ subdomaener: subFn([...SUB_FIRE.slice(0, 2), [ond, 20, 1, 0, 0]]) }));
+  await sov(120);
+  const escR = [...esc.d.querySelectorAll('#besoeg-sub tbody th')].map(x => x.textContent);
+  tjek('SUB en vært med tegn, der skal undslippes, står som tekst (intet element bliver til)', escR.includes(ond + '.wi24rd.com') && !esc.d.querySelector('#besoeg-sub img') && esc.d.querySelectorAll('img[src="x"]').length === 0, escR.join(' | '));
+
+  // Angreb: afsnittet, klik, filteret og "Ikke pr. subdomæne".
+  const ANG = x => DYK({ subdomaener: subFn(SUB_FIRE), sti200_oversigt: null, sikkerhedsfund_oversigt: null, email_oversigt: null, ...x });
+  const a = side('#vaernet?' + DOM + '&periode=30', ANG()), aEn = side('#vaernet?' + DOM + '&periode=30', ANG(), 'en');
+  await sov(150);
+  const aq = x => a.d.querySelector('#visning-vaernet ' + x), asek = aq('#vg-sub'), ashop = asek && [...asek.querySelectorAll('tbody th button')].find(b => b.textContent === 'shop.wi24rd.com');
+  tjek('SUB Angreb: afsnittet står efter søjlerne og før reglerne, med perioden fra dyk', asek && asek.previousElementSibling === aq('#vg-dage') && asek.nextElementSibling === aq('#vg-regler') && JSON.stringify(sidst(a, 'subdomaener')[1]) === JSON.stringify({ zone: 'z1', fra: '2026-10-05', til: '2026-11-03' }) && asek.querySelectorAll('tbody tr').length === 6, asek && asek.previousElementSibling?.id);
+  tjek('SUB Angreb: rækken åbner Angreb for subdomænet ("Vis Angreb for …"), og Angreb-kolonnen er angreb uden rutine', ashop && ashop.getAttribute('aria-label') === 'Vis Angreb for shop.wi24rd.com' && new URLSearchParams(ashop.dataset.dyk).get('vaert') === 'shop.wi24rd.com' && new URLSearchParams(ashop.dataset.dyk).get('periode') === '30' && ashop.closest('tr').querySelectorAll('td')[2].textContent === '2.310' && aEn.d.querySelector('#vg-sub tbody th button').getAttribute('aria-label') === 'Show Attacks for wi24rd.com', ashop && ashop.dataset.dyk);
+  await klik(a, ashop, 150);
+  const achip = a.d.querySelector('#dyk-filtre .ang-vaert-chip');
+  tjek('SUB Angreb filtreret: adressen har værten, dyk spørges uden filtre, og chippen står i filterlinjen', a.w.location.hash === `#vaernet?${DOM}&periode=30&vaert=shop.wi24rd.com` && JSON.stringify(sidsteDyk(a).filtre) === '[]' && achip && achip.textContent === 'Subdomæne: shop.wi24rd.com' && achip.dataset.gaa === `vaernet?${DOM}&periode=30`, a.w.location.hash);
+  const afl = [...a.d.querySelectorAll('#visning-vaernet .sub-fliser > *')].map(x => x.textContent);
+  tjek('SUB Angreb filtreret: fliserne er angreb og afviste på værten i perioden, og søjlerne har en søjle pr. dag med to serier', afl.length === 2 && afl[0].includes('Angreb på shop.wi24rd.com') && afl[0].includes('2.310') && afl[1].includes('Afviste på shop.wi24rd.com') && afl[1].includes('2.400') && aq('#sub-dage h2')?.textContent === 'Angreb og afviste på shop.wi24rd.com pr. dag' && a.d.querySelectorAll('#sub-dage .dyk-soejle').length === 30 && a.d.querySelectorAll('#sub-dage .dyk-soejle')[0].querySelectorAll('rect.vg-s-edge, rect.vg-s-server').length === 2, afl.join(' | '));
+  const ikkeH = [...a.d.querySelectorAll('#visning-vaernet .vg-blok')].filter(b => b.querySelector('.sub-ikke')).map(b => b.querySelector('h2').textContent);
+  tjek('SUB Angreb filtreret: regler, lande, stier, "De seneste" og Cloudflares egne fund siger "Ikke pr. subdomæne"; ingen af domænets tal står', ikkeH.join() === 'Reglerne, der slog til,Lande,Stier,De seneste, der blev afvist,Cloudflares egne fund' && !aq('#vg-regler') && !aq('#vg-seneste') && !aq('#vg-kort') && !aq('.dyk-lister') && !aq('#vg-sub'), ikkeH.join());
+  const dagS = [...a.d.querySelectorAll('#sub-dage .dyk-soejle[data-dyk]')].at(-1);
+  tjek('SUB Angreb filtreret: et klik på en dag viser dagen med samme filter', dagS && new URLSearchParams(dagS.dataset.dyk).get('dag') === '2026-11-03' && new URLSearchParams(dagS.dataset.dyk).get('vaert') === 'shop.wi24rd.com');
+  a.w.history.back(); await sov(150);
+  tjek('SUB Angreb tilbage: uden filter, med afsnittet', a.w.location.hash === `#vaernet?${DOM}&periode=30` && aq('#vg-sub') && !a.d.querySelector('.ang-vaert-chip'), a.w.location.hash);
+  a.w.history.forward(); await sov(150);
+  tjek('SUB Angreb frem: filteret igen', a.w.location.hash.endsWith('&vaert=shop.wi24rd.com') && a.d.querySelector('.ang-vaert-chip'), a.w.location.hash);
+  await klik(a, a.d.querySelector('.ang-vaert-chip'), 150);
+  tjek('SUB Angreb × fjerner filteret', a.w.location.hash === `#vaernet?${DOM}&periode=30` && !a.d.querySelector('.ang-vaert-chip') && aq('#vg-sub'), a.w.location.hash);
+  const ar = side(`#vaernet?${DOM}&periode=30&regel=${encodeURIComponent(REACT)}`, ANG());
+  await sov(150);
+  tjek('SUB Angreb: afsnittet står ikke med et filter (regel)', !ar.d.querySelector('#vg-sub') && !ar.kald.some(k => k[0] === 'subdomaener'));
+  const aAfv = side(`#vaernet?${DOM}&periode=30&vaert=shop.wi24rd.com`, ANG({ subdomaener: subFn([], { angreb_afvist: true }) }));
+  await sov(150);
+  tjek('SUB Angreb filtreret, Cloudflare afviste: teksten står, fliserne har intet tal', aAfv.d.querySelector('#visning-vaernet .sub-ikke-tilg')?.textContent === 'Cloudflare svarede ikke på subdomænerne for dette domæne.' && [...aAfv.d.querySelectorAll('.sub-fliser > *')].every(f => f.textContent.includes('–') && !f.querySelector('[data-rul]')));
+  const aSkift = side(`#vaernet?${DOM}&periode=30&vaert=shop.wi24rd.com`, ANG());
+  await sov(150);
+  const av = zoneVaelger(aSkift.d); av.value = 'z2'; av.dispatchEvent(new aSkift.w.Event('change')); await sov(150);
+  tjek('SUB Angreb: et andet domæne nulstiller filteret pr. subdomæne', aSkift.w.location.hash.includes('zone=z2') && !aSkift.w.location.hash.includes('vaert='), aSkift.w.location.hash);
+
+  // da/en-paritet, sikkerhedsporten og notifikationerne.
+  const Tda = side('', B2(), 'da').w.hmSprog.T.sub, Ten = side('', B2(), 'en').w.hmSprog.T.sub;
+  const ph = t => [...new Set(t.match(/\{\w+/g) || [])].sort().join();
+  tjek('SUB da/en-paritet: samme nøgler, ingen tomme, samme pladsholdere, og forskellig tekst', Object.keys(Tda).sort().join() === Object.keys(Ten).sort().join() && Object.keys(Tda).length === 38 && Object.keys(Tda).every(k => typeof Tda[k] === 'string' && Tda[k] && Ten[k] && ph(Tda[k]) === ph(Ten[k]) && Tda[k] !== Ten[k]), Object.keys(Tda).filter(k => ph(Tda[k]) !== ph(Ten[k]) || Tda[k] === Ten[k]).join());
+  const brugere = fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => f.endsWith('.js') && /'subdomaener'/.test(ui('assets/' + f)));
+  const notif = ['notify.rs', 'agent.rs', 'overblik.rs'].map(f => fs.readFileSync(path.join(repo, 'src-tauri', 'src', f), 'utf8')).join('\n');
+  tjek('SUB ingen vært i notifikationerne: kun Besøgende og Angreb spørger om subdomænerne, og notifikationer, menulinje og Overblik kender dem ikke', brugere.sort().join() === 'visning-besoegende.js,visning-vaernet.js' && !/vaert::|v_fw|subdomaen|clientRequestHTTPHost/.test(notif), brugere.join());
+  const kode = ['visning-besoegende.js', 'visning-vaernet.js', 'vg-tegn.js'].map(f => udenKommentarer(ui('assets/' + f))).join('\n');
+  tjek('SUB værtsnavne kun som tekst: ingen innerHTML, insertAdjacentHTML eller outerHTML =, og kommandoen er tilladt', !/innerHTML|insertAdjacentHTML|outerHTML\s*=|document\.write/.test(kode) && cap.permissions.includes('allow-subdomaener') && fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8').includes('"subdomaener",'));
+  const fotoSub = SIDER.filter(x => x.id.startsWith('subdom-'));
+  tjek('SUB fotobogen har Besøgende og Angreb ufiltreret og filtreret for wi24rd.com og et domæne uden subdomæner', fotoSub.map(x => x.id).join() === 'subdom-besoegende,subdom-besoegende-sider,subdom-besoegende-filter,subdom-angreb,subdom-angreb-filter,subdom-besoegende-uden,subdom-angreb-uden' && fotoSub.every(x => x.ekstra));
 }
 
 console.log(`\n${ok} bestået, ${fejl} fejlet`);

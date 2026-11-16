@@ -149,7 +149,27 @@ const aarDage = Array.from({ length: 365 }, (_, i) => { const dag = besDag('2026
 const ugerAf = dage => dage.reduce((u, d) => { const ms = Date.parse(d.dag + 'T00:00:00Z'), man = new Date(ms - ((new Date(ms).getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10); const sidst = u[u.length - 1]; const x = sidst && sidst.dag === man ? sidst : (u.push({ dag: man, fra: d.dag, til: d.dag, n: null, med: 0, dage: 0 }), u[u.length - 1]); x.til = d.dag; x.dage++; if (d.n !== null) { x.n = (x.n || 0) + d.n; x.med++; } return u; }, []);
 export const BESOEG_AAR = { ...BESOEG_UD, periode: { ...BESOEG_UD.periode, fra: '2025-11-06', dage: 365, med: 336 }, dage: aarDage, uger: ugerAf(aarDage), lande_med: 30 };
 /* Stubbene vælger svaret efter kaldet (som dyk_regel): land, sti, et år, ellers 7 dage. */
-export const BES_NOEGLE = "c==='besoegende'&&a.land?'besoegende_land':c==='besoegende'&&a.sti?'besoegende_side':c==='besoegende'&&a.periode==='alt'?'besoegende_aar':c";
+export const BES_NOEGLE = "c==='subdomaener'&&a.zone!=='z1'?'subdomaener_en':c==='besoegende'&&a.vaert!=null&&!a.sti?'besoegende_vaert':c==='besoegende'&&a.land?'besoegende_land':c==='besoegende'&&a.sti?'besoegende_side':c==='besoegende'&&a.periode==='alt'?'besoegende_aar':c";
+
+/* V-SUBDOM.1 B2: svaret fra subdomaener. Værterne er labels under domænet ("" = domænet selv) med tal pr. dag: [vært, forespørgsler, besøg, angreb, afviste]
+   pr. dag, så summerne passer til dagene. Kun opdigtede navne under wi24rd.com. huller: dage uden tal (null, ikke 0). */
+export const dageFraTil = (fra, til) => { const ud = []; for (let t = Date.parse(`${fra}T00:00:00Z`); t <= Date.parse(`${til}T00:00:00Z`); t += 864e5) ud.push(new Date(t).toISOString().slice(0, 10)); return ud; };
+export const subSvar = (fra, til, spec, x = {}) => {
+  const dage = dageFraTil(fra, til), hul = new Set(x.huller || []);
+  const vaerter = spec.map(([vaert, f, b, a, af]) => {
+    const dg = dage.map(dag => (hul.has(dag) ? { dag, foresp: null, besoeg: null, angreb: null, afvist: null } : { dag, foresp: f, besoeg: b, angreb: a, afvist: af }));
+    const sum = k => dg.reduce((n, d) => n + (d[k] || 0), 0);
+    return { vaert, foresp: sum('foresp'), besoeg: sum('besoeg'), angreb: sum('angreb'), afvist: sum('afvist'), dage: dg };
+  });
+  const { huller, ...resten } = x;
+  return { fra, til, vaerter, trafik_fra: '2026-10-07', angreb_fra: '2026-10-07', trafik_afskaaret: [], angreb_afskaaret: [], sider_afskaaret: false, trafik_afvist: false, angreb_afvist: false, ...resten };
+};
+/* wi24rd.com med fire subdomæner (www, shop, api, blog) og et opslag med IP-adressen; sorteret som i Rust (navne efter forespørgsler, kategorierne sidst). */
+export const SUB_FIRE = [['', 5559, 492, 539, 600], ['api', 900, 0, 25, 30], ['www', 441, 0, 0, 1], ['shop', 143, 3, 77, 80], ['blog', 60, 12, 2, 2], ['[ip]', 30, 0, 12, 14]];
+/* Et domæne uden subdomæner: kun domænet selv. */
+export const SUB_EN = [['', 2100, 300, 40, 41]];
+/* Mest besøgte sider for wi24rd.com med subdomæner: samme sti (/) på domænet selv, shop og blog er tre rækker. */
+export const BES_SIDER_VAERT = [['/', 1840, 1210, ''], ['/', 320, 40, 'shop'], ['/produkter', 620, 410, ''], ['/kurv', 210, 30, 'shop'], ['/', 90, 12, 'blog'], ['/v1/status', 60, 0, 'api'], ['/om', 300, 120, '']].map(([sti, n, besoeg, vaert]) => ({ sti, n, besoeg, vaert })).sort((a, b) => b.n - a.n);
 
 // ── Stub-svaret, alle visninger bruger ──
 const zoner = OVERBLIK.map(r => ({ id: r.id, navn: r.navn })), vaern = vaernUd();
@@ -197,6 +217,24 @@ SIDER.push(
   { id: 'konti-afvist', navn: 'Overblik med banneret om et afvist API Token', hash: 'overblik', rod: '#afvist-linjer .ban', ekstra: KONTI_AFVIST },
   /* FIX 1 (V3): ingen rul her; billedet viser, hvor programmet selv lægger formularen, og feltet skal have fokus og stå inden for kanten. */
   { id: 'konti-afvist-skift', navn: 'Skift API Token… fra banneret (rækken med den røde chip)', hash: 'overblik', aabn: ['#afvist-linjer .ban button'], rod: '#skift-form', fokus: '#skift-felt', luk: '#indst-luk', ekstra: KONTI_AFVIST },
+);
+
+/* V-SUBDOM.1 B2: Besøgende og Angreb for wi24rd.com med fire subdomæner, ufiltreret og filtreret pr. subdomæne, og xyz.wi24rd.com uden subdomæner (uændret).
+   Siderne hedder subdom-…; HM_FOTO_SIDER='subdom-*' tager kun dem. Tallene gælder 5. oktober–5. november, så de dækker både Besøgendes og Angrebs perioder. */
+const SUB_PERIODE = ['2026-10-05', '2026-11-05'];
+export const BES_VAERT = { ...BESOEG_UD, sider: BES_SIDER_VAERT, sider_i_alt: BES_SIDER_VAERT.reduce((a, x) => a + x.n, 0), sider_404: [{ sti: '/admin', n: 310, besoeg: 0, vaert: '' }, { sti: '/.env', n: 44, besoeg: 0, vaert: 'api' }], sider_forside: [] };
+export const BES_SHOP = { ...BES_VAERT, sider: BES_SIDER_VAERT.filter(x => x.vaert === 'shop'), sider_i_alt: BES_SIDER_VAERT.filter(x => x.vaert === 'shop').reduce((a, x) => a + x.n, 0), sider_404: [] };
+const SUB = { subdomaener: subSvar(...SUB_PERIODE, SUB_FIRE, { sider_afskaaret: true }), subdomaener_en: subSvar(...SUB_PERIODE, SUB_EN), besoegende: BES_VAERT, besoegende_vaert: BES_SHOP };
+/* Uden subdomæner: kun domænet selv i subdomaener, og Besøgendes almindelige svar (siderne har ingen vært). */
+const SUB_UDEN = { subdomaener_en: subSvar(...SUB_PERIODE, SUB_EN) }, domUden = 'zone=z2&navn=xyz.wi24rd.com';
+SIDER.push(
+  { id: 'subdom-besoegende', navn: 'Besøgende: afsnittet Subdomæner', hash: 'besoegende?' + dom, rul: '#besoeg-sub', ekstra: SUB },
+  { id: 'subdom-besoegende-sider', navn: 'Besøgende: Mest besøgte sider med subdomænet ved stien', hash: 'besoegende?' + dom, rul: '#besoeg-sider', ekstra: SUB },
+  { id: 'subdom-besoegende-filter', navn: 'Besøgende filtreret til shop.wi24rd.com', hash: 'besoegende?' + dom + '&vaert=shop.wi24rd.com', ekstra: SUB },
+  { id: 'subdom-angreb', navn: 'Angreb: afsnittet Subdomæner', hash: 'vaernet?' + dom, rul: '#vg-sub', ekstra: SUB },
+  { id: 'subdom-angreb-filter', navn: 'Angreb filtreret til shop.wi24rd.com', hash: 'vaernet?' + dom + '&periode=30&vaert=shop.wi24rd.com', ekstra: SUB },
+  { id: 'subdom-besoegende-uden', navn: 'Besøgende for et domæne uden subdomæner (uændret)', hash: 'besoegende?' + domUden, ekstra: SUB_UDEN },
+  { id: 'subdom-angreb-uden', navn: 'Angreb for et domæne uden subdomæner (uændret)', hash: 'vaernet?' + domUden, ekstra: SUB_UDEN },
 );
 
 /* V-KONTI.1 FIX 1: Jans forsøg. Forbindelse 1 ser hele kontoen (tre domæner), forbindelse 2 er et API Token til ét af dem på samme konto. Begge hedder

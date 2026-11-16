@@ -277,6 +277,10 @@ pub struct Laest {
     pub side_hentet: HashSet<String>,
     /// Arterne `b_side`, `b_side_b` og `b_side_bytes` med domænet: forsiden er hvert domænes egen (`forside_deling`).
     pub sider_z: Vec<(String, Raekke)>,
+    /// V-SUBDOM.1 B2: siderne skelner mellem værterne (kun når ét domæne er valgt; ellers lægges de sammen som før).
+    pub med_vaert: bool,
+    /// V-SUBDOM.1 B2: kun siderne på denne vært (`""` = domænet selv), også stifilterets tal pr. dag. `None` = alle værter.
+    pub vaert: Option<String>,
     /// Domæner i omfanget, hvor Cloudflare ikke svarede på besøgene, robotterne og siderne.
     pub ikke_tilgaengelig: Vec<String>,
     pub robot_ikke: Vec<String>,
@@ -371,12 +375,14 @@ pub struct GruppeUd {
     pub n: i64,
 }
 
-/// En side i perioden: visninger og besøg udefra.
+/// En side i perioden: visninger og besøg udefra. `vaert` er værten under domænet (V-SUBDOM.1 B2): `""` for domænet selv, ellers fx `www` eller `shop`
+/// (den rensede label, aldrig et navn uden for domænet). Samme sti på to værter er to sider. Med flere domæner er den altid `""`.
 #[derive(Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct SideUd {
     pub sti: String,
     pub n: i64,
     pub besoeg: i64,
+    pub vaert: String,
 }
 
 /// Filteret i adressen: højst ét ad gangen, for tallene kommer fra hvert sit kald og kan ikke deles på hinanden.
@@ -451,6 +457,16 @@ pub fn spaend(periode: &Periode, nu: i64) -> (String, String) {
 }
 
 /// Et land i adressen: to tegn, store bogstaver eller tal (Cloudflares koder, også `T1` og `XX`).
+/// Værten fra adressen (V-SUBDOM.1 B2): labelen under domænet, som `vaert::ren_vaert` gemmer den (`""` = domænet selv, `www`, `a.b`). Kategorierne (`[ip]`
+/// …) og alt andet er et ugyldigt filter. Ren funktion.
+pub fn tjek_vaert(vaert: Option<String>) -> Result<Option<String>, Fejl> {
+    match vaert {
+        Some(v) if v.is_empty() || crate::vaert::gyldigt_navn(&v) => Ok(Some(v)),
+        Some(_) => Err(Fejl::UgyldigtFilter),
+        None => Ok(None),
+    }
+}
+
 pub fn tjek_land(land: Option<String>) -> Result<Option<String>, Fejl> {
     match land {
         None => Ok(None),
@@ -515,8 +531,8 @@ pub fn uger(dage: &[DagUd]) -> Vec<UgeUd> {
     ud
 }
 
-/// Sti → (visninger, besøg).
-type Sider = HashMap<String, (i64, i64)>;
+/// (Sti, vært) → (visninger, besøg).
+type Sider = HashMap<(String, String), (i64, i64)>;
 
 /// "Svarede med sidens almindelige side" (V-BESOEG.2 FIX 1): mange sites svarer 200 med forsiden på adresser, de ikke kender (catch-all), så de kommer
 /// aldrig i 404-listen. Et skøn ud fra svarenes størrelse.
@@ -591,8 +607,10 @@ pub fn regn(periode: &Periode, filter: Option<&Filter>, l: &Laest, nu: i64) -> B
         Some(Filter::Robot(x)) => (None, None, Some(x.as_str())),
         None => (None, None, None),
     };
-    // Indtil B2 (V-SUBDOM.1) lægges samme sti på flere værter sammen i visningen, som før: værten i nøglen vises ikke.
+    // V-SUBDOM.1 B2: med ét domæne er samme sti på to værter to sider (`med_vaert`); et filter på en vært tager kun dens sider, også i stifilterets tal.
     let side_sti = |noegle: &str| side_dele(noegle).map_or("", |x| x.1).to_string();
+    let side_vaert = |noegle: &str| if l.med_vaert { side_dele(noegle).map_or("", |x| x.2) } else { "" }.to_string();
+    let paa_vaert = |noegle: &str| l.vaert.as_deref().is_none_or(|v| side_dele(noegle).is_some_and(|x| x.2 == v));
     let side_404 = |noegle: &str| noegle.starts_with("404 ");
     // Pr. dag: alle besøg, besøg fra landet, visninger og besøg på stien, besøg fra robotgruppen og fra alle kendte robotter.
     let mut besoeg: HashMap<&str, i64> = HashMap::new();
@@ -608,8 +626,8 @@ pub fn regn(periode: &Periode, filter: Option<&Filter>, l: &Laest, nu: i64) -> B
         match r.art.as_str() {
             "b_total" => *besoeg.entry(dag).or_default() += r.n,
             "b_land" if Some(r.noegle.as_str()) == land => *fra_land.entry(dag).or_default() += r.n,
-            "b_side" if sti.is_some_and(|s| side_sti(&r.noegle) == s) => *sti_vis.entry(dag).or_default() += r.n,
-            "b_side_b" if sti.is_some_and(|s| side_sti(&r.noegle) == s) => *sti_bes.entry(dag).or_default() += r.n,
+            "b_side" if sti.is_some_and(|s| side_sti(&r.noegle) == s) && paa_vaert(&r.noegle) => *sti_vis.entry(dag).or_default() += r.n,
+            "b_side_b" if sti.is_some_and(|s| side_sti(&r.noegle) == s) && paa_vaert(&r.noegle) => *sti_bes.entry(dag).or_default() += r.n,
             "b_robot" if !r.noegle.is_empty() => {
                 *fra_robot.entry(dag).or_default() += r.n;
                 if Some(robot_gruppe(&r.noegle)) == robot {
@@ -679,10 +697,10 @@ pub fn regn(periode: &Periode, filter: Option<&Filter>, l: &Laest, nu: i64) -> B
         .besoeg
         .iter()
         .filter(i_perioden)
-        .filter(|r| r.art == "b_side" || r.art == "b_side_b")
+        .filter(|r| (r.art == "b_side" || r.art == "b_side_b") && paa_vaert(&r.noegle))
     {
         let m = if side_404(&r.noegle) { &mut sider_404 } else { &mut sider };
-        let x = m.entry(side_sti(&r.noegle)).or_default();
+        let x = m.entry((side_sti(&r.noegle), side_vaert(&r.noegle))).or_default();
         if r.art == "b_side" {
             x.0 += r.n;
         } else {
@@ -693,9 +711,9 @@ pub fn regn(periode: &Periode, filter: Option<&Filter>, l: &Laest, nu: i64) -> B
         let mut v: Vec<SideUd> = m
             .into_iter()
             .filter(|x| x.1 .0 > 0)
-            .map(|(sti, (n, besoeg))| SideUd { sti, n, besoeg })
+            .map(|((sti, vaert), (n, besoeg))| SideUd { sti, n, besoeg, vaert })
             .collect();
-        v.sort_by(|a, b| b.n.cmp(&a.n).then_with(|| a.sti.cmp(&b.sti)));
+        v.sort_by(|a, b| b.n.cmp(&a.n).then_with(|| a.sti.cmp(&b.sti)).then_with(|| a.vaert.cmp(&b.vaert)));
         v
     };
     let deling = forside_deling(&l.sider_z, &fra, &til);
@@ -1249,7 +1267,8 @@ mod tests {
             vec![SideUd {
                 sti: "//crm/.env".into(),
                 n: 3,
-                besoeg: 0
+                besoeg: 0,
+                vaert: String::new()
             }]
         );
         assert_eq!((u.sider_i_alt, u.sider_404.len(), u.sider_uden_forside), (115, 1, false));
@@ -1294,9 +1313,10 @@ mod tests {
         assert!(side_afskaaret(&json!({"viewer": {"zones": [{"side": mange}]}})).unwrap());
     }
 
-    /// Indtil B2 lægges samme sti på flere værter sammen i visningen, som før: ingen tabulator og ingen vært i `sider`, og stifilteret rammer alle værter.
+    /// V-SUBDOM.1 B2: med ét domæne er samme sti på to værter to sider (`vaert` = labelen, `""` for domænet selv); med flere domæner lægges de sammen som
+    /// før. Et filter på en vært tager kun dens sider, også i stifilterets tal pr. dag; uden værtsfilter tæller stifilteret alle værter.
     #[test]
-    fn visningen_laegger_vaerterne_sammen_indtil_b2() {
+    fn siderne_skelner_mellem_vaerterne() {
         let mut l = Laest::default();
         let dag = dag_noegle(NU - DOEGN_MS);
         l.side_hentet.insert(dag.clone());
@@ -1307,18 +1327,48 @@ mod tests {
             rk(&dag, "b_side_b", "200 /\tshop", 2),
             rk(&dag, "b_side", "404 /x\tshop", 1),
         ];
+        let side = |sti: &str, n, besoeg, vaert: &str| SideUd {
+            sti: sti.into(),
+            n,
+            besoeg,
+            vaert: vaert.into(),
+        };
+        // Flere domæner (eller før B2): lagt sammen.
+        let u = regn(&Periode::D7, None, &l, NU);
+        assert_eq!(u.sider, vec![side("/", 15, 6, "")]);
+        assert_eq!((u.sider_404[0].sti.as_str(), u.sider_404[0].vaert.as_str()), ("/x", ""));
+        // Ét domæne: to rækker, og andelen regnes af alle.
+        l.med_vaert = true;
+        let u = regn(&Periode::D7, None, &l, NU);
+        assert_eq!(u.sider, vec![side("/", 10, 4, ""), side("/", 5, 2, "shop")]);
+        assert_eq!(u.sider_i_alt, 15);
+        assert_eq!(u.sider_404, vec![side("/x", 1, 0, "shop")]);
+        let f = regn(&Periode::D7, Some(&Filter::Sti("/".into())), &l, NU);
+        assert_eq!(f.dage.last().unwrap().n, Some(15), "stifilteret uden vært tæller alle værter");
+        // Filter på en vært: kun dens sider, og andelen af dens visninger.
+        l.vaert = Some("shop".into());
         let u = regn(&Periode::D7, None, &l, NU);
         assert_eq!(
-            u.sider,
-            vec![SideUd {
-                sti: "/".into(),
-                n: 15,
-                besoeg: 6
-            }]
+            (u.sider.clone(), u.sider_i_alt, u.sider_404.len()),
+            (vec![side("/", 5, 2, "shop")], 5, 1)
         );
-        assert_eq!(u.sider_404[0].sti, "/x");
         let f = regn(&Periode::D7, Some(&Filter::Sti("/".into())), &l, NU);
-        assert_eq!(f.dage.last().unwrap().n, Some(15), "stifilteret tæller alle værter");
+        assert_eq!((f.dage.last().unwrap().n, f.besoeg30.n), (Some(5), 2), "stien på værten");
+        l.vaert = Some(String::new());
+        let u = regn(&Periode::D7, None, &l, NU);
+        assert_eq!((u.sider, u.sider_404.len()), (vec![side("/", 10, 4, "")], 0), "domænet selv");
+    }
+
+    /// Værten fra adressen: labelen under domænet; kategorier og alt andet er et ugyldigt filter.
+    #[test]
+    fn vaertsfilteret_tjekkes() {
+        for ok in ["", "www", "shop", "a.b", "xn--bcher-kva", "a_b-1"] {
+            assert_eq!(tjek_vaert(Some(ok.into())).unwrap().as_deref(), Some(ok));
+        }
+        assert_eq!(tjek_vaert(None).unwrap(), None);
+        for daarlig in ["[ip]", "[andre]", "Shop", "a..b", "<b>", "shop.", "a b", "/sti", &"a".repeat(64)] {
+            assert!(matches!(tjek_vaert(Some(daarlig.into())), Err(Fejl::UgyldigtFilter)), "{daarlig}");
+        }
     }
 
     /// `forside_deling` pr. vært: et subdomæne med sin egen (lille) forside sammenlignes med den, ikke med domænets. Med to forsider deles stien på den vært,
@@ -1532,12 +1582,14 @@ mod tests {
                 SideUd {
                     sti: "/".into(),
                     n: 105,
-                    besoeg: 25
+                    besoeg: 25,
+                    vaert: String::new()
                 },
                 SideUd {
                     sti: "/om".into(),
                     n: 20,
-                    besoeg: 0
+                    besoeg: 0,
+                    vaert: String::new()
                 }
             ]
         );
@@ -1547,7 +1599,8 @@ mod tests {
             vec![SideUd {
                 sti: "/admin".into(),
                 n: 15,
-                besoeg: 0
+                besoeg: 0,
+                vaert: String::new()
             }]
         );
     }

@@ -64,6 +64,8 @@
 
 **Sti** · Delen af en adresse efter domænet, fx `/wp-login.php`. Gemmes uden forespørgselsdel.
 
+**Subdomæne** · Et navn under dit domæne, fx `www.wi24rd.com` eller `shop.wi24rd.com` under `wi24rd.com`. Domænet selv (uden noget foran) kaldes også *apex*. Programmet viser trafik og angreb pr. subdomæne i [Besøgende](40-visninger/besoegende.md) og [Angreb](40-visninger/vaernet.md), når trafikken går gennem Cloudflare (orange sky), ikke når navnet er «DNS only».
+
 **Udklædt** · En robot, der kalder sig fx Googlebot uden at være det.
 
 **Ukendt** · Status, når der ingen tal er endnu.

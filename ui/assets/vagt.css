@@ -461,3 +461,5 @@ tr[data-raekke="hul-raekke"] > * { color: var(--text-muted); font-style: italic;
 
 .tek-generiske { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
 .tek-forslag { margin: 0 0 8px; font-size: var(--font-size-sm); }
+/* V-SUBDOM.1 B2: subdomænet ved en sti i Mest besøgte sider (samme sti på to subdomæner er to rækker). Kun tekst. */
+.besoeg-vaert { margin-left: 0.5em; color: var(--text-muted); font-size: var(--font-size-xs); font-family: var(--font-sans); }
