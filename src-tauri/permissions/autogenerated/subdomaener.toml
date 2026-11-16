@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-subdomaener"
+description = "Enables the subdomaener command without any pre-configured scope."
+commands.allow = ["subdomaener"]
+
+[[permission]]
+identifier = "deny-subdomaener"
+description = "Denies the subdomaener command without any pre-configured scope."
+commands.deny = ["subdomaener"]

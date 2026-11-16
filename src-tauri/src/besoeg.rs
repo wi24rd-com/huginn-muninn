@@ -38,10 +38,11 @@ pub const ROBOT_QUERY: &str = r#"query Robot($zoneTag: string!, $since: Time!, $
     robot: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}) { count sum { visits } dimensions { date verifiedBotCategory } }
   } } }"#;
 
-/// Mest besøgte sider: html-svar pr. dag, sti og svarkode, flest først. Kun stien (aldrig forespørgselsstrengen, som `clientRequestPath` ikke har).
+/// Mest besøgte sider: html-svar pr. dag, sti, svarkode og vært, flest først. Kun stien (aldrig forespørgselsstrengen, som `clientRequestPath` ikke har).
 /// `edgeResponseBytes` (V-BESOEG.2 FIX 1, som `sti200::hoved_query`) giver svarenes størrelse, så stier, der svarer med forsiden, kan skilles fra.
+/// `clientRequestHTTPHost` (V-SUBDOM.1) skiller samme sti på to værter ad (`side_noegle_vaert`).
 pub const SIDE_QUERY: &str = r#"query Side($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
-    side: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", edgeResponseContentTypeName:"html"}, orderBy:[count_DESC]) { count sum { visits edgeResponseBytes } dimensions { date clientRequestPath edgeResponseStatus } }
+    side: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", edgeResponseContentTypeName:"html"}, orderBy:[count_DESC]) { count sum { visits edgeResponseBytes } dimensions { date clientRequestPath edgeResponseStatus clientRequestHTTPHost } }
   } } }"#;
 
 /// Art: bytes i alt pr. døgn, svarkode og sti (`SIDE_QUERY`).
@@ -156,6 +157,9 @@ struct SideDim {
     sti: String,
     #[serde(default, deserialize_with = "tom_ved_null", rename = "edgeResponseStatus")]
     status: i64,
+    /// Rå `clientRequestHTTPHost`; renses af `vaert::ren_vaert`. `None`: feltet var ikke med (svar fra før V-SUBDOM.1 i testene) = domænet selv.
+    #[serde(default, rename = "clientRequestHTTPHost")]
+    vaert: Option<String>,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -199,14 +203,42 @@ pub fn side_noegle(status: i64, sti: &str) -> String {
     format!("{status} {sti}")
 }
 
-/// Sidesvaret som (dag, art, "<svarkode> <sti>", n) for døgnene `dage`: `b_side` = visninger, `b_side_b` = besøg og `b_side_bytes` = bytes i alt (altid,
-/// også 0, så et døgn med bytes kan kendes fra et døgn hentet før de kom med). Stien renses som i Angreb
+/// Nøglen for en side på en vært (V-SUBDOM.1): som `side_noegle` for domænet selv (`vaert` = ""), ellers "<svarkode> <sti>\t<vært>". Tabulatoren kan ikke
+/// stå i en renset sti (`ren_sti` fjerner styretegn), så nøglen kan ikke misforstås. Et domæne uden subdomæner får præcis de samme nøgler som før.
+pub fn side_noegle_vaert(status: i64, sti: &str, vaert: &str) -> String {
+    if vaert.is_empty() {
+        side_noegle(status, sti)
+    } else {
+        format!("{status} {sti}\t{vaert}")
+    }
+}
+
+/// En sidenøgle → (svarkode, sti, vært). Nøgler uden vært (domænet selv og døgn hentet før V-SUBDOM.1) har værten "". Ren funktion.
+pub fn side_dele(noegle: &str) -> Option<(&str, &str, &str)> {
+    let (kode, rest) = noegle.split_once(' ')?;
+    let (sti, vaert) = rest.split_once('\t').unwrap_or((rest, ""));
+    Some((kode, sti, vaert))
+}
+
+/// Står sidesvaret på loftet (10.000 rækker)? Så mangler de mindst besøgte sider (`orderBy:[count_DESC]`). Ren funktion.
+pub fn side_afskaaret(data: &Value) -> Result<bool, Fejl> {
+    Ok(svar2(data)?.side.len() as i64 >= crate::dyk::LOFT)
+}
+
+/// Sidesvaret som (dag, art, nøgle, n) for døgnene `dage`: `b_side` = visninger, `b_side_b` = besøg og `b_side_bytes` = bytes i alt (altid,
+/// også 0, så et døgn med bytes kan kendes fra et døgn hentet før de kom med). Nøglen er `side_noegle_vaert` med værten renset under zonen `zone`
+/// (`vaert::ren_vaert`). Stien renses som i Angreb
 /// (`vaern::ren_sti`: uden forespørgselsstreng, token-agtige stykker skjult, højst 90 tegn), stier, der bliver ens, lægges sammen, og kun de `TOP_SIDER`
 /// med flest visninger pr. døgn gemmes. Ren funktion.
-pub fn side_raekker(data: &Value, dage: &[String]) -> Result<Vec<(String, String, String, i64)>, Fejl> {
+pub fn side_raekker(data: &Value, dage: &[String], zone: &str) -> Result<Vec<(String, String, String, i64)>, Fejl> {
     let mut tal: BTreeMap<String, HashMap<String, (i64, i64, i64)>> = BTreeMap::new();
     for g in svar2(data)?.side.into_iter().filter(|g| dage.contains(&g.dimensions.date)) {
-        let noegle = side_noegle(g.dimensions.status, &ren_sti(&g.dimensions.sti));
+        let vaert = g
+            .dimensions
+            .vaert
+            .as_deref()
+            .map_or_else(String::new, |v| crate::vaert::ren_vaert(v, zone));
+        let noegle = side_noegle_vaert(g.dimensions.status, &ren_sti(&g.dimensions.sti), &vaert);
         let x = tal.entry(g.dimensions.date).or_default().entry(noegle).or_default();
         x.0 += g.count;
         x.1 += g.sum.visits;
@@ -496,9 +528,10 @@ pub struct ForsideDeling {
     pub uden_forside: bool,
 }
 
-/// Delingen for perioden `fra`…`til` ud fra (domæne, række) med arterne `b_side`, `b_side_b` og `b_side_bytes`. Pr. domæne: snittet pr. visning af
-/// 200-svarene (kun døgn, hvor sidens bytes er hentet) sammenlignes med samme domænes forside, som Følsomme filer gør. 404 og andre svarkoder end 200
-/// tæller ikke med i snittet; besøg udefra tæller alle svarkoder undtagen 404. Uden forsiden deles intet. Ren funktion.
+/// Delingen for perioden `fra`…`til` ud fra (domæne, række) med arterne `b_side`, `b_side_b` og `b_side_bytes`. Pr. domæne og vært (V-SUBDOM.1): snittet pr.
+/// visning af 200-svarene (kun døgn, hvor sidens bytes er hentet) sammenlignes med samme værts forside, som Følsomme filer gør. 404 og andre svarkoder end 200
+/// tæller ikke med i snittet; besøg udefra tæller alle svarkoder undtagen 404. En vært uden sin egen forside deles ikke; et domæne, hvor ingen vært har en
+/// forside, er `uden_forside`. Ren funktion.
 pub fn forside_deling(rk: &[(String, Raekke)], fra: &str, til: &str) -> ForsideDeling {
     let i_perioden: Vec<&(String, Raekke)> = rk
         .iter()
@@ -509,13 +542,13 @@ pub fn forside_deling(rk: &[(String, Raekke)], fra: &str, til: &str) -> ForsideD
         .filter(|(_, r)| r.art == SIDE_BYTES)
         .map(|(z, r)| ((z.as_str(), r.dag.as_str(), r.noegle.as_str()), r.n))
         .collect();
-    // (domæne, sti) → (visninger med 200 og bytes, bytes, besøg udefra).
-    let mut m: HashMap<(&str, &str), (i64, i64, i64)> = HashMap::new();
+    // (domæne, vært, sti) → (visninger med 200 og bytes, bytes, besøg udefra).
+    let mut m: HashMap<(&str, &str, &str), (i64, i64, i64)> = HashMap::new();
     for (z, r) in &i_perioden {
-        let Some((kode, sti)) = r.noegle.split_once(' ') else {
+        let Some((kode, sti, vaert)) = side_dele(&r.noegle) else {
             continue;
         };
-        let x = m.entry((z.as_str(), sti)).or_default();
+        let x = m.entry((z.as_str(), vaert, sti)).or_default();
         match r.art.as_str() {
             "b_side" if kode == "200" => {
                 if let Some(b) = bytes.get(&(z.as_str(), r.dag.as_str(), r.noegle.as_str())) {
@@ -528,15 +561,16 @@ pub fn forside_deling(rk: &[(String, Raekke)], fra: &str, til: &str) -> ForsideD
         }
     }
     let snit = |x: &(i64, i64, i64)| (x.0 > 0).then(|| x.1 / x.0);
-    let forside = |z: &str| m.get(&(z, crate::sti200::FORSIDE)).and_then(snit).filter(|f| *f > 0);
+    let forside = |z: &str, v: &str| m.get(&(z, v, crate::sti200::FORSIDE)).and_then(snit).filter(|f| *f > 0);
     let med_bytes: HashSet<&str> = bytes.keys().map(|k| k.0).collect();
-    let uden_forside = med_bytes.iter().any(|z| forside(z).is_none());
-    // En sti står kun i den nye liste, når den gør det i alle domæner, hvor den står.
+    let med_forside: HashSet<&str> = m.keys().filter(|k| forside(k.0, k.1).is_some()).map(|k| k.0).collect();
+    let uden_forside = med_bytes.iter().any(|z| !med_forside.contains(z));
+    // En sti står kun i den nye liste, når den gør det på alle domæner og værter, hvor den står.
     let mut alle: HashMap<&str, bool> = HashMap::new();
-    for ((z, sti), x) in &m {
+    for ((z, v, sti), x) in &m {
         let ja = *sti != crate::sti200::FORSIDE
             && x.2 == 0
-            && matches!((snit(x), forside(z)), (Some(s), Some(f)) if crate::sti200::som_forsiden(s, f));
+            && matches!((snit(x), forside(z, v)), (Some(s), Some(f)) if crate::sti200::som_forsiden(s, f));
         *alle.entry(sti).or_insert(true) &= ja;
     }
     ForsideDeling {
@@ -557,7 +591,8 @@ pub fn regn(periode: &Periode, filter: Option<&Filter>, l: &Laest, nu: i64) -> B
         Some(Filter::Robot(x)) => (None, None, Some(x.as_str())),
         None => (None, None, None),
     };
-    let side_sti = |noegle: &str| noegle.split_once(' ').map_or("", |x| x.1).to_string();
+    // Indtil B2 (V-SUBDOM.1) lægges samme sti på flere værter sammen i visningen, som før: værten i nøglen vises ikke.
+    let side_sti = |noegle: &str| side_dele(noegle).map_or("", |x| x.1).to_string();
     let side_404 = |noegle: &str| noegle.starts_with("404 ");
     // Pr. dag: alle besøg, besøg fra landet, visninger og besøg på stien, besøg fra robotgruppen og fra alle kendte robotter.
     let mut besoeg: HashMap<&str, i64> = HashMap::new();
@@ -1026,7 +1061,7 @@ mod tests {
         for felt in [
             "httpRequestsAdaptiveGroups",
             "count sum { visits edgeResponseBytes }",
-            "dimensions { date clientRequestPath edgeResponseStatus }",
+            "dimensions { date clientRequestPath edgeResponseStatus clientRequestHTTPHost }",
             r#"requestSource:"eyeball""#,
             r#"edgeResponseContentTypeName:"html""#,
             "orderBy:[count_DESC]",
@@ -1079,7 +1114,7 @@ mod tests {
         }
         let data = json!({"viewer": {"zones": [{"side": grupper}]}});
         let dage = vec!["2026-11-01".to_string(), "2026-11-02".to_string()];
-        let r = side_raekker(&data, &dage).unwrap();
+        let r = side_raekker(&data, &dage, "wi24rd.com").unwrap();
         let tal = |art: &str, n: &str| r.iter().find(|x| x.0 == "2026-11-01" && x.1 == art && x.2 == n).map(|x| x.3);
         assert_eq!((tal("b_side", "200 /"), tal("b_side_b", "200 /")), (Some(100), Some(60)));
         assert_eq!(tal("b_side", "404 /admin"), Some(7));
@@ -1112,7 +1147,7 @@ mod tests {
             grupper.push(json!({"count": 1, "sum": {"visits": 1, "edgeResponseBytes": 5}, "dimensions": {"date": "2026-11-02", "clientRequestPath": format!("/s{i:02}"), "edgeResponseStatus": 200}}));
         }
         let data = json!({"viewer": {"zones": [{"side": grupper}]}});
-        let r = side_raekker(&data, &["2026-11-01".to_string(), "2026-11-02".to_string()]).unwrap();
+        let r = side_raekker(&data, &["2026-11-01".to_string(), "2026-11-02".to_string()], "wi24rd.com").unwrap();
         let tal = |art: &str, n: &str| r.iter().find(|x| x.0 == "2026-11-01" && x.1 == art && x.2 == n).map(|x| x.3);
         assert_eq!(tal(SIDE_BYTES, "200 /"), Some(200_000));
         assert_eq!(tal(SIDE_BYTES, "200 //crm/.env"), Some(61_000), "stierne lagt sammen, også bytes");
@@ -1223,6 +1258,111 @@ mod tests {
         assert!(
             u.sider_forside.is_empty() && u.sider_uden_forside && u.sider.len() == 4,
             "uden forside: alt står som før"
+        );
+    }
+
+    /// V-SUBDOM.1: nøglen for domænet selv er uændret ("<svarkode> <sti>"), og samme sti på to værter bliver to nøgler ("…\t<vært>"). Værten renses (port,
+    /// store bogstaver, IP), og et svar uden værtsfeltet giver nøglerne fra før.
+    #[test]
+    fn sidenoeglen_har_vaerten_kun_uden_for_domaenet_selv() {
+        let g = |vaert: Option<&str>, sti: &str, n: i64| {
+            let mut d = json!({"date": "2026-11-01", "clientRequestPath": sti, "edgeResponseStatus": 200});
+            if let Some(v) = vaert {
+                d["clientRequestHTTPHost"] = json!(v);
+            }
+            json!({"count": n, "sum": {"visits": n, "edgeResponseBytes": n * 10}, "dimensions": d})
+        };
+        let data = json!({"viewer": {"zones": [{"side": [
+            g(Some("wi24rd.com"), "/", 9), g(Some("wi24rd.com:443"), "/", 1), g(Some("SHOP.wi24rd.com"), "/", 5), g(Some("shop.wi24rd.com"), "/om", 2),
+            g(Some("192.0.2.7"), "/", 1),
+        ]}]}});
+        let r = side_raekker(&data, &["2026-11-01".to_string()], "wi24rd.com").unwrap();
+        let noegler: Vec<&str> = r.iter().filter(|x| x.1 == "b_side").map(|x| x.2.as_str()).collect();
+        assert_eq!(noegler, ["200 /", "200 /\tshop", "200 /om\tshop", "200 /\t[ip]"]);
+        let tal = |n: &str| r.iter().find(|x| x.1 == "b_side" && x.2 == n).unwrap().3;
+        assert_eq!((tal("200 /"), tal("200 /\tshop")), (10, 5), "apex med port er apex");
+        assert_eq!(side_dele("200 /om\tshop"), Some(("200", "/om", "shop")));
+        assert_eq!(side_dele("200 /a b"), Some(("200", "/a b", "")), "en gammel nøgle har ingen vært");
+        let uden = json!({"viewer": {"zones": [{"side": [g(None, "/", 3)]}]}});
+        assert_eq!(
+            side_raekker(&uden, &["2026-11-01".to_string()], "wi24rd.com").unwrap()[0].2,
+            "200 /",
+            "som før V-SUBDOM.1"
+        );
+        assert!(!side_afskaaret(&data).unwrap());
+        let mange: Vec<Value> = (0..crate::dyk::LOFT).map(|i| g(Some("wi24rd.com"), &format!("/s{i}"), 1)).collect();
+        assert!(side_afskaaret(&json!({"viewer": {"zones": [{"side": mange}]}})).unwrap());
+    }
+
+    /// Indtil B2 lægges samme sti på flere værter sammen i visningen, som før: ingen tabulator og ingen vært i `sider`, og stifilteret rammer alle værter.
+    #[test]
+    fn visningen_laegger_vaerterne_sammen_indtil_b2() {
+        let mut l = Laest::default();
+        let dag = dag_noegle(NU - DOEGN_MS);
+        l.side_hentet.insert(dag.clone());
+        l.besoeg = vec![
+            rk(&dag, "b_side", "200 /", 10),
+            rk(&dag, "b_side_b", "200 /", 4),
+            rk(&dag, "b_side", "200 /\tshop", 5),
+            rk(&dag, "b_side_b", "200 /\tshop", 2),
+            rk(&dag, "b_side", "404 /x\tshop", 1),
+        ];
+        let u = regn(&Periode::D7, None, &l, NU);
+        assert_eq!(
+            u.sider,
+            vec![SideUd {
+                sti: "/".into(),
+                n: 15,
+                besoeg: 6
+            }]
+        );
+        assert_eq!(u.sider_404[0].sti, "/x");
+        let f = regn(&Periode::D7, Some(&Filter::Sti("/".into())), &l, NU);
+        assert_eq!(f.dage.last().unwrap().n, Some(15), "stifilteret tæller alle værter");
+    }
+
+    /// `forside_deling` pr. vært: et subdomæne med sin egen (lille) forside sammenlignes med den, ikke med domænets. Med to forsider deles stien på den vært,
+    /// hvor den ligner værtens forside, og ikke på den anden; en vært uden forside deles ikke, og domænet er ikke `uden_forside`, når en vært har en.
+    #[test]
+    fn forside_deling_med_to_forsider() {
+        let (fra, til) = ("2026-11-01", "2026-11-05");
+        let d = "2026-11-02";
+        let mut rk = sider_z("a", d); // domænet selv: forsiden 20 KB, "//crm/.env" ligner den
+        for (art, n) in [("b_side", 10), (SIDE_BYTES, 10 * 2_000)] {
+            rk.push(zr("a", d, art, "200 /\tshop", n)); // shop: forsiden 2 KB
+        }
+        for (art, n) in [("b_side", 2), (SIDE_BYTES, 2 * 2_100)] {
+            rk.push(zr("a", d, art, "200 /ukendt\tshop", n));
+        }
+        for (art, n) in [("b_side", 2), (SIDE_BYTES, 2 * 20_000)] {
+            rk.push(zr("a", d, art, "200 /stor\tshop", n)); // på domænets størrelse, men ikke på shops
+        }
+        for (art, n) in [("b_side", 2), (SIDE_BYTES, 2 * 2_000)] {
+            rk.push(zr("a", d, art, "200 /ingen\tapi", n)); // api har ingen forside
+        }
+        let deling = forside_deling(&rk, fra, til);
+        assert!(
+            deling.som_forsiden.contains("//crm/.env") && deling.som_forsiden.contains("/ukendt"),
+            "{deling:?}"
+        );
+        assert!(
+            !deling.som_forsiden.contains("/stor") && !deling.som_forsiden.contains("/ingen"),
+            "{deling:?}"
+        );
+        assert!(!deling.som_forsiden.contains("/"), "forsiden selv aldrig");
+        assert!(!deling.uden_forside, "domænet har en forside");
+        // Samme sti på to værter: deles kun, når den ligner forsiden på begge.
+        for (art, n) in [("b_side", 3), (SIDE_BYTES, 3 * 2_000)] {
+            rk.push(zr("a", d, art, "200 //crm/.env\tshop", n));
+        }
+        assert!(
+            forside_deling(&rk, fra, til).som_forsiden.contains("//crm/.env"),
+            "ligner begge forsider"
+        );
+        rk.push(zr("a", d, "b_side_b", "200 //crm/.env\tshop", 1));
+        assert!(
+            !forside_deling(&rk, fra, til).som_forsiden.contains("//crm/.env"),
+            "besøg på shop: en rigtig side"
         );
     }
 

@@ -24,7 +24,7 @@ use crate::besoeg;
 use crate::cf::{Fejl, Zone, MELLEMRUM_LANGSOM};
 use crate::dmarc;
 use crate::historik;
-use crate::store::{Store, BESOEG_FEJL, DMARC_FEJL, DNS_FEJL, ROBOT_FEJL, SIDE_FEJL};
+use crate::store::{Store, BESOEG_FEJL, DMARC_FEJL, DNS_FEJL, ROBOT_FEJL, SIDE_FEJL, VAERT_FEJL, VAERT_FW_FEJL};
 use crate::vaern::{dag_noegle, dage_at_hente, er_faerdig, iso, sidst_hentet, Doegnudfald, DOEGN_MS, HENT_DAGE};
 
 /// Ny runde så ofte (og straks ved `koe_prioritet`).
@@ -128,6 +128,14 @@ pub trait Henter: Sync {
     fn side<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
         async { Ok(()) }
     }
+    /// Henter og gemmer trafik pr. vært for døgnene `fra`…`til` (`vaert::VAERT_QUERY`, V-SUBDOM.1).
+    fn vaert<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
+        async { Ok(()) }
+    }
+    /// Henter og gemmer angreb pr. vært for døgnene `fra`…`til`, der blev hentet uden værten (`vaert::VAERT_FW_QUERY`, V-SUBDOM.1). Skriver aldrig `fw`.
+    fn vaert_fw<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
+        async { Ok(()) }
+    }
     /// Henter og gemmer zonens tilstand hos Cloudflare.
     fn tilstand<'a>(&'a self, zone: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a;
     /// Henter og gemmer Cloudflares egne sikkerhedsfund for kontoen, højst én gang i timen (`sikkerhed::skal_hente`). Udfaldet noteres af henteren selv.
@@ -176,12 +184,14 @@ impl Afsnit {
     }
 }
 
-/// De tre slags besøgstal, der hentes ens efter årstallene (`besoeg.rs`).
+/// De slags tal, der hentes ens efter årstallene: de tre besøgstal (`besoeg.rs`) og trafik og angreb pr. vært (`vaert.rs`, V-SUBDOM.1).
 #[derive(Clone, Copy)]
 enum Besoegsslags {
     Besoeg,
     Robot,
     Side,
+    Vaert,
+    VaertFw,
 }
 
 impl Besoegsslags {
@@ -190,6 +200,8 @@ impl Besoegsslags {
             Besoegsslags::Besoeg => s.hentet_besoeg(zone),
             Besoegsslags::Robot => s.hentet_robot(zone),
             Besoegsslags::Side => s.hentet_side(zone),
+            Besoegsslags::Vaert => s.hentet_vaert(zone),
+            Besoegsslags::VaertFw => s.hentet_vaert_fw(zone),
         }
     }
     fn fejl_praefiks(self) -> &'static str {
@@ -197,6 +209,8 @@ impl Besoegsslags {
             Besoegsslags::Besoeg => BESOEG_FEJL,
             Besoegsslags::Robot => ROBOT_FEJL,
             Besoegsslags::Side => SIDE_FEJL,
+            Besoegsslags::Vaert => VAERT_FEJL,
+            Besoegsslags::VaertFw => VAERT_FW_FEJL,
         }
     }
 }
@@ -722,8 +736,15 @@ impl Koe {
         }
         // Besøg pr. land, kendte robotter og mest besøgte sider, efter årstallene: ét kald pr. domæne og slags for de færdige døgn, der mangler (hver slags har sin
         // egen `hentet_*`). Afviser Cloudflare det, står det ved domænet som "ikke tilgængelig" for den slags, resten kører videre, og der spørges ikke igen før næste
-        // start. Kun en forbigående fejl gemmer resten til næste runde.
-        for slags in [Besoegsslags::Besoeg, Besoegsslags::Robot, Besoegsslags::Side] {
+        // start. Kun en forbigående fejl gemmer resten til næste runde. Bagefter, efter siderne, trafik pr. vært og angreb pr. vært for døgn hentet uden værten
+        // (V-SUBDOM.1): også ét kald pr. domæne, og et afslag koster kun tallene pr. vært.
+        for slags in [
+            Besoegsslags::Besoeg,
+            Besoegsslags::Robot,
+            Besoegsslags::Side,
+            Besoegsslags::Vaert,
+            Besoegsslags::VaertFw,
+        ] {
             for z in &zoner {
                 if self.stoppet() {
                     return false;
@@ -746,6 +767,8 @@ impl Koe {
                     Besoegsslags::Besoeg => h.besoeg(&z.id, &fra, &til).await,
                     Besoegsslags::Robot => h.robot(&z.id, &fra, &til).await,
                     Besoegsslags::Side => h.side(&z.id, &fra, &til).await,
+                    Besoegsslags::Vaert => h.vaert(&z.id, &fra, &til).await,
+                    Besoegsslags::VaertFw => h.vaert_fw(&z.id, &fra, &til).await,
                 };
                 match svar {
                     Ok(()) => {
@@ -1111,6 +1134,10 @@ mod tests {
         side_kald: Mutex<Vec<(String, String, String)>>,
         robot_svar: HashMap<String, Result<(), Fejl>>,
         side_svar: HashMap<String, Result<(), Fejl>>,
+        /// `vaert`, `vaert_fw` (V-SUBDOM.1): kaldene (zone, fra, til) og svaret på trafik pr. vært pr. zone (ingen = det går godt).
+        vaert_kald: Mutex<Vec<(String, String, String)>>,
+        vaert_fw_kald: Mutex<Vec<(String, String, String)>>,
+        vaert_svar: HashMap<String, Result<(), Fejl>>,
         tilstand_kald: Mutex<Vec<String>>,
         tilstand_svar: Result<(), Fejl>,
         /// Rækkefølgen af kaldene: zone, ekstra, angreb, laek, historik, tilstand.
@@ -1266,6 +1293,35 @@ mod tests {
             }
             svar
         }
+        async fn vaert(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+            self.vaert_kald
+                .lock()
+                .unwrap()
+                .push((zone.to_string(), fra.to_string(), til.to_string()));
+            self.log.lock().unwrap().push("vaert");
+            let svar = self.vaert_svar.get(zone).cloned().unwrap_or(Ok(()));
+            if let (Ok(()), Some(l)) = (&svar, self.ekstra_lager) {
+                l.lock()
+                    .unwrap()
+                    .gem_vaert(zone, &crate::robotter::dage_i(fra, til), &[], &iso(NU))
+                    .unwrap();
+            }
+            svar
+        }
+        async fn vaert_fw(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+            self.vaert_fw_kald
+                .lock()
+                .unwrap()
+                .push((zone.to_string(), fra.to_string(), til.to_string()));
+            self.log.lock().unwrap().push("vaert_fw");
+            if let Some(l) = self.ekstra_lager {
+                l.lock()
+                    .unwrap()
+                    .gem_vaert_fw(zone, &crate::robotter::dage_i(fra, til), &[], &iso(NU))
+                    .unwrap();
+            }
+            Ok(())
+        }
         async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
             self.tilstand_kald.lock().unwrap().push(zone.to_string());
             self.log.lock().unwrap().push("tilstand");
@@ -1346,6 +1402,9 @@ mod tests {
             side_kald: Mutex::default(),
             robot_svar: HashMap::new(),
             side_svar: HashMap::new(),
+            vaert_kald: Mutex::default(),
+            vaert_fw_kald: Mutex::default(),
+            vaert_svar: HashMap::new(),
             tilstand_kald: Mutex::default(),
             tilstand_svar: Ok(()),
             log: Mutex::default(),
@@ -2220,9 +2279,9 @@ mod tests {
             "tilstanden først: den er lille, og så fundene, én gang for alle domæner"
         );
         assert_eq!(
-            log[log.len() - 8..],
-            ["historik", "historik", "besoeg", "besoeg", "robot", "robot", "side", "side"],
-            "årstallene og så besøgene, robotterne og siderne sidst"
+            log[log.len() - 12..],
+            ["historik", "historik", "besoeg", "besoeg", "robot", "robot", "side", "side", "vaert", "vaert", "vaert_fw", "vaert_fw"],
+            "årstallene og så besøgene, robotterne, siderne og tallene pr. vært (V-SUBDOM.1) sidst"
         );
         assert!(log.iter().filter(|x| **x == "historik").count() == 2 && log.contains(&"laek") && log.contains(&"angreb"));
         let kald = f.historik_kald.lock().unwrap().clone();
@@ -2346,6 +2405,61 @@ mod tests {
         assert_eq!(lager.lock().unwrap().afsnit_fejl(SIDE_FEJL, "a").unwrap(), None);
     }
 
+    /// V-SUBDOM.1: trafik pr. vært og angreb pr. vært hentes efter siderne, hver med ét kald pr. domæne for de 30 færdige døgn (hentevinduet efter en
+    /// opgradering). Afviser Cloudflare værtsforespørgslen, står det kun ved domænet for den slags (`VAERT_FEJL`): besøgene, robotterne, siderne og angreb pr.
+    /// vært er hentet og uden fejl, og der spørges ikke igen før næste start.
+    #[tokio::test(start_paused = true)]
+    async fn afslag_paa_vaertsforespoergslen_roerer_ikke_besoegene() {
+        let koe = Koe::default();
+        let lager = lager_med(&[("a", "a.wi24rd.com", None), ("b", "b.wi24rd.com", None)]);
+        let mut f = falsk(&koe);
+        f.ekstra_lager = Some(&lager);
+        f.vaert_svar.insert(
+            "a".into(),
+            Err(Fejl::GraphQl {
+                dag: None,
+                detalje: "zone does not have access to the path".into(),
+            }),
+        );
+        assert!(!ekstra(&koe, &lager, &f).await);
+        assert!(!koe.stoppet());
+        let vindue = (dag_noegle(NU - besoeg::BESOEG_DAGE * DOEGN_MS), dag_noegle(NU - DOEGN_MS));
+        {
+            let s = lager.lock().unwrap();
+            assert!(s.afsnit_fejl(VAERT_FEJL, "a").unwrap().is_some(), "ikke tilgængelig pr. vært");
+            for praefiks in [BESOEG_FEJL, ROBOT_FEJL, SIDE_FEJL, VAERT_FW_FEJL] {
+                assert_eq!(s.afsnit_fejl(praefiks, "a").unwrap(), None, "{praefiks}");
+            }
+            for z in ["a", "b"] {
+                assert_eq!(s.hentet_besoeg(z).unwrap().len(), besoeg::BESOEG_DAGE as usize, "besøgene for {z}");
+                assert_eq!(s.hentet_side(z).unwrap().len(), besoeg::BESOEG_DAGE as usize, "siderne for {z}");
+                assert_eq!(
+                    s.hentet_vaert_fw(z).unwrap().len(),
+                    besoeg::BESOEG_DAGE as usize,
+                    "angreb pr. vært for {z}"
+                );
+            }
+            assert!(s.hentet_vaert("a").unwrap().is_empty());
+            assert_eq!(s.hentet_vaert("b").unwrap().len(), besoeg::BESOEG_DAGE as usize);
+        }
+        let kald = f.vaert_kald.lock().unwrap().clone();
+        assert_eq!(kald.len(), 2, "ét kald pr. domæne");
+        assert!(kald.iter().all(|k| (k.1.clone(), k.2.clone()) == vindue), "hele vinduet i ét kald");
+        assert_eq!(f.vaert_fw_kald.lock().unwrap().len(), 2, "ét kald pr. domæne");
+        let log = f.log.lock().unwrap().clone();
+        let plads = |x: &str| log.iter().position(|l| *l == x).unwrap();
+        assert!(
+            plads("side") < plads("vaert") && plads("vaert") < plads("vaert_fw"),
+            "efter siderne"
+        );
+        ekstra(&koe, &lager, &f).await;
+        assert_eq!(f.vaert_kald.lock().unwrap().len(), 2, "ikke igen før næste start, og b har alt");
+        f.vaert_svar.clear();
+        ekstra(&Koe::default(), &lager, &f).await;
+        assert_eq!(f.vaert_kald.lock().unwrap().len(), 3, "næste start");
+        assert_eq!(lager.lock().unwrap().afsnit_fejl(VAERT_FEJL, "a").unwrap(), None);
+    }
+
     /// IP-klasserne for de døgn, der var hentet før opdateringen: ét kald pr. domæne, én gang, efter unikke.
     #[tokio::test(start_paused = true)]
     async fn ipklasser_hentes_igen_en_gang() {
@@ -2446,8 +2560,8 @@ mod tests {
         assert!(!koe.ekstra_runde(&lager, &f, &|| NU, EKSTRA_TEMPO, &|_| {}).await);
         assert_eq!(
             t0.elapsed(),
-            EKSTRA_TEMPO * (29 + 30 + 30 + 31 + 31 + 1 + 1 + 1 + 1),
-            "de 29 døgn, der var tilbage, de 30 med enkelthændelser, de 30 med lækkede kodeord, de 31 med DNS, de 31 med DMARC, årstallene, besøgene, robotterne og siderne"
+            EKSTRA_TEMPO * (29 + 30 + 30 + 31 + 31 + 1 + 1 + 1 + 1 + 1 + 1),
+            "de 29 døgn, der var tilbage, de 30 med enkelthændelser, de 30 med lækkede kodeord, de 31 med DNS, de 31 med DMARC, årstallene, besøgene, robotterne, siderne, trafik pr. vært og angreb pr. vært (V-SUBDOM.1)"
         );
     }
 

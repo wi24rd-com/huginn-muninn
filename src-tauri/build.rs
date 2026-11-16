@@ -20,6 +20,7 @@ const KOMMANDOER: &[&str] = &[
     "dyk",
     "robotter",
     "besoegende",
+    "subdomaener",
     "login",
     "login_stier",
     "login_sti_saet",

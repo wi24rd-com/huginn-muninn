@@ -27,6 +27,7 @@ mod store;
 mod teknologi;
 mod token;
 mod vaern;
+mod vaert;
 mod ved_login;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -585,14 +586,52 @@ async fn hent_robot(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str
     laas(tilstand)?.gem_robot(zone, &dage, &besoeg::robot_raekker(&svar, &dage)?, &vaern::iso(nu_ms()))
 }
 
-/// Mest besøgte sider for døgnene `fra`…`til`: ét kald med `besoeg::SIDE_QUERY`.
+/// Mest besøgte sider for døgnene `fra`…`til`: ét kald med `besoeg::SIDE_QUERY`. Værten renses under zonens navn (V-SUBDOM.1), og står svaret på 10.000
+/// rækker, noteres det ved domænet (`store::SIDE_AFSKAARET`).
 async fn hent_side(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let navn = laas(tilstand)?.zone_navn(zone)?.ok_or(Fejl::ZoneUkendt)?;
     let svar = tilstand
         .klient
         .graphql(token, besoeg::SIDE_QUERY, besoeg::variabler(zone, fra, til)?)
         .await?;
     let dage = robotter::dage_i(fra, til);
-    laas(tilstand)?.gem_side(zone, &dage, &besoeg::side_raekker(&svar, &dage)?, &vaern::iso(nu_ms()))
+    let mut l = laas(tilstand)?;
+    l.gem_side(zone, &dage, &besoeg::side_raekker(&svar, &dage, &navn)?, &vaern::iso(nu_ms()))?;
+    l.noter_side_afskaaret(zone, fra, til, besoeg::side_afskaaret(&svar)?)
+}
+
+/// Trafik pr. vært for døgnene `fra`…`til` (V-SUBDOM.1): ét kald med `vaert::VAERT_QUERY`; står svaret på loftet, ét pr. døgn (`vaert::hent_opdelt`).
+async fn hent_vaert(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let navn = laas(tilstand)?.zone_navn(zone)?.ok_or(Fejl::ZoneUkendt)?;
+    let hent = |f: String, t: String| async move {
+        tilstand
+            .klient
+            .graphql(token, vaert::VAERT_QUERY, besoeg::variabler(zone, &f, &t)?)
+            .await
+    };
+    let (dage, rk) = vaert::hent_opdelt(fra, til, hent, |d, dage| vaert::trafik_raekker(d, dage, &navn), vaert::V_AFSKAARET).await?;
+    laas(tilstand)?.gem_vaert(zone, &dage, &rk, &vaern::iso(nu_ms()))
+}
+
+/// Angreb pr. vært for døgn, der blev hentet uden værten (V-SUBDOM.1): ét kald med `vaert::VAERT_FW_QUERY`; står svaret på loftet, ét pr. døgn, og et døgn,
+/// der stadig står på loftet, får intet tal. Skriver kun `v_fw`, aldrig `fw`.
+async fn hent_vaert_fw(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+    let navn = laas(tilstand)?.zone_navn(zone)?.ok_or(Fejl::ZoneUkendt)?;
+    let hent = |f: String, t: String| async move {
+        tilstand
+            .klient
+            .graphql(token, vaert::VAERT_FW_QUERY, besoeg::variabler(zone, &f, &t)?)
+            .await
+    };
+    let (dage, rk) = vaert::hent_opdelt(
+        fra,
+        til,
+        hent,
+        |d, dage| vaert::fw_dag_raekker(d, dage, &navn),
+        vaert::V_FW_AFSKAARET,
+    )
+    .await?;
+    laas(tilstand)?.gem_vaert_fw(zone, &dage, &rk, &vaern::iso(nu_ms()))
 }
 
 /// Zonens tilstand: GET /zones/{id}, Zone Read, som tokenet har i forvejen.
@@ -1159,6 +1198,16 @@ async fn besoegende(
     Ok(besoeg::regn(&spoerg.periode, filter.as_ref(), &laest, nu_ms()))
 }
 
+/// Subdomæner (V-SUBDOM.1, til B2): trafik og angreb pr. vært for ét domæne i `fra`…`til` (højst et år), pr. dag, kun fra cachen (intet netværk). Svaret har
+/// ingen id'er; værterne er nøglerne under zonen (`""` = domænet selv).
+#[tauri::command]
+async fn subdomaener(zone: String, fra: String, til: String, tilstand: State<'_, Tilstand>) -> Svar<vaert::SubdomaenerUd> {
+    let zone = vaern::tjek_zone(&zone)?;
+    vaert::tjek_periode(&fra, &til)?;
+    let laest = vaert::laes(&*laas(&tilstand)?, &zone, &fra)?;
+    Ok(vaert::regn(&laest, &fra, &til))
+}
+
 /// Login: de gemte tal for domænets login-stier, kun fra cachen (intet netværk).
 #[tauri::command]
 async fn login(omfang: dyk::Omfang, periode: dyk::Periode, filter: login::Filter, tilstand: State<'_, Tilstand>) -> Svar<login::LoginUd> {
@@ -1388,6 +1437,12 @@ impl Henter for KoeHenter<'_> {
     }
     async fn side(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
         hent_side(self.tilstand, self.token(zone)?, zone, fra, til).await
+    }
+    async fn vaert(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+        hent_vaert(self.tilstand, self.token(zone)?, zone, fra, til).await
+    }
+    async fn vaert_fw(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
+        hent_vaert_fw(self.tilstand, self.token(zone)?, zone, fra, til).await
     }
     async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
         hent_tilstand(self.tilstand, self.token(zone)?, zone).await
@@ -2106,6 +2161,11 @@ pub fn run() {
                 &vaern::dag_noegle(nu_ms()),
                 &vaern::dag_noegle(nu_ms() - besoeg::BESOEG_DAGE * vaern::DOEGN_MS),
             );
+            // V-SUBDOM.1: én gang hentes sidernes døgn i hentevinduet igen, nu med værten i nøglen. Ét kald pr. domæne.
+            let _ = lager.side_vaert_en_gang(
+                &vaern::dag_noegle(nu_ms()),
+                &vaern::dag_noegle(nu_ms() - besoeg::BESOEG_DAGE * vaern::DOEGN_MS),
+            );
             let sprog = sprog_fra(&lager);
             app.manage(Tilstand {
                 lager: Mutex::new(lager),
@@ -2168,6 +2228,7 @@ pub fn run() {
             dyk,
             robotter,
             besoegende,
+            subdomaener,
             login,
             login_stier,
             login_sti_saet,
@@ -2617,6 +2678,57 @@ mod tests {
         );
         assert_eq!(s.vurderet().unwrap()["a"], dag(2), "statusdøgnet venter på døgnet efter");
         assert_eq!(runde(&mut s, NU + 3_600_000), None, "én besked pr. mærke");
+    }
+
+    /// V-SUBDOM.1 (S2): tallene pr. vært ændrer hverken Overblik eller notifikationen, og et værtsnavn står aldrig i en notifikation, på dansk eller engelsk.
+    #[test]
+    fn vaerter_naar_aldrig_overblik_eller_notifikationer() {
+        const NU: i64 = 1_793_693_280_000; // 2026-11-03T08:08:00Z
+        let dag = |i: i64| vaern::dag_noegle(NU - i * vaern::DOEGN_MS);
+        let fw = |n: i64| {
+            let noegle = ["Regel", "US", "AS", "/", "CPH", "GET", "firewallManaged", "block"].join("\t");
+            ("fw".to_string(), noegle, n)
+        };
+        let byg = |med_vaerter: bool| {
+            let mut s = Store::i_hukommelse().unwrap();
+            let zoner: Vec<Zone> = ["a", "b", "c"].iter().map(|z| zone(z, &format!("{z}.wi24rd.com"))).collect();
+            s.gem_zoner(1, &zoner, "t").unwrap();
+            s.gem_valgte(&["a".to_string(), "b".to_string(), "c".to_string()]).unwrap();
+            for z in ["a", "b", "c"] {
+                for i in 1..=9 {
+                    let n = if z == "a" && i == 1 { 400 } else { 1 };
+                    let mut rk = vec![fw(n)];
+                    if med_vaerter {
+                        rk.push(("v_fw".into(), "hemmelig\tfirewallManaged\tblock".into(), n));
+                        rk.push(("v_fw_afskaaret".into(), String::new(), 10_000));
+                    }
+                    s.gem_doegn(z, &dag(i), &rk, &vaern::iso(NU - 3_600_000)).unwrap();
+                    if med_vaerter {
+                        let v = |art: &str, n: i64| (dag(i), art.to_string(), "hemmelig".to_string(), n);
+                        s.gem_vaert(z, &[dag(i)], &[v("v_alle", 99), v("v_besoeg", 9)], "t").unwrap();
+                        s.noter_vaert_fw(z, &dag(i), "t").unwrap();
+                    }
+                }
+            }
+            s
+        };
+        let (mut med, mut uden) = (byg(true), byg(false));
+        let (rm, ru) = (byg_overblik(&med, NU).unwrap(), byg_overblik(&uden, NU).unwrap());
+        assert_eq!(
+            serde_json::to_value(&rm).unwrap(),
+            serde_json::to_value(&ru).unwrap(),
+            "Overblik er det samme"
+        );
+        assert!(!serde_json::to_string(&rm).unwrap().contains("hemmelig"));
+        let (im, iu) = (notify::indst(&med).unwrap(), notify::indst(&uden).unwrap());
+        let bm = naeste_besked(&mut med, &rm, &im, NU).unwrap();
+        let bu = naeste_besked(&mut uden, &ru, &iu, NU).unwrap();
+        assert_eq!(bm, bu, "samme notifikation");
+        let b = bm.expect("a er rød: der er en notifikation at se på");
+        for sprog in [agent::Sprog::Da, agent::Sprog::En] {
+            let (titel, tekst) = notify::tekst(&b, sprog, &notify::dato_format(&med).unwrap());
+            assert!(!titel.contains("hemmelig") && !tekst.contains("hemmelig"), "{titel} / {tekst}");
+        }
     }
 
     /// Kun valgte domæner, hver med sine linjer; "Ved ikke" står med, og et valg på et fravalgt domæne tæller til knappen.

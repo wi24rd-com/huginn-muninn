@@ -65,6 +65,7 @@ fn haendelse(source: &str, n: usize) -> Fw {
         colo: "CPH".into(),
         datetime: "2026-11-03T05:17:00Z".into(),
         vaegt: 0,
+        vaert: None,
     }
 }
 
@@ -105,7 +106,9 @@ fn angreb_raekker_200_seneste_uden_rutine() {
 #[test]
 fn angreb_query_er_firewall_delen_uden_ip_og_brugeragent() {
     let fw = ANGREB_QUERY.lines().nth(1).unwrap();
-    assert!(DOEGN_QUERY.replacen(" datetime sampleInterval }", " datetime }", 1).contains(fw));
+    assert!(DOEGN_QUERY
+        .replacen(" datetime sampleInterval clientRequestHTTPHost }", " datetime }", 1)
+        .contains(fw));
     assert!(!ANGREB_QUERY.contains("sampleInterval"), "angreb tæller hændelser");
     for felt in ["clientIP", "userAgent", "clientIp"] {
         assert!(!ANGREB_QUERY.contains(felt), "{felt}");
@@ -354,10 +357,15 @@ fn paritet_forespoergslen_har_samme_felter_som_w() {
         .replace("\"abc\"", "$zoneTag")
         .replace("\"2026-10-28T00:00:00Z\"", "$since")
         .replace("\"2026-10-29T00:00:00Z\"", "$until");
-    // V-SAMPLE.1: W's forespørgsel + feltet `sampleInterval` på `fw` (HAM tæller Cloudflares estimat, W tæller rækker). Alt andet er ordret.
+    // V-SAMPLE.1: W's forespørgsel + feltet `sampleInterval` på `fw` (HAM tæller Cloudflares estimat, W tæller rækker). V-SUBDOM.1: + `clientRequestHTTPHost`
+    // på `fw` (kun til art `v_fw`; `doegn_raekker` bruger det ikke). Alt andet er ordret.
     let gammel = "clientASNDescriptionedgeColoNamedatetime}";
     assert_eq!(w.matches(gammel).count(), 1, "W har én fw-node");
-    let w = w.replacen(gammel, "clientASNDescriptionedgeColoNamedatetimesampleInterval}", 1);
+    let w = w.replacen(
+        gammel,
+        "clientASNDescriptionedgeColoNamedatetimesampleIntervalclientRequestHTTPHost}",
+        1,
+    );
     let mig = ingen_mellemrum(DOEGN_QUERY);
     let mig = mig
         .strip_prefix("queryVaernet($zoneTag:string!,$since:Time!,$until:Time!)")
@@ -367,6 +375,7 @@ fn paritet_forespoergslen_har_samme_felter_som_w() {
         "samme aliaser, grænser, filtre og felter plus sampleInterval; kun zone og tider er variabler"
     );
     assert_eq!(DOEGN_QUERY.matches("sampleInterval").count(), 1, "kun på fw");
+    assert_eq!(DOEGN_QUERY.matches("clientRequestHTTPHost").count(), 1, "værten kun på fw");
 }
 
 #[test]

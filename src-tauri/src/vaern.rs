@@ -423,10 +423,11 @@ pub fn forsoeg_kategori(sti: &str) -> Option<&'static str> {
 }
 
 // ── GraphQL: ét UTC-døgn pr. forespørgsel, alle værdier som variabler ───────────────────────────────────────────────
-/// Samme aliaser, grænser, filtre og felter som W `doegnForespoergsel` (vagt.js:121-134), plus `sampleInterval` på `fw` (V-SAMPLE.1); kun zone og tider er variabler.
+/// Samme aliaser, grænser, filtre og felter som W `doegnForespoergsel` (vagt.js:121-134), plus `sampleInterval` (V-SAMPLE.1) og `clientRequestHTTPHost`
+/// (V-SUBDOM.1, kun til art `v_fw`, `vaert.rs`) på `fw`; kun zone og tider er variabler.
 /// HAM tæller Cloudflares estimat (summen af `sampleInterval`); W tæller rækker. Tallene afviger derfor på travle domæner.
 pub const DOEGN_QUERY: &str = r#"query Vaernet($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
-    fw: firewallEventsAdaptive(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[datetime_DESC]) { action source description clientCountryName clientRequestPath clientRequestHTTPMethodName clientASNDescription edgeColoName datetime sampleInterval }
+    fw: firewallEventsAdaptive(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[datetime_DESC]) { action source description clientCountryName clientRequestPath clientRequestHTTPMethodName clientASNDescription edgeColoName datetime sampleInterval clientRequestHTTPHost }
     alle: httpRequestsAdaptiveGroups(limit:1, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[count_DESC]) { count dimensions { date } }
     probes: httpRequestsAdaptiveGroups(limit:400, filter:{datetime_geq:$since, datetime_lt:$until, edgeResponseStatus:404}, orderBy:[count_DESC]) { count dimensions { clientRequestPath } }
     bots: httpRequestsAdaptiveGroups(limit:1500, filter:{datetime_geq:$since, datetime_lt:$until, verifiedBotCategory_neq:""}, orderBy:[count_DESC]) { count dimensions { verifiedBotCategory userAgent clientRequestPath edgeResponseStatus } }
@@ -483,6 +484,10 @@ pub struct Fw {
     /// Cloudflares `sampleInterval`: hændelsen står for så mange (1 = talt én gang). Kun i `DOEGN_QUERY`; mangler det, er det 0.
     #[serde(default, deserialize_with = "mild_vaegt", rename = "sampleInterval")]
     pub vaegt: i64,
+    /// Cloudflares `clientRequestHTTPHost` (V-SUBDOM.1): rå og delvis angriberstyret. Bruges kun af `vaert::fw_raekker`, som renser den, og
+    /// gemmes aldrig rå. `None`: feltet var ikke i svaret (W's forespørgsel, `ANGREB_QUERY`).
+    #[serde(default, rename = "clientRequestHTTPHost")]
+    pub vaert: Option<String>,
 }
 
 impl Fw {
@@ -1478,6 +1483,8 @@ where
     Fut: Future<Output = Result<Doegn, Fejl>>,
 {
     let hentet = laas(lager)?.hentet(zone)?;
+    // V-SUBDOM.1: zonens navn til `vaert::ren_vaert`. Ukendt navn: ingen tal pr. vært, resten som før.
+    let navn = laas(lager)?.zone_navn(zone)?;
     let tid = iso(nu);
     let mut stroem = stream::iter(dage_at_hente(nu, &hentet))
         .map(|dag| {
@@ -1494,12 +1501,32 @@ where
                 raekker.extend(angreb_raekker(&z));
                 raekker.extend(crate::sti200::raekker(&z.sti200, &z.forside));
                 raekker.push(haendelser_raekke(&z));
+                // Angreb pr. vært (art `v_fw`) fra samme svar; `None` uden zonens navn eller uden værten i svaret.
+                let vaert_fw = navn.as_deref().and_then(|n| crate::vaert::fw_raekker(&z.fw, n));
                 let mut l = laas(lager)?;
-                if z.fw.len() as i64 >= crate::dyk::LOFT {
+                let loft = z.fw.len() as i64 >= crate::dyk::LOFT;
+                let mut beholdt = false;
+                if loft {
                     let gemt = l.doegn_art(zone, &dag, "fw")?;
-                    behold_fuldt_fw(&mut raekker, &gemt, z.fw.len());
+                    beholdt = behold_fuldt_fw(&mut raekker, &gemt, z.fw.len());
+                }
+                let med_vaert = vaert_fw.is_some();
+                if let Some(v) = vaert_fw {
+                    let gemt_v = if loft {
+                        l.doegn_art(zone, &dag, crate::vaert::V_FW)?
+                    } else {
+                        Vec::new()
+                    };
+                    raekker.extend(crate::vaert::fw_med_loft(v, loft, beholdt, &gemt_v, z.fw.len()));
                 }
                 l.gem_doegn(zone, &dag, &raekker, &tid)?;
+                // Uden tal pr. vært (intet navn, eller ingen vært i svaret) er døgnets `v_fw` slettet af `gem_doegn`: så er døgnet heller ikke hentet pr. vært
+                // (S4: intet tal, ikke 0).
+                if med_vaert {
+                    l.noter_vaert_fw(zone, &dag, &tid)?;
+                } else {
+                    l.glem_vaert_fw(zone, &dag)?;
+                }
                 antal += 1;
                 paa_doegn(&dag, Doegnudfald::Gemt);
             }

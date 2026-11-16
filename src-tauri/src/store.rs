@@ -16,8 +16,8 @@ use crate::cf::{Fejl, Zone};
 /// 7: + radar_dag. 8: valg → fravalgt. 9: fravalgt → valgt, + afvist_ny, ny_zone. 10: + teknologi, Radar-serier uden brug væk.
 /// 11: + hentet_angreb (art `angreb`). 12: + vurderet, hentet_angreb tømt, så angrebene hentes igen med netværket. 13: + hentet_historik, hentet_laek, zone_tilstand.
 /// 14: + tek_vis. 15: + hentet_dns, hentet_dmarc. 16: + sikkerhedsfund. 17: + hentet_besoeg. 18: + hentet_robot, hentet_side.
-/// 19: + forbindelse, zone_forbindelse (V-KONTI.1).
-const SKEMA_VERSION: i64 = 19;
+/// 19: + forbindelse, zone_forbindelse (V-KONTI.1). 20: + hentet_vaert, hentet_vaert_fw (V-SUBDOM.1).
+const SKEMA_VERSION: i64 = 20;
 const SKEMA_1: &str = "
 CREATE TABLE IF NOT EXISTS vagt_dag (zone TEXT NOT NULL, dag TEXT NOT NULL, art TEXT NOT NULL, noegle TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (zone, dag, art, noegle));
 CREATE TABLE IF NOT EXISTS hentet (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
@@ -132,10 +132,28 @@ INSERT INTO forbindelse (id, cf_navn, eget_navn, konti, oprettet_utc)
 INSERT OR IGNORE INTO zone_forbindelse (zone, forbindelse) SELECT id, 1 FROM zoner WHERE EXISTS (SELECT 1 FROM forbindelse WHERE id = 1);
 UPDATE indstillinger SET noegle = noegle || ':1' WHERE noegle IN ('sikkerhedsfund_hentet', 'sikkerhedsfund_tilstand');
 ";
+/// `hentet_vaert`: døgn, hvis trafik pr. vært (arterne `v_alle`, `v_besoeg`, `vaert.rs`) er hentet. `hentet_vaert_fw`: døgn, hvis hændelser har fået værten
+/// (art `v_fw`): nye døgn noteres af `vaern::opdater`, gamle af genhentningen (`vaert::VAERT_FW_QUERY`). Begge er tomme efter opgraderingen, så køen henter
+/// hentevinduet én gang. Ingen eksisterende række ændres (V-SUBDOM.1).
+const SKEMA_20: &str = "
+CREATE TABLE IF NOT EXISTS hentet_vaert (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
+CREATE TABLE IF NOT EXISTS hentet_vaert_fw (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
+";
 /// Arterne fra hovedhentningen (`vaern::DOEGN_QUERY` og `sti200::hoved_query`): dem, `gem_doegn` erstatter. `fwn` er antal hændelser
-/// i `fw`-svaret (`vaern::FW_HAENDELSER`, kun til loftet).
+/// i `fw`-svaret (`vaern::FW_HAENDELSER`, kun til loftet). `v_fw` og `v_fw_afskaaret` er angreb pr. vært fra samme svar (`vaert::FW_ARTER`, V-SUBDOM.1).
 pub const DOEGN_ARTER: &[&str] = &[
-    "alle", "angreb", "bot", "falsk", "fw", "fwn", "probe", "seneste", "sti200", "sti200b",
+    "alle",
+    "angreb",
+    "bot",
+    "falsk",
+    "fw",
+    "fwn",
+    "probe",
+    "seneste",
+    "sti200",
+    "sti200b",
+    "v_fw",
+    "v_fw_afskaaret",
 ];
 /// `indstillinger`: sat, når de færdige døgn i hentevinduet én gang er sat til at blive hentet igen med Cloudflares estimat
 /// (`vaern::fw_vaegt_en_gang`). Værdien er den første dag, hvis `fw`-tal er estimater; ældre døgn er talte rækker.
@@ -157,6 +175,14 @@ const IPKLASSE_MANGLER: &str = "ipklasse_mangler:";
 pub const BESOEG_ARTER: &[&str] = &["b_total", "b_land", "b_robot", "b_side", "b_side_b", "b_side_bytes"];
 /// `indstillinger`: sat, når sidernes døgn i hentevinduet én gang er sat til at blive hentet igen med `b_side_bytes` (`side_bytes_en_gang`, V-BESOEG.2 FIX 1).
 pub const SIDE_BYTES_V1: &str = "side_bytes_v1";
+/// `indstillinger`: sat, når sidernes døgn i hentevinduet én gang er sat til at blive hentet igen med værten i nøglen (`side_vaert_en_gang`, V-SUBDOM.1).
+pub const SIDE_VAERT_V1: &str = "side_vaert_v1";
+/// Som `BESOEG_FEJL` for trafik og angreb pr. vært (V-SUBDOM.1, `vaert.rs`). Hver koster kun sit eget; domænets egne tal og besøgene er uberørte.
+pub const VAERT_FEJL: &str = "vaert_fejl:";
+pub const VAERT_FW_FEJL: &str = "vaert_fw_fejl:";
+/// Foran zone-id'et i `indstillinger`: det seneste svar på de mest besøgte sider stod på 10.000 rækker (V-SUBDOM.1). Værdien er "<fra> <til>" for døgnene,
+/// afskårne svar har dækket; den ryddes, når et svar under loftet dækker dem igen (`noter_side_afskaaret`). Til visningens note, ingen tal.
+pub const SIDE_AFSKAARET: &str = "side_afskaaret:";
 /// Arterne fra `adgang::ADGANG_QUERY`: dem, `gem_ekstra` erstatter.
 pub const EKSTRA_ARTER: &[&str] = &["post", "status", "land", "login", "stoppet", "asn"];
 /// Foran zone-id'et i `indstillinger`: Cloudflare svarede ikke på de ekstra tal for domænet (værdien er den rensede fejl).
@@ -288,6 +314,9 @@ impl Store {
         }
         if v < 19 {
             tx.execute_batch(SKEMA_19).map_err(lagerfejl)?;
+        }
+        if v < 20 {
+            tx.execute_batch(SKEMA_20).map_err(lagerfejl)?;
         }
         tx.pragma_update(None, "user_version", SKEMA_VERSION).map_err(lagerfejl)?;
         tx.commit().map_err(lagerfejl)?;
@@ -633,6 +662,95 @@ impl Store {
             raekker,
             hentet_utc,
         )
+    }
+
+    /// Én gang (`SIDE_VAERT_V1`, V-SUBDOM.1): som `side_bytes_en_gang`, så sidernes døgn i hentevinduet hentes igen med værten i nøglen (`besoeg::side_raekker`).
+    /// Kun `hentet_side` røres; tallene står, til de nye erstatter dem for døgnet. Ældre døgn beholder de sammenlagte nøgler (de regnes som domænet selv). `true`: det skete nu.
+    pub fn side_vaert_en_gang(&mut self, i_dag: &str, fra_dag: &str) -> Result<bool, Fejl> {
+        if self.indstilling(SIDE_VAERT_V1)?.is_some() {
+            return Ok(false);
+        }
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        tx.execute("DELETE FROM hentet_side WHERE dag >= ?1", [fra_dag])
+            .map_err(lagerfejl)?;
+        tx.execute(
+            "INSERT OR REPLACE INTO indstillinger (noegle, vaerdi) VALUES (?1, ?2)",
+            [SIDE_VAERT_V1, i_dag],
+        )
+        .map_err(lagerfejl)?;
+        tx.commit().map_err(lagerfejl)?;
+        Ok(true)
+    }
+
+    /// Noterer (`afskaaret`) døgnene `fra`…`til` som afskåret for de mest besøgte sider (lagt sammen med dem, der stod), eller rydder mærket, når et svar under
+    /// loftet dækker alle de afskårne døgn.
+    pub fn noter_side_afskaaret(&mut self, zone: &str, fra: &str, til: &str, afskaaret: bool) -> Result<(), Fejl> {
+        let noegle = format!("{SIDE_AFSKAARET}{zone}");
+        let gemt = self
+            .indstilling(&noegle)?
+            .and_then(|v| v.split_once(' ').map(|(a, b)| (a.to_string(), b.to_string())));
+        match (afskaaret, gemt) {
+            (true, Some((a, b))) => self.gem_indstilling(&noegle, &format!("{} {}", a.as_str().min(fra), b.as_str().max(til))),
+            (true, None) => self.gem_indstilling(&noegle, &format!("{fra} {til}")),
+            (false, Some((a, b))) if a.as_str() >= fra && b.as_str() <= til => self.gem_afsnit_fejl(SIDE_AFSKAARET, zone, None),
+            (false, _) => Ok(()),
+        }
+    }
+
+    /// Zonens navn fra den gemte zoneliste (til `vaert::ren_vaert`).
+    pub fn zone_navn(&self, zone: &str) -> Result<Option<String>, Fejl> {
+        let mut st = self.db.prepare("SELECT navn FROM zoner WHERE id = ?1").map_err(lagerfejl)?;
+        let mut rk = st.query_map([zone], |r| r.get(0)).map_err(lagerfejl)?;
+        rk.next().transpose().map_err(lagerfejl)
+    }
+
+    pub fn hentet_vaert(&self, zone: &str) -> Result<HashMap<String, String>, Fejl> {
+        self.hentet_i("hentet_vaert", zone)
+    }
+
+    pub fn hentet_vaert_fw(&self, zone: &str) -> Result<HashMap<String, String>, Fejl> {
+        self.hentet_i("hentet_vaert_fw", zone)
+    }
+
+    /// Trafik pr. vært for døgnene `dage` (`vaert::ARTER`). Et døgn uden rækker er også hentet. Kun de arter skrives. Én transaktion.
+    pub fn gem_vaert(
+        &mut self,
+        zone: &str,
+        dage: &[String],
+        raekker: &[(String, String, String, i64)],
+        hentet_utc: &str,
+    ) -> Result<(), Fejl> {
+        self.gem_besoeg_i("hentet_vaert", crate::vaert::ARTER, zone, dage, raekker, hentet_utc)
+    }
+
+    /// Angreb pr. vært for døgnene `dage` (`vaert::FW_ARTER`), hentet igen for døgn, der blev hentet uden værten. Kun de arter skrives, aldrig `fw`. Én transaktion.
+    pub fn gem_vaert_fw(
+        &mut self,
+        zone: &str,
+        dage: &[String],
+        raekker: &[(String, String, String, i64)],
+        hentet_utc: &str,
+    ) -> Result<(), Fejl> {
+        self.gem_besoeg_i("hentet_vaert_fw", crate::vaert::FW_ARTER, zone, dage, raekker, hentet_utc)
+    }
+
+    /// Døgnet har ikke (længere) tal pr. vært for angrebene (`vaern::opdater` fik et svar uden værten).
+    pub fn glem_vaert_fw(&mut self, zone: &str, dag: &str) -> Result<(), Fejl> {
+        self.db
+            .execute("DELETE FROM hentet_vaert_fw WHERE zone = ?1 AND dag = ?2", [zone, dag])
+            .map(|_| ())
+            .map_err(lagerfejl)
+    }
+
+    /// Døgnets hændelser har fået værten i hovedhentningen (`vaern::opdater`).
+    pub fn noter_vaert_fw(&mut self, zone: &str, dag: &str, hentet_utc: &str) -> Result<(), Fejl> {
+        self.db
+            .execute(
+                "INSERT OR REPLACE INTO hentet_vaert_fw (zone, dag, hentet_utc) VALUES (?1, ?2, ?3)",
+                [zone, dag, hentet_utc],
+            )
+            .map(|_| ())
+            .map_err(lagerfejl)
     }
 
     fn gem_besoeg_i(
@@ -1077,11 +1195,12 @@ impl Store {
         Ok(self.raekker(zone, fra_dag)?.into_iter().filter(|r| r.art != "angreb").collect())
     }
 
-    /// Alle rækker for zonen fra og med `fra_dag`, i den rækkefølge de blev gemt (som D1 i W).
+    /// Alle rækker for zonen fra og med `fra_dag`, i den rækkefølge de blev gemt (som D1 i W). Uden årstallene, besøgene og tallene pr. vært (`vaert::ALLE_ARTER`):
+    /// Overblik, Angreb og notifikationerne regner præcis som før V-SUBDOM.1.
     pub fn raekker(&self, zone: &str, fra_dag: &str) -> Result<Vec<Raekke>, Fejl> {
         let mut st = self
             .db
-            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status', 'h_ipklasse', 'b_total', 'b_land', 'b_robot', 'b_side', 'b_side_b', 'b_side_bytes') ORDER BY rowid")
+            .prepare("SELECT dag, art, noegle, n FROM vagt_dag WHERE zone = ?1 AND dag >= ?2 AND art NOT IN ('h_total', 'h_land', 'h_status', 'h_ipklasse', 'b_total', 'b_land', 'b_robot', 'b_side', 'b_side_b', 'b_side_bytes', 'v_alle', 'v_besoeg', 'v_afskaaret', 'v_fw', 'v_fw_afskaaret') ORDER BY rowid")
             .map_err(lagerfejl)?;
         let rk = st
             .query_map(params![zone, fra_dag], |r| {
@@ -1096,13 +1215,13 @@ impl Store {
         rk.collect::<Result<_, _>>().map_err(lagerfejl)
     }
 
-    /// Rækkerne for flere zoner fra og med `fra_dag`, hver med sin zone, i den rækkefølge de blev gemt (samlet Værn).
+    /// Rækkerne for flere zoner fra og med `fra_dag`, hver med sin zone, i den rækkefølge de blev gemt (samlet Værn). Uden tallene pr. vært (V-SUBDOM.1).
     pub fn raekker_for(&self, zoner: &[String], fra_dag: &str) -> Result<Vec<(String, Raekke)>, Fejl> {
         if zoner.is_empty() {
             return Ok(Vec::new());
         }
         let sql = format!(
-            "SELECT zone, dag, art, noegle, n FROM vagt_dag WHERE dag >= ?1 AND zone IN ({}) ORDER BY rowid",
+            "SELECT zone, dag, art, noegle, n FROM vagt_dag WHERE dag >= ?1 AND zone IN ({}) AND art NOT IN ('v_alle', 'v_besoeg', 'v_afskaaret', 'v_fw', 'v_fw_afskaaret') ORDER BY rowid",
             vec!["?"; zoner.len()].join(", ")
         );
         let mut st = self.db.prepare(&sql).map_err(lagerfejl)?;
@@ -1655,7 +1774,7 @@ impl Store {
     pub fn nulstil_historik(&mut self) -> Result<(), Fejl> {
         let tx = self.db.transaction().map_err(lagerfejl)?;
         tx.execute_batch(
-            "DELETE FROM vagt_dag; DELETE FROM hentet; DELETE FROM hentet_ekstra; DELETE FROM hentet_angreb; DELETE FROM hentet_laek; DELETE FROM hentet_dns; DELETE FROM hentet_dmarc; DELETE FROM hentet_historik; DELETE FROM hentet_besoeg; DELETE FROM hentet_robot; DELETE FROM hentet_side; DELETE FROM radar_dag; DELETE FROM sikkerhedsfund;",
+            "DELETE FROM vagt_dag; DELETE FROM hentet; DELETE FROM hentet_ekstra; DELETE FROM hentet_angreb; DELETE FROM hentet_laek; DELETE FROM hentet_dns; DELETE FROM hentet_dmarc; DELETE FROM hentet_historik; DELETE FROM hentet_besoeg; DELETE FROM hentet_robot; DELETE FROM hentet_side; DELETE FROM hentet_vaert; DELETE FROM hentet_vaert_fw; DELETE FROM radar_dag; DELETE FROM sikkerhedsfund;",
         )
         .map_err(lagerfejl)?;
         for praefiks in [
@@ -1667,6 +1786,9 @@ impl Store {
             BESOEG_FEJL,
             ROBOT_FEJL,
             SIDE_FEJL,
+            VAERT_FEJL,
+            VAERT_FW_FEJL,
+            SIDE_AFSKAARET,
             UNIKKE_MANGLER,
             IPKLASSE_MANGLER,
         ] {
@@ -2997,6 +3119,149 @@ mod tests {
         db
     }
 
+    /// Alle tabellers rækker som tekst, sorteret (til at se, at en migration intet ændrer).
+    fn dump(db: &Connection) -> Vec<String> {
+        let mut tabeller: Vec<String> = db
+            .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        tabeller.retain(|t| t != "hentet_vaert" && t != "hentet_vaert_fw");
+        let mut ud = Vec::new();
+        for t in tabeller {
+            let mut st = db.prepare(&format!("SELECT * FROM {t}")).unwrap();
+            let n = st.column_count();
+            let mut rk: Vec<String> = st
+                .query_map([], |r| {
+                    Ok((0..n)
+                        .map(|i| format!("{:?}", r.get::<_, rusqlite::types::Value>(i).unwrap()))
+                        .collect::<Vec<_>>()
+                        .join("|"))
+                })
+                .unwrap()
+                .collect::<Result<_, _>>()
+                .unwrap();
+            rk.sort();
+            ud.extend(rk.into_iter().map(|r| format!("{t}: {r}")));
+        }
+        ud
+    }
+
+    /// V-SUBDOM.1, skema 20: to nye, tomme tabeller oven på 19. Ingen eksisterende række ændres, i nogen tabel: tallene, de hentede døgn, siderne,
+    /// besøgene, forbindelserne og indstillingerne er bit for bit de samme. Køen henter derefter vinduet pr. vært (tabellerne er tomme).
+    #[test]
+    fn migrering_fra_version_19_til_20_roerer_intet() {
+        let db = version_18();
+        db.execute_batch(
+            "INSERT INTO zoner VALUES ('z1', 'wi24rd.com', '2026-11-01T08:00:00.000Z'), ('z2', 'shop.wi24rd.com', '2026-11-02T08:00:00.000Z');
+             INSERT INTO valgt VALUES ('z1'), ('z2');",
+        )
+        .unwrap();
+        db.execute_batch(SKEMA_19).unwrap();
+        db.pragma_update(None, "user_version", 19).unwrap();
+        db.execute_batch(
+            "INSERT INTO vagt_dag VALUES ('z1', '2026-11-01', 'fw', 'Regel\tUS\tAS\t/\tCPH\tGET\twaf\tblock', 12), ('z1', '2026-11-01', 'alle', '', 900),
+               ('z1', '2026-11-01', 'fwn', '', 10), ('z1', '2026-11-01', 'angreb', 'k', 1), ('z1', '2026-11-01', 'b_total', 'besoeg', 80),
+               ('z1', '2026-11-01', 'b_side', '200 /', 50), ('z1', '2026-11-01', 'b_side_b', '200 /', 40), ('z1', '2026-11-01', 'b_side_bytes', '200 /', 5000),
+               ('z1', '2026-11-01', 'h_total', 'unikke', 33), ('z2', '2026-11-02', 'alle', '', 4);
+             INSERT INTO hentet VALUES ('z1', '2026-11-01', '2026-11-02T02:00:00.000Z');
+             INSERT INTO hentet_angreb VALUES ('z1', '2026-11-01', 't');
+             INSERT INTO hentet_ekstra VALUES ('z1', '2026-11-01', 't');
+             INSERT INTO hentet_besoeg VALUES ('z1', '2026-11-01', 't');
+             INSERT INTO hentet_robot VALUES ('z1', '2026-11-01', 't');
+             INSERT INTO hentet_side VALUES ('z1', '2026-11-01', 't');
+             INSERT INTO hentet_historik VALUES ('z1', '2026-11-01', 't');
+             INSERT INTO indstillinger VALUES ('side_bytes_v1', '2026-11-01'), ('besoeg_fejl:z2', 'afvist'), ('sprog', 'da');",
+        )
+        .unwrap();
+        let foer = dump(&db);
+        assert!(foer.len() > 25, "data i alle berørte tabeller ({})", foer.len());
+        let s = Store::klar(db).unwrap();
+        assert_eq!(s.skema_version().unwrap(), 20);
+        assert_eq!(dump(&s.db), foer, "ingen eksisterende række ændret");
+        for z in ["z1", "z2"] {
+            assert!(
+                s.hentet_vaert(z).unwrap().is_empty() && s.hentet_vaert_fw(z).unwrap().is_empty(),
+                "tomme: køen henter vinduet"
+            );
+        }
+        assert_eq!(s.zone_navn("z2").unwrap().as_deref(), Some("shop.wi24rd.com"));
+        assert_eq!(s.zone_navn("z9").unwrap(), None);
+        // Og en database på 20 åbnes uden ændringer.
+        let foer = dump(&s.db);
+        let s = Store::klar(s.db).unwrap();
+        assert_eq!(dump(&s.db), foer);
+    }
+
+    /// Arterne pr. vært står uden for `raekker` og `raekker_for` (Overblik, Angreb, samlet Værn, notifikationerne), kan læses med `raekker_art`, og
+    /// "Nulstil historik" sletter dem sammen med de nye `hentet_*`-tabeller og mærkerne. `v_fw` erstattes af `gem_doegn` som `fw`.
+    #[test]
+    fn arterne_pr_vaert_staar_for_sig() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let dag = "2026-11-05".to_string();
+        s.gem_doegn("z1", &dag, &[rk("fw", "k", 3), rk("v_fw", "shop\twaf\tblock", 3)], "t")
+            .unwrap();
+        s.noter_vaert_fw("z1", &dag, "t").unwrap();
+        s.gem_vaert(
+            "z1",
+            std::slice::from_ref(&dag),
+            &[
+                (dag.clone(), "v_alle".into(), "shop".into(), 9),
+                (dag.clone(), "v_besoeg".into(), "".into(), 2),
+                (dag.clone(), "b_total".into(), "x".into(), 1),
+            ],
+            "t",
+        )
+        .unwrap();
+        let arter = |r: Vec<Raekke>| r.into_iter().map(|r| r.art).collect::<Vec<_>>();
+        assert_eq!(arter(s.raekker("z1", "0000-00-00").unwrap()), ["fw"]);
+        assert_eq!(s.raekker_for(&["z1".into()], "0000-00-00").unwrap().len(), 1);
+        assert_eq!(
+            s.raekker_art(&["z1".into()], crate::vaert::ALLE_ARTER, "0000-00-00").unwrap().len(),
+            3,
+            "gem_vaert skriver kun sine arter"
+        );
+        s.gem_doegn("z1", &dag, &[rk("fw", "k", 4)], "t").unwrap();
+        assert!(
+            s.doegn_art("z1", &dag, "v_fw").unwrap().is_empty(),
+            "gem_doegn erstatter v_fw med døgnet"
+        );
+        s.gem_afsnit_fejl(VAERT_FEJL, "z1", Some("x")).unwrap();
+        s.gem_afsnit_fejl(VAERT_FW_FEJL, "z1", Some("x")).unwrap();
+        s.noter_side_afskaaret("z1", &dag, &dag, true).unwrap();
+        assert!(s.side_vaert_en_gang("2026-11-06", "2026-10-07").unwrap());
+        s.nulstil_historik().unwrap();
+        assert!(s.hentet_vaert("z1").unwrap().is_empty() && s.hentet_vaert_fw("z1").unwrap().is_empty());
+        for p in [VAERT_FEJL, VAERT_FW_FEJL, SIDE_AFSKAARET] {
+            assert_eq!(s.afsnit_fejl(p, "z1").unwrap(), None, "{p}");
+        }
+        assert!(
+            s.indstilling(SIDE_VAERT_V1).unwrap().is_some(),
+            "engangsmarkøren er en indstilling og bliver"
+        );
+    }
+
+    /// Én gang (V-SUBDOM.1): sidernes døgn i hentevinduet glemmes som hentet, så de hentes igen med værten. Tallene står, ældre døgn røres ikke.
+    #[test]
+    fn siderne_hentes_igen_med_vaerten_en_gang() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let dage: Vec<String> = ["2026-10-01", "2026-10-20", "2026-11-05"].iter().map(|d| d.to_string()).collect();
+        s.gem_side("z1", &dage, &[("2026-11-05".into(), "b_side".into(), "200 /".into(), 5)], "t")
+            .unwrap();
+        assert!(s.side_vaert_en_gang("2026-11-06", "2026-10-07").unwrap());
+        let mut tilbage: Vec<String> = s.hentet_side("z1").unwrap().into_keys().collect();
+        tilbage.sort();
+        assert_eq!(tilbage, ["2026-10-01"]);
+        assert_eq!(
+            s.doegn_art("z1", "2026-11-05", "b_side").unwrap().len(),
+            1,
+            "tallene står til de nye kommer"
+        );
+        assert!(!s.side_vaert_en_gang("2026-11-07", "2026-10-08").unwrap(), "kun én gang");
+    }
+
     /// V-KONTI.1, skema 19: en 1.0.0-database med zoneliste får forbindelse 1, som ser alle zoner og har sikkerhedsfundenes tidspunkt og tilstand.
     /// Valget, teknologierne, notifikationerne og tallene står uændret. Uden zoneliste oprettes ingen forbindelse (hullet lukkes af `sikr_forbindelse_1`).
     #[test]
@@ -3014,7 +3279,7 @@ mod tests {
         )
         .unwrap();
         let s = Store::klar(db).unwrap();
-        assert_eq!(s.skema_version().unwrap(), 19);
+        assert_eq!(s.skema_version().unwrap(), SKEMA_VERSION, "18 → 19 → 20");
         let f = s.forbindelser().unwrap();
         assert_eq!(
             f,
