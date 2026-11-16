@@ -1,6 +1,6 @@
 # Afinstallation
 
-Programmet lægger fem ting på din computer: programmet selv, to autostart-poster, et API Token i nøgleringen og en datamappe. Følg trinene i rækkefølge, så intet bliver liggende.
+Programmet lægger fem ting på din computer: programmet selv, to autostart-poster, et API Token pr. forbindelse i nøgleringen og en datamappe. Følg trinene i rækkefølge, så intet bliver liggende.
 
 ## macOS
 
@@ -15,13 +15,15 @@ rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist
 rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist
 ```
 
-### 2. Glem API Tokenet
+### 2. Glem alle forbindelser
 
 Vælg **Indstillinger** › **Forbindelse** › **Glem API Token…** og bekræft med **Glem**. Det sletter API Tokenet fra macOS Nøglering.
 
-Vil du gøre det i hånden: åbn macOS' nøgleringsprogram (Keychain Access), søg efter `com.wi24rd.huginn-muninn`, og slet posten.
+Har du flere forbindelser, klikker du **Glem…** i hver række og bekræfter med **Glem**, til der er én tilbage. Den sidste glemmer du med **Glem API Token…**. Hver gang slettes forbindelsens API Token fra nøgleringen.
 
-Overvej også at **tilbagekalde API Tokenet hos Cloudflare**: log ind, åbn **My Profile › API Tokens**, og slet tokenet med det navn, du gav det. Så kan det ikke bruges af nogen, uanset hvad.
+Vil du gøre det i hånden: åbn macOS' nøgleringsprogram (Keychain Access), søg efter `com.wi24rd.huginn-muninn`, og slet alle posterne. Den første forbindelse bruger posten `cloudflare-api-token`, de næste `cloudflare-api-token-2`, `cloudflare-api-token-3` og så videre.
+
+Overvej også at **tilbagekalde hvert API Token hos Cloudflare**: log ind, åbn **My Profile › API Tokens**, og slet tokenet med det navn, du gav det. Så kan det ikke bruges af nogen, uanset hvad.
 
 ### 3. Afslut programmet
 
@@ -53,7 +55,7 @@ Der findes endnu ingen Windows-udgave. Når den kommer, er stederne:
 |---|---|
 | Autostart | Værdien under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` (slå **Start ved login** fra i programmet først) |
 | Daglig start | Den planlagte opgave `Wi24rd Huginn and Muninn dagligt` (slå **Start ved login** fra i programmet først) |
-| API Token | Windows Credential Manager, posten `com.wi24rd.huginn-muninn` |
+| API Tokens | Windows Credential Manager, posterne under `com.wi24rd.huginn-muninn`: `cloudflare-api-token`, `cloudflare-api-token-2` og så videre, én pr. forbindelse |
 | Datamappe | `%APPDATA%\com.wi24rd.huginn-muninn\` |
 
 ## Linux
@@ -63,7 +65,7 @@ Der findes endnu ingen Linux-udgave. Datamappen vil ligge i `~/.local/share/com.
 ## Tjekliste
 
 - [ ] Start ved login slået fra (ingen `.plist` i `~/Library/LaunchAgents/`)
-- [ ] API Token glemt i programmet (og tilbagekaldt hos Cloudflare)
+- [ ] Alle forbindelser glemt i programmet (og API Tokens tilbagekaldt hos Cloudflare)
 - [ ] Programmet afsluttet (intet ravne-ikon i menulinjen)
 - [ ] Programmet slettet fra Programmer
 - [ ] Datamappen slettet, eller bevidst beholdt

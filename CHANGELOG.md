@@ -4,6 +4,19 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-16 23:30 — Flere API Tokens side om side
+#### Tilføjet
+- **Flere Cloudflare-konti:** under Indstillinger › Forbindelse(r) tilføjer du ét API Token pr. konto med **Tilføj API Token…**. Domænerne fra alle forbindelser vises og hentes samlet, og et domæne, to API Tokens ser, står kun én gang. Hver forbindelse har en række med navn, antal domæner og tilstand, og kan skiftes eller glemmes for sig. Med én forbindelse ser kassen ud som før.
+- **Navnet på en forbindelse** er kontoens navn hos Cloudflare, også når det er en e-mailadresse. **Omdøb…** giver den dit eget navn; et tomt felt giver Cloudflares navn igen.
+- **Domæner** viser med flere forbindelser én liste pr. forbindelse, hver med sit eget Vælg alle / Ingen.
+- **Et afvist API Token** stopper kun sin egen forbindelse. Overblik viser et banner med forbindelsens navn og **Skift API Token…**, og fodlinjen og menulinjen nævner det. Er alle afvist, stopper hentningen som før.
+- Guiden siger i trinnet Dit API Token, at flere konti tilføjes bagefter under Indstillinger.
+#### Ændret
+- **Den lokale database opgraderes** ved første start. Intet går tabt: et gemt API Token bliver den første forbindelse med alle sine valg. Version 1.0.0 kan ikke åbne databasen bagefter; tag en kopi af den først, hvis du vil kunne gå tilbage.
+- Hver forbindelse har sin egen post i nøgleringen. Den første bruger samme post som 1.0.0.
+#### Rettet
+- Et nyt API Token fra en anden Cloudflare-konto fjernede de første domæner, deres valg og teknologisvar. Nu tilføjes det som en ny forbindelse, og **Skift API Token…** siger i formularen, at en konto mere skal tilføjes.
+
 ### 2026-11-15 23:30 — Repoet på GitHub: CI, sikkerhedspolitik og skabeloner
 #### Tilføjet
 - **CI** (`.github/workflows/ci.yml`): Rust-testene, UI-røgtesten, testen af signeringsscriptet og kit-tjekket kører på GitHub ved hvert push til `main` og ved pull requests. Kun læserettigheder, ingen hemmeligheder, og de brugte actions er låst til en bestemt commit. Signering og notarisering sker stadig kun lokalt.

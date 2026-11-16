@@ -4,7 +4,7 @@ Settings is not a tab but a window on top of the view you are in. What you use w
 
 | You want to | How to open it |
 |---|---|
-| Language, appearance, date, country, start at login, notifications, API Token, data | The gear at the top right, or ⌘, (Windows: Ctrl+,) |
+| Language, appearance, date, country, start at login, notifications, connections (API Tokens), data | The gear at the top right, or ⌘, (Windows: Ctrl+,) |
 | Choose domains | **Overview** › **Choose domains** in the band |
 | Choose notifications per domain | **Overview** › **Notifications** (the bell) in the band |
 | Say what your site uses | **Attacks** › **Edit technologies** in the band |
@@ -12,6 +12,8 @@ Settings is not a tab but a window on top of the view you are in. What you use w
 | Version, licence and trademark | The **i** button next to the gear |
 
 Settings can be opened before you have connected to Cloudflare. Every field and switch is described in [Settings](../50-indstillinger.md).
+
+Under **Connection** you have one connection per Cloudflare account. Here you add one more account with **Add API Token…**, and each connection can be renamed (**Rename…**), have its API Token changed (**Change API Token…**) and be forgotten (**Forget API Token…**, with more than one connection **Forget…**). With more than one connection the group is called **Connections**. See [Connection](../50-indstillinger.md#connection).
 
 ![Settings from the top](../../img/indstillinger--light-en-1200x860.webp)
 *At the top: Appearance and language, Date and country and Start-up. The content scrolls, and **Close** stays at the bottom.*

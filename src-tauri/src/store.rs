@@ -1242,7 +1242,9 @@ impl Store {
         let foer_alle: HashSet<String> = self.zone_saet("SELECT id FROM zoner")?;
         let foer_egne = self.zoner_for(forbindelse)?;
         let andres = self.andres_zoner(forbindelse)?;
-        let alene = andres.is_empty();
+        // Alene = der findes ingen anden forbindelse (rækker i `forbindelse`), ikke "ingen anden ser zoner": en forbindelse med en tom liste er stadig en
+        // forbindelse, og dens valg må ikke slettes globalt, når en ny tilføjes (verifikationen af B1, fund 1).
+        let alene = self.andre_forbindelser(forbindelse)? == 0;
         let (valgte, afviste) = (self.valgte()?, self.zone_saet("SELECT zone FROM afvist_ny")?);
         let ny_forbindelse = foer_egne.is_empty() && !alene;
         let forfra = !zoner.is_empty() && !ny_forbindelse && !zoner.iter().any(|z| foer_egne.contains(&z.id));
@@ -1308,6 +1310,13 @@ impl Store {
     /// De zoner, forbindelsen ser.
     pub fn zoner_for(&self, forbindelse: i64) -> Result<HashSet<String>, Fejl> {
         self.zone_saet_for("SELECT zone FROM zone_forbindelse WHERE forbindelse = ?1", forbindelse)
+    }
+
+    /// Antal andre forbindelser (rækker i `forbindelse`), uanset om de ser zoner.
+    fn andre_forbindelser(&self, forbindelse: i64) -> Result<i64, Fejl> {
+        self.db
+            .query_row("SELECT count(*) FROM forbindelse WHERE id <> ?1", [forbindelse], |r| r.get(0))
+            .map_err(lagerfejl)
     }
 
     /// De zoner, mindst én anden forbindelse ser.
@@ -3072,6 +3081,32 @@ mod tests {
             .unwrap();
         assert_eq!(s.valg().unwrap(), ["z1", "z2"]);
         assert_eq!(s.zoner().unwrap().0.len(), 5);
+    }
+
+    /// Verifikationen af B1, fund 1: forbindelse A får én gang en tom zoneliste (koblingen tømmes, valget står), og B tilføjes bagefter. "Alene" er
+    /// rækker i `forbindelse`, så B er en ny forbindelse og sletter intet; A's valg og teknologisvar står, også når A's liste kommer igen.
+    #[test]
+    fn tom_liste_paa_a_og_ny_b_roerer_ikke_a_s_valg() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let a = s.ny_forbindelse("t").unwrap();
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_valgte(&["z1".into()]).unwrap();
+        s.gem_teknologi("z1", "php", "bruger", false, "t").unwrap();
+        s.gem_zoner(a, &[], "t").unwrap();
+        assert!(s.zoner_for(a).unwrap().is_empty(), "A's kobling er tømt");
+        assert_eq!(s.valgte().unwrap().len(), 1, "en tom liste rører ikke valget (B1, deviation 2)");
+        let b = s.ny_forbindelse("t").unwrap();
+        s.gem_zoner(b, &[zone("n1", "ny.wi24rd.com"), zone("n2", "ny2.wi24rd.com")], "t")
+            .unwrap();
+        assert_eq!(s.valgte().unwrap(), HashSet::from(["z1".to_string()]), "A's valg står");
+        assert_eq!(s.teknologi("z1").unwrap().len(), 1, "A's teknologisvar står");
+        // A's liste kommer igen: stadig intet tab.
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        assert_eq!(s.valgte().unwrap(), HashSet::from(["z1".to_string()]));
+        assert_eq!(s.teknologi("z1").unwrap().len(), 1);
+        assert_eq!(s.zoner().unwrap().0.len(), 4);
     }
 
     /// D4: Glem én forbindelse fjerner kun dens egne domæner og valg; den andens står, og alle tal bliver.

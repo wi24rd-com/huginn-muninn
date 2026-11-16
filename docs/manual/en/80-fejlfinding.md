@@ -22,7 +22,8 @@ The program only shows its own error texts in plain language, never raw technica
 |---|---|---|
 | **The field is empty. Paste your API Token.** | You clicked Save and connect with nothing in the field. | Paste the API Token. |
 | **What was pasted does not look like a Cloudflare API Token (only letters, digits and symbols without spaces).** | Something else came along, such as a space or a line break. | Copy the API Token again from Cloudflare, with nothing around it. |
-| **Cloudflare rejected the API Token. It may have expired or lack permissions.** | Cloudflare does not know the token, or it has expired. | Create a new API Token following [Setup](30-opsaetning.md), and paste it under **Settings** (the gear) › **Connection** › **Change API Token…**. |
+| **Cloudflare rejected the API Token. It may have expired or lack permissions.** | Cloudflare does not know the token, or it has expired. If Cloudflare rejects all your connections, it is the same as with one: fetching stops, and the status is red. | Create a new API Token following [Setup](30-opsaetning.md), and paste it under **Settings** (the gear) › **Connection** › **Change API Token…**. |
+| **Cloudflare rejected the API Token “name”. Its domains are not fetched.** (red line on the Overview with the button **Change API Token…**; in the footer: **1 API Token rejected**) | You have more than one connection, and Cloudflare rejects the API Token on the connection named in the text. It has been deleted, has expired, or its permissions have been reduced. The other connections keep fetching. The menu at the raven icon names it too. | Create a new API Token at Cloudflare following [Setup](30-opsaetning.md). Click **Change API Token…** in the red line; it opens **Settings** at the connection's row. Paste the new API Token, and click **Save and connect**. |
 | **The API Token is not active (status: …). Create a new read-only API Token.** | The token is disabled or expired at Cloudflare. | Create a new one. |
 | **The API Token cannot see any domains: it lacks the permission Zone › Read, or the domain is not under Include · All zones or Specific zone.** | The token may not see the zone list, or no zones are included. | Fix the token at Cloudflare: under **Policies**, **DNS & Zones** must have **Zone › Read**, and **Include** must cover the domain (**All zones** or **Specific zone**). |
 | **The API Token lacks the permission Analytics › Read, so the program cannot read the figures.** | The token may see zones, but not figures. | Add **Analytics › Read** under **Analytics & Logs** at Cloudflare. |
@@ -35,7 +36,7 @@ The program only shows its own error texts in plain language, never raw technica
 |---|---|---|
 | **The keychain could not be used.** | The program could not read or write in macOS Keychain / Credential Manager. | Try again. If macOS asks for access to the keychain, allow it. |
 | **The local database could not be used.** | The file in the data folder could not be opened or written. | Check that there is space on the disk, and that the data folder is not read-only. See [Data and history](70-data.md). |
-| **The local database is from a newer version of the program (schema …).** | You opened an older version of the program with a newer database. | Update the program. The file is not touched. |
+| **The local database is from a newer version of the program (schema …).** | You opened an older version of the program with a newer database. | Update the program. The file is not touched. See [Updating](85-opdatering.md). |
 | **Start at login could not be read or changed.** | The operating system refused to create or remove the autostart entry. | Try again. On macOS the entry is the file `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist`; see [Uninstalling](90-afinstallation.md). |
 | **An error occurred in the program.** | An error the program cannot explain itself. | Try again. If it happens again, it is worth reporting as a bug. |
 
@@ -47,6 +48,14 @@ The program only shows its own error texts in plain language, never raw technica
 | **You can have at most 20 login paths of your own per domain. Remove one before adding a new one.** | The limit for your own login paths is reached. |
 | **“From” must be on or before “To”.** | The date picker got a period the wrong way round. |
 | **not available** | Your Cloudflare plan lacks the fields for those figures (for example Login or "stopped at the Edge" per robot). The rest works. |
+
+## My domains disappeared when I entered a new API Token
+
+In version 1.0.0 the program could only have one API Token. If you used **Change API Token…** with an API Token for another Cloudflare account, it replaced the first one. Then the first account's domains and your choices for them disappeared. Figures already fetched were never deleted.
+
+Now each account gets its own connection. For one more account, use **Add API Token…** under **Settings** › **Connection**. **Change API Token…** still replaces the API Token on one connection, and the form says so: "Do you have another account? Use Add API Token… instead."
+
+If you have already changed it, add the first account again with **Add API Token…**. If you no longer have the API Token, create a new one at Cloudflare. Then choose the domains in the dialog **Domains**. Their figures are still there.
 
 ## It is not an error
 

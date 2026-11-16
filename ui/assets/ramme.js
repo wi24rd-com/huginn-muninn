@@ -29,7 +29,7 @@
   const mac = platform === 'macos';
 
   /* ── delt tilstand og beskeder ── */
-  const tilstand = { sat: false, gemte: null, raekker: [], domaener: [], uvalgt: new Set(), koe: null, siden: null, huller: null, visning: null, params: new URLSearchParams(), domaeneValg: 'samlet' };
+  const tilstand = { sat: false, forbindelser: [], gemte: null, raekker: [], domaener: [], uvalgt: new Set(), koe: null, siden: null, huller: null, visning: null, params: new URLSearchParams(), domaeneValg: 'samlet' };
   const abonnenter = {};
   const paa = (navn, fn) => { (abonnenter[navn] ||= new Set()).add(fn); return () => abonnenter[navn].delete(fn); };
   const udsend = (navn, data) => { for (const fn of [...(abonnenter[navn] || [])]) { try { fn(data); } catch (e) { console.error(e); } } };
@@ -524,6 +524,10 @@
         : k.zoner_fejl ? fmt(T.koeFaerdigFejl, { t: S.kl(sidst), n: T.domaener(k.zoner_fejl), f: S.fejl(k.fejl) }) : fmt(T.koeFaerdig, { t: S.kl(sidst) });
       klasse = k.zoner_fejl ? 'gul' : 'ok';
       k1 = net ? T.pilleNet : fmt(k.zoner_fejl ? T.pilleOpdateretFejl : T.pilleOpdateret, { t: S.tid(sidst || new Date().toISOString()), n: k.zoner_fejl });
+      /* V-KONTI.1: er nogle af flere API Tokens afvist, kører køen videre med de andre. Fodlinjen siger det med navnet (Overblik har banneret); er alle
+         afvist, stopper køen, og det står som i dag (tilstand 'fejl'). */
+      const a = afvist(k);
+      if (a.delvis && !net && !k.zoner_fejl) { klasse = 'gul'; t = a.tekst; k1 = fmt(T.pilleAfvist, { n: a.ider.length }); }
     } else {
       t = fmt(T.koeHenter, { z: k.zoner_faerdige, Z: k.zoner_i_alt, d: S.tal(k.doegn_faerdige), D: S.tal(k.doegn_i_alt) });
       if (k.navn) t += ' · ' + fmt(T.koeNu, { navn: k.navn });
@@ -531,7 +535,7 @@
     }
     koeStatus.saet({ status: KOE_STATUS[klasse], tekst: k1, fremdrift: klasse === 'henter' ? { maks, vaerdi: Math.min(k.doegn_faerdige, maks) } : null });
     pille.title = t;
-    status(besked, klasse === 'gul' || klasse === 'roed' ? t : '', klasse);
+    status(besked, (klasse === 'gul' || klasse === 'roed') && !(k.tilstand === 'faerdig' && afvist(k).delvis) ? t : '', klasse);
     udsend('koe', k);
   }
   /* "Hent nu": knappen og teksten ved siden af siger straks "Henter …". Rust svarer, hvad der skete (startet, kører allerede, intet at hente), så her gættes ikke: en startet runde er færdig, når køen melder det.
@@ -586,6 +590,33 @@
   }
   $('hent-nu').addEventListener('click', hentNu);
 
+  /* ── forbindelserne (V-KONTI.1): én forbindelse er ét API Token og et navn. Rust giver id, Cloudflares navn, brugerens navn, antal konti og
+     domæner, aldrig et token eller et konto-id. ── */
+  async function hentForbindelser() {
+    let v = null;
+    try { v = await invoke('forbindelser_hent'); } catch (e) { /* ingen liste: som én forbindelse */ }
+    tilstand.forbindelser = Array.isArray(v) ? v : [];
+    udsend('forbindelser', tilstand.forbindelser);
+  }
+  /* Det viste navn (D5) med samme regel som agent::vist_navn: brugerens navn, ellers Cloudflares (+ "1 anden"/"N andre", når API Tokenet ser flere
+     konti), ellers "Forbindelse {id}". Navnet bruges uændret, også når det er en e-mailadresse. */
+  function vistNavn(f) {
+    if (!f) return '';
+    if (f.eget_navn) return f.eget_navn;
+    if (f.cf_navn) return f.konti > 1 ? fmt(T.forbFlereKonti, { navn: f.cf_navn, n: f.konti - 1 }) : f.cf_navn;
+    return fmt(T.forbStandard, { n: f.id });
+  }
+  /* De afviste forbindelser: køens afviste (id'er), ellers forbindelsernes eget flag. Alle afvist = køen er stoppet (som i dag); delvis = nogle er
+     afvist, og resten hentes. Teksten nævner forbindelsens navn, når det er én. */
+  function afvist(k = tilstand.koe) {
+    const fs = tilstand.forbindelser, ider = k ? (Array.isArray(k.afviste) ? k.afviste : []) : fs.filter(f => f.afvist).map(f => f.id);
+    const stoppet = Boolean(k && k.tilstand === 'fejl' && k.fejl && k.fejl.kode === 'afvist');
+    const alle = stoppet || (ider.length > 0 && fs.length > 0 && fs.every(f => ider.includes(f.id)));
+    const navne = ider.map(id => vistNavn(fs.find(f => f.id === id) || { id }));
+    const tekst = !ider.length ? '' : ider.length === 1 ? fmt(T.afvistForb, { navn: navne[0] }) : fmt(T.afvistFlere, { n: ider.length, m: Math.max(fs.length, ider.length) });
+    return { ider, navne, alle, delvis: ider.length > 0 && !alle, tekst };
+  }
+
   /* ── overblikkets rækker og domænerne (delt af Overblik, Siden sidst, Angreb og Indstillinger) ── */
   /* Hele zonelisten med kontakten pr. domæne. Overblikkets rækker har kun dem, der er slået til. */
   async function hentDomaener() {
@@ -636,6 +667,7 @@
     try {
       const z = await invoke('zones');
       tilstand.gemte = { zoner: z, hentet: new Date().toISOString() };
+      await hentForbindelser(); // Cloudflares navn og antal domæner pr. forbindelse kommer med zonelisten
       await hentDomaener();
       await hentOverblik();
       status(st, z.length ? '' : T.ingenZoner, z.length ? '' : 'fejl');
@@ -661,6 +693,15 @@
     await genforsoeg.start();
   }
 
+  /* Efter Glem eller Omdøb af én forbindelse: forbindelserne, den gemte zoneliste, domænerne og overblikket læses igen fra den lokale database
+     (ingen kald til Cloudflare). */
+  async function opfrisk() {
+    try { tilstand.gemte = await invoke('zones_cache'); } catch (e) { /* den gamle står */ }
+    await hentForbindelser();
+    await hentDomaener();
+    await hentOverblik();
+  }
+
   /* "Siden sidst": Rust afgør, om visningen skal åbne af sig selv (vis: menuen, en notifikation eller forudindstillingen);
      tving = hændelsen fra menulinjen/notifikationen. Visningen tegner det hentede og markerer det som set. */
   async function sidenSidst(tving) {
@@ -677,6 +718,7 @@
     let sat = false;
     try { sat = (await invoke('token_status')).sat; } catch (e) { status($('opsaet-status'), S.fejl(e), 'fejl'); }
     tilstand.sat = sat;
+    if (sat) await hentForbindelser(); else { tilstand.forbindelser = []; udsend('forbindelser', []); }
     $('hent-nu').hidden = !sat;
     $('hent-nu').closest('.grp').hidden = !sat; // uden API Token er der intet at hente: hele gruppen væk, ikke kun knappen
     navTilstand();
@@ -685,15 +727,17 @@
     else { genforsoeg.afbryd(); tilstand.raekker = []; tilstand.domaener = []; tilstand.uvalgt = new Set(); tilstand.domaeneValg = 'samlet'; udsend('domaener'); sidenTal(); udsend('raekker', []); visKoe(null); route(); }
   }
 
-  /* Fælles for opsætningen og Indstillinger → Skift nøgle. true, når nøglen er gemt. */
-  async function gemNoegle(felt, knap, st) {
+  /* Fælles for guiden og Indstillinger → Forbindelse(r). Med id: "Skift API Token…" på den forbindelse (forbindelse_skift); uden: "Tilføj API Token…" og
+     guiden (forbindelse_tilfoej, som giver den nye forbindelses id). Bagefter henter vis() zonelisten (zones). Svaret er forbindelsens id, når API
+     Tokenet er gemt, ellers false. */
+  async function gemNoegle(felt, knap, st, id) {
     status(st, T.gemmer, 'venter'); knap.disabled = true;
     try {
-      await invoke('token_set', { token: felt.value });
+      const ny = id == null ? await invoke('forbindelse_tilfoej', { token: felt.value }) : (await invoke('forbindelse_skift', { id, token: felt.value }), id);
       felt.value = '';
       status(st, T.gemt, 'ok');
       await vis();
-      return true;
+      return ny == null ? true : ny;
     } catch (e) {
       status(st, S.fejl(e), 'fejl');
       /* En manglende rettighed: fejlen siger hvilken, og trinene står lige ved siden af. */
@@ -738,7 +782,7 @@
   window.hmRamme = {
     aabnCve, erCve: id => CVE.test(String(id)), visVaelger, landVaelger, aabnVejledning, baand, iBaand, baandValg,
     tilstand, paa, udsend, antalAbonnenter, registrer, gaaTil, erstatAdresse, route, titel: opdaterTitel, gemValgte, afvisNye, status, el, fmt, vis, hjaelp,
-    platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, tidsskift, bekraeft, dialog, genbesoeg: () => hist.genbesoeg, glemt: () => status($('opsaet-status'), T.glemt, 'ok'),
+    platform, mac, invoke, listen, hentNu, henterNu: () => hent.aktiv, hentOverblik, gemNoegle, hentForbindelser, vistNavn, afvist, opfrisk, tidsskift, bekraeft, dialog, genbesoeg: () => hist.genbesoeg, glemt: () => status($('opsaet-status'), T.glemt, 'ok'),
   };
 
   function start() {

@@ -305,7 +305,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   let til = true;
   const s = side('#indstillinger', {
     token_status: { sat: true }, zones_cache: { zoner: [], hentet: null }, zones: [], overblik: OVERBLIK, valg_hent: [], koe_status: null,
-    autostart_hent: () => til, autostart_saet: a => { til = a.til; return til; }, token_delete: null,
+    autostart_hent: () => til, autostart_saet: a => { til = a.til; return til; }, forbindelse_glem: null,
   });
   await sov(50);
   const { d, kald } = s;
@@ -323,7 +323,7 @@ const hv = tr => tr.querySelector('.hv-tekst');
   const v = d.getElementById('sprog'); v.value = 'en'; v.dispatchEvent(new s.w.Event('change')); await sov(10);
   tjek('Opstart, sprog_saet kaldes ved skift (en)', JSON.stringify(kald.filter(k => k[0] === 'sprog_saet').pop()) === '["sprog_saet",{"sprog":"en"}]' && kald.filter(k => k[0] === 'sprog_saet').length === 2);
   d.getElementById('glem').click(); d.getElementById('glem-ja').click(); await sov(20);
-  tjek('Opstart, "Glem nøglen…" + Glem kalder token_delete', kald.some(k => k[0] === 'token_delete'));
+  tjek('Opstart, "Glem nøglen…" + Glem kalder forbindelse_glem', kald.some(k => k[0] === 'forbindelse_glem'));
   tjek('Opstart, ingen style= i Indstillinger', !d.getElementById('indst-dialog').outerHTML.includes('style='));
 }
 {
@@ -921,17 +921,17 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   tjek('Indstillinger, Skift nøgle: folder feltet ud i kortet og giver det fokus', !form.hidden && knap.getAttribute('aria-expanded') === 'true' && d.activeElement === felt && form.closest('.kasse') && felt.type === 'password');
   felt.value = 'hemmelig';
   d.getElementById('skift-annuller').click();
-  tjek('Indstillinger, Skift nøgle: Annullér folder sammen, tømmer feltet og kalder intet', form.hidden && felt.value === '' && !kald.some(k => k[0] === 'token_set') && d.activeElement === knap);
+  tjek('Indstillinger, Skift nøgle: Annullér folder sammen, tømmer feltet og kalder intet', form.hidden && felt.value === '' && !kald.some(k => k[0] === 'forbindelse_skift') && d.activeElement === knap);
   knap.click(); felt.value = 'ny-noegle';
   form.dispatchEvent(new w.Event('submit', { cancelable: true, bubbles: true })); await sov(40);
-  tjek('Indstillinger, Skift nøgle: Gem kalder token_set, tømmer feltet og folder sammen', JSON.stringify(kald.filter(k => k[0] === 'token_set').pop()) === '["token_set",{"token":"ny-noegle"}]' && felt.value === '' && form.hidden && d.getElementById('skift-status').textContent === 'API Tokenet er gyldigt og gemt i nøgleringen.', d.getElementById('skift-status').textContent);
+  tjek('Indstillinger, Skift nøgle: Gem kalder forbindelse_skift på forbindelse 1, tømmer feltet og folder sammen', JSON.stringify(kald.filter(k => k[0] === 'forbindelse_skift').pop()) === '["forbindelse_skift",{"id":1,"token":"ny-noegle"}]' && felt.value === '' && form.hidden && d.getElementById('skift-status').textContent === 'API Tokenet er gyldigt og gemt i nøgleringen.', d.getElementById('skift-status').textContent);
 
   // Glem nøglen
   const dialog = d.getElementById('glem-dialog');
   d.getElementById('glem').click();
-  tjek('Indstillinger, Glem nøglen: bekræftelse i en dialog med den aftalte tekst', dialog.hasAttribute('open') && dialog.textContent.includes('Glem API Tokenet?') && d.getElementById('glem-p').textContent === 'Programmet holder op med at hente, og dine valg pr. domæne slettes. Historikken bliver.' && !kald.some(k => k[0] === 'token_delete'));
+  tjek('Indstillinger, Glem nøglen: bekræftelse i en dialog med den aftalte tekst', dialog.hasAttribute('open') && dialog.textContent.includes('Glem API Tokenet?') && d.getElementById('glem-p').textContent === 'Programmet holder op med at hente, og dine valg pr. domæne slettes. Historikken bliver.' && !kald.some(k => k[0] === 'forbindelse_glem'));
   d.getElementById('glem-nej').click(); await sov(10);
-  tjek('Indstillinger, Glem nøglen: Annullér lukker og kalder intet', !dialog.hasAttribute('open') && !kald.some(k => k[0] === 'token_delete'));
+  tjek('Indstillinger, Glem nøglen: Annullér lukker og kalder intet', !dialog.hasAttribute('open') && !kald.some(k => k[0] === 'forbindelse_glem'));
 
   // Data
   tjek('Indstillinger, Data: størrelse, periode og "N af M" fra data_status', d.getElementById('data-stoerrelse').textContent === '2,4 MB' && d.getElementById('data-historik').textContent === '4. okt. – 2. nov. 2026' && d.getElementById('data-domaener').textContent === '2 af 3', [d.getElementById('data-stoerrelse').textContent, d.getElementById('data-historik').textContent, d.getElementById('data-domaener').textContent].join(' | '));
@@ -946,7 +946,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
     && om.textContent.includes('Apache-2.0-licens · Ingen telemetri · Intet sendes til Wi24rd') && om.textContent.includes('Inter og JetBrains Mono') && om.textContent.includes('Natural Earth') && om.textContent.includes('Cloudflare® er et registreret varemærke tilhørende Cloudflare, Inc. Wi24rd Huginn and Muninn er ikke tilknyttet Cloudflare, Inc.') && !/registered trademark/.test(om.textContent), om.textContent);
   tjek('Indstillinger, ingen style= i Indstillinger', !d.getElementById('indst-dialog').outerHTML.includes('style='));
   d.getElementById('glem').click(); d.getElementById('glem-ja').click(); await sov(30);
-  tjek('Indstillinger, Glem nøglen: Glem kalder token_delete, dialogen lukker', !dialog.hasAttribute('open') && kald.filter(k => k[0] === 'token_delete').length === 1);
+  tjek('Indstillinger, Glem nøglen: Glem kalder forbindelse_glem(1), dialogen lukker', !dialog.hasAttribute('open') && JSON.stringify(kald.filter(k => k[0] === 'forbindelse_glem')) === '[["forbindelse_glem",{"id":1}]]');
 }
 {
   const s = side('#indstillinger', B2({ token_status: { sat: false }, zones_cache: { zoner: [], hentet: null }, data_status: { bytes: 900, foerste: null, sidste: null, domaener: 0 } }), 'en', 'macos');
@@ -1139,7 +1139,7 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
 {
   // Opsætningen: første trin bliver trin 0; nøglen gemmes uden at lave trin.
   let sat = false;
-  const s = side('', B2({ token_status: () => ({ sat }), token_set: () => { sat = true; return null; } })), { d, w } = s;
+  const s = side('', B2({ token_status: () => ({ sat }), forbindelse_tilfoej: () => { sat = true; return null; } })), { d, w } = s;
   await sov(50);
   tjek('Tilbage og frem, opsætning: adressen får en visning, trin 0, ‹ › deaktiveret', w.location.hash === '#overblik' && w.history.state?.hmTrin === 0 && d.getElementById('hist-tilbage').disabled && synlige(d).join() === 'opsaetning', w.location.hash);
   const laengde = w.history.length;
@@ -1205,7 +1205,7 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
   const gamle = /class="knap\b|'knap\b[^']*'|(?<![\w$\])])\.knap\b(?![(-])|primaer|chip-(roed|gul|groen|graa)|\bkontakt'|class="kontakt|input\.kontakt|hm-valgmulighed|class="segment|'segment'|\.segment\b(?!\()|radiol\b|input\.boks|'boks'/;
   tjek('B2b intet i ui/ bruger programmets gamle knapper, chips, kontakter, segmenter, radiolister eller afkrydsninger', uiKode.every(([, k]) => !gamle.test(k)), uiKode.filter(([, k]) => gamle.test(k)).map(([f, k]) => f + ': ' + gamle.exec(k)[0]).join(' | '));
   const ix = ui('index.html');
-  tjek('B2b index.html: knapper er .btn (17; dialogernes og guidens bygger kittet, og Angreb for alle og Til overblikket står i båndet), kontakter .tilfra (4, med Start ved login i guiden), radioer .afk-boks i .valgsaet (12), og hver <select> står i .vliste (3)', (ix.match(/<button class="btn( primary| danger)?"/g) || []).length === 17 && (ix.match(/<input class="tilfra" type="checkbox" role="switch"/g) || []).length === 4 && (ix.match(/<label class="afk"><input class="afk-boks" type="radio"/g) || []).length === 12 && (ix.match(/class="valgsaet/g) || []).length === 4 && (ix.match(/<select/g) || []).length === 3 && (ix.match(/<span class="vliste"><select/g) || []).length === 3);
+  tjek('B2b index.html: knapper er .btn (19; dialogernes og guidens bygger kittet, og Angreb for alle og Til overblikket står i båndet; V-KONTI.1: Omdøb… og Tilføj API Token…), kontakter .tilfra (4, med Start ved login i guiden), radioer .afk-boks i .valgsaet (12), og hver <select> står i .vliste (3)', (ix.match(/<button class="btn( primary| danger)?"/g) || []).length === 19 && (ix.match(/<input class="tilfra" type="checkbox" role="switch"/g) || []).length === 4 && (ix.match(/<label class="afk"><input class="afk-boks" type="radio"/g) || []).length === 12 && (ix.match(/class="valgsaet/g) || []).length === 4 && (ix.match(/<select/g) || []).length === 3 && (ix.match(/<span class="vliste"><select/g) || []).length === 3);
   const kitKode = ui('assets/kit2/kit.css');
   tjek('B2b kittets klasser findes i kit.css, og app.css tegner dem ikke om', ['.btn {', '.btn.primary', '.btn.danger', '.chip.ok', '.chip.warn', '.chip.danger', '.chip.none', '.tilfra {', '.afk-boks {', '.valgsaet {', '.vliste select {', '.seg {', '.seg-v {'].every(s => kitKode.includes(s)) && !/(^|\n)\.(chip|tilfra|afk|afk-boks|valgsaet|vliste|seg|seg-v)\b[^{\n]*\{/.test(appCss) && !/\.btn\b/.test(appCss) && /\.btn \{[^}]*white-space: nowrap/.test(kitKode));
   /* V-KIT2.1 B2d: sideskiftet og de små tomme tilstande er kittets. Tabellerne venter på kittet (K36). */
@@ -1226,7 +1226,7 @@ const regler = k => [...k.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => [m[1].trim
     d.getElementById('glem').focus(); d.getElementById('glem').click();
     const aaben = g.hasAttribute('open'), fokus = d.activeElement.id;
     g.dispatchEvent(new s.w.Event('cancel')); g.close(); await sov(10);
-    tjek('B2c Glem: dialogen åbner med fokus på Annullér, Esc lukker uden at glemme, og fokus går tilbage til knappen', aaben && fokus === 'glem-nej' && !g.hasAttribute('open') && !s.kald.some(k => k[0] === 'token_delete') && d.activeElement.id === 'glem', fokus + ' → ' + d.activeElement.id);
+    tjek('B2c Glem: dialogen åbner med fokus på Annullér, Esc lukker uden at glemme, og fokus går tilbage til knappen', aaben && fokus === 'glem-nej' && !g.hasAttribute('open') && !s.kald.some(k => k[0] === 'forbindelse_glem') && d.activeElement.id === 'glem', fokus + ' → ' + d.activeElement.id);
     const svar = s.w.hmRamme.bekraeft('Er du sikker?');
     const b = d.getElementById('bekraeft-dialog'), stod = b && b.hasAttribute('open') && d.getElementById('bekraeft-p').textContent === 'Er du sikker?';
     b.dispatchEvent(new s.w.Event('cancel')); b.close();
@@ -3775,7 +3775,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('Mærke, notifikation: kontakten gemmes i Rust', JSON.stringify(nt.kald.filter(k => k[0] === 'notifikation_rekog_saet').at(-1)) === '["notifikation_rekog_saet",{"til":true}]');
 
   /* Del C */
-  const op = side('', { token_status: { sat: false }, autostart_hent: true, aabn_api_token: null, token_set: () => { throw { kode: 'mangler_analytics' }; } }), ope = side('', { token_status: { sat: false }, autostart_hent: true, token_set: () => { throw { kode: 'mangler_zone' }; } }, 'en');
+  const op = side('', { token_status: { sat: false }, autostart_hent: true, aabn_api_token: null, forbindelse_tilfoej: () => { throw { kode: 'mangler_analytics' }; } }), ope = side('', { token_status: { sat: false }, autostart_hent: true, forbindelse_tilfoej: () => { throw { kode: 'mangler_zone' }; } }, 'en');
   await sov(80);
   const opS = op.d.getElementById('guide-trin-token'), ak = [...opS.querySelectorAll('button')].find(b => b.textContent === 'Opret API Token hos Cloudflare');
   tjek('API Token: knappen i guidens trin 2 åbner Cloudflare gennem Rust', ak && (ak.click(), true) && op.kald.some(k => k[0] === 'aabn_api_token'));
@@ -4153,7 +4153,7 @@ const DOMV = (fravalgte = [], x) => {
       /* DMARC-afsnittet og den åbne kolonnemenu. */
       const TEK5 = { domaener: [{ zone: 'z1', navn: 'eksempel.wi24rd.com', valg: { react: ['bruger', false] }, antal: { react: 4 } }], katalog: [{ tek: 'react', navn: 'React', gruppe: 'ramme', angreb: 4, set: true, vis: true, ny: false }] };
       const FIX5 = koer('fix5', tema, { email_oversigt: { mails: 1200, fejlet: 41, afsendere: 2, hentede_dage: 30, fejl: null, liste: [{ afsender: 'Ond Afsender', land: 'RU', mails: 40, fejlet: 40 }, { afsender: '', land: '', mails: 9, fejlet: 1 }] }, teknologi_side: TEK5 }, [{ navn: 'Angreb med DMARC', hash: 'vaernet?' + dom }, { navn: '#teknologi med åben kolonnemenu', hash: 'teknologi', aabn: ['.tek-kol-knap'] }]);
-      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [OPS]), koer('guide1', tema, G1.ekstra, [G1]), koer('guide2', tema, G2.ekstra, [G2]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST])];
+      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [OPS]), koer('guide1', tema, G1.ekstra, [G1]), koer('guide2', tema, G2.ekstra, [G2]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST]), ...[...new Set(SIDER.filter(s => s.id.startsWith('konti-')).map(s => s.ekstra))].map((e, i) => koer('konti' + i, tema, e, SIDER.filter(s => s.ekstra === e)))];
       /* Gradienten er lysest længst mod højre, så båndet måles også i det smalleste vindue og i standardvinduet. */
       const smalle = [1100, 1200].map(b => koer('baand' + b, tema, {}, [{ navn: `skallen ved ${b} px`, hash: 'vaernet?samlet=1' }], b));
       const sider = r.flatMap(x => (x ? x.sider : [])), ud = [...r, ...smalle].flatMap(x => (x ? x.ud : [])), klasser = new Set(sider.flatMap(s => s.klasser));
@@ -4231,7 +4231,7 @@ const DOMV = (fravalgte = [], x) => {
   const foerste = w => w.localStorage.removeItem('hm-guide');
   const ZL = [{ id: 'z1', navn: 'wi24rd.com', til: true, ny: false }, { id: 'z2', navn: 'xyz.wi24rd.com', til: true, ny: false }];
   let sat = false, auto = true;
-  const g = side('', B2({ token_status: () => ({ sat }), token_set: a => { if (a.token === 'forkert') throw { kode: 'afvist' }; sat = true; return null; }, domaener_hent: () => (sat ? ZL : []), domaener_saet: null, autostart_hent: () => auto, autostart_saet: a => { auto = a.til; return auto; }, notifikation_hent: { niveau: 'standard', roed: true, zoner: {} }, notifikation_saet: null }), 'da', 'windows', foerste);
+  const g = side('', B2({ token_status: () => ({ sat }), forbindelse_tilfoej: a => { if (a.token === 'forkert') throw { kode: 'afvist' }; sat = true; return null; }, domaener_hent: () => (sat ? ZL : []), domaener_saet: null, autostart_hent: () => auto, autostart_saet: a => { auto = a.til; return auto; }, notifikation_hent: { niveau: 'standard', roed: true, zoner: {} }, notifikation_saet: null }), 'da', 'windows', foerste);
   await sov(80);
   const { d, w } = g, $ = id => d.getElementById(id), trin = () => [...d.querySelectorAll('#guide .trin li')].map(li => li.textContent).join(), indhold = q => d.querySelector('#guide .trin-indhold ' + q);
   const send = (felt, v) => { felt.value = v; felt.closest('form').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true })); };
@@ -4244,7 +4244,7 @@ const DOMV = (fravalgte = [], x) => {
   send($('token'), 'forkert'); await sov(40);
   tjek('V-INDST.1 guiden, trin 2: et forkert API Token giver fejlen i trinnet, og Næste er stadig spærret', $('token-status').classList.contains('fejl') && $('token-status').textContent.length > 10 && $('guide-naeste').disabled && aabneDialoger(d) === 'guide-dialog', $('token-status').textContent);
   send($('token'), 'x'.repeat(40)); await sov(120);
-  tjek('V-INDST.1 guiden, trin 2: et API Token, der virker, frigør Næste; guiden bliver stående, feltet er tømt, og fanerne er slået til bag den', !$('guide-naeste').disabled && $('guide-spaerret').hidden && !$('guide-naeste').hasAttribute('aria-describedby') && aabneDialoger(d) === 'guide-dialog' && $('token').value === '' && synlige(d).join() === 'overblik' && d.querySelector('#vis-overblik').getAttribute('aria-disabled') !== 'true' && g.kald.filter(k => k[0] === 'token_set').length === 2, $('token-status').textContent + ' ' + synlige(d).join());
+  tjek('V-INDST.1 guiden, trin 2: et API Token, der virker, frigør Næste; guiden bliver stående, feltet er tømt, og fanerne er slået til bag den', !$('guide-naeste').disabled && $('guide-spaerret').hidden && !$('guide-naeste').hasAttribute('aria-describedby') && aabneDialoger(d) === 'guide-dialog' && $('token').value === '' && synlige(d).join() === 'overblik' && d.querySelector('#vis-overblik').getAttribute('aria-disabled') !== 'true' && g.kald.filter(k => k[0] === 'forbindelse_tilfoej').length === 2, $('token-status').textContent + ' ' + synlige(d).join());
   $('guide-naeste').click(); await sov(30);
   tjek('V-INDST.1 guiden, trin 3: samme domæneliste som dialogen Domæner, med en kontakt pr. domæne; de færdige trin kan vælges igen', $('guide-h').textContent === 'Vælg dine domæner' && d.querySelectorAll('#guide .trin-indhold #dom-del #domaener-liste input.tilfra').length === 2 && $('guide-domaener-venter').hidden && d.querySelectorAll('#guide .trin button.t.done').length === 2, $('guide-h').textContent + ' ' + d.querySelectorAll('#guide .trin-indhold #domaener-liste input').length);
   d.querySelector('#guide #domaener-liste input').click(); await sov(40);
@@ -4276,7 +4276,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek('V-INDST.1 uden API Token kan popuppen åbnes (sprog, tema, Forbindelse), og "Glem API Token…" er skjult', aabneDialoger(anden.d) === 'indst-dialog' && !anden.d.getElementById('sprog').disabled && anden.d.getElementById('glem').hidden && !anden.d.getElementById('skift-noegle').disabled);
 
   let pSat = true;
-  const p = side('#vaernet?samlet=1', B2({ token_status: () => ({ sat: pSat }), token_delete: () => { pSat = false; return null; } }));
+  const p = side('#vaernet?samlet=1', B2({ token_status: () => ({ sat: pSat }), forbindelse_glem: () => { pSat = false; return null; } }));
   await sov(80);
   const pd = p.d, knap = pd.getElementById('indst-knap');
   knap.focus(); knap.click(); await sov(10);
@@ -4288,7 +4288,7 @@ const DOMV = (fravalgte = [], x) => {
   pd.getElementById('indst-dialog').dispatchEvent(new p.w.Event('cancel')); pd.getElementById('indst-dialog').close(); await sov(10);
   tjek('V-INDST.1 tandhjulet åbner popuppen over visningen (fokus på overskriften, aria-expanded, adressen og historikken urørt); en bekræftelse ligger oven på, Esc lukker kun den øverste, og fokus går tilbage til tandhjulet', iPopup === `indst-dialog indst-h true #vaernet?samlet=1 ${p.w.history.length}` && oven === 'nulstil-dialog,indst-dialog' && efterEsc === 'indst-dialog' && aabneDialoger(pd) === '' && pd.activeElement.id === 'indst-knap' && knap.getAttribute('aria-expanded') === 'false' && synlige(pd).join() === 'vaernet', [iPopup, oven, efterEsc, pd.activeElement.id].join(' | '));
   knap.click(); await sov(10); pd.getElementById('glem').click(); pd.getElementById('glem-ja').click(); await sov(60);
-  tjek('V-INDST.1 "Glem API Token…" lukker popuppen, viser den tomme tilstand med beskeden, og guiden åbner igen', p.kald.some(k => k[0] === 'token_delete') && aabneDialoger(pd) === 'guide-dialog' && synlige(pd).join() === 'opsaetning' && pd.getElementById('opsaet-status').textContent.length > 5 && pd.getElementById('glem').hidden, aabneDialoger(pd) + ' ' + synlige(pd).join() + ' »' + pd.getElementById('opsaet-status').textContent + '«');
+  tjek('V-INDST.1 "Glem API Token…" lukker popuppen, viser den tomme tilstand med beskeden, og guiden åbner igen', p.kald.some(k => k[0] === 'forbindelse_glem') && aabneDialoger(pd) === 'guide-dialog' && synlige(pd).join() === 'opsaetning' && pd.getElementById('opsaet-status').textContent.length > 5 && pd.getElementById('glem').hidden, aabneDialoger(pd) + ' ' + synlige(pd).join() + ' »' + pd.getElementById('opsaet-status').textContent + '«');
 
   const dm = side('#overblik', DOMV(['z2']));
   await sov(80);
@@ -4337,7 +4337,12 @@ const DOMV = (fravalgte = [], x) => {
   tjek('V-SIGN.1 signer.sh: udgivelserne ligger uden for repoet, og en mappe i repoet afvises', /UD=\$\{UD:-\$HOME\/\$FILNAVN-udgivelser\}/.test(sh) && /case "\$UD\/" in "\$ROD"\/\*\) fejl "udgivelser=\$UD ligger i repoet/.test(sh));
   tjek('V-SIGN.1 signer.sh: programmets egne navne (bundlen med mellemrum under src-tauri/target, filnavne uden)', sh.includes('APPNAVN="Huginn and Muninn"') && sh.includes('FILNAVN="Huginn-Muninn"') && sh.includes('app="$ROD/src-tauri/target/release/bundle/macos/$APPNAVN.app"') && sh.includes('STANDARD_PROFIL="ham-notary"'));
   tjek('V-SIGN.1 .gitignore: tools/signer.lokal, og package.json har test:signer', fs.readFileSync(path.join(repo, '.gitignore'), 'utf8').split('\n').includes('/tools/signer.lokal') && JSON.parse(fs.readFileSync(path.join(repo, 'package.json'), 'utf8')).scripts['test:signer'] === 'node tests/signer/signer.mjs');
-  tjek('V-SIGN.1 README: de to kommandoer står under Byg på begge sprog, uden identitet og Team ID', ['README.md', 'README.da.md'].every(f => { const t = fs.readFileSync(path.join(repo, f), 'utf8'); return t.includes('sh tools/signer.sh proeve') && t.includes('npm run test:signer') && !/Developer ID Application:|\([A-Z0-9]{10}\)/.test(t); }));
+  /* V-KONTI.1 B2: afsnittet om at verificere det hentede (Jans valg, 5a7b6e4) må nævne udgiverens identitet og Team ID, for det er det, brugeren skal
+     sammenligne med. Under Byg og alle andre steder er de stadig forbudt. */
+  const afsnit = (t, overskrift) => { const i = t.indexOf('\n## ' + overskrift); if (i < 0) return null; const j = t.indexOf('\n## ', i + 4); return t.slice(i, j < 0 ? t.length : j); };
+  const IDENTITET = /Developer ID Application:|\([A-Z0-9]{10}\)/;
+  const readmes = [['README.md', 'Build (development)', 'Verify your download'], ['README.da.md', 'Byg (udvikling)', 'Verificér det, du har hentet']].map(([f, byg, verificer]) => { const t = fs.readFileSync(path.join(repo, f), 'utf8'), b = afsnit(t, byg), v = afsnit(t, verificer); return { f, b, v, uden: v ? t.replace(v, '') : t }; });
+  tjek('V-SIGN.1 README: de to kommandoer står under Byg på begge sprog, uden identitet og Team ID (kun verifikationsafsnittet må nævne dem)', readmes.every(r => r.b && r.b.includes('sh tools/signer.sh proeve') && r.b.includes('npm run test:signer') && !IDENTITET.test(r.b) && !IDENTITET.test(r.uden)), readmes.map(r => `${r.f}: Byg ${Boolean(r.b)}, verifikation ${Boolean(r.v)}, identitet uden for verifikationen ${IDENTITET.test(r.uden)}`).join(' · '));
 }
 
 // ── Fotobogen: listen følger programmet, og et gennemløb giver et billede af hver visning uden fejl ──
@@ -4885,6 +4890,132 @@ const DOMV = (fravalgte = [], x) => {
   const kilde = [process.env.HM_KILDE || fileURLToPath(import.meta.url), path.join(path.dirname(fileURLToPath(import.meta.url)), 'sider.mjs')].map(f => fs.readFileSync(f, 'utf8')).join('\n').split('\n').filter(l => !l.includes('/* uret */') && !l.includes('tjek(\'Fast ur')).join('\n');
   tjek('Fast ur: ingen test læser dagens dato uden om uret', !/new Date\(\)|\bDate\.now\(\)/.test(kilde.replace(/`<script>\(\(\)=>\{const D=Date[^`]*`/, '').replace(/static now\(\) \{ return urNu\(\); \}/, '').replace(/u1\.w\.eval\('[^']*'\)/g, '')), (kilde.match(/.*(new Date\(\)|\bDate\.now\(\)).*/) || [''])[0].slice(0, 120));
   }
+}
+
+// ── V-KONTI.1 B2: flere forbindelser (API Tokens) i Indstillinger, Domæner, Overblik og fodlinjen ──
+{
+  const ZD = [{ id: 'z1', navn: 'wi24rd.com', til: true, ny: false, forbindelse: 1 }, { id: 'z2', navn: 'xyz.wi24rd.com', til: false, ny: false, forbindelse: 1 }, { id: 'z3', navn: 'abe.wi24rd.com', til: true, ny: false, forbindelse: 2 }];
+  const TO = [{ id: 1, cf_navn: 'Eksempel ApS', eget_navn: null, konti: 1, domaener: 2, afvist: false }, { id: 2, cf_navn: "test@wi24rd.com's Account", eget_navn: null, konti: 1, domaener: 1, afvist: false }];
+  const KONTI = (fs, x) => B2({ forbindelser_hent: () => JSON.parse(JSON.stringify(fs)), domaener_hent: ZD, domaener_saet: null, ...x });
+  const $ = (s, id) => s.d.getElementById(id);
+  const aabnIndst = async s => { $(s, 'indst-knap').click(); await sov(20); };
+
+  // Én forbindelse: som i dag, plus Omdøb… og Tilføj API Token… (D8).
+  const en = side('#overblik', KONTI([TO[0]]));
+  await sov(80);
+  await aabnIndst(en);
+  const synligeIds = ids => ids.filter(id => !$(en, id).hidden);
+  tjek('V-KONTI.1 én forbindelse ser ud som før: "Forbindelse", Status-chippen og knapperne; ingen liste', $(en, 'forb-overskrift').textContent === 'Forbindelse' && synligeIds(['forb-status-raekke', 'forb-noegle-raekke', 'forb-tilfoej-raekke', 'forb-omdoeb', 'glem']).length === 5 && $(en, 'forb-liste').hidden && $(en, 'forb-chip').querySelector('.ord').textContent === 'Forbundet · 3 domæner' && $(en, 'skift-noegle').textContent === 'Skift API Token…' && $(en, 'glem').textContent === 'Glem API Token…' && $(en, 'forb-omdoeb').textContent === 'Omdøb…' && $(en, 'forb-tilfoej').textContent === 'Tilføj API Token…', $(en, 'forb-overskrift').textContent);
+  tjek('V-KONTI.1 én forbindelse: Domæner er som i dag (én tabel, fælles Vælg alle/Fravælg alle, ingen grupper)', !$(en, 'domaener-tabel').hidden && $(en, 'domaener-grupper').hidden && !$(en, 'domaener-alle-til').parentElement.hidden);
+  tjek('V-KONTI.1 én forbindelse: intet banner i Overblik', !en.d.querySelector('#afvist-linjer .ban'));
+  $(en, 'skift-noegle').click(); await sov(5);
+  tjek('V-KONTI.1 Skift API Token…: noten om Tilføj står i formularen (testbrugerens fejl)', !$(en, 'skift-form').hidden && !$(en, 'skift-note').hidden && $(en, 'skift-note').textContent === 'Har du en konto mere? Brug Tilføj API Token… i stedet. Skift erstatter API Tokenet på denne forbindelse.');
+  $(en, 'skift-annuller').click(); await sov(5);
+
+  // To forbindelser.
+  let fs2 = JSON.parse(JSON.stringify(TO));
+  const to = side('#overblik', KONTI(TO, { forbindelser_hent: () => JSON.parse(JSON.stringify(fs2)), forbindelse_glem: a => { fs2 = fs2.filter(f => f.id !== a.id); return null; }, forbindelse_omdoeb: a => { fs2.find(f => f.id === a.id).eget_navn = a.navn; return null; } }));
+  await sov(80);
+  await aabnIndst(to);
+  const raekker = () => [...to.d.querySelectorAll('#forb-liste .forb-raekke')];
+  const vist = raekker().map(r => [r.dataset.forbindelse, r.querySelector('.forb-navn').textContent, r.querySelector('.forb-domaener').textContent, r.querySelector('.forb-tilstand .ord').textContent].join('|'));
+  tjek('V-KONTI.1 to forbindelser: "Forbindelser", én række pr. forbindelse i id-orden med navn, antal domæner og tilstand', $(to, 'forb-overskrift').textContent === 'Forbindelser' && $(to, 'forb-status-raekke').hidden && $(to, 'forb-noegle-raekke').hidden && !$(to, 'forb-liste').hidden && vist.join(' · ') === "1|Eksempel ApS|2 domæner|Forbundet · 2|test@wi24rd.com's Account|1 domæne|Forbundet", vist.join(' · '));
+  tjek('V-KONTI.1 navnet med e-mailadresse vises uændret (D5)', raekker()[1].querySelector('.forb-navn').textContent === "test@wi24rd.com's Account" && $(to, 'forb-2-glem').getAttribute('aria-label') === "Glem test@wi24rd.com's Account");
+  const r1 = raekker()[0];
+  tjek('V-KONTI.1 klikbarhed: navnet er ikke klikbart; "2 domæner", chippen og de tre knapper er knapper med aria-label', !r1.querySelector('.forb-navn').closest('button, a') && r1.querySelector('.forb-domaener').tagName === 'BUTTON' && r1.querySelector('.forb-domaener').getAttribute('aria-label') === 'Vis domænerne for Eksempel ApS' && r1.querySelector('.forb-tilstand').dataset.gaa === 'overblik' && !r1.querySelector('.forb-tilstand').disabled && ['omdoeb', 'skift', 'glem'].map(n => $(to, `forb-1-${n}`).getAttribute('aria-label')).join(' / ') === 'Omdøb Eksempel ApS / Skift API Token for Eksempel ApS / Glem Eksempel ApS' && ['Omdøb…', 'Skift API Token…', 'Glem…'].every((t, i) => [...r1.querySelectorAll('.raekke-knapper > .btn')][i].textContent === t));
+  tjek('V-KONTI.1 rækkerne er en liste med navn (role list/listitem, aria-labelledby på navnet)', $(to, 'forb-liste').getAttribute('role') === 'list' && $(to, 'forb-liste').getAttribute('aria-label') === 'Dine forbindelser til Cloudflare' && r1.getAttribute('role') === 'listitem' && r1.getAttribute('aria-labelledby') === 'forb-1-navn');
+
+  // Skift API Token… på rækken: formularen står under rækken og kalder forbindelse_skift med rækkens id.
+  $(to, 'forb-2-skift').click(); await sov(5);
+  tjek('V-KONTI.1 Skift API Token… på række 2: formularen står lige under rækken, med noten, og knappen er udfoldet', !$(to, 'skift-form').hidden && raekker()[1].nextElementSibling === $(to, 'skift-form') && !$(to, 'skift-note').hidden && $(to, 'forb-2-skift').getAttribute('aria-expanded') === 'true' && to.d.activeElement === $(to, 'skift-felt'));
+  $(to, 'skift-felt').value = 'nyt-api-token'; $(to, 'skift-form').dispatchEvent(new to.w.Event('submit', { cancelable: true, bubbles: true })); await sov(60);
+  tjek('V-KONTI.1 Skift på række 2 kalder forbindelse_skift {id: 2}', JSON.stringify(to.kald.filter(k => k[0] === 'forbindelse_skift').pop()) === '["forbindelse_skift",{"id":2,"token":"nyt-api-token"}]' && $(to, 'skift-form').hidden && !to.kald.some(k => k[0] === 'forbindelse_tilfoej'));
+
+  // Tilføj API Token…: forbindelse_tilfoej og så zones; formularen uden noten om Tilføj. Ser den nye forbindelse mere end ét domæne, åbner Domæner ved dens gruppe.
+  {
+    let fs3 = [TO[0]];
+    const ny = side('#overblik', KONTI(TO, { forbindelser_hent: () => JSON.parse(JSON.stringify(fs3)), forbindelse_tilfoej: () => { fs3 = [...fs3, { id: 3, cf_navn: 'Tredje Konto', eget_navn: null, konti: 2, domaener: 2, afvist: false }]; return 3; }, domaener_hent: () => (fs3.length > 1 ? [...ZD.slice(0, 2), { id: 'z4', navn: 'ny.wi24rd.com', til: false, ny: false, forbindelse: 3 }, { id: 'z5', navn: 'ny2.wi24rd.com', til: false, ny: false, forbindelse: 3 }] : ZD.slice(0, 2)) }));
+    await sov(80);
+    await aabnIndst(ny);
+    const zonesFoer = ny.kald.filter(k => k[0] === 'zones').length;
+    $(ny, 'forb-tilfoej').click(); await sov(5);
+    tjek('V-KONTI.1 Tilføj API Token… folder formularen ud under knappen, uden noten om Tilføj', !$(ny, 'skift-form').hidden && $(ny, 'skift-note').hidden && $(ny, 'forb-tilfoej-raekke').nextElementSibling === $(ny, 'skift-form') && $(ny, 'forb-tilfoej').getAttribute('aria-expanded') === 'true' && ny.d.activeElement === $(ny, 'skift-felt'));
+    $(ny, 'skift-felt').value = 'api-token-nr-3'; $(ny, 'skift-form').dispatchEvent(new ny.w.Event('submit', { cancelable: true, bubbles: true })); await sov(120);
+    const iT = ny.kald.findIndex(k => k[0] === 'forbindelse_tilfoej'), iZ = ny.kald.findIndex((k, i) => i > iT && k[0] === 'zones');
+    tjek('V-KONTI.1 Tilføj kalder forbindelse_tilfoej og derefter zones', iT >= 0 && JSON.stringify(ny.kald[iT]) === '["forbindelse_tilfoej",{"token":"api-token-nr-3"}]' && iZ > iT && ny.kald.filter(k => k[0] === 'zones').length > zonesFoer && !ny.kald.some(k => k[0] === 'forbindelse_skift'), JSON.stringify(ny.kald.slice(iT, iT + 3)));
+    tjek('V-KONTI.1 en ny forbindelse med to domæner: Domæner åbner ved dens gruppe (navnet med "+ 1 anden"), og domænerne er ikke valgt', aaben(ny.d, 'domaener') && ny.d.activeElement === $(ny, 'dom-gruppe-3-h') && $(ny, 'dom-gruppe-3-h').textContent === 'Tredje Konto + 1 anden' && [...ny.d.querySelectorAll('#domaener-grupper [data-forbindelse="3"] input.tilfra')].every(k => !k.checked), aabneDialoger(ny.d) + ' ' + ny.d.activeElement?.id);
+  }
+
+  // Omdøb: tomt felt sender null; et navn sendes renset af Rust.
+  $(to, 'forb-1-omdoeb').click(); await sov(5);
+  tjek('V-KONTI.1 Omdøb… åbner en dialog med ét felt; tomt viser Cloudflares navn som pladsholder', aaben(to.d, 'omdoeb') && $(to, 'omdoeb-h').textContent === 'Omdøb forbindelsen' && $(to, 'omdoeb-felt').value === '' && $(to, 'omdoeb-felt').placeholder === 'Eksempel ApS' && to.d.querySelectorAll('#omdoeb-dialog input').length === 1 && to.d.activeElement === $(to, 'omdoeb-felt'));
+  $(to, 'omdoeb-felt').value = 'Kunden'; $(to, 'omdoeb-gem').click(); await sov(40);
+  tjek('V-KONTI.1 Omdøb med et navn sender navnet, og rækken viser det', JSON.stringify(to.kald.filter(k => k[0] === 'forbindelse_omdoeb').pop()) === '["forbindelse_omdoeb",{"id":1,"navn":"Kunden"}]' && !aaben(to.d, 'omdoeb') && raekker()[0].querySelector('.forb-navn').textContent === 'Kunden', raekker()[0].querySelector('.forb-navn').textContent);
+  $(to, 'forb-1-omdoeb').click(); await sov(5);
+  const foerTom = $(to, 'omdoeb-felt').value;
+  $(to, 'omdoeb-felt').value = '   '; $(to, 'omdoeb-gem').click(); await sov(40);
+  tjek('V-KONTI.1 Omdøb med tomt felt sender null, og Cloudflares navn står igen', foerTom === 'Kunden' && JSON.stringify(to.kald.filter(k => k[0] === 'forbindelse_omdoeb').pop()) === '["forbindelse_omdoeb",{"id":1,"navn":null}]' && raekker()[0].querySelector('.forb-navn').textContent === 'Eksempel ApS', raekker()[0].querySelector('.forb-navn').textContent);
+
+  // Domæner: to grupper i id-orden, hver med sit eget Vælg alle / Ingen; "2 domæner" åbner ved forbindelsens gruppe.
+  $(to, 'forb-2-domaener').click(); await sov(20);
+  const grp = [...to.d.querySelectorAll('#domaener-grupper .dom-gruppe')];
+  tjek('V-KONTI.1 domænevalget i to grupper: overskrift med navnet, egne domæner, egne knapper; fokus på gruppen, der blev klikket', aaben(to.d, 'domaener') && $(to, 'domaener-tabel').hidden && $(to, 'domaener-alle-til').parentElement.hidden && grp.map(g => g.querySelector('h3').textContent + ':' + [...g.querySelectorAll('tbody th')].map(t => t.textContent).join('+') + ':' + [...g.querySelectorAll('.raekke-knapper .btn')].map(b => b.textContent).join('/')).join(' · ') === "Eksempel ApS:wi24rd.com+xyz.wi24rd.com:Vælg alle/Ingen · test@wi24rd.com's Account:abe.wi24rd.com:Vælg alle/Ingen" && to.d.activeElement === $(to, 'dom-gruppe-2-h') && $(to, 'domaener-ser').textContent === '2 API Tokens ser 3 domæner i alt', grp.map(g => g.textContent).join(' | '));
+  grp[0].querySelectorAll('.raekke-knapper .btn')[0].click(); await sov(30);
+  tjek('V-KONTI.1 Vælg alle i gruppe 1 vælger kun gruppens domæner og beholder de andre', JSON.stringify(to.kald.filter(k => k[0] === 'domaener_saet').pop()?.[1].valgte?.sort()) === '["z1","z2","z3"]' && grp[1].querySelectorAll('.raekke-knapper .btn')[0].getAttribute('aria-label') === "Vælg alle domæner for test@wi24rd.com's Account", JSON.stringify(to.kald.filter(k => k[0] === 'domaener_saet')));
+  to.d.getElementById('domaener-dialog').close(); await sov(5);
+
+  // Glem… med navnet i overskriften; kalder forbindelse_glem med rækkens id og lader den anden stå.
+  await aabnIndst(to);
+  $(to, 'forb-2-glem').click(); await sov(5);
+  tjek('V-KONTI.1 Glem… spørger med forbindelsens navn i overskriften', aaben(to.d, 'glem') && $(to, 'glem-h').textContent === "Glem forbindelsen «test@wi24rd.com's Account»?" && $(to, 'glem-p').textContent === 'Programmet holder op med at hente dens domæner, og dine valg for dem slettes. Historikken bliver.' && !to.kald.some(k => k[0] === 'forbindelse_glem'), $(to, 'glem-h').textContent);
+  $(to, 'glem-ja').click(); await sov(60);
+  tjek('V-KONTI.1 Glem kalder forbindelse_glem med det rigtige id; popuppen og den anden forbindelse står, og kassen er tilbage ved én', JSON.stringify(to.kald.filter(k => k[0] === 'forbindelse_glem')) === '[["forbindelse_glem",{"id":2}]]' && aaben(to.d, 'indst') && $(to, 'forb-liste').hidden && !$(to, 'forb-status-raekke').hidden && $(to, 'forb-overskrift').textContent === 'Forbindelse' && !to.kald.slice(to.kald.findIndex(k => k[0] === 'forbindelse_glem')).some(k => k[0] === 'zones'), JSON.stringify(to.kald.filter(k => k[0] === 'forbindelse_glem')));
+  $(to, 'glem').click(); await sov(5);
+  tjek('V-KONTI.1 med én tilbage er Glem igen "Glem API Tokenet?"', $(to, 'glem-h').textContent === 'Glem API Tokenet?' && $(to, 'glem-p').textContent === 'Programmet holder op med at hente, og dine valg pr. domæne slettes. Historikken bliver.');
+  $(to, 'glem-nej').click();
+
+  // Én afvist af to: rød chip på rækken, banneret i Overblik, fodlinjen med navnet.
+  const af = side('#overblik', KONTI(TO, { koe_status: { zone: null, zoner_i_alt: 3, zoner_faerdige: 3, doegn_i_alt: 1, doegn_faerdige: 1, zoner_fejl: 0, tilstand: 'faerdig', afviste: [2] } }));
+  await sov(100);
+  const ban = [...af.d.querySelectorAll('#afvist-linjer .ban')];
+  tjek('V-KONTI.1 banneret ved én afvist af to: kittets banner med navnet og "Skift API Token…"', ban.length === 1 && ban[0].classList.contains('danger') && ban[0].getAttribute('role') === 'alert' && ban[0].querySelector('.ord').textContent === "Cloudflare afviste API Tokenet «test@wi24rd.com's Account». Dens domæner hentes ikke." && ban[0].querySelector('button').textContent === 'Skift API Token…' && ban[0].querySelector('button').getAttribute('aria-label') === "Skift API Token for test@wi24rd.com's Account", ban.map(b => b.textContent).join());
+  tjek('V-KONTI.1 fodlinjen følger samme regel: gul, "1 API Token afvist", navnet i title; ingen dobbelt linje i indholdet', af.d.getElementById('koe').dataset.status === 'warn' && af.d.querySelector('#koe').textContent.includes('1 API Token afvist') && koeTekst(af.d).textContent === "Cloudflare afviste API Tokenet «test@wi24rd.com's Account». Dens domæner hentes ikke." && af.d.getElementById('koe-besked').textContent === '', af.d.getElementById('koe').dataset.status + ' ' + koeTekst(af.d).textContent);
+  const foerBan = ban[0];
+  af.emit('hentekoe', { zone: null, zoner_i_alt: 3, zoner_faerdige: 3, doegn_i_alt: 1, doegn_faerdige: 1, zoner_fejl: 0, tilstand: 'faerdig', afviste: [2] }); await sov(10);
+  tjek('V-KONTI.1 banneret tegnes ikke om ved hver melding fra køen (role="alert" læses ikke op igen)', af.d.querySelector('#afvist-linjer .ban') === foerBan);
+  ban[0].querySelector('button').click(); await sov(30);
+  tjek('V-KONTI.1 "Skift API Token…" i banneret åbner Indstillinger med formularen på den afviste række', aaben(af.d, 'indst') && !af.d.getElementById('skift-form').hidden && af.d.querySelector('#forb-liste [data-forbindelse="2"]').nextElementSibling === af.d.getElementById('skift-form') && af.d.getElementById('forb-2-skift').getAttribute('aria-expanded') === 'true');
+  const roed = af.d.getElementById('forb-2-chip'), groen = af.d.getElementById('forb-1-chip');
+  tjek('V-KONTI.1 rød chip "Afvist" på den afviste række (åbner Skift), grøn på den anden (→ Overblik)', roed.querySelector('.ord').textContent === 'Afvist' && roed.classList.contains('danger') && !roed.dataset.gaa && roed.getAttribute('aria-label') === "Skift API Token for test@wi24rd.com's Account" && groen.classList.contains('ok') && groen.dataset.gaa === 'overblik');
+  af.d.getElementById('skift-annuller').click(); await sov(5);
+  roed.click(); await sov(5);
+  tjek('V-KONTI.1 klik på den røde chip åbner Skift API Token… på rækken', !af.d.getElementById('skift-form').hidden && af.d.querySelector('#forb-liste [data-forbindelse="2"]').nextElementSibling === af.d.getElementById('skift-form'));
+  af.emit('hentekoe', { zone: null, zoner_i_alt: 3, zoner_faerdige: 0, doegn_i_alt: 1, doegn_faerdige: 0, zoner_fejl: 0, tilstand: 'fejl', fejl: { kode: 'afvist', status: 403 }, afviste: [1, 2] }); await sov(10);
+  tjek('V-KONTI.1 alle afvist: intet banner, og køen står som i dag (rød, "stoppet")', !af.d.querySelector('#afvist-linjer .ban') && af.d.getElementById('koe').dataset.status === 'danger' && koeTekst(af.d).textContent.startsWith('Hentningen i baggrunden er stoppet: Cloudflare afviste API Tokenet'), koeTekst(af.d).textContent);
+  af.emit('hentekoe', { zone: null, zoner_i_alt: 3, zoner_faerdige: 3, doegn_i_alt: 1, doegn_faerdige: 1, zoner_fejl: 0, tilstand: 'faerdig' }); await sov(10);
+  tjek('V-KONTI.1 ingen afviste: banneret er væk, og fodlinjen er grøn', !af.d.querySelector('#afvist-linjer .ban') && af.d.getElementById('koe').dataset.status === 'ok');
+  const afEn = side('#overblik', KONTI(TO, { koe_status: { zone: null, zoner_i_alt: 3, zoner_faerdige: 3, doegn_i_alt: 1, doegn_faerdige: 1, zoner_fejl: 0, tilstand: 'faerdig', afviste: [2] } }), 'en');
+  await sov(100);
+  tjek('V-KONTI.1 banneret på engelsk', afEn.d.querySelector('#afvist-linjer .ban .ord')?.textContent === "Cloudflare rejected the API Token “test@wi24rd.com's Account”. Its domains are not fetched." && afEn.d.querySelector('#afvist-linjer .ban button').textContent === 'Change API Token…', afEn.d.querySelector('#afvist-linjer')?.textContent);
+
+  // Guiden: noten om flere konti under formularen, ikke klikbar.
+  const gd = $(en, 'guide-flere');
+  tjek('V-KONTI.1 guiden, trin "Dit API Token": noten om flere konti står under formularen og er ikke klikbar', gd && gd.closest('#guide-trin-token') && gd.textContent === 'Har du flere Cloudflare-konti? Tilføj dem bagefter under Indstillinger → Forbindelser.' && !gd.querySelector('a, button') && !gd.closest('a, button') && (en.d.getElementById('token-form').compareDocumentPosition(gd) & 4) !== 0);
+
+  // Det viste navn: samme tabel som agent::vist_navn (cargo test vist_navn_som_ui_et).
+  const tabel = JSON.parse(fs.readFileSync(path.join(repo, 'tests', 'faelles', 'vist-navn.json'), 'utf8')).tilfaelde;
+  for (const sp of ['da', 'en']) {
+    const x = side('', B2(), sp); await sov(5);
+    const forkert = tabel.filter(t => x.w.hmRamme.vistNavn(t) !== (t[sp] ?? (sp === 'da' ? `Forbindelse ${t.id}` : `Connection ${t.id}`))).map(t => `${t.id}: ${x.w.hmRamme.vistNavn(t)}`);
+    tjek(`V-KONTI.1 vistNavn (${sp}) giver samme navne som agent::vist_navn (${tabel.length} tilfælde)`, tabel.length >= 10 && !forkert.length, forkert.join(' · '));
+  }
+
+  // da/en har de samme nye nøgler, og ingen er tom.
+  const NYE = ['grpForbindelser', 'forbTilfoej', 'forbOmdoeb', 'forbOmdoebH', 'forbNavnFelt', 'forbNavnNote', 'forbNavnGem', 'forbNavnGemt', 'forbStandard', 'forbFlereKonti', 'forbForbundet', 'forbDomaenerAria', 'forbOmdoebAria', 'forbSkiftAria', 'forbGlem', 'forbGlemAria', 'forbListe', 'forbFlereH', 'forbFlereNote', 'forbSkiftNote', 'glemForbH', 'glemForbP', 'afvistForb', 'afvistFlere', 'pilleAfvist', 'domGruppeAlle', 'domGruppeIngen', 'domGruppeAlleAria', 'domGruppeIngenAria', 'domaenerSerFlere', 'guideFlere'];
+  const Tda = side('', B2(), 'da').w.hmSprog, Ten = side('', B2(), 'en').w.hmSprog;
+  tjek('V-KONTI.1 da/en-paritet: de nye nøgler findes på begge sprog med samme pladsholdere', NYE.every(k => typeof Tda.T[k] === 'string' && typeof Ten.T[k] === 'string' && Tda.T[k] && Ten.T[k] && [...new Set(Tda.T[k].match(/\{\w+/g) || [])].sort().join() === [...new Set(Ten.T[k].match(/\{\w+/g) || [])].sort().join()), NYE.filter(k => !Tda.T[k] || !Ten.T[k]).join());
+  tjek('V-KONTI.1 ental og flertal: "1 anden"/"2 andre", "1 API Token"/"2 API Tokens", "1 domæne"', Tda.fmt(Tda.T.forbFlereKonti, { navn: 'A', n: 1 }) === 'A + 1 anden' && Tda.fmt(Tda.T.forbFlereKonti, { navn: 'A', n: 2 }) === 'A + 2 andre' && Tda.fmt(Tda.T.pilleAfvist, { n: 1 }) === '1 API Token afvist' && Tda.fmt(Tda.T.pilleAfvist, { n: 2 }) === '2 API Tokens afvist' && Ten.fmt(Ten.T.pilleAfvist, { n: 2 }) === '2 API Tokens rejected' && Tda.fmt(Tda.T.domaenerSerFlere, { n: 1, m: 2 }) === '2 API Tokens ser 1 domæne i alt');
+  tjek('V-KONTI.1 sikkerhedsporten: de fem kommandoer er tilladt, token_set og token_delete er væk (capabilities, build.rs, handleren)', ['forbindelser_hent', 'forbindelse_tilfoej', 'forbindelse_skift', 'forbindelse_omdoeb', 'forbindelse_glem', 'token_status'].every(c => cap.permissions.includes('allow-' + c.replace(/_/g, '-')) && fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8').includes(`"${c}"`)) && !['allow-token-set', 'allow-token-delete'].some(c => cap.permissions.includes(c)) && !/"token_(set|delete)"/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8')) && !/generate_handler!\[[^\]]*\btoken_(set|delete)\b/.test(fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'lib.rs'), 'utf8')) && !/token_(set|delete)/.test(ui('assets/ramme.js') + ui('assets/visning-indstillinger.js')));
 }
 
 console.log(`\n${ok} bestået, ${fejl} fejlet`);

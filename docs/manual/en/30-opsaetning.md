@@ -45,6 +45,8 @@ Each step is shown with screenshots in [Create an API Token at Cloudflare – st
 
 The program checks the API Token with Cloudflare and stores it in your computer's keychain (macOS Keychain or Windows Credential Manager). It never leaves the program's Rust part, and the window cannot read it back.
 
+**More than one Cloudflare account?** The guide takes one API Token. Below the field it says: "More than one Cloudflare account? Add them afterwards under Settings → Connections." The line cannot be clicked. When the guide is done, you add the other accounts with **Add API Token…** under **Settings** › **Connection**, one API Token per account. See [Settings](50-indstillinger.md#connection).
+
 If you get an error text, it is explained in [Troubleshooting](80-fejlfinding.md). The most common ones are that the API Token lacks one of the two permissions, or that the domain is not included under **Include** (**All zones** or **Specific zone**).
 
 ## Step 3 – Choose domains

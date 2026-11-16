@@ -14,6 +14,8 @@
 
 **Calm** · The status when nothing is unusual.
 
+**Connection** · One API Token and a name in the program, one per Cloudflare account. The name is the account's name at Cloudflare until you give the connection your own with **Rename…**. The domains from all connections are shown together.
+
 **CVE** · A number for a known security hole, for example CVE-2025-55182. A click opens the hole's page on cve.org.
 
 **Data centre** · One of Cloudflare's many places in the world that your site answers from. Attacks are stopped in the data centre nearest the attacker.
@@ -34,7 +36,7 @@
 
 **In disguise** · A robot calling itself Googlebot, say, without being it.
 
-**Keychain** · The place your operating system keeps passwords safely: macOS Keychain or Windows Credential Manager. This is where the API Token lives.
+**Keychain** · The place your operating system keeps passwords safely: macOS Keychain or Windows Credential Manager. This is where the API Token lives, one per connection.
 
 **Known robots** · Robots Cloudflare has verified, for example Googlebot. Robots that pretend to be an ordinary browser are not included.
 

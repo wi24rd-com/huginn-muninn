@@ -408,6 +408,29 @@ mod tests {
         }
     }
 
+    /// D5: det viste navn følger samme tabel som UI'ets `hmRamme.vistNavn` (`tests/faelles/vist-navn.json`, som `npm run test:ui` også prøver), så
+    /// menulinjen og vinduet altid giver forbindelsen samme navn. `null` i tabellen: intet navn (UI'et viser "Forbindelse {id}").
+    #[test]
+    fn vist_navn_som_ui_et() {
+        let tabel: serde_json::Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../tests/faelles/vist-navn.json"
+        )))
+        .unwrap();
+        let tilfaelde = tabel["tilfaelde"].as_array().unwrap();
+        assert!(tilfaelde.len() >= 10);
+        for t in tilfaelde {
+            let f = forb(
+                t["id"].as_i64().unwrap(),
+                t["cf_navn"].as_str(),
+                t["eget_navn"].as_str(),
+                t["konti"].as_i64().unwrap(),
+            );
+            assert_eq!(vist_navn(&f, Sprog::Da).as_deref(), t["da"].as_str(), "{t}");
+            assert_eq!(vist_navn(&f, Sprog::En).as_deref(), t["en"].as_str(), "{t}");
+        }
+    }
+
     /// V-KONTI.1: én afvist forbindelse nævnes ved sit viste navn (brugerens, ellers Cloudflares, "+ N andre" ved flere konti), flere som "n af m".
     /// Med én forbindelse uden navn er teksten som i 1.0.0. Andre forbindelser blev hentet: teksten står efter "Hentet".
     #[test]

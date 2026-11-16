@@ -8,7 +8,15 @@
 2. Download the new version, and replace **Huginn and Muninn** in your Applications folder.
 3. Open the program again.
 
-Your history, your settings and your API Token stay where they are. The update does not touch the database or the keychain.
+Your history, your settings and your API Token stay where they are. Replacing the application does not touch the database or the keychain.
+
+## The database is upgraded on first start
+
+The version with more than one connection upgrades the local database by itself the first time it starts. Nothing is lost: your API Token becomes connection 1 with all your choices.
+
+Afterwards version 1.0.0 cannot open the database. It says "The local database is from a newer version of the program (schema 19)." and leaves the file alone.
+
+**Might you want to go back to 1.0.0?** Then take a copy of the database file `huginn-muninn.sqlite` before you open the new version for the first time. The program must be closed while you copy. Where the file is, is in [Data and history](70-data.md).
 
 ## If the database is newer than the program
 

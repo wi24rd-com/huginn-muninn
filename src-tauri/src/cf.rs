@@ -775,7 +775,7 @@ impl Klient {
         Ok(svar.is_ok())
     }
 
-    /// Et nyt token, før det gemmes: verificeret og med de to rettigheder (`token_set`, `forbindelse_tilfoej`, `forbindelse_skift`). Se `efter_verificering`.
+    /// Et nyt token, før det gemmes: verificeret og med de to rettigheder (`forbindelse_tilfoej`, `forbindelse_skift`). Se `efter_verificering`.
     pub async fn godkend(&self, t: &Hemmelig, nu: i64) -> Result<(), Fejl> {
         let v = self.verificer(t).await;
         efter_verificering(v, || self.rettigheder(t, nu)).await

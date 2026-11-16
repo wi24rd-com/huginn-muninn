@@ -2,9 +2,9 @@
 
 Åbn Indstillinger med tandhjulet øverst til højre eller med ⌘, (Windows: Ctrl+,). Indstillinger er et vindue oven på den visning, du står i, og kan også åbnes, før du har forbundet med Cloudflare. **Luk** står fast nederst; Esc lukker også.
 
-Alle valg gemmes med det samme på din computer. Der er ingen Gem-knap, bortset fra ved API Tokenet.
+Alle valg gemmes med det samme på din computer. Der er ingen Gem-knap, bortset fra ved API Tokenet og navnet på en forbindelse.
 
-Vinduet har syv grupper: **Udseende og sprog**, **Dato og land**, **Start**, **Notifikationer**, **Forbindelse**, **Data** og **Første start**. Tre ting ligger ikke her, men hvor du bruger dem: [Domæner](#domæner), [Notifikationer pr. domæne](#notifikationer-pr-domæne) og [Om](#om).
+Vinduet har syv grupper: **Udseende og sprog**, **Dato og land**, **Start**, **Notifikationer**, **Forbindelse** (**Forbindelser**, når der er flere), **Data** og **Første start**. Tre ting ligger ikke her, men hvor du bruger dem: [Domæner](#domæner), [Notifikationer pr. domæne](#notifikationer-pr-domæne) og [Om](#om).
 
 ## Udseende og sprog, Dato og land, Start
 
@@ -40,15 +40,57 @@ Nederst står: "Du kan også slå notifikationerne helt fra i Systemindstillinge
 ![Forbindelse](../img/indstillinger-forbindelse--light-da-1200x860.webp)
 *Status og API Token med **Skift API Token…** foldet ud.*
 
+En forbindelse er ét API Token og et navn. Du har én forbindelse pr. Cloudflare-konto. Domænerne fra alle forbindelser vises samlet; Overblik og de andre visninger deler dem ikke op efter forbindelse. Gruppen hedder **Forbindelse**, når der er én, og **Forbindelser**, når der er flere.
+
+### Med én forbindelse
+
 | Felt | Hvad det gør |
 |---|---|
 | **Status** | Chippen viser fx **Forbundet · 3 domæner**. Linjen siger, at API Tokenet ligger i din computers nøglering (macOS Nøglering eller Windows Credential Manager). |
-| **API Token til Cloudflare** – **Skift API Token…** | Åbner feltet, hvor du indsætter et nyt API Token og klikker **Gem og forbind**. **Annullér** lukker det igen. Det gamle erstattes. |
-| **Glem API Token…** | Programmet spørger **Glem API Tokenet?** Vælger du **Glem**, holder programmet op med at hente, API Tokenet slettes fra nøgleringen, og dine valg pr. domæne slettes (domænevalg, notifikationer pr. domæne, login-stier, teknologi-valg). Historikken bliver. Du kan forbinde igen med et nyt API Token. |
+| **API Token til Cloudflare** – **Skift API Token…** | Åbner feltet, hvor du indsætter et nyt API Token og klikker **Gem og forbind**. **Annullér** lukker det igen. Det gamle erstattes. Se [Skift og tilføj](#skift-og-tilføj). |
+| **Omdøb…** | Giver forbindelsen dit eget navn. Se [Navnet](#navnet). |
+| **Glem API Token…** | Programmet spørger **Glem API Tokenet?** Vælger du **Glem**, holder programmet op med at hente, API Tokenet slettes fra nøgleringen, og dine valg pr. domæne slettes (domænevalg, notifikationer pr. domæne, login-stier, teknologi-valg). Historikken bliver. Opsætningen og guiden vises igen, og du kan forbinde igen med et nyt API Token. |
+| **Flere Cloudflare-konti** – **Tilføj API Token…** | Linjen siger "Ét API Token pr. konto. Domænerne vises samlet." Knappen tilføjer en forbindelse mere. Se [Skift og tilføj](#skift-og-tilføj). |
 | **Opret API Token hos Cloudflare** og **Sådan opretter du et API Token** | Samme hjælp som i opsætningen; se [Opsætning](30-opsaetning.md). |
 
 ![Glem API Tokenet?](../img/glem-dialog--light-da-1200x860.webp)
 *Dialogen, før API Tokenet glemmes.*
+
+### Med flere forbindelser
+
+Hver forbindelse har sin egen række. Under rækkerne står **Tilføj API Token…**.
+
+| Felt | Hvad det gør |
+|---|---|
+| Navnet | Forbindelsens navn. Kan ikke klikkes. |
+| **N domæner** | Åbner dialogen [Domæner](#domæner) ved forbindelsens gruppe. |
+| Chippen **Forbundet** / **Afvist** | Grøn **Forbundet**: klik åbner Overblik. Rød **Afvist**: Cloudflare afviste API Tokenet; klik åbner **Skift API Token…** i rækken. Se [Fejlfinding](80-fejlfinding.md). |
+| **Omdøb…** | Giver forbindelsen dit eget navn. Se [Navnet](#navnet). |
+| **Skift API Token…** | Erstatter API Tokenet på denne forbindelse. Se [Skift og tilføj](#skift-og-tilføj). |
+| **Glem…** | Programmet spørger **Glem forbindelsen «navn»?** med teksten "Programmet holder op med at hente dens domæner, og dine valg for dem slettes. Historikken bliver." Vælger du **Glem**, slettes forbindelsens API Token fra nøgleringen. Kun domæner, som ingen anden forbindelse ser, mister deres valg. De andre forbindelser henter videre. |
+
+Glemmer du den sidste forbindelse, er det præcis som med én forbindelse: programmet spørger **Glem API Tokenet?**, opsætningen og guiden vises igen, og historikken bliver.
+
+Ser to forbindelser det samme domæne, vises det én gang og hører til den ældste forbindelse. Bliver den glemt eller afvist, overtager den anden.
+
+### Skift og tilføj
+
+**Tilføj API Token…** åbner samme formular som i guiden: feltet **API Token (kun læsning)**, knappen **Gem og forbind** og hjælpen **Opret API Token hos Cloudflare** med trinene. Programmet tjekker API Tokenet hos Cloudflare, gemmer det i nøgleringen og henter den nye forbindelses domæner.
+
+Den nye forbindelses domæner er ikke valgt af sig selv. Ser den præcis ét domæne, programmet ikke kendte, vælges det for dig. Ser den flere, åbner dialogen **Domæner** ved forbindelsens gruppe, så du kan vælge.
+
+**Skift API Token…** erstatter kun API Tokenet på sin egen forbindelse. I formularen står: "Har du en konto mere? Brug Tilføj API Token… i stedet. Skift erstatter API Tokenet på denne forbindelse." Hører det nye API Token til en anden Cloudflare-konto, forsvinder den gamle kontos domæner fra listen, og valgene for forbindelsen begynder forfra. Tallene, der allerede er hentet, og historikken bliver.
+
+### Navnet
+
+**Omdøb…** åbner dialogen **Omdøb forbindelsen** med ét felt, **Navn**, og noten "Tomt felt: navnet fra Cloudflare." Gem med **Gem**. Tømmer du feltet, vises navnet fra Cloudflare igen.
+
+Programmet viser:
+
+- dit eget navn, hvis du har givet forbindelsen et,
+- ellers kontoens navn hos Cloudflare, uændret, også når det er en mailadresse,
+- "… + 1 anden" eller "… + 2 andre", hvis ét API Token ser flere konti,
+- "Forbindelse 1", "Forbindelse 2" osv., hvis programmet endnu ikke kender noget navn.
 
 ## Data
 
@@ -82,6 +124,8 @@ Nederst står: "Du kan også slå notifikationerne helt fra i Systemindstillinge
 | **Vis i Huginn** – én kontakt pr. domæne | Vælg de domæner, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere, vises ingen steder og giver ingen notifikationer; dets tal bliver liggende, og vælger du det igen, hentes det, der mangler, højst de seneste 30 dage. Et domæne, der er nyt på kontoen, er mærket **NY**. |
 | **Vælg alle** / **Fravælg alle** | Alle kontakter på én gang. |
 | Linjen "API Tokenet ser N domæner" | Hvor mange domæner API Tokenet kan se. Ser det præcis ét, er det valgt for dig. |
+| Med flere forbindelser: én overskrift og én liste pr. forbindelse | Overskriften er forbindelsens navn. Hver liste har sine egne **Vælg alle** og **Ingen**; de fælles knapper **Vælg alle** og **Fravælg alle** står da ikke. |
+| Linjen "M API Tokens ser N domæner i alt" | Står med flere forbindelser i stedet for linjen ovenfor. |
 
 Hvad dit site bruger af teknologi, siger du i [Teknologi pr. domæne](40-visninger/teknologi.md), som du åbner med **Ret teknologier** i båndet på **Angreb**.
 

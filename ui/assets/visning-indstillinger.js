@@ -1,8 +1,9 @@
 /* Huginn and Muninn — Indstillinger, Domæner, Om og guiden ved første start (V-INDST.1). Markup'en står i index.html (#indst-dele
    og #guide-dele, skjulte holdere); her flyttes den ind i kittets dialoger, så hver kontrol beholder sit id og sin logik:
    · popuppen Indstillinger bag tandhjulet i titellinjen (#indst-knap, ⌘, / Ctrl+,): Udseende og sprog, Dato og land, Start,
-     Notifikationer, Forbindelse, Data og Første start. Alt gemmes med det samme. Sprog og datoformat genindlæser, og popuppen
-     åbner igen bagefter (sessionStorage). "Glem API Token…" og "Nulstil historik…" spørger i en dialog oven på popuppen.
+     Notifikationer, Forbindelse(r), Data og Første start. Alt gemmes med det samme. Sprog og datoformat genindlæser, og popuppen
+     åbner igen bagefter (sessionStorage). "Glem…" og "Nulstil historik…" spørger i en dialog oven på popuppen; "Omdøb…" har sin egen.
+     Forbindelse(r) (V-KONTI.1): én forbindelse = ét API Token og et navn; Tilføj, Skift, Omdøb og Glem pr. forbindelse.
    · dialogen Domæner (Overblik › Vælg domæner, og alle gamle veje med afsnit=domaener): valget pr. domæne. "Giv besked" pr. valgt domæne er sin egen
      dialog bag klokken i båndet (Overblik › Notifikationer). Ingen valgte er en normal tilstand, så der er ingen bekræftelse. Samme del står i guidens trin 3.
    · dialogen Om bag #om-knap og programmenuens Om.
@@ -92,31 +93,57 @@
     catch (e) { status($('domaener-status'), S.fejl(e), 'fejl'); tegnDomaener(true); }
   }
   let domNoegle = null; // listen, som "Domæner" sidst blev tegnet med: rammen melder ofte, og en omtegning tager fokus
+  const valgteNu = () => new Set(R.tilstand.domaener.filter(x => x.til).map(x => x.id));
+  function domRaekke(d) {
+    const k = el('input', { className: 'tilfra', type: 'checkbox', checked: d.til });
+    k.setAttribute('role', 'switch');
+    k.setAttribute('aria-label', fmt(T.domaenerFor, { navn: d.navn }));
+    k.addEventListener('change', () => {
+      const valgte = valgteNu();
+      if (k.checked) valgte.add(d.id); else valgte.delete(d.id);
+      gemDomaener(valgte);
+    });
+    const navn = d.til ? window.hmTegn.knap(window.hmTegn.domaene(d.navn), { gaa: 'vaernet?' + new URLSearchParams({ zone: d.id, navn: d.navn }) }, 'link dyk-celle', fmt(T.aabnFor, { navn: d.navn })) : window.hmTegn.domaene(d.navn);
+    const th = el('th', { scope: 'row' }, navn);
+    if (d.ny) th.append(' ', el('span', { className: 'ny', textContent: T.ny }));
+    return el('tr', {}, th, el('td', {}, k));
+  }
+  const tomRaekke = () => el('tr', {}, el('td', { className: 'note', textContent: T.prDomaeneTom, colSpan: 2 }));
+  /* Med mere end én forbindelse (V-KONTI.1, punkt 3): én overskrift med det viste navn og én tabel pr. forbindelse i id-orden, hver med sit eget
+     "Vælg alle / Ingen". En delt zone står under sin ejer (domaener_hent.forbindelse); en zone uden ejer står under den første. Med én: som i dag. */
+  function domGrupper(liste) {
+    const fs = R.tilstand.forbindelser, foerste = fs[0].id;
+    return fs.map(f => {
+      const egne = liste.filter(d => (fs.some(x => x.id === d.forbindelse) ? d.forbindelse : foerste) === f.id), navn = R.vistNavn(f), hId = `dom-gruppe-${f.id}-h`;
+      const antalTil = egne.filter(d => d.til).length;
+      const alle = window.Kit.knap({ tekst: T.domGruppeAlle, aria: fmt(T.domGruppeAlleAria, { navn }), deaktiveret: !egne.length || antalTil === egne.length, ved: () => { const v = valgteNu(); egne.forEach(d => v.add(d.id)); gemDomaener(v); } });
+      const ingen = window.Kit.knap({ tekst: T.domGruppeIngen, aria: fmt(T.domGruppeIngenAria, { navn }), deaktiveret: !antalTil, ved: () => { const v = valgteNu(); egne.forEach(d => v.delete(d.id)); gemDomaener(v); } });
+      const h = el('h3', { className: 'etik dom-gruppe-h', id: hId, textContent: navn, tabIndex: -1 });
+      const hoved = el('thead', { className: 'sr-only' }, el('tr', {}, el('th', { scope: 'col', textContent: T.thDomaene }), el('th', { scope: 'col', textContent: T.domaenerVis })));
+      const tabel = el('table', { className: 'mini' }, hoved, el('tbody', {}, ...(egne.length ? egne.map(domRaekke) : [tomRaekke()])));
+      tabel.setAttribute('aria-labelledby', hId);
+      const sek = el('section', { className: 'dom-gruppe' }, el('div', { className: 'raekke' }, h, el('div', { className: 'raekke-knapper' }, alle, ingen)), tabel);
+      sek.dataset.forbindelse = String(f.id);
+      sek.setAttribute('aria-labelledby', hId);
+      return sek;
+    });
+  }
   function tegnDomaener(tving) {
-    const liste = [...R.tilstand.domaener].sort((a, b) => a.navn.localeCompare(b.navn)), noegle = liste.map(d => `${d.id}\t${d.navn}\t${d.til}\t${d.ny}`).join('\n');
+    const liste = [...R.tilstand.domaener].sort((a, b) => a.navn.localeCompare(b.navn)), fs = R.tilstand.forbindelser, flere = fs.length > 1;
+    const noegle = (flere ? fs.map(f => `${f.id}\t${R.vistNavn(f)}`).join('\n') + '\n\n' : '') + liste.map(d => `${d.id}\t${d.navn}\t${d.til}\t${d.ny}\t${d.forbindelse}`).join('\n');
     const antalTil = liste.filter(d => d.til).length;
     $('domaener-alle-til').disabled = antalTil === liste.length;
     $('domaener-alle-fra').disabled = !antalTil;
+    $('domaener-alle-til').parentElement.hidden = flere; // med flere forbindelser har hver gruppe sine egne
     $('domaener-ser').hidden = !liste.length;
-    $('domaener-ser').textContent = T.domaenerSer(liste.length);
+    $('domaener-ser').textContent = flere ? fmt(T.domaenerSerFlere, { n: liste.length, m: fs.length }) : T.domaenerSer(liste.length);
     if (noegle === domNoegle && !tving) return;
     domNoegle = noegle;
-    const tb = $('domaener-liste');
-    if (!liste.length) { tb.replaceChildren(el('tr', {}, el('td', { className: 'note', textContent: T.prDomaeneTom, colSpan: 2 }))); return; }
-    tb.replaceChildren(...liste.map(d => {
-      const k = el('input', { className: 'tilfra', type: 'checkbox', checked: d.til });
-      k.setAttribute('role', 'switch');
-      k.setAttribute('aria-label', fmt(T.domaenerFor, { navn: d.navn }));
-      k.addEventListener('change', () => {
-        const valgte = new Set(liste.filter(x => x.til).map(x => x.id));
-        if (k.checked) valgte.add(d.id); else valgte.delete(d.id);
-        gemDomaener(valgte);
-      });
-      const navn = d.til ? window.hmTegn.knap(window.hmTegn.domaene(d.navn), { gaa: 'vaernet?' + new URLSearchParams({ zone: d.id, navn: d.navn }) }, 'link dyk-celle', fmt(T.aabnFor, { navn: d.navn })) : window.hmTegn.domaene(d.navn);
-      const th = el('th', { scope: 'row' }, navn);
-      if (d.ny) th.append(' ', el('span', { className: 'ny', textContent: T.ny }));
-      return el('tr', {}, th, el('td', {}, k));
-    }));
+    $('domaener-tabel').hidden = flere;
+    $('domaener-grupper').hidden = !flere;
+    if (flere) { $('domaener-liste').replaceChildren(); $('domaener-grupper').replaceChildren(...domGrupper(liste)); return; }
+    $('domaener-grupper').replaceChildren();
+    $('domaener-liste').replaceChildren(...(liste.length ? liste.map(domRaekke) : [tomRaekke()]));
   }
   $('domaener-alle-til').addEventListener('click', () => gemDomaener(R.tilstand.domaener.map(d => d.id)));
   $('domaener-alle-fra').addEventListener('click', () => gemDomaener([]));
@@ -155,41 +182,155 @@
     b.setAttribute('aria-label', fmt(T.dykAabnTekst, { navn: tekst }));
   }
 
-  /* ── Forbindelse ── */
+  /* ── Forbindelse(r) (V-KONTI.1) ──
+     Én forbindelse ser ud som i dag (D8): Status-chippen og "Skift API Token…"/"Glem API Token…", plus "Omdøb…" og "Tilføj API Token…". Med flere står
+     én række pr. forbindelse: navnet (ikke klikbart), "{n} domæner" (åbner Domæner ved forbindelsens gruppe), tilstanden som chip (grøn → Overblik,
+     rød → "Skift API Token…" på rækken) og knapperne Omdøb…, Skift API Token… og Glem…. Formularen er den samme for Tilføj og Skift og flyttes hen
+     under den række, den hører til. */
+  const forbindelser = () => R.tilstand.forbindelser;
+  const flere = () => forbindelser().length > 1;
+  /* Den eneste forbindelses id. Kendes listen ikke (forbindelser_hent fejlede), er det 1: nøgleringens oprindelige post. */
+  const enesteId = () => (forbindelser()[0] ? forbindelser()[0].id : 1);
+  const navnPaa = id => R.vistNavn(forbindelser().find(f => f.id === id) || { id });
+  const erAfvist = id => R.afvist().ider.includes(id) || (!flere() && Boolean(R.tilstand.koe && R.tilstand.koe.fejl && R.tilstand.koe.fejl.kode === 'afvist'));
+  let skiftMaal = null; // null: formularen er lukket; { id }: Skift på den forbindelse; { ny: true }: Tilføj
+  let skiftKnap = null;
   function tegnForbindelse() {
-    const st = R.tilstand, c = $('forb-chip'), afvist = Boolean(st.koe && st.koe.fejl && st.koe.fejl.kode === 'afvist');
+    const st = R.tilstand, mange = st.sat && flere();
+    $('forb-overskrift').dataset.t = mange ? 'grpForbindelser' : 'grpForbindelse';
+    $('forb-overskrift').textContent = mange ? T.grpForbindelser : T.grpForbindelse;
+    $('forb-status-raekke').hidden = mange;
+    $('forb-noegle-raekke').hidden = mange;
+    $('forb-liste').hidden = !mange;
+    $('forb-tilfoej-raekke').hidden = !st.sat;
+    $('forb-omdoeb').hidden = !st.sat;
+    const c = $('forb-chip'), afvist = st.sat && erAfvist(enesteId());
     const n = st.gemte && st.gemte.zoner ? st.gemte.zoner.length : 0;
     const [klasse, tekst] = !st.sat ? ['graa', T.forbIngen] : afvist ? ['roed', T.forbAfvist] : ['groen', fmt(T.forbOk, { n: T.domaener(n) })];
     const ny = window.hmTegn.chip(klasse, tekst, 'button');
     c.className = ny.className;
     c.replaceChildren(...ny.childNodes);
-    saetMaal(c, st.sat ? { gaa: 'overblik' } : null, tekst);
+    /* Rød: chippen åbner "Skift API Token…" (som på rækkerne med flere). */
+    saetMaal(c, st.sat && !afvist ? { gaa: 'overblik' } : null, tekst);
+    if (afvist) { c.disabled = false; c.setAttribute('aria-label', fmt(T.forbSkiftAria, { navn: navnPaa(enesteId()) })); c.setAttribute('aria-controls', 'skift-form'); } else c.removeAttribute('aria-controls');
     $('glem').hidden = !st.sat;
     $('data-hent').disabled = !st.sat || R.henterNu();
     $('nulstil').disabled = !st.sat; // uden nøgle kan intet hentes igen
+    if (mange) tegnListe();
+    else if (skiftMaal && skiftMaal.id != null && skiftMaal.id !== enesteId()) visSkift(null); // rækken findes ikke mere
   }
-  function visSkift(aaben) {
-    $('skift-form').hidden = !aaben;
-    $('skift-noegle').setAttribute('aria-expanded', String(aaben));
+  let listeNoegle = null;
+  function tegnListe() {
+    const fs = forbindelser(), afviste = R.afvist().ider;
+    const noegle = fs.map(f => [f.id, R.vistNavn(f), f.domaener, afviste.includes(f.id)].join('\t')).join('\n') + '\n' + S.lang;
+    if (noegle === listeNoegle && $('forb-liste').childElementCount) return;
+    listeNoegle = noegle;
+    const aaben = skiftMaal && skiftMaal.id != null ? skiftMaal.id : null;
+    $('forb-liste').replaceChildren(...fs.map(f => {
+      const navn = R.vistNavn(f), roed = afviste.includes(f.id), nId = `forb-${f.id}-navn`;
+      const dom = el('button', { type: 'button', className: 'link forb-domaener', textContent: T.domaener(f.domaener) });
+      dom.setAttribute('aria-label', fmt(T.forbDomaenerAria, { navn }));
+      dom.addEventListener('click', () => aabnDomaener(f.id));
+      const chipTekst = roed ? T.forbAfvist : T.forbForbundet, chip = window.hmTegn.chip(roed ? 'roed' : 'groen', chipTekst, 'button');
+      chip.classList.add('forb-tilstand');
+      if (roed) { chip.setAttribute('aria-label', fmt(T.forbSkiftAria, { navn })); chip.setAttribute('aria-controls', 'skift-form'); chip.addEventListener('click', () => visSkift({ id: f.id }, chip)); }
+      else saetMaal(chip, { gaa: 'overblik' }, chipTekst);
+      const omdoeb = window.Kit.knap({ tekst: T.forbOmdoeb, aria: fmt(T.forbOmdoebAria, { navn }), ved: () => aabnOmdoeb(f.id) });
+      const skift = window.Kit.knap({ tekst: T.skift, aria: fmt(T.forbSkiftAria, { navn }) });
+      skift.setAttribute('aria-controls', 'skift-form');
+      skift.setAttribute('aria-expanded', String(aaben === f.id));
+      skift.addEventListener('click', () => visSkift(skiftMaal && skiftMaal.id === f.id ? null : { id: f.id }, skift));
+      const glem = window.Kit.knap({ tekst: T.forbGlem, variant: 'danger', aria: fmt(T.forbGlemAria, { navn }), ved: () => aabnGlem(f.id) });
+      for (const [b, n] of [[omdoeb, 'omdoeb'], [skift, 'skift'], [glem, 'glem']]) b.id = `forb-${f.id}-${n}`;
+      chip.id = `forb-${f.id}-chip`;
+      dom.id = `forb-${f.id}-domaener`;
+      const r = el('div', { className: 'raekke forb-raekke', role: 'listitem' }, el('span', { className: 'etik' }, el('span', { id: nId, className: 'forb-navn', textContent: navn }), el('small', {}, dom)), el('div', { className: 'raekke-knapper' }, chip, omdoeb, skift, glem));
+      r.dataset.forbindelse = String(f.id);
+      r.setAttribute('aria-labelledby', nId);
+      return r;
+    }));
+    if (aaben != null) { const r = $('forb-liste').querySelector(`[data-forbindelse="${aaben}"]`); if (r) { r.after($('skift-form'), $('skift-status')); skiftKnap = $(`forb-${aaben}-skift`); } else visSkift(null); }
+  }
+  /* Formularen: maal { id } (Skift på den forbindelse) eller { ny: true } (Tilføj); null lukker. Den står under den række eller knap, den hører til. */
+  function visSkift(maal, knap) {
+    const form = $('skift-form'), st = $('skift-status');
+    for (const b of document.querySelectorAll('[aria-controls="skift-form"][aria-expanded]')) b.setAttribute('aria-expanded', 'false');
+    skiftMaal = maal;
+    skiftKnap = maal ? knap || null : null;
+    form.hidden = !maal;
     $('skift-felt').value = '';
-    status($('skift-status'), '');
-    if (aaben) $('skift-felt').focus();
+    status(st, '');
+    $('skift-note').hidden = !maal || Boolean(maal.ny);
+    if (!maal) { $('forb-noegle-raekke').after(form, st); return; }
+    if (maal.ny) $('forb-tilfoej-raekke').after(form, st);
+    else if (flere()) { const r = $('forb-liste').querySelector(`[data-forbindelse="${maal.id}"]`); if (r) r.after(form, st); }
+    else $('forb-noegle-raekke').after(form, st);
+    const b = maal.ny ? $('forb-tilfoej') : flere() ? $(`forb-${maal.id}-skift`) : $('skift-noegle');
+    if (b) b.setAttribute('aria-expanded', 'true');
+    $('skift-felt').focus();
   }
-  $('skift-noegle').addEventListener('click', () => visSkift($('skift-form').hidden));
-  $('skift-annuller').addEventListener('click', () => { visSkift(false); $('skift-noegle').focus(); });
+  const lukSkift = () => { const b = skiftKnap; visSkift(null); if (b && b.isConnected) b.focus(); };
+  $('skift-noegle').addEventListener('click', () => visSkift(skiftMaal && !skiftMaal.ny ? null : { id: enesteId() }, $('skift-noegle')));
+  $('forb-chip').addEventListener('click', () => { if (!$('forb-chip').dataset.gaa && R.tilstand.sat && erAfvist(enesteId())) visSkift({ id: enesteId() }, $('forb-chip')); });
+  $('forb-tilfoej').addEventListener('click', () => visSkift(skiftMaal && skiftMaal.ny ? null : { ny: true }, $('forb-tilfoej')));
+  $('skift-annuller').addEventListener('click', lukSkift);
   $('skift-form').addEventListener('submit', async ev => {
     ev.preventDefault();
-    if (!await R.gemNoegle($('skift-felt'), $('skift-gem'), $('skift-status'))) return;
-    $('skift-form').hidden = true;
-    $('skift-noegle').setAttribute('aria-expanded', 'false');
+    const maal = skiftMaal;
+    if (!maal) return;
+    const id = await R.gemNoegle($('skift-felt'), $('skift-gem'), $('skift-status'), maal.ny ? null : maal.id);
+    if (id === false) return;
+    const st = $('skift-status'), tekst = st.textContent;
+    visSkift(null);
+    status(st, tekst, 'ok');
+    /* En ny forbindelse, der ser mere end ét domæne: Domæner åbner ved dens gruppe, så man kan vælge (de vælges ikke af sig selv). */
+    if (maal.ny && typeof id === 'number') { const f = forbindelser().find(x => x.id === id); if (f && f.domaener > 1) aabnDomaener(id); }
   });
-  /* Kittets dialog lukker selv ved Annullér, Glem og Esc; her står kun det, Glem gør. */
+
+  /* Omdøb: én dialog med ét felt. Tomt felt gemmes som null og viser Cloudflares navn igen. */
+  let omdoebId = null;
+  const omdoebFelt = window.Kit.felt({ id: 'omdoeb-felt', etiket: T.forbNavnFelt, hjaelp: T.forbNavnNote, foelsom: true });
+  const omdoebDialog = R.dialog('omdoeb', document.body, { t: 'forbOmdoebH', indhold: omdoebFelt, fejl: true, udfyld: e => S.anvend(e),
+    knapper: [{ id: 'nej', t: 'annuller' }, { id: 'gem', t: 'forbNavnGem', variant: 'primary', ved: async () => {
+      const v = $('omdoeb-felt').value.trim();
+      try { await invoke('forbindelse_omdoeb', { id: omdoebId, navn: v || null }); }
+      catch (e) { throw S.fejl(e); }
+      await R.opfrisk();
+      status($('indst-status'), T.forbNavnGemt, 'ok');
+      return true;
+    } }] });
+  $('omdoeb-felt').addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); omdoebDialog.knap('gem').click(); } });
+  function aabnOmdoeb(id) {
+    const f = forbindelser().find(x => x.id === id) || { id };
+    omdoebId = id;
+    $('omdoeb-felt').value = f.eget_navn || '';
+    $('omdoeb-felt').placeholder = f.cf_navn || fmt(T.forbStandard, { n: id });
+    omdoebDialog.aabn();
+  }
+  $('forb-omdoeb').addEventListener('click', () => aabnOmdoeb(enesteId()));
+
+  /* Kittets dialog lukker selv ved Annullér, Glem og Esc; her står kun det, Glem gør. Med én forbindelse: "Glem API Tokenet?" som i dag; med flere:
+     forbindelsens navn i overskriften. Glem af den sidste er "Glem tokenet" fra 1.0.0 (Rust), og opsætningen vises. */
   const NEJ_JA = ja => [{ id: 'nej', t: 'annuller' }, { id: 'ja', t: ja, variant: 'danger' }];
   const glemDialog = R.dialog('glem', document.body, { t: 'glemH', p: { t: 'glemP' }, knapper: NEJ_JA('glemJa') }), dialog = glemDialog.rod;
-  $('glem').addEventListener('click', () => glemDialog.aabn());
+  let glemId = null;
+  function aabnGlem(id) {
+    glemId = id;
+    const en = !flere(), h = $('glem-h'), p = $('glem-p');
+    h.dataset.t = 'glemH';
+    p.dataset.t = 'glemP';
+    if (en) { h.textContent = T.glemH; p.textContent = T.glemP; }
+    else { delete h.dataset.t; delete p.dataset.t; h.textContent = fmt(T.glemForbH, { navn: navnPaa(id) }); p.textContent = T.glemForbP; }
+    glemDialog.aabn();
+  }
+  $('glem').addEventListener('click', () => aabnGlem(enesteId()));
   $('glem-ja').addEventListener('click', async () => {
-    try { await invoke('token_delete'); popup.luk(); await R.vis(); R.glemt(); }
-    catch (e) { status($('indst-status'), S.fejl(e), 'fejl'); }
+    const id = glemId, sidste = !flere();
+    try {
+      await invoke('forbindelse_glem', { id });
+      if (sidste) { popup.luk(); await R.vis(); R.glemt(); }
+      else { if (skiftMaal && skiftMaal.id === id) visSkift(null); await R.opfrisk(); tegnForbindelse(); status($('indst-status'), T.glemt, 'ok'); }
+    } catch (e) { status($('indst-status'), S.fejl(e), 'fejl'); }
   });
 
   /* ── Data ── */
@@ -261,7 +402,7 @@
   /* ── popuppen, dialogerne og guiden ── */
   const LUK = [{ id: 'luk', t: 'luk' }];
   const husk = (lager, noegle, v) => { try { if (v === undefined) return lager.getItem(noegle); if (v === null) lager.removeItem(noegle); else lager.setItem(noegle, v); } catch (e) { /* gælder kun denne gang */ } return null; };
-  const ryd = () => { visSkift(false); if (dialog.open) dialog.close(); if (nulstilDialog.open) nulstilDialog.close(); window.hmLand.glemTilbage(); };
+  const ryd = () => { visSkift(null); if (dialog.open) dialog.close(); if (omdoebDialog.aaben) omdoebDialog.luk(); if (nulstilDialog.open) nulstilDialog.close(); window.hmLand.glemTilbage(); };
   /* Et mål inde i en dialog (et domæne, chippen, Historik) lukker dialogerne, før rammen skifter visning. */
   const lukVedMaal = d => d.rod.addEventListener('click', ev => { if (ev.target.closest('[data-gaa], [data-dyk]')) d.luk(); }, true);
 
@@ -284,13 +425,24 @@
   const domDialog = R.dialog('domaener', document.body, { t: 'domaenerH', indhold: el('div', { id: 'dom-plads' }), bred: true, knapper: LUK, fokus: 'domaener-h' });
   lukVedMaal(domDialog);
   function tegnDomDel() { tegnDomaener(); }
-  function aabnDomaener() {
+  /* id: åbn ved den forbindelses gruppe (med flere forbindelser): gruppen rulles frem, og dens overskrift får fokus. */
+  function aabnDomaener(id) {
     if (guideDialog.aaben) return;
     if (popup.aaben) popup.luk();
     $('dom-plads').append(domDel);
     tegnDomDel();
     status($('domaener-status'), '');
-    domDialog.aabn();
+    const h = typeof id === 'number' && flere() ? $(`dom-gruppe-${id}-h`) : null;
+    domDialog.aabn(h || undefined);
+    if (h && h.scrollIntoView) h.scrollIntoView({ block: 'start' });
+  }
+  /* "Skift API Token…" fra banneret i Overblik: Indstillinger åbner med formularen på forbindelsens række. */
+  function aabnSkift(id) {
+    aabnPopup();
+    if (!popup.aaben) return;
+    const knap = flere() ? $(`forb-${id}-skift`) : $('skift-noegle');
+    visSkift({ id }, knap);
+    if ($('skift-form').scrollIntoView) $('skift-form').scrollIntoView({ block: 'center' });
   }
 
   /* Notifikationer pr. domæne: sin egen knap med klokken i båndet på Overblik (Jan 2026-11-13). */
@@ -359,6 +511,7 @@
   S.anvend($('opsaet-tom'));
 
   R.paa('raekker', () => { tegnPrDomaene(); tegnForbindelse(); if (popup.aaben) tegnData(); });
+  R.paa('forbindelser', () => { tegnForbindelse(); tegnDomaener(); });
   R.paa('domaener', () => { tegnDomaener(); guideTilstand(); });
   let foersteToken = true;
   R.paa('token', sat => {
@@ -370,7 +523,7 @@
   });
   R.paa('koe', tegnForbindelse);
   const ALLE = [popup, domDialog, beskedDialog, omDialog, guideDialog];
-  window.hmIndst = { aabn: aabnPopup, domaener: aabnDomaener, besked: aabnBesked, om: aabnOm, guide: aabnGuide, aaben: () => ALLE.some(d => d.aaben), lukAlle() { for (const d of ALLE) if (d.aaben) d.luk(); } };
+  window.hmIndst = { aabn: aabnPopup, domaener: aabnDomaener, skift: aabnSkift, besked: aabnBesked, om: aabnOm, guide: aabnGuide, aaben: () => ALLE.some(d => d.aaben), lukAlle() { for (const d of ALLE) if (d.aaben) d.luk(); } };
   if (husk(sessionStorage, 'hm-indst-aaben')) setTimeout(aabnPopup, 0); // efter et skift af sprog eller datoformat
   visAutostart();
   hentNotif();

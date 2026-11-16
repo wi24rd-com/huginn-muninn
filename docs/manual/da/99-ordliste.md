@@ -26,6 +26,8 @@
 
 **Edge – første forsvarslinje** · Cloudflares netværk af datacentre. Dit site svarer fra dem alle (anycast), så et angreb stoppes nær angriberen, længe før det når din server. Gælder kun DNS-poster med orange sky.
 
+**Forbindelse** · Ét API Token og et navn i programmet, én pr. Cloudflare-konto. Navnet er kontoens navn hos Cloudflare, indtil du giver forbindelsen dit eget med **Omdøb…**. Domænerne fra alle forbindelser vises samlet.
+
 **Handl** · Status, når der var usædvanligt mange angreb i går i forhold til ugen før, eller noget slap igennem. Giver besked som standard.
 
 **Hold øje** · Status, når mønsteret er usædvanligt, men alt er stoppet.
@@ -48,7 +50,7 @@
 
 **Netværk** · Den udbyder (et autonomt system), en forespørgsel kom fra. Programmet ser netværket, aldrig IP-adressen.
 
-**Nøglering** · Det sted, dit styresystem gemmer adgangskoder sikkert: macOS Nøglering eller Windows Credential Manager. Her ligger API Tokenet.
+**Nøglering** · Det sted, dit styresystem gemmer adgangskoder sikkert: macOS Nøglering eller Windows Credential Manager. Her ligger API Tokenet, ét pr. forbindelse.
 
 **Radar** · Cloudflare Radar, Cloudflares offentlige tal for hele internettet. Bruges i dit lands visning. Kræver ingen rettighed.
 

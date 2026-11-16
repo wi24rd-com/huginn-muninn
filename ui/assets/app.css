@@ -347,3 +347,12 @@ button.chip-knap:hover:not(:disabled) { box-shadow: inset 0 0 0 100vmax var(--co
 .velkomst-situation { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
 .velkomst-situation p { margin: 0 0 12px; max-width: none; }
 .velkomst-situation b { display: block; }
+
+/* V-KONTI.1: flere forbindelser. Navnet (kan være en e-mailadresse) ombrydes; Domæner i grupper pr. forbindelse; banneret ved et afvist API Token. */
+.forb-raekke .forb-navn { overflow-wrap: anywhere; }
+.forb-raekke .etik small .link { font-size: inherit; }
+.forb-skift-note { margin: 0 0 6px; }
+.dom-gruppe + .dom-gruppe { border-top: 1px solid var(--border); }
+.dom-gruppe .dom-gruppe-h { margin: 0; font-size: var(--font-size-md); overflow-wrap: anywhere; }
+#afvist-linjer:not(:empty) { display: grid; gap: 8px; margin-bottom: 12px; }
+.guide-flere { margin-top: 10px; }

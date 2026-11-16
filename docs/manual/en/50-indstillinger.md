@@ -2,9 +2,9 @@
 
 Open Settings with the gear at the top right or with ⌘, (Windows: Ctrl+,). Settings is a window on top of the view you are in, and it can also be opened before you have connected to Cloudflare. **Close** stays at the bottom; Esc closes it too.
 
-Every choice is saved at once on your computer. There is no Save button, except for the API Token.
+Every choice is saved at once on your computer. There is no Save button, except for the API Token and the name of a connection.
 
-The window has seven groups: **Appearance and language**, **Date and country**, **Start-up**, **Notifications**, **Connection**, **Data** and **First start**. Three things are not here but where you use them: [Domains](#domains), [Notifications per domain](#notifications-per-domain) and [About](#about).
+The window has seven groups: **Appearance and language**, **Date and country**, **Start-up**, **Notifications**, **Connection** (**Connections** when there is more than one), **Data** and **First start**. Three things are not here but where you use them: [Domains](#domains), [Notifications per domain](#notifications-per-domain) and [About](#about).
 
 ## Appearance and language, Date and country, Start-up
 
@@ -40,15 +40,57 @@ At the bottom it says: "You can also turn notifications off completely in System
 ![Connection](../img/indstillinger-forbindelse--light-en-1200x860.webp)
 *Status and the API Token with **Change API Token…** unfolded.*
 
+A connection is one API Token and a name. You have one connection per Cloudflare account. The domains from all connections are shown together; the Overview and the other views do not split them up by connection. The group is called **Connection** when there is one, and **Connections** when there is more than one.
+
+### With one connection
+
 | Field | What it does |
 |---|---|
 | **Status** | The chip shows, for example, **Connected · 3 domains**. The line says that the API Token is in your computer's keychain (macOS Keychain or Windows Credential Manager). |
-| **API Token for Cloudflare** – **Change API Token…** | Opens the field where you paste a new API Token and click **Save and connect**. **Cancel** closes it again. The old one is replaced. |
-| **Forget API Token…** | The program asks **Forget the API Token?** If you choose **Forget**, the program stops fetching, the API Token is deleted from the keychain, and your per-domain choices are deleted (domain choice, notifications per domain, login paths, technology choices). The history stays. You can connect again with a new API Token. |
+| **API Token for Cloudflare** – **Change API Token…** | Opens the field where you paste a new API Token and click **Save and connect**. **Cancel** closes it again. The old one is replaced. See [Change and add](#change-and-add). |
+| **Rename…** | Gives the connection your own name. See [The name](#the-name). |
+| **Forget API Token…** | The program asks **Forget the API Token?** If you choose **Forget**, the program stops fetching, the API Token is deleted from the keychain, and your per-domain choices are deleted (domain choice, notifications per domain, login paths, technology choices). The history stays. Setup and the guide are shown again, and you can connect again with a new API Token. |
+| **More Cloudflare accounts** – **Add API Token…** | The line says "One API Token per account. The domains are shown together." The button adds one more connection. See [Change and add](#change-and-add). |
 | **Create API Token at Cloudflare** and **How to create an API Token** | The same help as in setup; see [Setup](30-opsaetning.md). |
 
 ![Forget the API Token?](../img/glem-dialog--light-en-1200x860.webp)
 *The dialog before the API Token is forgotten.*
+
+### With more than one connection
+
+Each connection has its own row. Below the rows is **Add API Token…**.
+
+| Field | What it does |
+|---|---|
+| The name | The connection's name. Cannot be clicked. |
+| **N domains** | Opens the dialog [Domains](#domains) at the connection's group. |
+| The chip **Connected** / **Rejected** | Green **Connected**: clicking opens the Overview. Red **Rejected**: Cloudflare rejected the API Token; clicking opens **Change API Token…** in the row. See [Troubleshooting](80-fejlfinding.md). |
+| **Rename…** | Gives the connection your own name. See [The name](#the-name). |
+| **Change API Token…** | Replaces the API Token on this connection. See [Change and add](#change-and-add). |
+| **Forget…** | The program asks **Forget the connection “name”?** with the text "The program stops fetching its domains, and your choices for them are deleted. The history stays." If you choose **Forget**, the connection's API Token is deleted from the keychain. Only domains that no other connection sees lose their choices. The other connections keep fetching. |
+
+If you forget the last connection, it is exactly as with one connection: the program asks **Forget the API Token?**, setup and the guide are shown again, and the history stays.
+
+If two connections see the same domain, it is shown once and belongs to the oldest connection. If that one is forgotten or rejected, the other takes over.
+
+### Change and add
+
+**Add API Token…** opens the same form as in the guide: the field **API Token (read only)**, the button **Save and connect** and the help **Create API Token at Cloudflare** with the steps. The program checks the API Token with Cloudflare, stores it in the keychain and fetches the new connection's domains.
+
+The new connection's domains are not chosen by themselves. If it sees exactly one domain the program did not know, that one is chosen for you. If it sees more, the dialog **Domains** opens at the connection's group so you can choose.
+
+**Change API Token…** only replaces the API Token on its own connection. The form says: "Do you have another account? Use Add API Token… instead. Change replaces the API Token on this connection." If the new API Token belongs to a different Cloudflare account, the old account's domains disappear from the list, and the choices for the connection start over. The figures already fetched and the history stay.
+
+### The name
+
+**Rename…** opens the dialog **Rename the connection** with one field, **Name**, and the note "Empty: the name from Cloudflare." Save with **Save**. If you empty the field, the name from Cloudflare is shown again.
+
+The program shows:
+
+- your own name, if you have given the connection one,
+- otherwise the account's name at Cloudflare, unchanged, even when it is an e-mail address,
+- "… + 1 more" or "… + 2 more", if one API Token sees more than one account,
+- "Connection 1", "Connection 2" and so on, if the program does not know a name yet.
 
 ## Data
 
@@ -82,6 +124,8 @@ Open the dialog with **Choose domains** in the band on **Overview**.
 | **Show in Huginn** – one switch per domain | Choose the domains Huginn should fetch and show. A domain you clear is no longer fetched, is not shown anywhere and gives no notifications; its figures stay, and if you choose it again, what is missing is fetched, at most the last 30 days. A domain that is new on the account is marked **NEW**. |
 | **Choose all** / **Clear all** | All switches at once. |
 | The line "The API Token sees N domains" | How many domains the API Token can see. If it sees exactly one, it is chosen for you. |
+| With more than one connection: one heading and one list per connection | The heading is the connection's name. Each list has its own **Select all** and **None**; the shared **Choose all** and **Clear all** buttons are then not shown. |
+| The line "M API Tokens can see N domains in total" | Shown with more than one connection instead of the line above. |
 
 What technology your site uses, you say in [Technology by domain](40-visninger/teknologi.md), which you open with **Edit technologies** in the band on **Attacks**.
 

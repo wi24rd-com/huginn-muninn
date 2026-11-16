@@ -67,6 +67,7 @@
     <div class="titelrad">
       <h1 id="overblik-h" data-t="zonerH">Overblik</h1><span class="under" id="overblik-antal" aria-live="polite"></span>
     </div>
+    <div id="afvist-linjer"></div>
     <div id="hul-linjer"></div>
     <p class="server-linje" id="server-linje" hidden></p>
     <div class="dom" id="dom" hidden>
@@ -179,14 +180,19 @@
         <p class="note kort-note" data-t="notifSystem"></p>
       </div></section>
 
-      <section class="kasse" aria-labelledby="indst-forbindelse"><div class="kasse-top"><svg class="kasse-ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8" cy="15" r="5"/><path d="M12 11l8-8M16 7l3 3M18 5l2 2"/></svg><h2 id="indst-forbindelse"><span data-t="grpForbindelse">Forbindelse</span></h2></div>
+      <section class="kasse" aria-labelledby="indst-forbindelse"><div class="kasse-top"><svg class="kasse-ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8" cy="15" r="5"/><path d="M12 11l8-8M16 7l3 3M18 5l2 2"/></svg><h2 id="indst-forbindelse"><span id="forb-overskrift" data-t="grpForbindelse">Forbindelse</span></h2></div>
       <div class="kasse-indhold fyld">
-        <div class="raekke"><span class="etik"><span data-t="forbStatus">Status</span><small id="forb-note" data-t="forbNote"></small></span><button class="chip none chip-knap" type="button" id="forb-chip" disabled></button></div>
-        <div class="raekke"><span class="etik"><span data-t="forbNoegle">API Token til Cloudflare</span><small data-t="forbNoegleNote"></small></span>
+        <div class="raekke" id="forb-status-raekke"><span class="etik"><span data-t="forbStatus">Status</span><small id="forb-note" data-t="forbNote"></small></span><button class="chip none chip-knap" type="button" id="forb-chip" disabled></button></div>
+        <div class="raekke" id="forb-noegle-raekke"><span class="etik"><span data-t="forbNoegle">API Token til Cloudflare</span><small data-t="forbNoegleNote"></small></span>
           <div class="raekke-knapper"><button class="btn" type="button" id="skift-noegle" aria-expanded="false" aria-controls="skift-form" data-t="skift">Skift API Token…</button>
+          <button class="btn" type="button" id="forb-omdoeb" data-t="forbOmdoeb" hidden>Omdøb…</button>
           <button class="btn danger" type="button" id="glem" data-t="glem" hidden>Glem API Token…</button></div></div>
+        <div id="forb-liste" role="list" data-t-aria="forbListe" hidden></div>
+        <div class="raekke" id="forb-tilfoej-raekke" hidden><span class="etik"><span data-t="forbFlereH">Flere Cloudflare-konti</span><small data-t="forbFlereNote"></small></span>
+          <div class="raekke-knapper"><button class="btn" type="button" id="forb-tilfoej" aria-expanded="false" aria-controls="skift-form" data-t="forbTilfoej">Tilføj API Token…</button></div></div>
         <div class="kort-hjaelp token-hjaelp" data-token-hjaelp></div>
         <form class="hm-form kort-form" id="skift-form" autocomplete="off" hidden>
+          <p class="note forb-skift-note" id="skift-note" data-t="forbSkiftNote" hidden></p>
           <p class="note token-it" data-t="tokenItFirma"></p>
           <label><span data-t="tokenFelt">API Token (kun læsning)</span><input id="skift-felt" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" required></label>
           <button class="btn primary" type="submit" id="skift-gem" data-t="tokenKnap">Gem og forbind</button>
@@ -217,7 +223,8 @@
 <div id="dom-del" class="dom-del">
         <div class="raekke"><span class="etik"><span data-t="domaenerVis">Vis i Huginn</span><small data-t="domaenerP"></small></span>
           <div class="raekke-knapper"><button class="btn" type="button" id="domaener-alle-til" data-t="domaenerAlleTil">Vælg alle</button><button class="btn" type="button" id="domaener-alle-fra" data-t="domaenerAlleFra">Fravælg alle</button></div></div>
-        <table class="mini" data-t-aria="domaenerH"><thead class="sr-only"><tr><th scope="col" data-t="thDomaene">Domæne</th><th scope="col" data-t="domaenerVis">Vis i Huginn</th></tr></thead><tbody id="domaener-liste"></tbody></table>
+        <table class="mini" id="domaener-tabel" data-t-aria="domaenerH"><thead class="sr-only"><tr><th scope="col" data-t="thDomaene">Domæne</th><th scope="col" data-t="domaenerVis">Vis i Huginn</th></tr></thead><tbody id="domaener-liste"></tbody></table>
+        <div id="domaener-grupper" hidden></div>
         <p class="note kort-note" id="domaener-ser" hidden></p>
         <p class="r6-status kort-status" id="domaener-status" role="status" aria-live="polite"></p>
 </div>
@@ -251,6 +258,7 @@
       <button class="btn primary" type="submit" id="token-knap" data-t="tokenKnap">Gem og forbind</button>
     </form>
     <p class="r6-status" id="token-status" role="status" aria-live="polite"></p>
+    <p class="note guide-flere" id="guide-flere" data-t="guideFlere"></p>
   </section>
   <div id="guide-trin-domaener"><p class="note" id="guide-domaener-venter" data-t="guideDomVenter" role="status"></p></div>
   <div id="guide-trin-besked">

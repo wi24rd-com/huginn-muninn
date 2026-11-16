@@ -1,6 +1,6 @@
 # Uninstalling
 
-The program puts five things on your computer: the application itself, two autostart entries, an API Token in the keychain and a data folder. Follow the steps in order so nothing is left behind.
+The program puts five things on your computer: the application itself, two autostart entries, an API Token per connection in the keychain and a data folder. Follow the steps in order so nothing is left behind.
 
 ## macOS
 
@@ -15,13 +15,15 @@ rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist
 rm ~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist
 ```
 
-### 2. Forget the API Token
+### 2. Forget all connections
 
 Choose **Settings** › **Connection** › **Forget API Token…** and confirm with **Forget**. That deletes the API Token from macOS Keychain.
 
-To do it by hand: open macOS's keychain application (Keychain Access), search for `com.wi24rd.huginn-muninn`, and delete the item.
+If you have more than one connection, click **Forget…** in each row and confirm with **Forget** until one is left. Forget the last one with **Forget API Token…**. Each time, the connection's API Token is deleted from the keychain.
 
-Also consider **revoking the API Token at Cloudflare**: log in, open **My Profile › API Tokens**, and delete the token with the name you gave it. Then it cannot be used by anyone, whatever happens.
+To do it by hand: open macOS's keychain application (Keychain Access), search for `com.wi24rd.huginn-muninn`, and delete all the items. The first connection uses the item `cloudflare-api-token`, the next ones `cloudflare-api-token-2`, `cloudflare-api-token-3` and so on.
+
+Also consider **revoking each API Token at Cloudflare**: log in, open **My Profile › API Tokens**, and delete the token with the name you gave it. Then it cannot be used by anyone, whatever happens.
 
 ### 3. Quit the program
 
@@ -53,7 +55,7 @@ There is no Windows version yet. When it comes, the places are:
 |---|---|
 | Autostart | The value under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` (turn **Start at login** off in the program first) |
 | Daily start | The scheduled task `Wi24rd Huginn and Muninn dagligt` (turn **Start at login** off in the program first) |
-| API Token | Windows Credential Manager, the item `com.wi24rd.huginn-muninn` |
+| API Tokens | Windows Credential Manager, the items under `com.wi24rd.huginn-muninn`: `cloudflare-api-token`, `cloudflare-api-token-2` and so on, one per connection |
 | Data folder | `%APPDATA%\com.wi24rd.huginn-muninn\` |
 
 ## Linux
@@ -63,7 +65,7 @@ There is no Linux version yet. The data folder will be in `~/.local/share/com.wi
 ## Checklist
 
 - [ ] Start at login turned off (no `.plist` in `~/Library/LaunchAgents/`)
-- [ ] API Token forgotten in the program (and revoked at Cloudflare)
+- [ ] All connections forgotten in the program (and the API Tokens revoked at Cloudflare)
 - [ ] Program quit (no raven icon in the menu bar)
 - [ ] Application deleted from Applications
 - [ ] Data folder deleted, or deliberately kept

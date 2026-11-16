@@ -117,14 +117,6 @@ fn ider_eller_1(ider: Vec<i64>) -> Vec<i64> {
     }
 }
 
-/// D7: den forbindelse, `token_set` gemmer i: den med lavest id, eller en ny (1), hvis der ingen er; `true`, hvis den er ny.
-fn token_set_forbindelse(l: &mut Store, oprettet_utc: &str) -> Result<(i64, bool), Fejl> {
-    match l.forbindelse_ider()?.first() {
-        Some(id) => Ok((*id, false)),
-        None => Ok((l.ny_forbindelse(oprettet_utc)?, true)),
-    }
-}
-
 /// Forbindelsens token fra hukommelsen, ellers fra nøgleringen (og så huskes det). Nøgleringen læses af én ad gangen, også på tværs af forbindelserne:
 /// spørger køen og siden samtidig (ved start), venter den ene og får tokenet fra hukommelsen, så der kun kommer én dialog pr. post. Er tokenet glemt eller
 /// erstattet, mens nøgleringen blev læst, gælder det nye: det læste token bruges ikke. Finder læsningen af forbindelse 1 et token, og er der ingen
@@ -218,16 +210,6 @@ async fn gem_token(tilstand: &Tilstand, app: &AppHandle, id: i64, ny: bool, toke
     Ok(())
 }
 
-/// Verificerer tokenet hos Cloudflare og gemmer det kun, hvis det er gyldigt (`Klient::godkend`). Returnerer aldrig tokenet. Starter køen.
-/// D7 (genvej til det nuværende UI, fjernes i B2): opretter forbindelse 1, hvis der ingen er, og skifter ellers tokenet på forbindelsen med lavest id.
-#[tauri::command]
-async fn token_set(token: Hemmelig, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
-    token::tjek_form(&token)?;
-    tilstand.klient.godkend(&token, nu_ms()).await?;
-    let (id, ny) = token_set_forbindelse(&mut *laas(&tilstand)?, &vaern::iso(nu_ms()))?;
-    gem_token(&tilstand, &app, id, ny, token).await
-}
-
 /// Er der mindst én forbindelse med et token? En nøgleringsfejl meldes kun, hvis ingen forbindelse kunne læses.
 #[tauri::command]
 async fn token_status(tilstand: State<'_, Tilstand>) -> Svar<TokenStatus> {
@@ -238,13 +220,8 @@ async fn token_status(tilstand: State<'_, Tilstand>) -> Svar<TokenStatus> {
     }
 }
 
-/// "Glem tokenet" (D7: alle forbindelser, som i 1.0.0; fjernes i B2): stopper køen (menulinjen: "intet token") og glemmer forbindelserne én ad gangen
-/// (`glem_en`), så nøgleringen og databasen passer sammen, også hvis en sletning fejler midt i. Værnets tal og indstillingerne bliver.
-#[tauri::command]
-async fn token_delete(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
-    glem_alle(&tilstand, &app).await
-}
-
+/// Glem den sidste forbindelse (`forbindelse_glem`), som "Glem tokenet" i 1.0.0: stopper køen (menulinjen: "intet token") og glemmer forbindelserne én ad
+/// gangen (`glem_en`), så nøgleringen og databasen passer sammen, også hvis en sletning fejler midt i. Værnets tal og indstillingerne bliver.
 async fn glem_alle(tilstand: &Tilstand, app: &AppHandle) -> Result<(), Fejl> {
     tilstand.koe.stop_med(Fejl::IntetToken, &|s| melder(app, s));
     for id in forbindelse_ider(tilstand)? {
@@ -284,7 +261,8 @@ async fn forbindelser_hent(tilstand: State<'_, Tilstand>) -> Svar<Vec<Forbindels
         .collect())
 }
 
-/// En ny forbindelse med et godkendt token; dens id. Zonelisten hentes af `zones` (som efter `token_set`).
+/// En ny forbindelse med et godkendt token; dens id. Verificerer tokenet hos Cloudflare og gemmer det kun, hvis det er gyldigt (`Klient::godkend`).
+/// Returnerer aldrig tokenet. Den første forbindelse er id 1 (nøgleringens oprindelige post). Zonelisten hentes af `zones` bagefter.
 #[tauri::command]
 async fn forbindelse_tilfoej(token: Hemmelig, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<i64> {
     token::tjek_form(&token)?;
@@ -318,7 +296,7 @@ async fn forbindelse_omdoeb(id: i64, navn: Option<String>, tilstand: State<'_, T
     laas(&tilstand)?.omdoeb(id, navn.as_deref())
 }
 
-/// "Glem" én forbindelse (D4). Er det den sidste, er det "Glem tokenet" (`token_delete`).
+/// "Glem" én forbindelse (D4). Er det den sidste, er det "Glem tokenet" fra 1.0.0 (`glem_alle`).
 #[tauri::command]
 async fn forbindelse_glem(id: i64, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
     findes(&tilstand, id)?;
@@ -2103,7 +2081,7 @@ pub fn run() {
             }
             // Første start af en bundlet build: start ved login slås til. Lykkes det ikke, prøves der igen ved næste start.
             let _ = autostart_standard(app.handle());
-            // Køen starter, hvis der er et token (ellers melder den "intet token" og startes af token_set).
+            // Køen starter, hvis der er et token (ellers melder den "intet token" og startes af forbindelse_tilfoej).
             start_koe(app.handle());
             start_radar(app.handle());
             // Daglig start: lukker selv igen, når køen er færdig.
@@ -2117,9 +2095,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            token_set,
             token_status,
-            token_delete,
             forbindelser_hent,
             forbindelse_tilfoej,
             forbindelse_skift,
@@ -2326,23 +2302,19 @@ mod tests {
         );
     }
 
-    /// D7: med det nuværende UI virker "Gem og forbind" og "Glem tokenet" som i 1.0.0. `token_set` gemmer i forbindelse 1 (den oprindelige post), opretter den
-    /// første gang og skifter tokenet på den med lavest id bagefter; uden forbindelser læses den oprindelige post (`[1]`). "Glem tokenet" (forbindelse for
-    /// forbindelse, så alle) efterlader lageret som `slet_zoner` i 1.0.0: ingen forbindelser, zoner, valg eller notifikationsvalg, men tallene og indstillingerne.
+    /// D7 er udløbet: `token_set` og `token_delete` er væk. Det, de gjorde med én forbindelse, gør `forbindelse_tilfoej` og `forbindelse_glem` nu: den første
+    /// forbindelse er id 1 (den oprindelige post i nøgleringen), og uden forbindelser læses den oprindelige post (`[1]`). Glem af den sidste (`glem_alle`:
+    /// forbindelse for forbindelse, så alle) efterlader lageret som `slet_zoner` i 1.0.0: ingen forbindelser, zoner, valg eller notifikationsvalg, men tallene og
+    /// indstillingerne. Glem af én af to rører ikke den anden.
     #[test]
-    fn token_set_og_token_delete_virker_som_foer_med_een_forbindelse() {
+    fn forbindelse_tilfoej_og_glem_virker_som_foer_med_een_forbindelse() {
         let mut s = Store::i_hukommelse().unwrap();
         assert_eq!(
             ider_eller_1(s.forbindelse_ider().unwrap()),
             [1],
             "hullet: den oprindelige post læses"
         );
-        assert_eq!(token_set_forbindelse(&mut s, "t").unwrap(), (1, true));
-        assert_eq!(
-            token_set_forbindelse(&mut s, "t").unwrap(),
-            (1, false),
-            "et nyt token skifter på forbindelse 1"
-        );
+        assert_eq!(s.ny_forbindelse("t").unwrap(), 1, "forbindelse_tilfoej: den første er 1");
         assert_eq!(token::konto(1), "cloudflare-api-token", "samme post som 1.0.0");
         s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
             .unwrap();
@@ -2350,7 +2322,8 @@ mod tests {
         s.gem_notifikation_zone("z1", Some("fra")).unwrap();
         s.gem_indstilling("sprog", "da").unwrap();
         s.gem_doegn("z1", "2026-11-02", &[], "t").unwrap();
-        // Som glem_alle: hver forbindelse for sig, så det hele.
+        // forbindelse_glem på den sidste = glem_alle: hver forbindelse for sig, så det hele.
+        assert_eq!(s.forbindelse_ider().unwrap().len(), 1, "den sidste");
         for id in ider_eller_1(s.forbindelse_ider().unwrap()) {
             s.slet_zoner(id).unwrap();
         }
@@ -2360,17 +2333,18 @@ mod tests {
         assert!(s.valgte().unwrap().is_empty() && s.notifikation_zoner().unwrap().is_empty());
         assert_eq!(s.hentet("z1").unwrap().len(), 1, "tallene bliver");
         assert_eq!(s.indstilling("sprog").unwrap().as_deref(), Some("da"));
-        assert_eq!(
-            token_set_forbindelse(&mut s, "t").unwrap(),
-            (1, true),
-            "næste token er igen forbindelse 1"
-        );
-        // Er forbindelse 1 glemt, men 2 står, skifter token_set på 2.
+        assert_eq!(s.ny_forbindelse("t").unwrap(), 1, "næste API Token er igen forbindelse 1");
+        // To forbindelser: forbindelse_tilfoej giver 2, og forbindelse_glem(1) rører ikke 2.
         let to = s.ny_forbindelse("t").unwrap();
+        assert_eq!(to, 2);
+        assert_eq!(token::konto(to), "cloudflare-api-token-2");
         s.gem_zoner(1, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
         s.gem_zoner(to, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_valgte(&["z1".into(), "z2".into()]).unwrap();
+        assert!(s.forbindelse_ider().unwrap().len() > 1, "ikke den sidste: kun glem_en");
         s.slet_zoner(1).unwrap();
-        assert_eq!(token_set_forbindelse(&mut s, "t").unwrap(), (to, false));
+        assert_eq!(s.forbindelse_ider().unwrap(), [to]);
+        assert_eq!(s.valg().unwrap(), ["z2"]);
     }
 
     #[test]

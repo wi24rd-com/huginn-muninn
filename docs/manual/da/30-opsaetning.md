@@ -45,6 +45,8 @@ Hvert trin er vist med skærmbilleder i [Opret API Token hos Cloudflare – trin
 
 Programmet tjekker API Tokenet hos Cloudflare og gemmer det i din computers nøglering (macOS Nøglering eller Windows Credential Manager). Det forlader aldrig programmets Rust-del, og vinduet kan ikke hente det tilbage.
 
+**Har du flere Cloudflare-konti?** Guiden tager ét API Token. Under feltet står: "Har du flere Cloudflare-konti? Tilføj dem bagefter under Indstillinger → Forbindelser." Linjen kan ikke klikkes. Når guiden er færdig, tilføjer du de andre konti med **Tilføj API Token…** under **Indstillinger** › **Forbindelse**, ét API Token pr. konto. Se [Indstillinger](50-indstillinger.md#forbindelse).
+
 Får du en fejltekst, står den forklaret i [Fejlfinding](80-fejlfinding.md). De mest almindelige er, at API Tokenet mangler en af de to rettigheder, eller at domænet ikke er med under **Include** (**All zones** eller **Specific zone**).
 
 ## Trin 3 – Vælg domæner

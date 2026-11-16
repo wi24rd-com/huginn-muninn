@@ -19,7 +19,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - **Huginn (thought):** what is happening now — the attacks, what was stopped and how.
 - **Muninn (memory):** what has happened — every finished day is kept locally.
 
-**Privacy:** the app talks only to `api.cloudflare.com` with your own read-only API Token, stored in your OS keychain. Nothing is sent to Wi24rd. No telemetry.
+**Privacy:** the app talks only to `api.cloudflare.com` with your own read-only API Token (one per Cloudflare account, if you have several), stored in your OS keychain. Nothing is sent to Wi24rd. No telemetry.
 
 **Status:** version 1.0.0 for macOS (Apple silicon), signed with Developer ID and notarised by Apple. Download it from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). The Windows version is not released yet, and there is no Linux version.
 
@@ -29,6 +29,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - **One window:** at the top a title bar with the app's name, back and forward, **Guide**, **?** (help: the explanations for the view and the shortcuts), the gear (**Settings**) and **i** (About). Below it are the tabs and a band with the buttons for the view you are in, with **Fetch now** first. The footer at the bottom shows the status ("Fetching 3 of 7", "Updated 08:01") and the version.
 - **The tabs:** **Overview** · **Since last time** · **Attacks** · **Robots** · **Login** · **Denmark now** (the name follows your country) · **Visitors**. On the left is the list **Domains**, where you choose one domain or **All domains**. The first time, a guide with four steps opens (Welcome, Your API Token, Your domains, Notifications); without an API Token the tabs cannot be used.
 - **Settings** is a window behind the gear (⌘,): Appearance and language, Date and country, Start-up, Notifications, Connection, Data and First start.
+- **Several Cloudflare accounts:** under **Settings** › **Connection** you add one API Token per account with **Add API Token…**, side by side. The domains from all of them are shown together. Each connection is named after the account at Cloudflare; you can **Rename…** it, **Change API Token…** on it or **Forget…** it without touching the others. If Cloudflare rejects one API Token, the others keep fetching, and the Overview names the one that was rejected.
 - **Domains** are something you choose. After you connect, no domains are chosen, unless the API Token can see exactly one, which is then chosen for you. With **Choose domains** in the band on the Overview you choose the ones Huginn should fetch and show. A domain you clear is no longer fetched, is not shown anywhere and gives no notifications; its figures stay, and if you choose it again, what is missing is fetched, at most the last 30 days. A new domain on your account is not chosen: a discreet line in the Overview offers **Choose** or **Not now**.
 - **Overview:** a verdict line at the top ("1 domain needs action" / "Nothing to do") and one row per domain with status (**Act**, **Watch**, **Calm**, **Unknown**), why, refused requests (yesterday, 7 and 30 days) and attacks this week and last week. Click a row (or press Enter) to see the domain's attacks; **Attacks for all** shows them combined.
 - **Visitors:** unique visitors a year back (per week when the period is over 90 days), visits per country, known robots and most visited pages (the 404s apart), with blue bars and at most one filter at a time.
@@ -95,7 +96,7 @@ Download `Huginn-Muninn-1.0.0.zip` from [Releases](https://github.com/wi24rd-com
 
 ## What the app sends, and where
 - **To Cloudflare, and nowhere else:** the app itself makes network requests to one host only, `api.cloudflare.com`. That covers your zones, the figures for your chosen domains, Cloudflare's own findings and Cloudflare Radar. Each request carries your API Token and the name `huginn-muninn/<version>`.
-- **Your API Token** is stored in the operating system's keychain, never in a file, and is sent only to Cloudflare. Give it read permissions only; the guide shows [the two permissions it needs](docs/manual/en/31-cloudflare.md).
+- **Your API Token** is stored in the operating system's keychain, never in a file, and is sent only to Cloudflare. With several API Tokens, each has its own entry in the keychain, and each is sent only with the requests for its own account's domains. Give it read permissions only; the guide shows [the two permissions it needs](docs/manual/en/31-cloudflare.md).
 - **Nothing to Wi24rd:** no telemetry, no crash reports, no account and no update check. The app does not look for new versions by itself.
 - **Links open in your browser, only when you click:** a CVE number (cve.org), the source line under Radar figures (radar.cloudflare.com), **Create API Token at Cloudflare** and Cloudflare's own findings (dash.cloudflare.com), and **Guide** (wi24rd.com). The app fetches nothing from those sites itself.
 - **On your computer:** the figures are kept in one SQLite file in `~/Library/Application Support/com.wi24rd.huginn-muninn/`. See [Data and history](docs/manual/en/70-data.md).

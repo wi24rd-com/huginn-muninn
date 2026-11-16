@@ -1,6 +1,7 @@
 // Fotobog: et skærmbillede af hver visning i sider.mjs, i headless Chrome, uden at starte programmet og uden netværk ud af maskinen.
 // Brug: npm run test:foto. Matrix: tema × sprog × størrelse; HM_FOTO_MATRIX=lille giver kun light/da/1200×860.
 // Output: tests/ui/out/<dato>/fotobog/<id>--<tema>-<sprog>-<BxH>.png + manifest.json. HM_FOTO_UD overstyrer mappen.
+// HM_FOTO_SIDER vælger sider efter id, kommasepareret; * til sidst er et præfiks (fx HM_FOTO_SIDER='konti-*').
 // HM_CHROME peger på Chrome, HM_REPO på en anden kopi af repoet, HM_NU sætter uret (som i ui-roeg.mjs).
 // Hver visning hentes to gange: første gang tager billedet, anden gang (--dump-dom) henter fejlene ud og prøver luk. Exit 1 ved fejl, eller hvis et billede mangler eller er under 5 KB.
 import fs from 'node:fs';
@@ -15,7 +16,10 @@ process.env.HM_REPO = repo;
 let data = await import('./sider.mjs');
 const kopi = data.UR_AAR !== 2026 ? data.siderIAar() : null; /* fast år */
 if (kopi) data = await import(kopi);
-const { SIDER, svar, UR_STUB, BES_NOEGLE } = data;
+const { svar, UR_STUB, BES_NOEGLE } = data;
+const valg = (process.env.HM_FOTO_SIDER || '').split(',').map(x => x.trim()).filter(Boolean);
+const SIDER = valg.length ? data.SIDER.filter(s => valg.some(v => (v.endsWith('*') ? s.id.startsWith(v.slice(0, -1)) : s.id === v))) : data.SIDER;
+if (!SIDER.length) { console.log('HM_FOTO_SIDER rammer ingen side'); process.exit(1); }
 
 const CHROME = [process.env.HM_CHROME, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(f => f && fs.existsSync(f));
 if (!CHROME) { console.log('Chrome findes ikke (sæt HM_CHROME)'); process.exit(1); }

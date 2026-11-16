@@ -56,7 +56,8 @@ export const SIDEN_RK = [
 export const B2 = x => Object.assign({
   token_status: { sat: true }, zones_cache: { zoner: OVERBLIK.map(r => ({ id: r.id, navn: r.navn })), hentet: NU_ISO }, zones: OVERBLIK.map(r => ({ id: r.id, navn: r.navn })), overblik: OVERBLIK,
   valg_hent: ['z1'], koe_status: null, koe_prioritet: null, autostart_hent: true, autostart_saet: true, notifikation_hent: { niveau: 'standard', roed: true, zoner: {} }, notifikation_saet: null,
-  siden_sidst: { vis: false, nye: [], raekker: [] }, siden_sidst_set: null, data_status: { bytes: 2412000, foerste: '2026-10-04', sidste: '2026-11-02', domaener: 2, nulstil: { sikkerhed: null, trafik: null } }, token_delete: null, token_set: null, hent_nu: null,
+  siden_sidst: { vis: false, nye: [], raekker: [] }, siden_sidst_set: null, data_status: { bytes: 2412000, foerste: '2026-10-04', sidste: '2026-11-02', domaener: 2, nulstil: { sikkerhed: null, trafik: null } }, forbindelse_glem: null, forbindelse_tilfoej: 1, forbindelse_skift: null, forbindelse_omdoeb: null, hent_nu: null,
+  forbindelser_hent: [{ id: 1, cf_navn: 'Eksempel ApS', eget_navn: null, konti: 1, domaener: 3, afvist: false }],
   kortdata: KORT, vaern_cache: vaernUd(), vaern_oversigt: vaernUd(), vaern_samlet_cache: { vaern: vaernUd(), valgte: [], domaener: 1, med_tal: 1 },
 }, x);
 export const REACT = 'React - RCE - CVE:CVE-2025-55182';
@@ -181,3 +182,18 @@ export const SIDER = [
   { id: 'guide-2', navn: 'guiden, trin 2: Dit API Token', hash: 'overblik', visning: 'opsaetning', aabn: ['#guide-naeste', '#guide-trin-token .hm-hjaelp summary'], rod: '#guide-dialog', ekstra: { token_status: { sat: false } } },
   { id: 'alle-fra', navn: 'velkomsten', hash: 'overblik', ekstra: { domaener_hent: zoner.map(z => ({ ...z, til: false, ny: false })), overblik: [], valg_hent: [] } },
 ];
+/* V-KONTI.1 B2: to forbindelser (opdigtede navne; den ene er Cloudflares standardnavn med e-mailadresse) og en tilstand, hvor den ene er afvist. Siderne
+   hedder konti-…; HM_FOTO_SIDER='konti-*' tager kun dem (fotobogen til cyklussen). */
+export const KONTI_TO = [{ id: 1, cf_navn: 'Eksempel ApS', eget_navn: null, konti: 1, domaener: 2, afvist: false }, { id: 2, cf_navn: "test@wi24rd.com's Account", eget_navn: null, konti: 1, domaener: 1, afvist: false }];
+const kontiDomaener = zoner.map((z, i) => ({ ...z, til: i !== 2, ny: false, forbindelse: i < 2 ? 1 : 2 }));
+const KONTI = { forbindelser_hent: KONTI_TO, domaener_hent: kontiDomaener };
+const KONTI_AFVIST = { ...KONTI, forbindelser_hent: KONTI_TO.map(f => ({ ...f, afvist: f.id === 2 })), koe_status: { zone: null, navn: null, zoner_i_alt: 3, zoner_faerdige: 3, doegn_i_alt: 93, doegn_faerdige: 93, zoner_fejl: 0, tilstand: 'faerdig', afviste: [2] } };
+const indstForb = 'section[aria-labelledby="indst-forbindelse"]';
+SIDER.push(
+  { id: 'konti-forbindelser', navn: 'Indstillinger: to forbindelser', hash: 'overblik', aabn: ['#indst-knap'], rul: indstForb, rod: '#forb-liste', luk: '#indst-luk', ekstra: KONTI },
+  { id: 'konti-omdoeb', navn: 'Omdøb en forbindelse', hash: 'overblik', aabn: ['#indst-knap', '#forb-2-omdoeb'], rod: '#omdoeb-dialog', luk: '#omdoeb-nej', ekstra: KONTI },
+  { id: 'konti-glem', navn: 'Glem en forbindelse (navnet i overskriften)', hash: 'overblik', aabn: ['#indst-knap', '#forb-2-glem'], rod: '#glem-dialog', luk: '#glem-nej', ekstra: KONTI },
+  { id: 'konti-domaener', navn: 'Domæner i to grupper', hash: 'overblik', aabn: ['#vaelg-dom'], rod: '#domaener-grupper', luk: '#domaener-luk', ekstra: KONTI },
+  { id: 'konti-afvist', navn: 'Overblik med banneret om et afvist API Token', hash: 'overblik', rod: '#afvist-linjer .ban', ekstra: KONTI_AFVIST },
+  { id: 'konti-afvist-skift', navn: 'Skift API Token… fra banneret (rækken med den røde chip)', hash: 'overblik', aabn: ['#afvist-linjer .ban button'], rul: indstForb, rod: '#skift-form', luk: '#indst-luk', ekstra: KONTI_AFVIST },
+);

@@ -108,6 +108,14 @@ If you delete the program, or want to close the access for any other reason, del
 ![Confirm deletion](../img/cf-12-delete-confirm.webp)
 *Cloudflare asks whether you are sure. **Delete** removes the token at once; the program will then say that Cloudflare rejected the API Token.*
 
+## More than one account
+
+The program takes one API Token per Cloudflare account. If you have domains on more than one account, create an API Token for each account following steps 1–6. You paste the first one in the guide. You add the others under **Settings** › **Connection** with **Add API Token…**. The domains from all accounts are shown together.
+
+Each API Token becomes a connection in the program. The name the program shows is the account's name at Cloudflare. It is used as it is, even when it is an e-mail address, for example "…'s Account". If one API Token can see more than one account, it says, for example, "… + 1 more". If the program does not know a name yet, it says, for example, "Connection 2".
+
+You can give the connection your own name with **Rename…** in the program. The name at Cloudflare does not change. See [Settings](50-indstillinger.md#connection).
+
 ## For the IT company: one token per customer
 
 If you manage customers' domains, make one API Token per customer with **Specific zone** and the customer's domain (step 3), give the customer the token, and the customer pastes it into their own program. The customer then sees only their own domain, and you can revoke the access again without touching anything else.

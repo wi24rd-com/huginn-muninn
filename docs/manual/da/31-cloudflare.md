@@ -108,6 +108,14 @@ Sletter du programmet, eller vil du af andre grunde lukke adgangen, sletter du t
 ![Bekræft sletning](../img/cf-12-delete-confirm.webp)
 *Cloudflare spørger, om du er sikker. **Delete** fjerner tokenet med det samme; programmet vil derefter sige, at Cloudflare afviste API Tokenet.*
 
+## Flere konti
+
+Programmet tager ét API Token pr. Cloudflare-konto. Har du domæner på flere konti, opretter du et API Token for hver konto efter trin 1–6. Det første indsætter du i guiden. De andre tilføjer du under **Indstillinger** › **Forbindelse** med **Tilføj API Token…**. Domænerne fra alle konti vises samlet.
+
+Hvert API Token bliver en forbindelse i programmet. Navnet, programmet viser, er kontoens navn hos Cloudflare. Det bruges, som det er, også når det er en mailadresse, fx "…'s Account". Kan ét API Token se flere konti, står der fx "… + 1 anden". Kender programmet endnu ikke noget navn, står der fx "Forbindelse 2".
+
+Du kan give forbindelsen dit eget navn med **Omdøb…** i programmet. Navnet hos Cloudflare ændres ikke. Se [Indstillinger](50-indstillinger.md#forbindelse).
+
 ## Til IT-firmaet: ét token pr. kunde
 
 Administrerer du kunders domæner, laver du ét API Token pr. kunde med **Specific zone** og kundens domæne (trin 3), giver kunden tokenet, og kunden indsætter det i sit eget program. Kunden ser så kun sit eget domæne, og du kan tilbagekalde adgangen igen uden at røre noget andet.

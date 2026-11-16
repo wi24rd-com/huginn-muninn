@@ -1,0 +1,15 @@
+{
+  "om": "Det viste navn på en forbindelse (V-KONTI.1, D5). Samme tabel prøves mod agent::vist_navn (cargo test) og hmRamme.vistNavn (npm run test:ui). null: intet navn; programmet viser »Forbindelse {id}« / »Connection {id}«. Kun opdigtede navne og test@wi24rd.com.",
+  "tilfaelde": [
+    { "id": 1, "cf_navn": null, "eget_navn": null, "konti": 0, "da": null, "en": null },
+    { "id": 2, "cf_navn": "test@wi24rd.com's Account", "eget_navn": null, "konti": 1, "da": "test@wi24rd.com's Account", "en": "test@wi24rd.com's Account" },
+    { "id": 3, "cf_navn": "Eksempel ApS", "eget_navn": null, "konti": 2, "da": "Eksempel ApS + 1 anden", "en": "Eksempel ApS + 1 more" },
+    { "id": 4, "cf_navn": "Eksempel ApS", "eget_navn": null, "konti": 4, "da": "Eksempel ApS + 3 andre", "en": "Eksempel ApS + 3 more" },
+    { "id": 5, "cf_navn": "Eksempel ApS", "eget_navn": "Kunden", "konti": 3, "da": "Kunden", "en": "Kunden" },
+    { "id": 6, "cf_navn": "Eksempel ApS", "eget_navn": "", "konti": 1, "da": "Eksempel ApS", "en": "Eksempel ApS" },
+    { "id": 7, "cf_navn": "", "eget_navn": null, "konti": 1, "da": null, "en": null },
+    { "id": 8, "cf_navn": null, "eget_navn": "Mit eget navn", "konti": 0, "da": "Mit eget navn", "en": "Mit eget navn" },
+    { "id": 9, "cf_navn": "Æblegården Øster Åby", "eget_navn": null, "konti": 1, "da": "Æblegården Øster Åby", "en": "Æblegården Øster Åby" },
+    { "id": 10, "cf_navn": "test@wi24rd.com's Account", "eget_navn": null, "konti": 2, "da": "test@wi24rd.com's Account + 1 anden", "en": "test@wi24rd.com's Account + 1 more" }
+  ]
+}

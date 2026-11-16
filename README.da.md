@@ -19,7 +19,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - **Huginn (tanke):** det, der sker nu — angrebene, hvad der blev stoppet og hvordan.
 - **Muninn (hukommelse):** det, der er sket — hver færdig dag gemmes lokalt.
 
-**Privatliv:** programmet taler kun med `api.cloudflare.com` med dit eget API Token, der kun kan læse, gemt i styresystemets nøglering. Intet sendes til Wi24rd. Ingen telemetri.
+**Privatliv:** programmet taler kun med `api.cloudflare.com` med dit eget API Token, der kun kan læse (ét pr. Cloudflare-konto, hvis du har flere), gemt i styresystemets nøglering. Intet sendes til Wi24rd. Ingen telemetri.
 
 **Status:** version 1.0.0 til macOS (Apple silicon), signeret med Developer ID og notariseret af Apple. Hent den under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). Windows-udgaven er ikke udgivet endnu, og der findes ingen Linux-udgave.
 
@@ -29,6 +29,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - **Ét vindue:** øverst en titellinje med programmets navn, tilbage og frem, **Vejledning**, **?** (hjælp: forklaringerne til visningen og genvejene), tandhjulet (**Indstillinger**) og **i** (Om). Under den står fanerne og et bånd med knapperne til den visning, du står i, med **Hent nu** først. Fodlinjen nederst viser status ("Henter 3 af 7", "Opdateret 08.01") og versionen.
 - **Fanerne:** **Overblik** · **Siden sidst** · **Angreb** · **Robotter** · **Login** · **Danmark lige nu** (navnet følger dit land) · **Besøgende**. Til venstre står listen **Domæner**, hvor du vælger ét domæne eller **Alle domæner**. Første gang åbner en guide med fire trin (Velkommen, Dit API Token, Dine domæner, Besked); uden API Token kan fanerne ikke bruges.
 - **Indstillinger** er et vindue bag tandhjulet (⌘,): Udseende og sprog, Dato og land, Start, Notifikationer, Forbindelse, Data og Første start.
+- **Flere Cloudflare-konti:** under **Indstillinger** › **Forbindelse** tilføjer du ét API Token pr. konto med **Tilføj API Token…**, side om side. Domænerne fra dem alle vises samlet. Hver forbindelse har kontoens navn hos Cloudflare; du kan **Omdøb…**, **Skift API Token…** og **Glem…** hver for sig uden at røre de andre. Afviser Cloudflare ét API Token, henter de andre videre, og Overblik siger, hvilket der blev afvist.
 - **Domæner** er et tilvalg. Når du har forbundet, er ingen domæner valgt, medmindre API Tokenet ser præcis ét, som så vælges for dig. Med **Vælg domæner** i båndet på Overblik vælger du dem, Huginn skal hente og vise. Et domæne, du fravælger, hentes ikke længere, vises ingen steder og giver ingen notifikationer; dets tal bliver liggende, og vælger du det igen, hentes det, der mangler, højst de seneste 30 dage. Et nyt domæne på kontoen er ikke valgt: en diskret linje i Overblik tilbyder **Vælg** eller **Ikke nu**.
 - **Overblik:** en domslinje øverst ("1 domæne kræver handling" / "Intet at gøre") og én række pr. domæne med status (**Handl**, **Hold øje**, **Roligt**, **Ukendt**), hvorfor, afviste forespørgsler (i går, 7 og 30 dage) og angreb denne og sidste uge. Klik på en række (eller Enter) for at se domænets angreb; **Angreb for alle** viser dem samlet.
 - **Besøgende:** unikke besøgende et år tilbage (pr. uge, når perioden er over 90 dage), besøg pr. land, kendte robotter og mest besøgte sider (404'erne for sig), med blå søjler og højst ét filter ad gangen.
@@ -95,7 +96,7 @@ Hent `Huginn-Muninn-1.0.0.zip` under [Releases](https://github.com/wi24rd-com/hu
 
 ## Hvad programmet sender, og hvorhen
 - **Til Cloudflare og ingen andre steder:** programmet laver selv kun netværkskald til én vært, `api.cloudflare.com`. Det dækker dine zoner, tallene for dine valgte domæner, Cloudflares egne fund og Cloudflare Radar. Hvert kald har dit API Token og navnet `huginn-muninn/<version>` med.
-- **Dit API Token** gemmes i styresystemets nøglering, aldrig i en fil, og sendes kun til Cloudflare. Giv det kun læserettigheder; vejledningen viser [de to rettigheder, det skal have](docs/manual/da/31-cloudflare.md).
+- **Dit API Token** gemmes i styresystemets nøglering, aldrig i en fil, og sendes kun til Cloudflare. Med flere API Tokens har hvert sin post i nøgleringen, og hvert sendes kun med kaldene for sin egen kontos domæner. Giv det kun læserettigheder; vejledningen viser [de to rettigheder, det skal have](docs/manual/da/31-cloudflare.md).
 - **Intet til Wi24rd:** ingen telemetri, ingen fejlrapporter, ingen konto og intet tjek for opdateringer. Programmet leder ikke selv efter nye udgaver.
 - **Links åbner i din browser, og kun når du klikker:** et CVE-nummer (cve.org), kildelinjen under Radar-tal (radar.cloudflare.com), **Opret API Token hos Cloudflare** og Cloudflares egne fund (dash.cloudflare.com) og **Vejledning** (wi24rd.com). Programmet henter ikke selv noget fra de sider.
 - **På din computer:** tallene ligger i én SQLite-fil i `~/Library/Application Support/com.wi24rd.huginn-muninn/`. Se [Data og historik](docs/manual/da/70-data.md).

@@ -1,8 +1,6 @@
 // Appens egne kommandoer får autogenererede rettigheder (allow-<kommando>), så capabilities/ skal nævne hver enkelt.
 const KOMMANDOER: &[&str] = &[
-    "token_set",
     "token_status",
-    "token_delete",
     "forbindelser_hent",
     "forbindelse_tilfoej",
     "forbindelse_skift",

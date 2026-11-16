@@ -271,6 +271,22 @@
   }
   const tegnHuller = () => $('hul-linjer').replaceChildren(...hulLinjer());
 
+  /* ── afviste API Tokens (V-KONTI.1) ── Er nogle af flere forbindelser afvist, står ét banner pr. afvist forbindelse (kittets banner) med navnet og
+     "Skift API Token…", som åbner Indstillinger med formularen på forbindelsens række. Er alle afvist, står det som i dag (køens linje og fodlinjen).
+     Tegnes kun, når de afviste eller navnene ændrer sig: banneret er role="alert" og må ikke læses op ved hver melding fra køen. */
+  let afvistNoegle = null;
+  function tegnAfvist() {
+    const a = R.afvist(), ider = a.delvis ? a.ider : [];
+    const noegle = ider.map((id, i) => id + '\t' + a.navne[i]).join('\n');
+    if (noegle === afvistNoegle) return;
+    afvistNoegle = noegle;
+    $('afvist-linjer').replaceChildren(...ider.map((id, i) => {
+      const b = window.Kit.banner({ variant: 'danger', tekst: fmt(T.afvistForb, { navn: a.navne[i] }), handling: { tekst: T.skift, aria: fmt(T.forbSkiftAria, { navn: a.navne[i] }), ved: () => window.hmIndst.skift(id) } });
+      b.dataset.forbindelse = String(id);
+      return b;
+    }));
+  }
+
   /* ── tabellen ── */
   /* "Angreb denne uge" farves kun ved en stor ændring: rød ved mindst det dobbelte, grøn ved højst det halve, og i begge
      tilfælde en forskel på mindst 20 angreb. Ellers neutral; procenten står i title. */
@@ -384,6 +400,8 @@
   R.paa('domaener', tegnTabel);
   R.paa('siden', tegnDom); // "ny" ved domæner, der er nye siden sidst
   R.paa('huller', tegnHuller);
+  R.paa('koe', tegnAfvist);
+  R.paa('forbindelser', tegnAfvist);
   R.hulLinjer = hulLinjer;
   R.hvorfor = hvorfor;
   R.guide = guide;
