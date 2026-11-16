@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-forbindelse-tilfoej"
+description = "Enables the forbindelse_tilfoej command without any pre-configured scope."
+commands.allow = ["forbindelse_tilfoej"]
+
+[[permission]]
+identifier = "deny-forbindelse-tilfoej"
+description = "Denies the forbindelse_tilfoej command without any pre-configured scope."
+commands.deny = ["forbindelse_tilfoej"]

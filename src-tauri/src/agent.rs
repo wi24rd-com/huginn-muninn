@@ -13,6 +13,7 @@ use crate::cf::Fejl;
 use crate::koe::{Fase, KoeStatus};
 use crate::notify::flertal;
 use crate::overblik::{MoensterSlags, Raekke1};
+use crate::store::Forbindelse;
 use crate::vaern::parse_iso;
 
 pub const AABN: &str = "aabn";
@@ -143,9 +144,46 @@ pub fn nye_tekst(n: usize, kl: Option<(i64, i64)>, sprog: Sprog) -> String {
     }
 }
 
+/// Forbindelsens viste navn (V-KONTI.1, D5): brugerens, ellers Cloudflares kontonavn (med "+ N andre", når tokenet ser flere konti). `None` uden navn. Ren funktion.
+pub fn vist_navn(f: &Forbindelse, sprog: Sprog) -> Option<String> {
+    if let Some(eget) = f.eget_navn.as_deref().filter(|n| !n.is_empty()) {
+        return Some(eget.to_string());
+    }
+    let cf = f.cf_navn.as_deref().filter(|n| !n.is_empty())?;
+    Some(match (f.konti - 1, sprog) {
+        (n, Sprog::Da) if n > 0 => format!("{cf} + {n} {}", if n == 1 { "anden" } else { "andre" }),
+        (n, Sprog::En) if n > 0 => format!("{cf} + {n} more"),
+        _ => cf.to_string(),
+    })
+}
+
+/// Teksten, når Cloudflare har afvist en eller flere forbindelsers token: én med navn → navnet, én uden navn → som i 1.0.0, flere → "n af m". `None`, når
+/// ingen er afvist. Kontoens navn står kun her, i databasen og i `forbindelser_hent` (V-KONTI.1). Ren funktion.
+pub fn afvist_tekst(afviste: &[i64], forbindelser: &[Forbindelse], sprog: Sprog) -> Option<String> {
+    let da = sprog == Sprog::Da;
+    match afviste {
+        [] => None,
+        [id] => Some(
+            match (forbindelser.iter().find(|f| f.id == *id).and_then(|f| vist_navn(f, sprog)), da) {
+                (Some(n), true) => format!("Cloudflare afviste API Tokenet «{n}»"),
+                (Some(n), false) => format!("Cloudflare rejected the API Token “{n}”"),
+                (None, true) => "Cloudflare afviste API Tokenet".into(),
+                (None, false) => "Cloudflare rejected the API Token".into(),
+            },
+        ),
+        _ => {
+            let (n, m) = (afviste.len(), forbindelser.len().max(afviste.len()));
+            Some(match da {
+                true => format!("Cloudflare afviste {n} af {m} API Tokens"),
+                false => format!("Cloudflare rejected {n} of {m} API Tokens"),
+            })
+        }
+    }
+}
+
 /// Statuslinjen i menuen (og tooltippen) ud fra køens seneste status. `faerdig_kl` er, hvornår den seneste runde sluttede
-/// (ms, UTC), og `nu` er uret; begge på vægur, så teksten passer efter dvale. Ren funktion.
-pub fn menulinje_tekst(status: Option<&KoeStatus>, faerdig_kl: Option<i64>, nu: i64, sprog: Sprog) -> String {
+/// (ms, UTC), og `nu` er uret; begge på vægur, så teksten passer efter dvale. `forbindelser` giver navnene ved en afvisning. Ren funktion.
+pub fn menulinje_tekst(status: Option<&KoeStatus>, faerdig_kl: Option<i64>, nu: i64, sprog: Sprog, forbindelser: &[Forbindelse]) -> String {
     let da = sprog == Sprog::Da;
     let Some(s) = status else {
         return if da { "Starter …" } else { "Starting …" }.into();
@@ -179,6 +217,11 @@ pub fn menulinje_tekst(status: Option<&KoeStatus>, faerdig_kl: Option<i64>, nu: 
                 (n, true) => t.push_str(&format!(" · {n} {} fejlede", flertal(n as i64, "domæne", "domæner"))),
                 (n, false) => t.push_str(&format!(" · {n} {} failed", flertal(n as i64, "domain", "domains"))),
             }
+            // V-KONTI.1: andre forbindelser blev hentet, men en er afvist.
+            if let Some(a) = afvist_tekst(&s.afviste, forbindelser, sprog) {
+                t.push_str(" · ");
+                t.push_str(&a);
+            }
             t
         }
         Fase::Fejl => match (&s.fejl, da) {
@@ -186,8 +229,14 @@ pub fn menulinje_tekst(status: Option<&KoeStatus>, faerdig_kl: Option<i64>, nu: 
             (Some(Fejl::Noegle), false) => "Waiting for the keychain – choose Fetch now".into(),
             (Some(Fejl::IntetToken), true) => "Intet API Token – åbn Huginn".into(),
             (Some(Fejl::IntetToken), false) => "No API Token – open Huginn".into(),
-            (Some(Fejl::Afvist(_)), true) => "Cloudflare afviste API Tokenet".into(),
-            (Some(Fejl::Afvist(_)), false) => "Cloudflare rejected the API Token".into(),
+            (Some(Fejl::Afvist(_)), _) => afvist_tekst(&s.afviste, forbindelser, sprog).unwrap_or_else(|| {
+                if da {
+                    "Cloudflare afviste API Tokenet"
+                } else {
+                    "Cloudflare rejected the API Token"
+                }
+                .into()
+            }),
             (_, true) => "Hentningen er stoppet".into(),
             (_, false) => "Fetching has stopped".into(),
         },
@@ -206,6 +255,8 @@ pub struct Agent {
     maerker: Mutex<Maerker>,
     /// Nyt siden Siden sidst blev åbnet: antal og hvornår (lokal time og minut).
     nye: Mutex<(usize, Option<(i64, i64)>)>,
+    /// Forbindelserne (navnene ved en afvisning).
+    forbindelser: Mutex<Vec<Forbindelse>>,
 }
 
 impl Agent {
@@ -218,7 +269,7 @@ impl Agent {
             MenuItem::with_id(app, HENT, hent, true, None::<&str>)?,
             MenuItem::with_id(app, AFSLUT, afslut, true, None::<&str>)?,
         ];
-        let tekst = menulinje_tekst(None, None, 0, sprog);
+        let tekst = menulinje_tekst(None, None, 0, sprog, &[]);
         let status = MenuItem::with_id(app, STATUS, &tekst, true, None::<&str>)?;
         let menu = Menu::with_items(
             app,
@@ -252,6 +303,7 @@ impl Agent {
             faerdig_kl: Mutex::new(None),
             maerker: Mutex::new(Maerker::default()),
             nye: Mutex::new((0, None)),
+            forbindelser: Mutex::new(Vec::new()),
         })
     }
 
@@ -265,14 +317,20 @@ impl Agent {
         let maerker = self.maerker.lock().unwrap_or_else(|e| e.into_inner()).clone();
         let sprog = self.sprog();
         let (nye, kl) = *self.nye.lock().unwrap_or_else(|e| e.into_inner());
+        let forbindelser = self.forbindelser.lock().unwrap_or_else(|e| e.into_inner()).clone();
         let tekst = format!(
             "{}{}{}",
-            menulinje_tekst(status, faerdig, nu, sprog),
+            menulinje_tekst(status, faerdig, nu, sprog, &forbindelser),
             maerke_tekst(&maerker, sprog),
             nye_tekst(nye, kl, sprog)
         );
         let _ = self.status.set_text(&tekst);
         let _ = self.ikon.set_tooltip(Some(&tekst));
+    }
+
+    /// Forbindelserne, som de står i databasen (navnene ved en afvisning).
+    pub fn saet_forbindelser(&self, f: Vec<Forbindelse>) {
+        *self.forbindelser.lock().unwrap_or_else(|e| e.into_inner()) = f;
     }
 
     /// Domænerne med et mærke.
@@ -325,14 +383,87 @@ mod tests {
             fejl: None,
             fortsaetter_kl: None,
             fejl_navn: None,
+            afviste: Vec::new(),
         }
     }
 
     fn begge(s: Option<&KoeStatus>, faerdig: Option<i64>) -> (String, String) {
+        begge_med(s, faerdig, &[])
+    }
+
+    fn begge_med(s: Option<&KoeStatus>, faerdig: Option<i64>, f: &[Forbindelse]) -> (String, String) {
         (
-            menulinje_tekst(s, faerdig, NU, Sprog::Da),
-            menulinje_tekst(s, faerdig, NU, Sprog::En),
+            menulinje_tekst(s, faerdig, NU, Sprog::Da, f),
+            menulinje_tekst(s, faerdig, NU, Sprog::En, f),
         )
+    }
+
+    fn forb(id: i64, cf: Option<&str>, eget: Option<&str>, konti: i64) -> Forbindelse {
+        Forbindelse {
+            id,
+            cf_navn: cf.map(str::to_string),
+            eget_navn: eget.map(str::to_string),
+            konti,
+            domaener: 1,
+        }
+    }
+
+    /// V-KONTI.1: én afvist forbindelse nævnes ved sit viste navn (brugerens, ellers Cloudflares, "+ N andre" ved flere konti), flere som "n af m".
+    /// Med én forbindelse uden navn er teksten som i 1.0.0. Andre forbindelser blev hentet: teksten står efter "Hentet".
+    #[test]
+    fn afvist_med_forbindelsens_navn() {
+        let t = |a: &str, b: &str| (a.to_string(), b.to_string());
+        let fejl = |afviste: Vec<i64>| KoeStatus {
+            fejl: Some(Fejl::Afvist(403)),
+            afviste,
+            ..st(Fase::Fejl)
+        };
+        assert_eq!(
+            begge_med(Some(&fejl(vec![1])), None, &[forb(1, None, None, 0)]),
+            t("Cloudflare afviste API Tokenet", "Cloudflare rejected the API Token")
+        );
+        let navnet = [forb(1, Some("test@wi24rd.com's Account"), None, 1)];
+        assert_eq!(
+            begge_med(Some(&fejl(vec![1])), None, &navnet),
+            t(
+                "Cloudflare afviste API Tokenet «test@wi24rd.com's Account»",
+                "Cloudflare rejected the API Token “test@wi24rd.com's Account”"
+            ),
+            "D5: kontoens navn uændret"
+        );
+        let flere = [
+            forb(1, Some("Eksempel ApS"), Some("Kunden"), 1),
+            forb(2, Some("Anden Konto"), None, 3),
+        ];
+        assert_eq!(
+            begge_med(Some(&fejl(vec![1])), None, &flere),
+            t(
+                "Cloudflare afviste API Tokenet «Kunden»",
+                "Cloudflare rejected the API Token “Kunden”"
+            ),
+            "brugerens navn vinder"
+        );
+        assert_eq!(
+            begge_med(Some(&fejl(vec![1, 2])), None, &flere),
+            t("Cloudflare afviste 2 af 2 API Tokens", "Cloudflare rejected 2 of 2 API Tokens")
+        );
+        let delvis = KoeStatus {
+            afviste: vec![2],
+            ..st(Fase::Faerdig)
+        };
+        assert_eq!(
+            begge_med(Some(&delvis), Some(NU - 2 * MIN), &flere),
+            t(
+                "Hentet for 2 min. siden · Cloudflare afviste API Tokenet «Anden Konto + 2 andre»",
+                "Fetched 2 min ago · Cloudflare rejected the API Token “Anden Konto + 2 more”"
+            )
+        );
+        assert_eq!(
+            vist_navn(&forb(3, Some("A"), Some(""), 2), Sprog::Da).as_deref(),
+            Some("A + 1 anden"),
+            "tomt eget navn: Cloudflares"
+        );
+        assert_eq!(vist_navn(&forb(3, None, None, 0), Sprog::En), None);
     }
 
     #[test]

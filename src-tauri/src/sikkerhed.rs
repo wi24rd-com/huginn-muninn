@@ -22,8 +22,17 @@ pub const INTERVAL_MS: i64 = 60 * 60 * 1000;
 pub const PR_SIDE: usize = 1000;
 pub const MAKS_SIDER: usize = 5;
 /// I `indstillinger`: hvornår fundene sidst blev forsøgt hentet, og hvordan det gik (`ok`, `mangler_ret` eller `fejl:<kode>`).
+/// Pr. forbindelse (V-KONTI.1): nøglen er `<HENTET>:<id>` og `<TILSTAND>:<id>` (`hentet_noegle`, `tilstand_noegle`); skema 19 gav de gamle til forbindelse 1.
 pub const HENTET: &str = "sikkerhedsfund_hentet";
 pub const TILSTAND: &str = "sikkerhedsfund_tilstand";
+
+pub fn hentet_noegle(forbindelse: i64) -> String {
+    format!("{HENTET}:{forbindelse}")
+}
+
+pub fn tilstand_noegle(forbindelse: i64) -> String {
+    format!("{TILSTAND}:{forbindelse}")
+}
 /// Alvor, der giver Hold øje. Cloudflares værdier er `Low`, `Moderate` og `Critical` (how-it-works-siden); tællesiden nævner også `high`, så
 /// den tæller med, hvis den nogensinde kommer.
 const HOEJ: &[&str] = &["critical", "high"];

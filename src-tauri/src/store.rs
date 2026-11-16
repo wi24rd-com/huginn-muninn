@@ -16,7 +16,8 @@ use crate::cf::{Fejl, Zone};
 /// 7: + radar_dag. 8: valg → fravalgt. 9: fravalgt → valgt, + afvist_ny, ny_zone. 10: + teknologi, Radar-serier uden brug væk.
 /// 11: + hentet_angreb (art `angreb`). 12: + vurderet, hentet_angreb tømt, så angrebene hentes igen med netværket. 13: + hentet_historik, hentet_laek, zone_tilstand.
 /// 14: + tek_vis. 15: + hentet_dns, hentet_dmarc. 16: + sikkerhedsfund. 17: + hentet_besoeg. 18: + hentet_robot, hentet_side.
-const SKEMA_VERSION: i64 = 18;
+/// 19: + forbindelse, zone_forbindelse (V-KONTI.1).
+const SKEMA_VERSION: i64 = 19;
 const SKEMA_1: &str = "
 CREATE TABLE IF NOT EXISTS vagt_dag (zone TEXT NOT NULL, dag TEXT NOT NULL, art TEXT NOT NULL, noegle TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (zone, dag, art, noegle));
 CREATE TABLE IF NOT EXISTS hentet (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
@@ -117,6 +118,20 @@ const SKEMA_18: &str = "
 CREATE TABLE IF NOT EXISTS hentet_robot (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
 CREATE TABLE IF NOT EXISTS hentet_side (zone TEXT NOT NULL, dag TEXT NOT NULL, hentet_utc TEXT NOT NULL, PRIMARY KEY (zone, dag));
 ";
+/// `forbindelse`: ét API Token i nøgleringen og dets navn (V-KONTI.1). Ingen hemmeligheder og intet konto-id: `cf_navn` er kontoens navn hos Cloudflare
+/// (den første efter navn, hvis tokenet ser flere konti), `konti` antallet af forskellige konti, `eget_navn` brugerens navn (`NULL` = Cloudflares). Id'et
+/// genbruges aldrig (`AUTOINCREMENT`); forbindelse 1 bruger nøgleringens oprindelige post (`token.rs`). `zone_forbindelse`: hvilke forbindelser der ser
+/// hvilke zoner; en zone hører til den med lavest id, hvis token ikke er afvist (`Store::ejere`). En installation med en zoneliste har et token i
+/// nøgleringen: det bliver forbindelse 1, og alle zoner hører til den. Sikkerhedsfundenes tidspunkt og tilstand bliver forbindelse 1's. Ingen anden række ændres.
+const SKEMA_19: &str = "
+CREATE TABLE IF NOT EXISTS forbindelse (id INTEGER PRIMARY KEY AUTOINCREMENT, cf_navn TEXT, eget_navn TEXT, konti INTEGER NOT NULL DEFAULT 0, oprettet_utc TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS zone_forbindelse (zone TEXT NOT NULL, forbindelse INTEGER NOT NULL, PRIMARY KEY (zone, forbindelse));
+INSERT INTO forbindelse (id, cf_navn, eget_navn, konti, oprettet_utc)
+  SELECT 1, NULL, NULL, 0, COALESCE((SELECT min(hentet_utc) FROM zoner), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  WHERE EXISTS (SELECT 1 FROM zoner) AND NOT EXISTS (SELECT 1 FROM forbindelse);
+INSERT OR IGNORE INTO zone_forbindelse (zone, forbindelse) SELECT id, 1 FROM zoner WHERE EXISTS (SELECT 1 FROM forbindelse WHERE id = 1);
+UPDATE indstillinger SET noegle = noegle || ':1' WHERE noegle IN ('sikkerhedsfund_hentet', 'sikkerhedsfund_tilstand');
+";
 /// Arterne fra hovedhentningen (`vaern::DOEGN_QUERY` og `sti200::hoved_query`): dem, `gem_doegn` erstatter. `fwn` er antal hændelser
 /// i `fw`-svaret (`vaern::FW_HAENDELSER`, kun til loftet).
 pub const DOEGN_ARTER: &[&str] = &[
@@ -181,6 +196,16 @@ pub struct Raekke {
     pub n: i64,
 }
 
+/// Én forbindelse (V-KONTI.1): et API Token i nøgleringen og dets navn. Ingen hemmelighed, intet konto-id og intet token-id. `domaener`: zoner, den ser.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Forbindelse {
+    pub id: i64,
+    pub cf_navn: Option<String>,
+    pub eget_navn: Option<String>,
+    pub konti: i64,
+    pub domaener: i64,
+}
+
 pub struct Store {
     db: Connection,
 }
@@ -200,7 +225,7 @@ impl Store {
         Self::klar(Connection::open_in_memory().map_err(lagerfejl)?)
     }
 
-    /// Opretter eller migrerer skemaet trin for trin (0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10) i én transaktion.
+    /// Opretter eller migrerer skemaet trin for trin (0 → 1 → … → `SKEMA_VERSION`) i én transaktion.
     fn klar(mut db: Connection) -> Result<Self, Fejl> {
         let v: i64 = db.query_row("PRAGMA user_version", [], |r| r.get(0)).map_err(lagerfejl)?;
         if v > SKEMA_VERSION {
@@ -260,6 +285,9 @@ impl Store {
         }
         if v < 18 {
             tx.execute_batch(SKEMA_18).map_err(lagerfejl)?;
+        }
+        if v < 19 {
+            tx.execute_batch(SKEMA_19).map_err(lagerfejl)?;
         }
         tx.pragma_update(None, "user_version", SKEMA_VERSION).map_err(lagerfejl)?;
         tx.commit().map_err(lagerfejl)?;
@@ -759,10 +787,15 @@ impl Store {
         rk.collect::<Result<_, _>>().map_err(lagerfejl)
     }
 
-    /// Erstatter alle gemte sikkerhedsfund med `fund`. Én transaktion.
-    pub fn gem_sikkerhedsfund(&mut self, fund: &[crate::sikkerhed::Fund], hentet_utc: &str) -> Result<(), Fejl> {
+    /// Erstatter de gemte sikkerhedsfund for `zoner` (den hentende forbindelses domæner, `Store::ejede`) med `fund`. Andre forbindelsers fund røres ikke. Én transaktion.
+    pub fn gem_sikkerhedsfund(&mut self, zoner: &[String], fund: &[crate::sikkerhed::Fund], hentet_utc: &str) -> Result<(), Fejl> {
         let tx = self.db.transaction().map_err(lagerfejl)?;
-        tx.execute("DELETE FROM sikkerhedsfund", []).map_err(lagerfejl)?;
+        {
+            let mut slet = tx.prepare("DELETE FROM sikkerhedsfund WHERE zone = ?1").map_err(lagerfejl)?;
+            for z in zoner {
+                slet.execute([z]).map_err(lagerfejl)?;
+            }
+        }
         {
             let mut ind = tx
                 .prepare("INSERT OR REPLACE INTO sikkerhedsfund (zone, id, alvor, klasse, type, siden, hentet_utc) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)")
@@ -1199,36 +1232,64 @@ impl Store {
         Ok(ud)
     }
 
-    /// Erstatter hele den gemte zoneliste med en frisk fra Cloudflare og holder valget ajour. Er det første forbindelse, eller ser nøglen en helt anden
-    /// konto (ingen fælles zoner), starter alt forfra: intet er nyt, og intet er valgt, medmindre nøglen ser præcis ét domæne (T2: IT-firmaets
-    /// kunde med et token til sin egen zone). Ellers er en zone, der ikke var kendt før og hverken er valgt eller afvist, ny (T3); den vælges aldrig af sig selv.
-    /// En tom liste rører ikke valget: den siger ikke, at kontoen er en anden. Tallene bliver. Én transaktion.
-    pub fn gem_zoner(&mut self, zoner: &[Zone], hentet_utc: &str) -> Result<(), Fejl> {
-        let foer: HashSet<String> = self.zone_saet("SELECT id FROM zoner")?;
+    /// Erstatter én forbindelses zoneliste med en frisk fra Cloudflare og holder valget ajour (V-KONTI.1, D2–D4). Den samlede liste (`zoner`) er alle
+    /// forbindelsers; en zone, ingen forbindelse ser længere, falder ud. Ser ingen anden forbindelse zoner (én forbindelse, som i 1.0.0), gælder det gamle:
+    /// er det første liste, eller ser nøglen en helt anden konto (ingen fælles zoner), starter alt forfra (intet er nyt, intet er valgt, medmindre nøglen ser
+    /// præcis ét domæne, T2). Med flere forbindelser starter kun denne forbindelses egne domæner forfra, når dens token skiftes til en anden konto, og andres
+    /// valg røres aldrig; en ny forbindelse sletter intet, og dens domæner vælges ikke (T2 for et domæne, der ikke var kendt). Ellers er en zone, der ikke var
+    /// kendt før og hverken er valgt eller afvist, ny (T3); den vælges aldrig af sig selv. En tom liste rører ikke valget. Tallene bliver. Én transaktion.
+    pub fn gem_zoner(&mut self, forbindelse: i64, zoner: &[Zone], hentet_utc: &str) -> Result<(), Fejl> {
+        let foer_alle: HashSet<String> = self.zone_saet("SELECT id FROM zoner")?;
+        let foer_egne = self.zoner_for(forbindelse)?;
+        let andres = self.andres_zoner(forbindelse)?;
+        let alene = andres.is_empty();
         let (valgte, afviste) = (self.valgte()?, self.zone_saet("SELECT zone FROM afvist_ny")?);
-        let forfra = !zoner.is_empty() && !zoner.iter().any(|z| foer.contains(&z.id));
+        let ny_forbindelse = foer_egne.is_empty() && !alene;
+        let forfra = !zoner.is_empty() && !ny_forbindelse && !zoner.iter().any(|z| foer_egne.contains(&z.id));
         let tx = self.db.transaction().map_err(lagerfejl)?;
-        tx.execute("DELETE FROM zoner", []).map_err(lagerfejl)?;
+        tx.execute("DELETE FROM zone_forbindelse WHERE forbindelse = ?1", [forbindelse])
+            .map_err(lagerfejl)?;
         {
             let mut ind = tx
                 .prepare("INSERT OR REPLACE INTO zoner (id, navn, hentet_utc) VALUES (?1, ?2, ?3)")
                 .map_err(lagerfejl)?;
+            let mut par = tx
+                .prepare("INSERT OR IGNORE INTO zone_forbindelse (zone, forbindelse) VALUES (?1, ?2)")
+                .map_err(lagerfejl)?;
             for z in zoner {
                 ind.execute(params![z.id, z.navn, hentet_utc]).map_err(lagerfejl)?;
+                par.execute(params![z.id, forbindelse]).map_err(lagerfejl)?;
             }
         }
+        tx.execute("DELETE FROM zoner WHERE id NOT IN (SELECT zone FROM zone_forbindelse)", [])
+            .map_err(lagerfejl)?;
+        let ukendt_eneste = match zoner {
+            [eneste] if alene || !foer_alle.contains(&eneste.id) => Some(&eneste.id),
+            _ => None,
+        };
         if forfra {
-            tx.execute_batch("DELETE FROM valgt; DELETE FROM afvist_ny; DELETE FROM ny_zone; DELETE FROM teknologi;")
-                .map_err(lagerfejl)?;
-            if let [eneste] = zoner {
-                tx.execute("INSERT INTO valgt (zone) VALUES (?1)", [&eneste.id])
+            if alene {
+                tx.execute_batch("DELETE FROM valgt; DELETE FROM afvist_ny; DELETE FROM ny_zone; DELETE FROM teknologi;")
+                    .map_err(lagerfejl)?;
+            } else {
+                for z in foer_egne.iter().filter(|z| !andres.contains(*z)) {
+                    for tabel in ["valgt", "afvist_ny", "ny_zone", "teknologi"] {
+                        tx.execute(&format!("DELETE FROM {tabel} WHERE zone = ?1"), [z])
+                            .map_err(lagerfejl)?;
+                    }
+                }
+            }
+        }
+        if forfra || ny_forbindelse {
+            if let Some(id) = ukendt_eneste {
+                tx.execute("INSERT OR IGNORE INTO valgt (zone) VALUES (?1)", [id])
                     .map_err(lagerfejl)?;
             }
         } else {
             let mut ny = tx.prepare("INSERT OR IGNORE INTO ny_zone (zone) VALUES (?1)").map_err(lagerfejl)?;
             for z in zoner
                 .iter()
-                .filter(|z| !foer.contains(&z.id) && !valgte.contains(&z.id) && !afviste.contains(&z.id))
+                .filter(|z| !foer_alle.contains(&z.id) && !valgte.contains(&z.id) && !afviste.contains(&z.id))
             {
                 ny.execute([&z.id]).map_err(lagerfejl)?;
             }
@@ -1236,6 +1297,150 @@ impl Store {
         tx.execute("DELETE FROM ny_zone WHERE zone NOT IN (SELECT id FROM zoner)", [])
             .map_err(lagerfejl)?;
         tx.commit().map_err(lagerfejl)
+    }
+
+    fn zone_saet_for(&self, sql: &str, forbindelse: i64) -> Result<HashSet<String>, Fejl> {
+        let mut st = self.db.prepare(sql).map_err(lagerfejl)?;
+        let rk = st.query_map([forbindelse], |r| r.get(0)).map_err(lagerfejl)?;
+        rk.collect::<Result<_, _>>().map_err(lagerfejl)
+    }
+
+    /// De zoner, forbindelsen ser.
+    pub fn zoner_for(&self, forbindelse: i64) -> Result<HashSet<String>, Fejl> {
+        self.zone_saet_for("SELECT zone FROM zone_forbindelse WHERE forbindelse = ?1", forbindelse)
+    }
+
+    /// De zoner, mindst én anden forbindelse ser.
+    fn andres_zoner(&self, forbindelse: i64) -> Result<HashSet<String>, Fejl> {
+        self.zone_saet_for("SELECT zone FROM zone_forbindelse WHERE forbindelse <> ?1", forbindelse)
+    }
+
+    /// Forbindelserne efter id.
+    pub fn forbindelser(&self) -> Result<Vec<Forbindelse>, Fejl> {
+        let mut st = self
+            .db
+            .prepare("SELECT f.id, f.cf_navn, f.eget_navn, f.konti, (SELECT count(*) FROM zone_forbindelse z WHERE z.forbindelse = f.id) FROM forbindelse f ORDER BY f.id")
+            .map_err(lagerfejl)?;
+        let rk = st
+            .query_map([], |r| {
+                Ok(Forbindelse {
+                    id: r.get(0)?,
+                    cf_navn: r.get(1)?,
+                    eget_navn: r.get(2)?,
+                    konti: r.get(3)?,
+                    domaener: r.get(4)?,
+                })
+            })
+            .map_err(lagerfejl)?;
+        rk.collect::<Result<_, _>>().map_err(lagerfejl)
+    }
+
+    /// Forbindelsernes id'er, laveste først.
+    pub fn forbindelse_ider(&self) -> Result<Vec<i64>, Fejl> {
+        Ok(self.forbindelser()?.into_iter().map(|f| f.id).collect())
+    }
+
+    /// En ny forbindelse uden navn og zoner; dens id. Den første er altid 1, for den bruger nøgleringens oprindelige post (`token.rs`).
+    pub fn ny_forbindelse(&mut self, oprettet_utc: &str) -> Result<i64, Fejl> {
+        if self.forbindelse_ider()?.is_empty() {
+            self.db
+                .execute("INSERT INTO forbindelse (id, oprettet_utc) VALUES (1, ?1)", [oprettet_utc])
+                .map_err(lagerfejl)?;
+            return Ok(1);
+        }
+        self.db
+            .execute("INSERT INTO forbindelse (oprettet_utc) VALUES (?1)", [oprettet_utc])
+            .map_err(lagerfejl)?;
+        Ok(self.db.last_insert_rowid())
+    }
+
+    /// Hullet fra skema 19: et token i nøgleringens oprindelige post, men ingen forbindelser (der var ingen zoneliste). Opretter forbindelse 1, hvis der
+    /// ingen forbindelser er; `true`, hvis den blev oprettet.
+    pub fn sikr_forbindelse_1(&mut self, oprettet_utc: &str) -> Result<bool, Fejl> {
+        let n = self
+            .db
+            .execute(
+                "INSERT INTO forbindelse (id, oprettet_utc) SELECT 1, ?1 WHERE NOT EXISTS (SELECT 1 FROM forbindelse)",
+                [oprettet_utc],
+            )
+            .map_err(lagerfejl)?;
+        Ok(n > 0)
+    }
+
+    /// Fjerner en forbindelse, der aldrig fik et token gemt (nøgleringen fejlede): kun rækken, og kun hvis den ingen zoner har.
+    pub fn fortryd_forbindelse(&mut self, id: i64) -> Result<(), Fejl> {
+        self.db
+            .execute(
+                "DELETE FROM forbindelse WHERE id = ?1 AND NOT EXISTS (SELECT 1 FROM zone_forbindelse WHERE forbindelse = ?1)",
+                [id],
+            )
+            .map(|_| ())
+            .map_err(lagerfejl)
+    }
+
+    /// Kontoens navn hos Cloudflare (renset i `cf.rs`) og antallet af konti, som den seneste zoneliste viste. `None` lader et kendt navn stå.
+    pub fn gem_cf_navn(&mut self, id: i64, navn: Option<&str>, konti: i64) -> Result<(), Fejl> {
+        self.db
+            .execute(
+                "UPDATE forbindelse SET cf_navn = COALESCE(?2, cf_navn), konti = ?3 WHERE id = ?1",
+                params![id, navn, konti],
+            )
+            .map(|_| ())
+            .map_err(lagerfejl)
+    }
+
+    /// Brugerens navn på forbindelsen; `None` (eller tomt) viser Cloudflares igen. `Fejl::Intern`, hvis forbindelsen ikke findes.
+    pub fn omdoeb(&mut self, id: i64, navn: Option<&str>) -> Result<(), Fejl> {
+        let navn = navn.filter(|n| !n.is_empty());
+        let n = self
+            .db
+            .execute("UPDATE forbindelse SET eget_navn = ?2 WHERE id = ?1", params![id, navn])
+            .map_err(lagerfejl)?;
+        if n == 0 {
+            return Err(Fejl::Intern);
+        }
+        Ok(())
+    }
+
+    /// De forbindelser, der ser zonen, laveste id først.
+    pub fn forbindelser_for(&self, zone: &str) -> Result<Vec<i64>, Fejl> {
+        let mut st = self
+            .db
+            .prepare("SELECT forbindelse FROM zone_forbindelse WHERE zone = ?1 ORDER BY forbindelse")
+            .map_err(lagerfejl)?;
+        let rk = st.query_map([zone], |r| r.get(0)).map_err(lagerfejl)?;
+        rk.collect::<Result<_, _>>().map_err(lagerfejl)
+    }
+
+    /// Zone → den forbindelse, den hører til (D3): lavest id blandt dem, der ser den, og hvis token ikke er afvist. En zone, kun afviste ser, er ikke med.
+    pub fn ejere(&self, afviste: &HashSet<i64>) -> Result<HashMap<String, i64>, Fejl> {
+        let mut st = self
+            .db
+            .prepare("SELECT zone, forbindelse FROM zone_forbindelse ORDER BY zone, forbindelse")
+            .map_err(lagerfejl)?;
+        let rk = st
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+            .map_err(lagerfejl)?;
+        let mut ud = HashMap::new();
+        for par in rk {
+            let (zone, f) = par.map_err(lagerfejl)?;
+            if !afviste.contains(&f) {
+                ud.entry(zone).or_insert(f);
+            }
+        }
+        Ok(ud)
+    }
+
+    /// De zoner, forbindelsen ejer (`ejere`), sorteret.
+    pub fn ejede(&self, forbindelse: i64, afviste: &HashSet<i64>) -> Result<Vec<String>, Fejl> {
+        let mut ud: Vec<String> = self
+            .ejere(afviste)?
+            .into_iter()
+            .filter(|(_, f)| *f == forbindelse)
+            .map(|(z, _)| z)
+            .collect();
+        ud.sort();
+        Ok(ud)
     }
 
     /// Den gemte zoneliste (sorteret efter navn) og hvornår den blev hentet (`None`, hvis der ikke er gemt nogen).
@@ -1357,12 +1562,61 @@ impl Store {
             .map_err(lagerfejl)
     }
 
-    /// "Glem tokenet": zonelisten, de valgte, de afviste og de nye domæner, notifikationsvalget pr. domæne, login-stierne, teknologierne og det meldte slettes (zonerne kan
-    /// høre til en anden konto næste gang); Værnets tal (vagt_dag, hentet, hentet_ekstra) og indstillingerne bliver. Én transaktion.
-    pub fn slet_zoner(&mut self) -> Result<(), Fejl> {
+    /// "Glem" én forbindelse (D4): dens række og dens kobling til zonerne slettes; for de zoner, ingen anden forbindelse ser, slettes også de valgte, de
+    /// afviste og de nye domæner, notifikationsvalget pr. domæne, login-stierne, teknologierne, det meldte, det vurderede og zonens tilstand, og står
+    /// domænevalget på en af dem, nulstilles det. En zone, en anden forbindelse også ser, beholder alt og hører nu til den. Er det den sidste forbindelse,
+    /// er det `slet_alle`. Hentede tal (Værnets tal, sikkerhedsfundene) og indstillingerne bliver. Én transaktion.
+    pub fn slet_zoner(&mut self, forbindelse: i64) -> Result<(), Fejl> {
+        if self.forbindelse_ider()?.iter().all(|f| *f == forbindelse) {
+            return self.slet_alle();
+        }
+        let andres = self.andres_zoner(forbindelse)?;
+        let forsvundne: Vec<String> = self.zoner_for(forbindelse)?.into_iter().filter(|z| !andres.contains(z)).collect();
+        let domaene_valg = self.indstilling("domaene_valg")?;
+        let tx = self.db.transaction().map_err(lagerfejl)?;
+        for z in &forsvundne {
+            for tabel in [
+                "valgt",
+                "afvist_ny",
+                "ny_zone",
+                "notifikation_zone",
+                "login_sti",
+                "meldt",
+                "vurderet",
+                "zone_tilstand",
+                "teknologi",
+            ] {
+                tx.execute(&format!("DELETE FROM {tabel} WHERE zone = ?1"), [z])
+                    .map_err(lagerfejl)?;
+            }
+        }
+        if domaene_valg.is_some_and(|v| forsvundne.contains(&v)) {
+            tx.execute("DELETE FROM indstillinger WHERE noegle = 'domaene_valg'", [])
+                .map_err(lagerfejl)?;
+        }
+        tx.execute("DELETE FROM zone_forbindelse WHERE forbindelse = ?1", [forbindelse])
+            .map_err(lagerfejl)?;
+        tx.execute("DELETE FROM zoner WHERE id NOT IN (SELECT zone FROM zone_forbindelse)", [])
+            .map_err(lagerfejl)?;
+        tx.execute("DELETE FROM forbindelse WHERE id = ?1", [forbindelse])
+            .map_err(lagerfejl)?;
+        for noegle in [
+            crate::sikkerhed::hentet_noegle(forbindelse),
+            crate::sikkerhed::tilstand_noegle(forbindelse),
+        ] {
+            tx.execute("DELETE FROM indstillinger WHERE noegle = ?1", [noegle])
+                .map_err(lagerfejl)?;
+        }
+        tx.commit().map_err(lagerfejl)
+    }
+
+    /// "Glem tokenet" for alle forbindelser (som i 1.0.0): forbindelserne, zonelisten, de valgte, de afviste og de nye domæner, notifikationsvalget pr. domæne,
+    /// login-stierne, teknologierne og det meldte slettes (zonerne kan høre til en anden konto næste gang); Værnets tal (vagt_dag, hentet, hentet_ekstra) og
+    /// indstillingerne bliver. Én transaktion.
+    pub fn slet_alle(&mut self) -> Result<(), Fejl> {
         let tx = self.db.transaction().map_err(lagerfejl)?;
         tx.execute_batch(
-            "DELETE FROM zoner; DELETE FROM valgt; DELETE FROM afvist_ny; DELETE FROM ny_zone; DELETE FROM notifikation_zone; DELETE FROM login_sti; DELETE FROM meldt; DELETE FROM vurderet; DELETE FROM zone_tilstand; DELETE FROM teknologi; DELETE FROM tek_vis; DELETE FROM indstillinger WHERE noegle = 'domaene_valg';",
+            "DELETE FROM zoner; DELETE FROM valgt; DELETE FROM afvist_ny; DELETE FROM ny_zone; DELETE FROM notifikation_zone; DELETE FROM login_sti; DELETE FROM meldt; DELETE FROM vurderet; DELETE FROM zone_tilstand; DELETE FROM teknologi; DELETE FROM tek_vis; DELETE FROM indstillinger WHERE noegle = 'domaene_valg'; DELETE FROM zone_forbindelse; DELETE FROM forbindelse;",
         )
         .map_err(lagerfejl)?;
         tx.commit().map_err(lagerfejl)
@@ -1404,6 +1658,11 @@ mod tests {
 
     fn rk(art: &str, noegle: &str, n: i64) -> (String, String, i64) {
         (art.into(), noegle.into(), n)
+    }
+
+    /// To forbindelser i et lager (1 og 2, eller de næste numre).
+    fn to(s: &mut Store) -> (i64, i64) {
+        (s.ny_forbindelse("t").unwrap(), s.ny_forbindelse("t").unwrap())
     }
 
     fn zone(id: &str, navn: &str) -> Zone {
@@ -1451,12 +1710,23 @@ mod tests {
             type_: "t".into(),
             siden: "2026-04-24".into(),
         };
-        s.gem_sikkerhedsfund(&[f("z", "z-a", "Low"), f("y", "y-a", "Critical")], "t1")
+        let begge = ["y".to_string(), "z".to_string()];
+        s.gem_sikkerhedsfund(&begge, &[f("z", "z-a", "Low"), f("y", "y-a", "Critical")], "t1")
             .unwrap();
         assert_eq!(s.sikkerhedsfund(Some("z")).unwrap(), vec![f("z", "z-a", "Low")]);
         assert_eq!(s.sikkerhedsfund(None).unwrap().len(), 2);
-        s.gem_sikkerhedsfund(&[f("y", "y-b", "Low")], "t2").unwrap();
-        assert_eq!(s.sikkerhedsfund(None).unwrap(), vec![f("y", "y-b", "Low")], "erstattes helt");
+        s.gem_sikkerhedsfund(&begge, &[f("y", "y-b", "Low")], "t2").unwrap();
+        assert_eq!(
+            s.sikkerhedsfund(None).unwrap(),
+            vec![f("y", "y-b", "Low")],
+            "erstattes helt for forbindelsens zoner"
+        );
+        s.gem_sikkerhedsfund(&["x".to_string()], &[f("x", "x-a", "Low")], "t3").unwrap();
+        assert_eq!(
+            s.sikkerhedsfund(None).unwrap().len(),
+            2,
+            "V-KONTI.1: en anden forbindelses fund røres ikke"
+        );
         let sql: String =
             s.db.query_row("SELECT sql FROM sqlite_master WHERE name = 'sikkerhedsfund'", [], |r| r.get(0))
                 .unwrap();
@@ -1595,7 +1865,7 @@ mod tests {
         assert_eq!(har_zoner(&s.db), 1);
         assert_eq!(s.raekker("z1", "2026-10-01").unwrap()[0].n, 31, "Værnets tal er urørte");
         assert_eq!(s.hentet("z1").unwrap()["2026-10-11"], "2026-11-03T06:55:55.180Z");
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com")], "2026-11-03T08:00:00.000Z").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com")], "2026-11-03T08:00:00.000Z").unwrap();
         assert_eq!(s.zoner().unwrap().0, vec![zone("z1", "a.wi24rd.com")]);
 
         // Åbnes igen (allerede version 9): intet sker.
@@ -1750,8 +2020,17 @@ mod tests {
         assert_eq!(s.teknologi("z1").unwrap().len(), 1, "valget står");
         s.nulstil_historik().unwrap();
         assert_eq!(s.tek_vis().unwrap().len(), 1, "Nulstil historik er ikke Glem");
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert!(s.tek_vis().unwrap().is_empty());
+        // V-KONTI.1: kolonnerne er brugerens og følger ingen forbindelse; kun Glem af den sidste rydder dem.
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.tilfoej_tek_vis(&[("php".to_string(), true, true, false)]).unwrap();
+        s.slet_zoner(b).unwrap();
+        assert_eq!(s.tek_vis().unwrap().len(), 1, "Glem én af to rører ikke kolonnerne");
+        s.slet_zoner(a).unwrap();
+        assert!(s.tek_vis().unwrap().is_empty(), "den sidste rydder dem");
     }
 
     #[test]
@@ -1764,9 +2043,22 @@ mod tests {
             phishing: true,
         };
         s.gem_zone_tilstand("z1", &z, "t").unwrap();
-        assert_eq!(s.zone_tilstande().unwrap()["z1"], (z, "t".to_string()));
-        s.slet_zoner().unwrap();
+        assert_eq!(s.zone_tilstande().unwrap()["z1"], (z.clone(), "t".to_string()));
+        s.slet_zoner(1).unwrap();
         assert!(s.zone_tilstande().unwrap().is_empty());
+        // V-KONTI.1: Glem én forbindelse rydder kun tilstanden for zoner, ingen anden forbindelse ser.
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_zone_tilstand("z1", &z, "t").unwrap();
+        s.gem_zone_tilstand("z2", &z, "t").unwrap();
+        s.slet_zoner(a).unwrap();
+        assert_eq!(
+            s.zone_tilstande().unwrap().keys().collect::<Vec<_>>(),
+            ["z2"],
+            "z2 ses af forbindelse 2"
+        );
     }
 
     /// 11 → 12: `vurderet` kommer til, og `hentet_angreb` tømmes, så døgnene hentes igen med netværket. De gemte angreb bliver stående, til det er sket.
@@ -1803,8 +2095,16 @@ mod tests {
             .unwrap();
         let v = s.vurderet().unwrap();
         assert_eq!((v["z1"].as_str(), v["z2"].as_str()), ("2026-11-02", "2026-11-01"));
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert!(s.vurderet().unwrap().is_empty());
+        // V-KONTI.1: kun for zoner, ingen anden forbindelse ser.
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_vurderet(&[("z1".into(), "2026-11-02".into()), ("z2".into(), "2026-11-02".into())])
+            .unwrap();
+        s.slet_zoner(b).unwrap();
+        assert_eq!(s.vurderet().unwrap().keys().collect::<Vec<_>>(), ["z1"]);
     }
 
     /// Cloudflare har ikke døgnet længere: det, der er gemt, bliver stående.
@@ -1823,7 +2123,8 @@ mod tests {
     fn teknologi_ryddes_med_kontoen_og_bliver_ved_fravalg() {
         let mut s = Store::i_hukommelse().unwrap();
         let valg = |s: &Store, z: &str| s.teknologi(z).unwrap();
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
         s.gem_teknologi("z1", "wordpress", "bruger_ikke", false, "t").unwrap();
         s.gem_teknologi("z1", "php", "bruger", true, "t").unwrap();
         assert_eq!(
@@ -1844,12 +2145,22 @@ mod tests {
         assert_eq!(valg(&s, "z1").len(), 1, "fravalg af domænet bevarer valget");
         s.nulstil_historik().unwrap();
         assert_eq!(valg(&s, "z1").len(), 1, "Nulstil historik sletter tal, ikke valg");
-        s.gem_zoner(&[zone("z9", "anden.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z9", "anden.wi24rd.com")], "t").unwrap();
         assert!(valg(&s, "z1").is_empty(), "en anden konto starter forfra");
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
         s.gem_teknologi("z1", "php", "bruger", false, "t").unwrap();
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert!(valg(&s, "z1").is_empty(), "Glem API Token");
+        // V-KONTI.1: skiftes én forbindelses token til en anden konto, ryddes kun dens egne domæners teknologier.
+        let mut s = Store::i_hukommelse().unwrap();
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_teknologi("z1", "php", "bruger", false, "t").unwrap();
+        s.gem_teknologi("z2", "php", "bruger", false, "t").unwrap();
+        s.gem_zoner(b, &[zone("z8", "anden.wi24rd.com")], "t").unwrap();
+        assert_eq!(valg(&s, "z1").len(), 1, "forbindelse 1's svar står");
+        assert!(valg(&s, "z2").is_empty(), "forbindelse 2 startede forfra");
     }
 
     #[test]
@@ -2058,9 +2369,19 @@ mod tests {
         assert_eq!(s.indstilling("sprog").unwrap().as_deref(), Some("da"), "kun fejlene ryger");
         assert_eq!(s.login_stier("z1").unwrap().len(), 1);
         s.gem_ekstra("z1", "2026-11-02", &[rk("login", "x", 2)], "t").unwrap();
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert!(s.login_stier("z1").unwrap().is_empty());
         assert_eq!(s.hentet_ekstra("z1").unwrap().len(), 1, "tallene bliver som Værnets");
+        // V-KONTI.1: login-stierne glemmes kun for den glemte forbindelses domæner; tallene bliver altid.
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_login_sti("z1", "/login", true).unwrap();
+        s.gem_login_sti("z2", "/wp-login.php", true).unwrap();
+        s.slet_zoner(a).unwrap();
+        assert!(s.login_stier("z1").unwrap().is_empty());
+        assert_eq!(s.login_stier("z2").unwrap().len(), 1);
+        assert_eq!(s.hentet_ekstra("z1").unwrap().len(), 1, "tallene bliver");
     }
 
     #[test]
@@ -2104,7 +2425,7 @@ mod tests {
         s.gem_indstilling("notifikation_niveau", "alt").unwrap();
         s.gem_doegn("z1", "2026-11-02", &[rk("fw", "k", 1)], "2026-11-03T06:00:00.000Z")
             .unwrap();
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert!(s.notifikation_zoner().unwrap().is_empty(), "pr.-domæne-valget er glemt");
         assert!(s.meldt().unwrap().is_empty(), "det meldte er glemt");
         assert_eq!(
@@ -2113,24 +2434,58 @@ mod tests {
             "forudindstillingen bliver"
         );
         assert_eq!(s.raekker("z1", "2026-11-01").unwrap().len(), 1, "Værnets tal bliver");
+        // V-KONTI.1: Glem én forbindelse glemmer kun dens domæners valg og det meldte.
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_notifikation_zone("z1", Some("fra")).unwrap();
+        s.gem_notifikation_zone("z2", Some("roed")).unwrap();
+        s.gem_meldt(
+            &[
+                ("z1".into(), "2026-11-02".into(), "roed".into()),
+                ("z2".into(), "2026-11-02".into(), "gul".into()),
+            ],
+            "2026-11-03T06:00:00.000Z",
+            "2026-09-24",
+        )
+        .unwrap();
+        s.slet_zoner(b).unwrap();
+        assert_eq!(
+            s.notifikation_zoner().unwrap().keys().collect::<Vec<_>>(),
+            ["z1"],
+            "den andens valg står"
+        );
+        assert_eq!(s.meldt().unwrap().len(), 1);
     }
 
     #[test]
     fn indstillinger_overlever_glem_tokenet() {
         let mut s = Store::i_hukommelse().unwrap();
         s.gem_indstilling("autostart_standard", "1").unwrap();
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert_eq!(
             s.indstilling("autostart_standard").unwrap().as_deref(),
             Some("1"),
             "Glem tokenet slår ikke autostart til igen ved næste start"
         );
+        // V-KONTI.1: Glem én forbindelse sletter kun dens egne sikkerhedsfund-nøgler; resten bliver.
+        let (a, b) = to(&mut s);
+        for f in [a, b] {
+            s.gem_indstilling(&crate::sikkerhed::hentet_noegle(f), "t").unwrap();
+            s.gem_indstilling(&crate::sikkerhed::tilstand_noegle(f), "ok").unwrap();
+        }
+        s.slet_zoner(b).unwrap();
+        assert_eq!(s.indstilling(&crate::sikkerhed::hentet_noegle(b)).unwrap(), None);
+        assert_eq!(s.indstilling(&crate::sikkerhed::tilstand_noegle(b)).unwrap(), None);
+        assert_eq!(s.indstilling(&crate::sikkerhed::hentet_noegle(a)).unwrap().as_deref(), Some("t"));
+        assert_eq!(s.indstilling("autostart_standard").unwrap().as_deref(), Some("1"));
     }
 
     #[test]
     fn valgte_gemmes_og_glemmes_med_tokenet() {
         let mut s = Store::i_hukommelse().unwrap();
         s.gem_zoner(
+            1,
             &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")],
             "2026-11-03T08:00:00.000Z",
         )
@@ -2146,12 +2501,23 @@ mod tests {
         s.afvis_nye(&["z2".into()]).unwrap();
         s.gem_doegn("z1", "2026-11-02", &[rk("alle", "", 5)], "2026-11-03T08:00:00.000Z")
             .unwrap();
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert_eq!(s.zoner().unwrap(), (vec![], None));
         assert!(s.valgte().unwrap().is_empty(), "Glem tokenet sletter de valgte");
         let n: i64 = s.db.query_row("SELECT count(*) FROM afvist_ny", [], |r| r.get(0)).unwrap();
         assert_eq!(n, 0, "og de afviste");
         assert_eq!(s.raekker("z1", "2026-11-01").unwrap().len(), 1, "Værnets tal bliver");
+        // V-KONTI.1: med to forbindelser glemmes kun de valgte og afviste for den glemtes domæner.
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_valgte(&["z1".into(), "z2".into()]).unwrap();
+        s.afvis_nye(&["z3".into()]).unwrap();
+        s.slet_zoner(b).unwrap();
+        assert_eq!(s.valg().unwrap(), ["z1"]);
+        let n: i64 = s.db.query_row("SELECT count(*) FROM afvist_ny", [], |r| r.get(0)).unwrap();
+        assert_eq!(n, 0, "z3 hørte kun til forbindelse 2");
     }
 
     #[test]
@@ -2180,6 +2546,7 @@ mod tests {
         s.gem_doegn("z1", "2026-10-29", &[rk("alle", "", 5)], "2026-10-29T10:00:00.000Z")
             .unwrap();
         s.gem_zoner(
+            1,
             &[zone("z2", "b.wi24rd.com"), zone("z1", "a.wi24rd.com")],
             "2026-11-03T07:00:00.000Z",
         )
@@ -2192,16 +2559,27 @@ mod tests {
             ),
             "sorteret efter navn"
         );
-        s.gem_zoner(&[zone("z3", "c.wi24rd.com")], "2026-11-03T08:00:00.000Z").unwrap();
+        s.gem_zoner(1, &[zone("z3", "c.wi24rd.com")], "2026-11-03T08:00:00.000Z").unwrap();
         assert_eq!(
             s.zoner().unwrap(),
             (vec![zone("z3", "c.wi24rd.com")], Some("2026-11-03T08:00:00.000Z".into())),
             "hele listen erstattes"
         );
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert_eq!(s.zoner().unwrap(), (vec![], None));
         assert_eq!(s.raekker("z1", "2026-10-01").unwrap().len(), 1, "Værnets tal bliver");
         assert_eq!(s.hentet("z1").unwrap().len(), 1);
+        // V-KONTI.1: en forbindelses liste erstatter kun dens egen; den samlede liste er alle forbindelsers.
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t1").unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t2").unwrap();
+        assert_eq!(s.zoner().unwrap().0, [zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")]);
+        s.gem_zoner(b, &[zone("z3", "c.wi24rd.com")], "t3").unwrap();
+        assert_eq!(
+            s.zoner().unwrap().0,
+            [zone("z1", "a.wi24rd.com"), zone("z3", "c.wi24rd.com")],
+            "z2 er væk, z1 står"
+        );
     }
 
     #[test]
@@ -2243,7 +2621,7 @@ mod tests {
         }
         let ventet = (Some("2026-10-04".to_string()), Some("2026-11-02".to_string()), 2);
         assert_eq!(s.data_status().unwrap(), ventet);
-        s.slet_zoner().unwrap();
+        s.slet_zoner(1).unwrap();
         assert_eq!(s.data_status().unwrap(), ventet);
     }
 
@@ -2312,27 +2690,42 @@ mod tests {
     #[test]
     fn eet_domaene_vaelges_ved_foerste_forbindelse() {
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
         assert_eq!(s.valg().unwrap(), ["z1"]);
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
         assert!(s.valg().unwrap().is_empty(), "to domæner: intet vælges");
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&[], "t").unwrap();
+        s.gem_zoner(1, &[], "t").unwrap();
         assert!(s.valg().unwrap().is_empty(), "ingen zoner");
+        // V-KONTI.1: T2 gælder også en ny forbindelse, men kun for et domæne, der ikke var kendt; et kendt domæne beholder brugerens valg.
+        let mut s = Store::i_hukommelse().unwrap();
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_valgte(&["z1".into()]).unwrap();
+        s.gem_zoner(b, &[zone("z9", "x.wi24rd.com")], "t").unwrap();
+        assert_eq!(s.valg().unwrap(), ["z1", "z9"], "et ukendt domæne på en ny forbindelse vælges");
+        let c = s.ny_forbindelse("t").unwrap();
+        s.gem_zoner(c, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        assert_eq!(s.valg().unwrap(), ["z1", "z9"], "z2 var kendt og fravalgt: det står");
     }
 
     /// T3: en zone, der dukker op senere, er ny og vælges ikke, heller ikke hvis den er den eneste nye. Den bliver ny, til der er svaret.
     #[test]
     fn nye_zoner_venter_paa_svar() {
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com")], "t").unwrap();
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
         assert_eq!(s.valg().unwrap(), ["z1"], "T2 slår ikke til for en ny zone senere");
         assert_eq!(s.nye().unwrap(), HashSet::from(["z2".to_string()]));
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
         assert_eq!(s.nye().unwrap().len(), 1, "den er stadig ny i næste zoneliste");
         s.gem_zoner(
+            1,
             &[
                 zone("z1", "a.wi24rd.com"),
                 zone("z2", "b.wi24rd.com"),
@@ -2351,11 +2744,13 @@ mod tests {
             "afvist og valgt er væk fra linjen"
         );
         s.gem_zoner(
+            1,
             &[zone("z1", "a.wi24rd.com"), zone("z3", "c.wi24rd.com"), zone("z4", "d.wi24rd.com")],
             "t",
         )
         .unwrap();
         s.gem_zoner(
+            1,
             &[
                 zone("z1", "a.wi24rd.com"),
                 zone("z2", "b.wi24rd.com"),
@@ -2370,18 +2765,48 @@ mod tests {
             HashSet::from(["z4".to_string()]),
             "\"Ikke nu\" huskes, også hvis domænet var væk et stykke tid"
         );
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z3", "c.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z3", "c.wi24rd.com")], "t")
+            .unwrap();
         assert!(s.nye().unwrap().is_empty(), "et domæne, nøglen ikke ser, venter ikke på svar");
+        // V-KONTI.1: en zone, der er kendt fra en anden forbindelse, er ikke ny; en ny forbindelses domæner er ikke nye (de vælges i Domæner);
+        // en zone, der kommer til på en kendt forbindelse, er ny.
+        let mut s = Store::i_hukommelse().unwrap();
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com"), zone("z5", "e.wi24rd.com")], "t")
+            .unwrap();
+        assert!(s.nye().unwrap().is_empty(), "ny forbindelse: intet er nyt");
+        s.gem_zoner(
+            b,
+            &[zone("z2", "b.wi24rd.com"), zone("z5", "e.wi24rd.com"), zone("z6", "f.wi24rd.com")],
+            "t",
+        )
+        .unwrap();
+        assert_eq!(s.nye().unwrap(), HashSet::from(["z6".to_string()]));
+        s.gem_zoner(
+            a,
+            &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com"), zone("z5", "e.wi24rd.com")],
+            "t",
+        )
+        .unwrap();
+        assert_eq!(
+            s.nye().unwrap(),
+            HashSet::from(["z6".to_string()]),
+            "z5 var kendt fra forbindelse 2"
+        );
     }
 
     /// Et domæne, brugeren fravælger, er ikke nyt: det var kendt.
     #[test]
     fn fravalgt_er_ikke_nyt() {
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
         s.gem_valgte(&["z1".into(), "z2".into()]).unwrap();
         s.gem_valgte(&["z1".into()]).unwrap();
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
         assert!(s.nye().unwrap().is_empty());
     }
 
@@ -2390,6 +2815,7 @@ mod tests {
     fn anden_konto_starter_forfra() {
         let mut s = Store::i_hukommelse().unwrap();
         s.gem_zoner(
+            1,
             &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")],
             "t",
         )
@@ -2397,20 +2823,28 @@ mod tests {
         s.gem_valgte(&["z1".into(), "z2".into()]).unwrap();
         s.afvis_nye(&["z3".into()]).unwrap();
         s.gem_doegn("z2", "2026-11-02", &[rk("alle", "", 5)], "t").unwrap();
-        s.gem_zoner(&[zone("z2", "b.wi24rd.com"), zone("z9", "x.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z2", "b.wi24rd.com"), zone("z9", "x.wi24rd.com")], "t")
+            .unwrap();
         assert_eq!(s.valg().unwrap(), ["z2"], "samme konto: valget bliver");
         assert_eq!(s.nye().unwrap(), HashSet::from(["z9".to_string()]));
-        s.gem_zoner(&[zone("n1", "ny.wi24rd.com"), zone("n2", "ny2.wi24rd.com")], "t")
+        s.gem_zoner(1, &[zone("n1", "ny.wi24rd.com"), zone("n2", "ny2.wi24rd.com")], "t")
             .unwrap();
         assert!(s.valgte().unwrap().is_empty(), "en anden konto: intet er valgt");
         assert!(s.nye().unwrap().is_empty(), "og intet er nyt");
         let n: i64 = s.db.query_row("SELECT count(*) FROM afvist_ny", [], |r| r.get(0)).unwrap();
         assert_eq!(n, 0, "de afviste er ryddet");
-        s.gem_zoner(&[zone("m1", "en.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("m1", "en.wi24rd.com")], "t").unwrap();
         assert_eq!(s.valg().unwrap(), ["m1"], "T2 gælder også en anden konto");
         assert_eq!(s.raekker("z2", "2026-11-01").unwrap().len(), 1, "historikken bliver");
-        s.gem_zoner(&[], "t").unwrap();
+        s.gem_zoner(1, &[], "t").unwrap();
         assert_eq!(s.valgte().unwrap().len(), 1, "en tom liste er ikke en anden konto");
+        // V-KONTI.1: det gælder med én forbindelse (som i 1.0.0). Med flere starter kun den skiftede forbindelse forfra
+        // (`skift_token_paa_forbindelse_starter_kun_den_forfra`).
+        assert_eq!(
+            s.forbindelse_ider().unwrap(),
+            Vec::<i64>::new(),
+            "gem_zoner opretter ingen forbindelse"
+        );
     }
 
     /// Skema 7: en database fra version 6 får `radar_dag`, og alle tal bliver stående.
@@ -2492,6 +2926,7 @@ mod tests {
         )
         .unwrap();
         s.gem_zoner(
+            1,
             &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")],
             "2026-11-03T02:00:00.000Z",
         )
@@ -2521,5 +2956,236 @@ mod tests {
         s.gem_doegn("z1", "2026-11-02", &[rk("fw", "x", 1)], "2026-11-04T02:00:00.000Z")
             .unwrap();
         assert_eq!(s.raekker("z1", "2000-01-01").unwrap()[0].n, 1, "databasen virker efter VACUUM");
+    }
+
+    /// En database fra 1.0.0 (skema 18), som den ser ud efter et SQL-forløb trin for trin.
+    fn version_18() -> Connection {
+        let db = Connection::open_in_memory().unwrap();
+        for skema in [
+            SKEMA_1, SKEMA_2, SKEMA_3, SKEMA_4, SKEMA_5, SKEMA_6, SKEMA_7, SKEMA_8, SKEMA_9, SKEMA_10, SKEMA_11, SKEMA_12, SKEMA_13,
+            SKEMA_14, SKEMA_15, SKEMA_16, SKEMA_17, SKEMA_18,
+        ] {
+            db.execute_batch(skema).unwrap();
+        }
+        db.pragma_update(None, "user_version", 18).unwrap();
+        db
+    }
+
+    /// V-KONTI.1, skema 19: en 1.0.0-database med zoneliste får forbindelse 1, som ser alle zoner og har sikkerhedsfundenes tidspunkt og tilstand.
+    /// Valget, teknologierne, notifikationerne og tallene står uændret. Uden zoneliste oprettes ingen forbindelse (hullet lukkes af `sikr_forbindelse_1`).
+    #[test]
+    fn migrering_fra_version_18_giver_forbindelse_1() {
+        let db = version_18();
+        db.execute_batch(
+            "INSERT INTO zoner VALUES ('z1', 'a.wi24rd.com', '2026-11-01T08:00:00.000Z'), ('z2', 'b.wi24rd.com', '2026-11-02T08:00:00.000Z');
+             INSERT INTO valgt VALUES ('z1');
+             INSERT INTO afvist_ny VALUES ('z2');
+             INSERT INTO teknologi VALUES ('z1', 'php', 'bruger', 0, 't');
+             INSERT INTO notifikation_zone VALUES ('z1', 'fra');
+             INSERT INTO vagt_dag VALUES ('z1', '2026-11-01', 'alle', '', 5);
+             INSERT INTO sikkerhedsfund VALUES ('z1', 'z1-a', 'Low', 'k', 't', '2026-11-01', 't');
+             INSERT INTO indstillinger VALUES ('sikkerhedsfund_hentet', '2026-11-02T09:00:00.000Z'), ('sikkerhedsfund_tilstand', 'ok'), ('sprog', 'da');",
+        )
+        .unwrap();
+        let s = Store::klar(db).unwrap();
+        assert_eq!(s.skema_version().unwrap(), 19);
+        let f = s.forbindelser().unwrap();
+        assert_eq!(
+            f,
+            [Forbindelse {
+                id: 1,
+                cf_navn: None,
+                eget_navn: None,
+                konti: 0,
+                domaener: 2
+            }]
+        );
+        let oprettet: String = s.db.query_row("SELECT oprettet_utc FROM forbindelse", [], |r| r.get(0)).unwrap();
+        assert_eq!(oprettet, "2026-11-01T08:00:00.000Z", "den ældste zoneliste");
+        assert_eq!(
+            s.ejere(&HashSet::new()).unwrap(),
+            HashMap::from([("z1".into(), 1), ("z2".into(), 1)])
+        );
+        assert_eq!(s.valg().unwrap(), ["z1"], "valget står");
+        assert_eq!(s.teknologi("z1").unwrap().len(), 1);
+        assert_eq!(s.notifikation_zoner().unwrap().len(), 1);
+        assert_eq!(s.raekker("z1", "2026-10-01").unwrap().len(), 1);
+        assert_eq!(s.sikkerhedsfund(None).unwrap().len(), 1);
+        assert_eq!(
+            s.indstilling(&crate::sikkerhed::hentet_noegle(1)).unwrap().as_deref(),
+            Some("2026-11-02T09:00:00.000Z")
+        );
+        assert_eq!(s.indstilling(&crate::sikkerhed::tilstand_noegle(1)).unwrap().as_deref(), Some("ok"));
+        assert_eq!(s.indstilling(crate::sikkerhed::HENTET).unwrap(), None, "den gamle nøgle er flyttet");
+        assert_eq!(s.indstilling("sprog").unwrap().as_deref(), Some("da"));
+        let n: i64 = s.db.query_row("SELECT count(*) FROM afvist_ny", [], |r| r.get(0)).unwrap();
+        assert_eq!(n, 1);
+        // Uden zoneliste: ingen forbindelse; den første læsning af nøgleringens gamle post opretter nummer 1, én gang.
+        let mut s = Store::klar(version_18()).unwrap();
+        assert!(s.forbindelser().unwrap().is_empty());
+        assert!(s.sikr_forbindelse_1("t").unwrap());
+        assert!(!s.sikr_forbindelse_1("t").unwrap(), "kun når der ingen er");
+        assert_eq!(s.forbindelse_ider().unwrap(), [1]);
+        // En database, der allerede er på 19, migreres ikke igen.
+        let s = Store::klar(std::mem::replace(&mut s.db, Connection::open_in_memory().unwrap())).unwrap();
+        assert_eq!(s.forbindelse_ider().unwrap(), [1]);
+    }
+
+    /// Testbrugerens fejl (IDEA-051): API Token nummer 2 til en anden konto fjerner ikke nummer 1's domæner, valg, "Ikke nu" eller teknologier.
+    #[test]
+    fn to_forbindelser_beholder_hinandens_valg() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let a = s.ny_forbindelse("t").unwrap();
+        s.gem_zoner(
+            a,
+            &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")],
+            "t",
+        )
+        .unwrap();
+        s.gem_valgte(&["z1".into(), "z2".into()]).unwrap();
+        s.afvis_nye(&["z3".into()]).unwrap();
+        s.gem_teknologi("z1", "php", "bruger", false, "t").unwrap();
+        let b = s.ny_forbindelse("t").unwrap();
+        assert_eq!((a, b), (1, 2));
+        s.gem_zoner(b, &[zone("n1", "ny.wi24rd.com"), zone("n2", "ny2.wi24rd.com")], "t")
+            .unwrap();
+        assert_eq!(s.zoner().unwrap().0.len(), 5, "begge forbindelsers domæner");
+        assert_eq!(
+            s.valg().unwrap(),
+            ["z1", "z2"],
+            "valget står; den nye forbindelses domæner vælges ikke"
+        );
+        assert!(s.nye().unwrap().is_empty());
+        assert_eq!(s.teknologi("z1").unwrap().len(), 1);
+        let n: i64 = s.db.query_row("SELECT count(*) FROM afvist_ny", [], |r| r.get(0)).unwrap();
+        assert_eq!(n, 1, "Ikke nu står");
+        let f = s.forbindelser().unwrap();
+        assert_eq!(f.iter().map(|f| (f.id, f.domaener)).collect::<Vec<_>>(), [(1, 3), (2, 2)]);
+        // Begge lister hentes igen: intet ændrer sig.
+        s.gem_zoner(
+            a,
+            &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")],
+            "t",
+        )
+        .unwrap();
+        s.gem_zoner(b, &[zone("n1", "ny.wi24rd.com"), zone("n2", "ny2.wi24rd.com")], "t")
+            .unwrap();
+        assert_eq!(s.valg().unwrap(), ["z1", "z2"]);
+        assert_eq!(s.zoner().unwrap().0.len(), 5);
+    }
+
+    /// D4: Glem én forbindelse fjerner kun dens egne domæner og valg; den andens står, og alle tal bliver.
+    #[test]
+    fn glem_en_forbindelse_roerer_ikke_den_andens() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_valgte(&["z1".into(), "z2".into()]).unwrap();
+        s.gem_teknologi("z2", "php", "bruger", false, "t").unwrap();
+        s.gem_doegn("z2", "2026-11-02", &[rk("alle", "", 5)], "t").unwrap();
+        s.gem_indstilling("domaene_valg", "z2").unwrap();
+        s.slet_zoner(b).unwrap();
+        assert_eq!(s.forbindelse_ider().unwrap(), [a]);
+        assert_eq!(s.zoner().unwrap().0, [zone("z1", "a.wi24rd.com")]);
+        assert_eq!(s.valg().unwrap(), ["z1"]);
+        assert!(s.teknologi("z2").unwrap().is_empty());
+        assert_eq!(s.indstilling("domaene_valg").unwrap(), None, "domænevalget stod på et glemt domæne");
+        assert_eq!(s.raekker("z2", "2026-11-01").unwrap().len(), 1, "tallene bliver");
+        // Glem den sidste: som "Glem tokenet" i 1.0.0.
+        s.gem_indstilling("domaene_valg", "z1").unwrap();
+        s.slet_zoner(a).unwrap();
+        assert!(s.forbindelser().unwrap().is_empty() && s.zoner().unwrap().0.is_empty() && s.valgte().unwrap().is_empty());
+        assert_eq!(s.indstilling("domaene_valg").unwrap(), None);
+        // Et id genbruges aldrig, undtagen 1, som altid er den første (nøgleringens oprindelige post).
+        let (c, d) = to(&mut s);
+        assert_eq!((c, d), (1, 3));
+    }
+
+    /// D3 og D4: en zone, to forbindelser ser, hører til den med lavest id, der ikke er afvist. Glemmes den, overtager den anden straks, og brugerens
+    /// valg for zonen står.
+    #[test]
+    fn delt_zone_skifter_ejer_ved_glem() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_valgte(&["z1".into(), "z2".into(), "z3".into()]).unwrap();
+        s.gem_notifikation_zone("z2", Some("roed")).unwrap();
+        assert_eq!(s.zoner().unwrap().0.len(), 3, "z2 står én gang");
+        assert_eq!(s.forbindelser_for("z2").unwrap(), [a, b]);
+        assert_eq!(s.ejere(&HashSet::new()).unwrap()["z2"], a, "laveste id");
+        assert_eq!(s.ejere(&HashSet::from([a])).unwrap()["z2"], b, "a er afvist: b");
+        assert!(!s.ejere(&HashSet::from([a])).unwrap().contains_key("z1"), "kun a ser z1");
+        assert_eq!(s.ejede(a, &HashSet::new()).unwrap(), ["z1", "z2"]);
+        s.slet_zoner(a).unwrap();
+        assert_eq!(s.ejere(&HashSet::new()).unwrap()["z2"], b, "b overtager");
+        assert_eq!(s.valg().unwrap(), ["z2", "z3"], "z2's valg står; z1 er væk");
+        assert_eq!(s.notifikation_zoner().unwrap()["z2"], "roed");
+    }
+
+    /// Q5 punkt 5: skiftes tokenet på en forbindelse til en anden konto, starter kun dens egne domæner forfra; andre forbindelsers valg røres ikke, og et
+    /// domæne, en anden forbindelse også ser, beholder sit valg.
+    #[test]
+    fn skift_token_paa_forbindelse_starter_kun_den_forfra() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let (a, b) = to(&mut s);
+        s.gem_zoner(a, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_zoner(b, &[zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_valgte(&["z1".into(), "z2".into(), "z3".into()]).unwrap();
+        s.gem_teknologi("z3", "php", "bruger", false, "t").unwrap();
+        s.gem_teknologi("z1", "php", "bruger", false, "t").unwrap();
+        s.gem_zoner(b, &[zone("m1", "m.wi24rd.com")], "t").unwrap();
+        assert_eq!(
+            s.valg().unwrap(),
+            ["m1", "z1", "z2"],
+            "z3 forfra; z2 ses af a og står; m1 er ukendt og eneste (T2)"
+        );
+        assert!(s.teknologi("z3").unwrap().is_empty());
+        assert_eq!(s.teknologi("z1").unwrap().len(), 1, "a's svar står");
+        assert!(s.nye().unwrap().is_empty());
+        assert_eq!(s.zoner().unwrap().0.len(), 3, "z3 er væk");
+        s.gem_zoner(b, &[], "t").unwrap();
+        assert_eq!(
+            s.valg().unwrap(),
+            ["z1", "z2"],
+            "en tom liste: m1 er væk fra listen, valget røres ikke"
+        );
+    }
+
+    /// D5: Cloudflares navn og brugerens navn gemmes hver for sig; brugerens vinder i UI'et, og et tomt navn viser Cloudflares igen. Et kendt
+    /// Cloudflare-navn bliver stående, hvis den næste liste ikke har et. Ingen konto-id i tabellen.
+    #[test]
+    fn forbindelsens_navn_gemmes_og_omdoebes() {
+        let mut s = Store::i_hukommelse().unwrap();
+        let a = s.ny_forbindelse("t").unwrap();
+        s.gem_cf_navn(a, Some("test@wi24rd.com's Account"), 1).unwrap();
+        s.omdoeb(a, Some("Kunden")).unwrap();
+        let f = &s.forbindelser().unwrap()[0];
+        assert_eq!(
+            (f.cf_navn.as_deref(), f.eget_navn.as_deref(), f.konti),
+            (Some("test@wi24rd.com's Account"), Some("Kunden"), 1)
+        );
+        s.omdoeb(a, Some("")).unwrap();
+        s.gem_cf_navn(a, None, 2).unwrap();
+        let f = &s.forbindelser().unwrap()[0];
+        assert_eq!(
+            (f.cf_navn.as_deref(), f.eget_navn.as_deref(), f.konti),
+            (Some("test@wi24rd.com's Account"), None, 2)
+        );
+        assert_eq!(s.omdoeb(99, Some("x")), Err(Fejl::Intern), "ukendt forbindelse");
+        s.fortryd_forbindelse(a).unwrap();
+        assert!(s.forbindelser().unwrap().is_empty(), "en forbindelse uden zoner kan fortrydes");
+        let sql: String =
+            s.db.query_row("SELECT sql FROM sqlite_master WHERE name = 'forbindelse'", [], |r| r.get(0))
+                .unwrap();
+        assert!(
+            !sql.contains("account") && !sql.contains("konto_id") && !sql.contains("token"),
+            "{sql}"
+        );
     }
 }

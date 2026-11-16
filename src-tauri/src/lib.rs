@@ -29,7 +29,7 @@ mod token;
 mod vaern;
 mod ved_login;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
@@ -102,24 +102,100 @@ async fn blokerende<T: Send + 'static>(f: impl FnOnce() -> Result<T, Fejl> + Sen
     tauri::async_runtime::spawn_blocking(f).await.map_err(|_| Fejl::Noegle)?
 }
 
-/// Tokenet fra hukommelsen, ellers fra nøgleringen (og så huskes det). Nøgleringen læses af én ad gangen: spørger køen og
-/// siden samtidig (ved start), venter den ene og får tokenet fra hukommelsen, så der kun kommer én dialog. Er tokenet
-/// glemt eller erstattet, mens nøgleringen blev læst, gælder det nye: det læste token bruges ikke.
-async fn gemt_token(t: &Tilstand) -> Result<Hemmelig, Fejl> {
-    if let Ok(h) = t.token.hent() {
+/// Forbindelsernes id'er, laveste først. Uden forbindelser er det `[1]`: nøgleringens oprindelige post kan have et token fra før skema 19 uden en
+/// zoneliste (hullet), og den almindelige læsning finder det (`gemt_token` opretter så forbindelse 1).
+fn forbindelse_ider(t: &Tilstand) -> Result<Vec<i64>, Fejl> {
+    Ok(ider_eller_1(laas(t)?.forbindelse_ider()?))
+}
+
+/// Se `forbindelse_ider`. Ren funktion.
+fn ider_eller_1(ider: Vec<i64>) -> Vec<i64> {
+    if ider.is_empty() {
+        vec![1]
+    } else {
+        ider
+    }
+}
+
+/// D7: den forbindelse, `token_set` gemmer i: den med lavest id, eller en ny (1), hvis der ingen er; `true`, hvis den er ny.
+fn token_set_forbindelse(l: &mut Store, oprettet_utc: &str) -> Result<(i64, bool), Fejl> {
+    match l.forbindelse_ider()?.first() {
+        Some(id) => Ok((*id, false)),
+        None => Ok((l.ny_forbindelse(oprettet_utc)?, true)),
+    }
+}
+
+/// Forbindelsens token fra hukommelsen, ellers fra nøgleringen (og så huskes det). Nøgleringen læses af én ad gangen, også på tværs af forbindelserne:
+/// spørger køen og siden samtidig (ved start), venter den ene og får tokenet fra hukommelsen, så der kun kommer én dialog pr. post. Er tokenet glemt eller
+/// erstattet, mens nøgleringen blev læst, gælder det nye: det læste token bruges ikke. Finder læsningen af forbindelse 1 et token, og er der ingen
+/// forbindelser, oprettes forbindelse 1 (hullet fra skema 19); der læses ikke ekstra.
+async fn gemt_token(t: &Tilstand, forbindelse: i64) -> Result<Hemmelig, Fejl> {
+    if let Ok(h) = t.token.hent(forbindelse) {
         return Ok(h);
     }
     t.laase
         .koer(NOEGLERINGEN, async {
-            let udgave = match t.token.hent() {
+            let udgave = match t.token.hent(forbindelse) {
                 Ok(h) => return Ok(h),
                 Err(u) => u,
             };
-            let h = blokerende(token::hent).await?.ok_or(Fejl::IntetToken)?;
-            t.token.fyld(udgave, &h);
-            t.token.hent().map_err(|_| Fejl::IntetToken)
+            let h = blokerende(move || token::hent(forbindelse)).await?.ok_or(Fejl::IntetToken)?;
+            if forbindelse == 1 {
+                laas(t)?.sikr_forbindelse_1(&vaern::iso(nu_ms()))?;
+            }
+            t.token.fyld(forbindelse, udgave, &h);
+            t.token.hent(forbindelse).map_err(|_| Fejl::IntetToken)
         })
         .await
+}
+
+/// Det første token i `ider`, der kan læses; ellers den første fejl, der ikke er `IntetToken` (nøgleringen), og så `IntetToken`.
+async fn foerste_token(t: &Tilstand, ider: Vec<i64>) -> Result<Hemmelig, Fejl> {
+    let mut fejl = None;
+    for id in ider {
+        match gemt_token(t, id).await {
+            Ok(h) => return Ok(h),
+            Err(Fejl::IntetToken) => {}
+            Err(e) => {
+                fejl.get_or_insert(e);
+            }
+        }
+    }
+    Err(fejl.unwrap_or(Fejl::IntetToken))
+}
+
+/// Et vilkårligt gyldigt token (Radar hører ikke til en konto): den første forbindelse, der ikke er afvist.
+async fn et_token(t: &Tilstand) -> Result<Hemmelig, Fejl> {
+    let afviste = t.koe.afviste();
+    foerste_token(t, forbindelse_ider(t)?.into_iter().filter(|f| !afviste.contains(f)).collect()).await
+}
+
+/// Tokenet til zonen (D3): den forbindelse med lavest id blandt dem, der ser zonen, hvis token ikke er afvist og kan læses.
+async fn token_til(t: &Tilstand, zone: &str) -> Result<Hemmelig, Fejl> {
+    let afviste = t.koe.afviste();
+    let ider = laas(t)?.forbindelser_for(zone)?;
+    foerste_token(t, ider.into_iter().filter(|f| !afviste.contains(f)).collect()).await
+}
+
+/// Alle forbindelsers tokens ved rundens start. En forbindelse, hvis token ikke kan læses, springes over; kan intet læses, er det den første fejl,
+/// der ikke er `IntetToken` (køen venter på "Hent nu"), ellers `IntetToken` (køen stopper), som i 1.0.0.
+async fn alle_tokens(t: &Tilstand) -> Result<BTreeMap<i64, Hemmelig>, Fejl> {
+    let (mut ud, mut fejl) = (BTreeMap::new(), None);
+    for id in forbindelse_ider(t)? {
+        match gemt_token(t, id).await {
+            Ok(h) => {
+                ud.insert(id, h);
+            }
+            Err(Fejl::IntetToken) => {}
+            Err(e) => {
+                fejl.get_or_insert(e);
+            }
+        }
+    }
+    if ud.is_empty() {
+        return Err(fejl.unwrap_or(Fejl::IntetToken));
+    }
+    Ok(ud)
 }
 
 #[derive(Serialize)]
@@ -127,55 +203,167 @@ struct TokenStatus {
     sat: bool,
 }
 
-/// Verificerer tokenet hos Cloudflare og gemmer det kun, hvis det er gyldigt. Returnerer aldrig tokenet. Starter køen.
-#[tauri::command]
-async fn token_set(token: Hemmelig, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
-    token::tjek_form(&token)?;
-    tilstand.klient.verificer(&token).await?;
-    tilstand.klient.tjek_rettigheder(&token, nu_ms()).await?;
+/// Gemmer et godkendt token i forbindelsens post. Den nye forbindelse (`ny`) fjernes igen, hvis nøgleringen fejler. Rydder en afvisning og starter køen.
+async fn gem_token(tilstand: &Tilstand, app: &AppHandle, id: i64, ny: bool, token: Hemmelig) -> Result<(), Fejl> {
     let gem = token.clone();
-    blokerende(move || token::gem(&gem)).await?;
-    tilstand.token.saet(token);
-    start_koe(&app);
+    if let Err(e) = blokerende(move || token::gem(id, &gem)).await {
+        if ny {
+            let _ = laas(tilstand).and_then(|mut l| l.fortryd_forbindelse(id));
+        }
+        return Err(e);
+    }
+    tilstand.token.saet(id, token);
+    tilstand.koe.ryd_afvist(id);
+    start_koe(app);
     Ok(())
 }
 
+/// Verificerer tokenet hos Cloudflare og gemmer det kun, hvis det er gyldigt (`Klient::godkend`). Returnerer aldrig tokenet. Starter køen.
+/// D7 (genvej til det nuværende UI, fjernes i B2): opretter forbindelse 1, hvis der ingen er, og skifter ellers tokenet på forbindelsen med lavest id.
+#[tauri::command]
+async fn token_set(token: Hemmelig, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    token::tjek_form(&token)?;
+    tilstand.klient.godkend(&token, nu_ms()).await?;
+    let (id, ny) = token_set_forbindelse(&mut *laas(&tilstand)?, &vaern::iso(nu_ms()))?;
+    gem_token(&tilstand, &app, id, ny, token).await
+}
+
+/// Er der mindst én forbindelse med et token? En nøgleringsfejl meldes kun, hvis ingen forbindelse kunne læses.
 #[tauri::command]
 async fn token_status(tilstand: State<'_, Tilstand>) -> Svar<TokenStatus> {
-    match gemt_token(&tilstand).await {
+    match foerste_token(&tilstand, forbindelse_ider(&tilstand)?).await {
         Ok(_) => Ok(TokenStatus { sat: true }),
         Err(Fejl::IntetToken) => Ok(TokenStatus { sat: false }),
         Err(e) => Err(e),
     }
 }
 
-/// "Glem tokenet": sletter tokenet i hukommelsen og nøgleringen, den gemte zoneliste og valget, og stopper køen
-/// (menulinjen: "intet token"). Værnets tal og indstillingerne bliver. Rækkefølgen: først nøgleringen, så hukommelsen.
-/// En læsning af nøgleringen, der startede før `glem`, har den gamle udgave, og `fyld` afviser den; en læsning efter
-/// `slet` finder intet. Omvendt kunne en læsning mellem `glem` og `slet` finde det gamle token med den nye udgave og
-/// lægge det tilbage i hukommelsen. Fejler `slet`, huskes tokenet stadig, og fejlen returneres (det er ikke glemt).
+/// "Glem tokenet" (D7: alle forbindelser, som i 1.0.0; fjernes i B2): stopper køen (menulinjen: "intet token") og glemmer forbindelserne én ad gangen
+/// (`glem_en`), så nøgleringen og databasen passer sammen, også hvis en sletning fejler midt i. Værnets tal og indstillingerne bliver.
 #[tauri::command]
 async fn token_delete(tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
-    tilstand.koe.stop_med(Fejl::IntetToken, &|s| melder(&app, s));
-    blokerende(token::slet).await?;
-    tilstand.token.glem();
-    laas(&tilstand)?.slet_zoner()
+    glem_alle(&tilstand, &app).await
+}
+
+async fn glem_alle(tilstand: &Tilstand, app: &AppHandle) -> Result<(), Fejl> {
+    tilstand.koe.stop_med(Fejl::IntetToken, &|s| melder(app, s));
+    for id in forbindelse_ider(tilstand)? {
+        glem_en(tilstand, id).await?;
+    }
+    laas(tilstand)?.slet_alle()
+}
+
+/// Glemmer én forbindelse: først nøgleringen, så hukommelsen, så databasen (`Store::slet_zoner`). En læsning af nøgleringen, der startede før `glem`, har den
+/// gamle udgave, og `fyld` afviser den; en læsning efter `slet` finder intet. Fejler `slet`, huskes tokenet stadig, og fejlen returneres (det er ikke glemt).
+async fn glem_en(tilstand: &Tilstand, id: i64) -> Result<(), Fejl> {
+    blokerende(move || token::slet(id)).await?;
+    tilstand.token.glem(id);
+    tilstand.koe.ryd_afvist(id);
+    laas(tilstand)?.slet_zoner(id)
+}
+
+/// En forbindelse til webvisningen: id, Cloudflares navn, brugerens navn, antal konti og domæner, og om tokenet er afvist. Aldrig et token, et konto-id
+/// eller et token-id. Det viste navn dannes i UI'et (D5).
+#[derive(Serialize)]
+struct ForbindelseUd {
+    #[serde(flatten)]
+    f: store::Forbindelse,
+    afvist: bool,
+}
+
+#[tauri::command]
+async fn forbindelser_hent(tilstand: State<'_, Tilstand>) -> Svar<Vec<ForbindelseUd>> {
+    let afviste = tilstand.koe.afviste();
+    Ok(laas(&tilstand)?
+        .forbindelser()?
+        .into_iter()
+        .map(|f| ForbindelseUd {
+            afvist: afviste.contains(&f.id),
+            f,
+        })
+        .collect())
+}
+
+/// En ny forbindelse med et godkendt token; dens id. Zonelisten hentes af `zones` (som efter `token_set`).
+#[tauri::command]
+async fn forbindelse_tilfoej(token: Hemmelig, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<i64> {
+    token::tjek_form(&token)?;
+    tilstand.klient.godkend(&token, nu_ms()).await?;
+    let id = laas(&tilstand)?.ny_forbindelse(&vaern::iso(nu_ms()))?;
+    gem_token(&tilstand, &app, id, true, token).await?;
+    Ok(id)
+}
+
+fn findes(tilstand: &Tilstand, id: i64) -> Result<(), Fejl> {
+    if laas(tilstand)?.forbindelse_ider()?.contains(&id) {
+        Ok(())
+    } else {
+        Err(Fejl::Intern)
+    }
+}
+
+/// Et nyt token på en forbindelse ("Skift API Token…"). Rydder afvisningen og vækker køen.
+#[tauri::command]
+async fn forbindelse_skift(id: i64, token: Hemmelig, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    findes(&tilstand, id)?;
+    token::tjek_form(&token)?;
+    tilstand.klient.godkend(&token, nu_ms()).await?;
+    gem_token(&tilstand, &app, id, false, token).await
+}
+
+/// Brugerens navn på forbindelsen (renset som Cloudflares, `cf::rens_kontonavn`); tomt eller `null` viser Cloudflares igen (D5).
+#[tauri::command]
+async fn forbindelse_omdoeb(id: i64, navn: Option<String>, tilstand: State<'_, Tilstand>) -> Svar<()> {
+    let navn = navn.as_deref().and_then(cf::rens_kontonavn);
+    laas(&tilstand)?.omdoeb(id, navn.as_deref())
+}
+
+/// "Glem" én forbindelse (D4). Er det den sidste, er det "Glem tokenet" (`token_delete`).
+#[tauri::command]
+async fn forbindelse_glem(id: i64, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
+    findes(&tilstand, id)?;
+    if laas(&tilstand)?.forbindelse_ider()?.len() == 1 {
+        return glem_alle(&tilstand, &app).await;
+    }
+    glem_en(&tilstand, id).await?;
+    tilstand.koe.prioriter(None);
+    Ok(())
 }
 
 fn laas(tilstand: &Tilstand) -> Result<std::sync::MutexGuard<'_, Store>, Fejl> {
     tilstand.lager.lock().map_err(|_| Fejl::Lager)
 }
 
-/// Zonerne fra Cloudflare. Ved succes erstatter de den gemte liste (`zones_cache`), og køen får besked.
+/// Zonerne fra Cloudflare, forbindelse for forbindelse i id-orden. Hver forbindelses liste erstatter dens gemte (`Store::gem_zoner`), og kontoens navn
+/// gemmes. En fejl på én stopper ikke de andre; fejler alle, er det den første fejl. Svaret er den samlede liste (`zones_cache`), og køen får besked.
 #[tauri::command]
 async fn zones(tilstand: State<'_, Tilstand>) -> Svar<Vec<Zone>> {
     let z = tilstand
         .laase
         .koer(ZONELISTEN, async {
-            let t = gemt_token(&tilstand).await?;
-            let z = tilstand.klient.zoner(&t).await?;
-            laas(&tilstand)?.gem_zoner(&z, &vaern::iso(nu_ms()))?;
-            Ok::<_, Fejl>(z)
+            let (mut nogen, mut fejl) = (false, None);
+            for id in forbindelse_ider(&tilstand)? {
+                let svar = async {
+                    let t = gemt_token(&tilstand, id).await?;
+                    tilstand.klient.zoner(&t).await
+                }
+                .await;
+                match svar {
+                    Ok(l) => {
+                        let mut lager = laas(&tilstand)?;
+                        lager.gem_zoner(id, &l.zoner, &vaern::iso(nu_ms()))?;
+                        lager.gem_cf_navn(id, l.konto_navn.as_deref(), l.konti)?;
+                        nogen = true;
+                    }
+                    Err(e) => {
+                        fejl.get_or_insert(e);
+                    }
+                }
+            }
+            match (nogen, fejl) {
+                (false, Some(e)) => Err(e),
+                _ => Ok::<_, Fejl>(laas(&tilstand)?.zoner()?.0),
+            }
         })
         .await?;
     tilstand.koe.prioriter(None);
@@ -393,31 +581,33 @@ async fn hent_tilstand(tilstand: &Tilstand, token: &Hemmelig, zone: &str) -> Res
     laas(tilstand)?.gem_zone_tilstand(zone, &z, &vaern::iso(nu_ms()))
 }
 
-/// Cloudflares egne sikkerhedsfund: højst én gang i timen (`sikkerhed::skal_hente`, regnet fra sidste forsøg), efter zonernes tilstand i `ekstra_runde`. Kun fund for
-/// zoner i zonelisten gemmes. Uden rettigheden noteres det, de gamle fund slettes (de kan ikke længere holdes ajour), og resten af programmet virker. En anden fejl
-/// lader de gamle fund stå.
-async fn hent_fund(tilstand: &Tilstand, token: &Hemmelig) {
+/// Cloudflares egne sikkerhedsfund for én forbindelse: højst én gang i timen pr. forbindelse (`sikkerhed::skal_hente`, regnet fra sidste forsøg), efter zonernes
+/// tilstand i `ekstra_runde`. Kun fund for de zoner, forbindelsen ejer (`Store::ejede`, D3), gemmes, og kun dens fund erstattes. Uden rettigheden noteres det,
+/// forbindelsens gamle fund slettes (de kan ikke længere holdes ajour), og resten af programmet virker. En anden fejl lader de gamle fund stå.
+async fn hent_fund(tilstand: &Tilstand, forbindelse: i64, token: &Hemmelig) {
     let nu = nu_ms();
+    let (hentet_noegle, tilstand_noegle) = (sikkerhed::hentet_noegle(forbindelse), sikkerhed::tilstand_noegle(forbindelse));
     let sidst = laas(tilstand)
         .ok()
-        .and_then(|l| l.indstilling(sikkerhed::HENTET).ok().flatten())
+        .and_then(|l| l.indstilling(&hentet_noegle).ok().flatten())
         .and_then(|s| vaern::parse_iso(&s));
     if !sikkerhed::skal_hente(sidst, nu) {
         return;
     }
     let svar = tilstand.klient.sikkerhedsfund(token).await;
+    let afviste = tilstand.koe.afviste();
     let Ok(mut l) = laas(tilstand) else { return };
     let tid = vaern::iso(nu);
-    let _ = l.gem_indstilling(sikkerhed::HENTET, &tid);
-    let _ = l.gem_indstilling(sikkerhed::TILSTAND, &sikkerhed::tilstand_efter(svar.as_ref().err()));
+    let _ = l.gem_indstilling(&hentet_noegle, &tid);
+    let _ = l.gem_indstilling(&tilstand_noegle, &sikkerhed::tilstand_efter(svar.as_ref().err()));
+    let ejede = l.ejede(forbindelse, &afviste).unwrap_or_default();
     match svar {
         Ok(fund) => {
-            let kendte: HashSet<String> = l.zoner().map(|z| z.0.into_iter().map(|z| z.id).collect()).unwrap_or_default();
-            let fund: Vec<sikkerhed::Fund> = fund.into_iter().filter(|f| kendte.contains(&f.zone)).collect();
-            let _ = l.gem_sikkerhedsfund(&fund, &tid);
+            let fund: Vec<sikkerhed::Fund> = fund.into_iter().filter(|f| ejede.contains(&f.zone)).collect();
+            let _ = l.gem_sikkerhedsfund(&ejede, &fund, &tid);
         }
         Err(Fejl::Afvist(_)) => {
-            let _ = l.gem_sikkerhedsfund(&[], &tid);
+            let _ = l.gem_sikkerhedsfund(&ejede, &[], &tid);
         }
         Err(_) => {}
     }
@@ -431,7 +621,7 @@ async fn vaern_oversigt(zone_id: String, tilstand: State<'_, Tilstand>) -> Svar<
     let zone = vaern::tjek_zone(&zone_id)?;
     // Kun valgte domæner hentes, heller ikke fra en gammel adresse.
     if laas(&tilstand)?.valgte()?.contains(&zone) {
-        let token = gemt_token(&tilstand).await?;
+        let token = token_til(&tilstand, &zone).await?;
         hent_zone(&tilstand, &token, &zone, &mut |_, _| {}).await?;
     }
     byg(&tilstand, &zone, nu_ms())?.ok_or(Fejl::Svar)
@@ -514,11 +704,17 @@ async fn sti200_oversigt(zone: String, fra: Option<String>, til: Option<String>,
 #[tauri::command]
 async fn sikkerhedsfund_oversigt(zone: String, tilstand: State<'_, Tilstand>) -> Svar<sikkerhed::FundUd> {
     let zone = vaern::tjek_zone(&zone)?;
+    let afviste = tilstand.koe.afviste();
     let lager = laas(&tilstand)?;
+    // Tilstanden og tidspunktet er zonens forbindelses (D3).
+    let f = match lager.ejere(&afviste)?.get(&zone) {
+        Some(f) => *f,
+        None => lager.forbindelser_for(&zone)?.first().copied().unwrap_or(1),
+    };
     Ok(sikkerhed::oversigt(
         lager.sikkerhedsfund(Some(&zone))?,
-        lager.indstilling(sikkerhed::TILSTAND)?.as_deref(),
-        lager.indstilling(sikkerhed::HENTET)?,
+        lager.indstilling(&sikkerhed::tilstand_noegle(f))?.as_deref(),
+        lager.indstilling(&sikkerhed::hentet_noegle(f))?,
     ))
 }
 
@@ -616,15 +812,18 @@ struct DomaeneValg {
     til: bool,
     /// Nyt på kontoen og venter på et svar (linjen i Overblik).
     ny: bool,
+    /// Den forbindelse, domænet hører til (D3; V-KONTI.1). `null`, hvis kun afviste forbindelser ser det.
+    forbindelse: Option<i64>,
 }
 
-/// Hele zonelisten med kontakten pr. domæne (Indstillinger → Domæner). Ren funktion.
-fn domaener_ud(zoner: Vec<Zone>, valgte: &HashSet<String>, nye: &HashSet<String>) -> Vec<DomaeneValg> {
+/// Hele zonelisten med kontakten pr. domæne og forbindelsen (Indstillinger → Domæner). Ren funktion.
+fn domaener_ud(zoner: Vec<Zone>, valgte: &HashSet<String>, nye: &HashSet<String>, ejere: &HashMap<String, i64>) -> Vec<DomaeneValg> {
     zoner
         .into_iter()
         .map(|z| DomaeneValg {
             til: valgte.contains(&z.id),
             ny: nye.contains(&z.id),
+            forbindelse: ejere.get(&z.id).copied(),
             id: z.id,
             navn: z.navn,
         })
@@ -633,8 +832,14 @@ fn domaener_ud(zoner: Vec<Zone>, valgte: &HashSet<String>, nye: &HashSet<String>
 
 #[tauri::command]
 async fn domaener_hent(tilstand: State<'_, Tilstand>) -> Svar<Vec<DomaeneValg>> {
+    let afviste = tilstand.koe.afviste();
     let lager = laas(&tilstand)?;
-    Ok(domaener_ud(lager.zoner()?.0, &lager.valgte()?, &lager.nye()?))
+    Ok(domaener_ud(
+        lager.zoner()?.0,
+        &lager.valgte()?,
+        &lager.nye()?,
+        &lager.ejere(&afviste)?,
+    ))
 }
 
 /// Det første domæne, der er kommet til: det står forrest i køen. Ren funktion.
@@ -1024,7 +1229,7 @@ async fn radar_runde(app: &AppHandle, token: &Hemmelig, kode: Option<&str>, inte
 #[tauri::command]
 async fn radar_opdater(kode: String, tilstand: State<'_, Tilstand>, app: AppHandle) -> Svar<()> {
     let kode = radar::tjek_land(&kode)?;
-    let token = gemt_token(&tilstand).await?;
+    let token = et_token(&tilstand).await?;
     radar_runde(&app, &token, Some(&kode), radar::AABEN_MS).await
 }
 
@@ -1036,7 +1241,13 @@ fn start_radar(app: &AppHandle) {
         loop {
             tokio::time::sleep(koe::TIK).await;
             let t = app.state::<Tilstand>();
-            let Ok(token) = t.token.hent() else { continue };
+            let afviste = t.koe.afviste();
+            let ider: Vec<i64> = forbindelse_ider(&t)
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|f| !afviste.contains(f))
+                .collect();
+            let Some(token) = t.token.et_af(&ider) else { continue };
             let land = laas(&t).ok().and_then(|l| l.indstilling(radar::LAND).ok().flatten());
             let _ = radar_runde(&app, &token, land.as_deref(), radar::OPDATER_MS).await;
         }
@@ -1093,56 +1304,81 @@ struct HentNu {
 }
 
 // ── Køens driver ───────────────────────────────────────────────────────────────────────────────────────────────────
+/// Rundens henter: tokens for alle forbindelser, der kunne læses ved rundens start (V-KONTI.1). Tokenet slås op pr. zone (D3) ved hvert kald,
+/// så en forbindelse, der er afvist eller glemt undervejs, ikke bruges igen.
 struct KoeHenter<'a> {
     tilstand: &'a Tilstand,
-    token: &'a Hemmelig,
+    tokens: BTreeMap<i64, Hemmelig>,
+}
+
+impl KoeHenter<'_> {
+    fn token(&self, zone: &str) -> Result<&Hemmelig, Fejl> {
+        Henter::forbindelse(self, zone)
+            .and_then(|f| self.tokens.get(&f))
+            .ok_or(Fejl::IntetToken)
+    }
 }
 
 impl Henter for KoeHenter<'_> {
     async fn zone(&self, zone: &str, paa_doegn: &mut (dyn FnMut(&str, Doegnudfald<'_>) + Send)) -> Result<usize, Fejl> {
-        hent_zone(self.tilstand, self.token, zone, paa_doegn).await
+        hent_zone(self.tilstand, self.token(zone)?, zone, paa_doegn).await
     }
     fn pause_til(&self) -> Option<i64> {
         self.tilstand.klient.pause_til_ms()
     }
     async fn ekstra(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
-        hent_ekstra(self.tilstand, self.token, zone, dag).await
+        hent_ekstra(self.tilstand, self.token(zone)?, zone, dag).await
     }
     async fn angreb(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
-        hent_angreb(self.tilstand, self.token, zone, dag).await
+        hent_angreb(self.tilstand, self.token(zone)?, zone, dag).await
     }
     async fn laek(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
-        hent_laek(self.tilstand, self.token, zone, dag).await
+        hent_laek(self.tilstand, self.token(zone)?, zone, dag).await
     }
     async fn dns(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
-        hent_dns(self.tilstand, self.token, zone, dag).await
+        hent_dns(self.tilstand, self.token(zone)?, zone, dag).await
     }
     async fn dmarc(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
-        hent_dmarc(self.tilstand, self.token, zone, dag).await
+        hent_dmarc(self.tilstand, self.token(zone)?, zone, dag).await
     }
     async fn historik(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
-        hent_historik(self.tilstand, self.token, zone, fra, til).await
+        hent_historik(self.tilstand, self.token(zone)?, zone, fra, til).await
     }
     async fn unikke(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
-        hent_unikke(self.tilstand, self.token, zone, fra, til).await
+        hent_unikke(self.tilstand, self.token(zone)?, zone, fra, til).await
     }
     async fn besoeg(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
-        hent_besoeg(self.tilstand, self.token, zone, fra, til).await
+        hent_besoeg(self.tilstand, self.token(zone)?, zone, fra, til).await
     }
     async fn ipklasse(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
-        hent_ipklasse(self.tilstand, self.token, zone, fra, til).await
+        hent_ipklasse(self.tilstand, self.token(zone)?, zone, fra, til).await
     }
     async fn robot(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
-        hent_robot(self.tilstand, self.token, zone, fra, til).await
+        hent_robot(self.tilstand, self.token(zone)?, zone, fra, til).await
     }
     async fn side(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
-        hent_side(self.tilstand, self.token, zone, fra, til).await
+        hent_side(self.tilstand, self.token(zone)?, zone, fra, til).await
     }
     async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
-        hent_tilstand(self.tilstand, self.token, zone).await
+        hent_tilstand(self.tilstand, self.token(zone)?, zone).await
     }
     async fn fund(&self) {
-        hent_fund(self.tilstand, self.token).await
+        let afviste = self.tilstand.koe.afviste();
+        for (id, t) in self.tokens.iter().filter(|(id, _)| !afviste.contains(*id)) {
+            // En forbindelse, der er glemt undervejs i runden, hentes ikke (dens nøgler er slettet).
+            let findes = laas(self.tilstand).is_ok_and(|l| l.forbindelse_ider().is_ok_and(|v| v.contains(id)));
+            if findes {
+                hent_fund(self.tilstand, *id, t).await;
+            }
+        }
+    }
+    fn forbindelse(&self, zone: &str) -> Option<i64> {
+        let afviste = self.tilstand.koe.afviste();
+        let ider = laas(self.tilstand).ok()?.forbindelser_for(zone).ok()?;
+        ider.into_iter().find(|f| !afviste.contains(f) && self.tokens.contains_key(f))
+    }
+    fn forbindelser(&self) -> Vec<i64> {
+        self.tokens.keys().copied().collect()
     }
 }
 
@@ -1151,6 +1387,13 @@ impl Henter for KoeHenter<'_> {
 fn melder(app: &AppHandle, s: &KoeStatus) {
     let _ = app.emit("hentekoe", s);
     if let Some(a) = app.try_state::<agent::Agent>() {
+        // Forbindelsernes navne til teksten ved en afvisning. `try_lock`: melderen må aldrig vente på lageret (en kalder kan holde det).
+        if let Some(f) = app
+            .try_state::<Tilstand>()
+            .and_then(|t| t.lager.try_lock().ok().and_then(|l| l.forbindelser().ok()))
+        {
+            a.saet_forbindelser(f);
+        }
         a.meld(s, nu_ms());
     }
     if s.tilstand == koe::Fase::Faerdig {
@@ -1176,12 +1419,9 @@ fn start_koe(app: &AppHandle) {
             let _ = app.emit("ekstra", zone);
         };
         let runde = move || async move {
-            let token = gemt_token(t).await?;
+            let tokens = alle_tokens(t).await?;
             t.klient.ny_runde();
-            let h = KoeHenter {
-                tilstand: t,
-                token: &token,
-            };
+            let h = KoeHenter { tilstand: t, tokens };
             let slut = t.koe.runde(&t.lager, &h, meld, &nu_ms).await;
             if slut == koe::Slut::Faerdig && t.koe.ekstra_runde(&t.lager, &h, &nu_ms, koe::EKSTRA_TEMPO, paa_gemt).await {
                 return Ok(koe::Slut::Vaekket);
@@ -1880,6 +2120,11 @@ pub fn run() {
             token_set,
             token_status,
             token_delete,
+            forbindelser_hent,
+            forbindelse_tilfoej,
+            forbindelse_skift,
+            forbindelse_omdoeb,
+            forbindelse_glem,
             zones,
             zones_cache,
             vaern_cache,
@@ -2037,7 +2282,8 @@ mod tests {
         const NU: i64 = 1_793_693_280_000;
         let mut s = Store::i_hukommelse().unwrap();
         let dag = vaern::dag_noegle(NU - vaern::DOEGN_MS);
-        s.gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
         let rk = [(
             "fw".to_string(),
             ["R", "US", "A", "/", "CPH", "GET", "firewallManaged", "block"].join("\t"),
@@ -2060,17 +2306,71 @@ mod tests {
         assert_eq!(meldes(&s), Some(1), "det fravalgte giver ingen notifikation");
         assert_eq!(s.raekker("z2", &dag).unwrap().len(), 1, "tallene bliver liggende");
         s.gem_zoner(
+            1,
             &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com"), zone("z3", "c.wi24rd.com")],
             "t",
         )
         .unwrap();
         assert_eq!(s.valg().unwrap(), ["z1"], "T3: en ny zone er ikke valgt");
         assert_eq!(meldes(&s), Some(1), "og giver ingen notifikation");
-        let ud = domaener_ud(s.zoner().unwrap().0, &s.valgte().unwrap(), &s.nye().unwrap());
-        assert_eq!(
-            ud.iter().map(|d| (d.til, d.ny)).collect::<Vec<_>>(),
-            [(true, false), (false, false), (false, true)]
+        let ud = domaener_ud(
+            s.zoner().unwrap().0,
+            &s.valgte().unwrap(),
+            &s.nye().unwrap(),
+            &s.ejere(&HashSet::new()).unwrap(),
         );
+        assert_eq!(
+            ud.iter().map(|d| (d.til, d.ny, d.forbindelse)).collect::<Vec<_>>(),
+            [(true, false, Some(1)), (false, false, Some(1)), (false, true, Some(1))],
+            "V-KONTI.1: hvert domæne har sin forbindelse"
+        );
+    }
+
+    /// D7: med det nuværende UI virker "Gem og forbind" og "Glem tokenet" som i 1.0.0. `token_set` gemmer i forbindelse 1 (den oprindelige post), opretter den
+    /// første gang og skifter tokenet på den med lavest id bagefter; uden forbindelser læses den oprindelige post (`[1]`). "Glem tokenet" (forbindelse for
+    /// forbindelse, så alle) efterlader lageret som `slet_zoner` i 1.0.0: ingen forbindelser, zoner, valg eller notifikationsvalg, men tallene og indstillingerne.
+    #[test]
+    fn token_set_og_token_delete_virker_som_foer_med_een_forbindelse() {
+        let mut s = Store::i_hukommelse().unwrap();
+        assert_eq!(
+            ider_eller_1(s.forbindelse_ider().unwrap()),
+            [1],
+            "hullet: den oprindelige post læses"
+        );
+        assert_eq!(token_set_forbindelse(&mut s, "t").unwrap(), (1, true));
+        assert_eq!(
+            token_set_forbindelse(&mut s, "t").unwrap(),
+            (1, false),
+            "et nyt token skifter på forbindelse 1"
+        );
+        assert_eq!(token::konto(1), "cloudflare-api-token", "samme post som 1.0.0");
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], "t")
+            .unwrap();
+        s.gem_valgte(&["z1".into()]).unwrap();
+        s.gem_notifikation_zone("z1", Some("fra")).unwrap();
+        s.gem_indstilling("sprog", "da").unwrap();
+        s.gem_doegn("z1", "2026-11-02", &[], "t").unwrap();
+        // Som glem_alle: hver forbindelse for sig, så det hele.
+        for id in ider_eller_1(s.forbindelse_ider().unwrap()) {
+            s.slet_zoner(id).unwrap();
+        }
+        s.slet_alle().unwrap();
+        assert!(s.forbindelser().unwrap().is_empty());
+        assert_eq!(s.zoner().unwrap(), (vec![], None));
+        assert!(s.valgte().unwrap().is_empty() && s.notifikation_zoner().unwrap().is_empty());
+        assert_eq!(s.hentet("z1").unwrap().len(), 1, "tallene bliver");
+        assert_eq!(s.indstilling("sprog").unwrap().as_deref(), Some("da"));
+        assert_eq!(
+            token_set_forbindelse(&mut s, "t").unwrap(),
+            (1, true),
+            "næste token er igen forbindelse 1"
+        );
+        // Er forbindelse 1 glemt, men 2 står, skifter token_set på 2.
+        let to = s.ny_forbindelse("t").unwrap();
+        s.gem_zoner(1, &[zone("z1", "a.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(to, &[zone("z2", "b.wi24rd.com")], "t").unwrap();
+        s.slet_zoner(1).unwrap();
+        assert_eq!(token_set_forbindelse(&mut s, "t").unwrap(), (to, false));
     }
 
     #[test]
@@ -2139,7 +2439,7 @@ mod tests {
         let med = |valgte: &[&str]| {
             let mut s = Store::i_hukommelse().unwrap();
             let zoner: Vec<Zone> = ["a", "b", "c", "d"].iter().map(|z| zone(z, &format!("{z}.wi24rd.com"))).collect();
-            s.gem_zoner(&zoner, "t").unwrap();
+            s.gem_zoner(1, &zoner, "t").unwrap();
             s.gem_valgte(&valgte.iter().map(|z| z.to_string()).collect::<Vec<_>>()).unwrap();
             for (z, net, n) in [
                 ("a", "Mal AS", 40),
@@ -2174,7 +2474,7 @@ mod tests {
         };
         let mut s = Store::i_hukommelse().unwrap();
         let zoner: Vec<Zone> = ["a", "b", "c"].iter().map(|z| zone(z, &format!("{z}.wi24rd.com"))).collect();
-        s.gem_zoner(&zoner, "t").unwrap();
+        s.gem_zoner(1, &zoner, "t").unwrap();
         s.gem_valgte(&["a".to_string(), "b".to_string(), "c".to_string()]).unwrap();
         for z in ["a", "b", "c"] {
             for i in 5..=9 {
@@ -2208,6 +2508,7 @@ mod tests {
     fn teknologi_oversigten_taeller_valg_pr_valgt_domaene() {
         let mut s = Store::i_hukommelse().unwrap();
         s.gem_zoner(
+            1,
             &[zone("a", "a.wi24rd.com"), zone("b", "b.wi24rd.com"), zone("c", "c.wi24rd.com")],
             "t",
         )
@@ -2229,7 +2530,8 @@ mod tests {
     fn teknologi_siden_afkrydser_det_sete() {
         const NU: i64 = 1_793_693_280_000;
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&[zone("a", "a.wi24rd.com"), zone("c", "c.wi24rd.com")], "t").unwrap();
+        s.gem_zoner(1, &[zone("a", "a.wi24rd.com"), zone("c", "c.wi24rd.com")], "t")
+            .unwrap();
         s.gem_valgte(&["a".to_string()]).unwrap();
         let dag = vaern::dag_noegle(NU - vaern::DOEGN_MS);
         let regel = |r: &str| {

@@ -2496,7 +2496,7 @@ mod tests {
             navn: navn.into(),
         };
         lager
-            .gem_zoner(&[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], &t)
+            .gem_zoner(1, &[zone("z1", "a.wi24rd.com"), zone("z2", "b.wi24rd.com")], &t)
             .unwrap();
         lager.gem_valgte(&["z1".into(), "z2".into()]).unwrap();
         let l = laes(&lager, &s, NU).unwrap();
@@ -2517,7 +2517,7 @@ mod tests {
             navn: format!("{id}.wi24rd.com"),
         };
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&[z("a"), z("b"), z("c")], "t").unwrap();
+        s.gem_zoner(1, &[z("a"), z("b"), z("c")], "t").unwrap();
         for id in ["a", "b", "c"] {
             s.gem_doegn(id, &dag_noegle(NU - DOEGN_MS), &[("fw".to_string(), "k".to_string(), 1)], "t")
                 .unwrap();

@@ -760,7 +760,7 @@ mod tests {
             navn: format!("{id}.wi24rd.com"),
         };
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&[z("a"), z("b")], "t").unwrap();
+        s.gem_zoner(1, &[z("a"), z("b")], "t").unwrap();
         for id in ["a", "b"] {
             s.gem_doegn(id, &d(25), &[], "t").unwrap();
             s.gem_doegn(id, &d(1), &[("bot".to_string(), "NyBot\t\tAI Crawler\t/\t200".to_string(), 3)], "t")
@@ -778,6 +778,7 @@ mod tests {
     fn ny_robot_kun_paa_hele_doegn() {
         let mut s = Store::i_hukommelse().unwrap();
         s.gem_zoner(
+            1,
             &[Zone {
                 id: "z1".into(),
                 navn: "a.wi24rd.com".into(),
@@ -797,6 +798,7 @@ mod tests {
     fn nye_robotter_fra_lageret_efter_sidste_visning() {
         let mut s = Store::i_hukommelse().unwrap();
         s.gem_zoner(
+            1,
             &[Zone {
                 id: "z1".into(),
                 navn: "a.wi24rd.com".into(),

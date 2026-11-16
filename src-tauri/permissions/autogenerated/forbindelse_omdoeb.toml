@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-forbindelse-omdoeb"
+description = "Enables the forbindelse_omdoeb command without any pre-configured scope."
+commands.allow = ["forbindelse_omdoeb"]
+
+[[permission]]
+identifier = "deny-forbindelse-omdoeb"
+description = "Denies the forbindelse_omdoeb command without any pre-configured scope."
+commands.deny = ["forbindelse_omdoeb"]

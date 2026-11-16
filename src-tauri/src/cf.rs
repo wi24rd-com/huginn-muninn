@@ -1,6 +1,7 @@
 //! HTTP-klienten mod Cloudflare. Kun https://api.cloudflare.com/client/v4/ (HTTPS, ingen omdirigeringer), kun læsning.
 //! GraphQL-værdier sendes altid som variabler, aldrig flettet ind i forespørgselsteksten. Alle GraphQL-kald (siden og
 //! hentekøen) går gennem én fælles begrænser, så programmet holder sig inden for Cloudflares kvote.
+use std::collections::BTreeMap;
 use std::fmt;
 use std::future::Future;
 use std::sync::{Arc, LazyLock, Mutex};
@@ -333,6 +334,76 @@ pub fn tolk_graphql(r: &Raasvar) -> Result<Value, Fejl> {
     match j.get("data") {
         Some(d) if !d.is_null() => Ok(d.clone()),
         _ => Err(Fejl::Svar),
+    }
+}
+
+/// Et nyt tokens dom (V-KONTI.1, Q8). Svarer `user/tokens/verify` med en status, der ikke er `active`, er tokenet afvist som før. Bliver selve kaldet
+/// afvist (`Afvist` eller `Api`: et Account API Token kan måske ikke verificeres dér; det er ikke målt), afgør rettighederne det: kun et svar, der bekræfter
+/// begge (`Ok(true)`), godkender tokenet, og ellers gælder den oprindelige fejl. Uden for det er det som i 1.0.0: verificeret, og rettighederne afgør
+/// en manglende rettighed. `accounts/{id}/tokens/verify` kaldes ikke (heller ikke målt). Ren funktion af de to svar.
+pub async fn efter_verificering<F, Fut>(v: Result<(), Fejl>, rettigheder: F) -> Result<(), Fejl>
+where
+    F: FnOnce() -> Fut,
+    Fut: Future<Output = Result<bool, Fejl>>,
+{
+    match v {
+        Ok(()) => rettigheder().await.map(|_| ()),
+        Err(e @ (Fejl::Afvist(_) | Fejl::Api(_))) => match rettigheder().await {
+            Ok(true) => Ok(()),
+            _ => Err(e),
+        },
+        Err(e) => Err(e),
+    }
+}
+
+/// Zonerne fra Cloudflare og kontoens navn til forbindelsen (V-KONTI.1, D5). `konto_navn` er den første konto efter navn (renset, `rens_kontonavn`),
+/// `konti` antallet af forskellige konti i svaret. Kontoernes id'er bruges kun til at tælle dem og forlader aldrig `zoner`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Zoneliste {
+    pub zoner: Vec<Zone>,
+    pub konto_navn: Option<String>,
+    pub konti: i64,
+}
+
+/// Højst så mange tegn af kontoens navn gemmes og vises.
+pub const KONTONAVN_MAKS: usize = 100;
+
+/// Kontoens navn, som det må gemmes: kontroltegn væk, mellemrum i enderne væk, højst `KONTONAVN_MAKS` tegn; bogstaver uden for ASCII (æøå) og en
+/// e-mailadresse bliver stående (D5). Tomt bliver `None`. Ren funktion.
+pub fn rens_kontonavn(s: &str) -> Option<String> {
+    let s: String = s.chars().filter(|c| !c.is_control()).collect();
+    let s: String = s.trim().chars().take(KONTONAVN_MAKS).collect();
+    let s = s.trim_end().to_string();
+    (!s.is_empty()).then_some(s)
+}
+
+/// Én side af /zones: zonerne (med id og navn) til `alle` og kontoerne (id → renset navn) til `konti`. Ren funktion.
+pub fn zoneside(j: &Value, alle: &mut Vec<Zone>, konti: &mut BTreeMap<String, Option<String>>) {
+    for z in j.get("result").and_then(Value::as_array).into_iter().flatten() {
+        if let Some(k) = z.pointer("/account/id").and_then(Value::as_str).filter(|k| !k.is_empty()) {
+            let navn = z.pointer("/account/name").and_then(Value::as_str).and_then(rens_kontonavn);
+            let post = konti.entry(k.to_string()).or_insert(None);
+            if post.is_none() {
+                *post = navn;
+            }
+        }
+        let (Some(id), Some(navn)) = (z.get("id").and_then(Value::as_str), z.get("name").and_then(Value::as_str)) else {
+            continue;
+        };
+        alle.push(Zone {
+            id: id.into(),
+            navn: navn.into(),
+        });
+    }
+}
+
+/// Zonerne sorteret efter navn, den første konto efter navn og antallet af konti. Ren funktion.
+pub fn zoneliste(mut alle: Vec<Zone>, konti: &BTreeMap<String, Option<String>>) -> Zoneliste {
+    alle.sort_by(|a, b| a.navn.cmp(&b.navn));
+    Zoneliste {
+        zoner: alle,
+        konto_navn: konti.values().flatten().min().cloned(),
+        konti: konti.len() as i64,
     }
 }
 
@@ -683,9 +754,9 @@ impl Klient {
         }
     }
 
-    /// Har tokenet de to rettigheder? Ét kald til /zones og én lille GraphQL-forespørgsel. Svarer Cloudflare noget andet end en manglende rettighed (net, 5xx, kvote), står tokenet ikke til
-    /// doms her: køen melder selv fejlen.
-    pub async fn tjek_rettigheder(&self, t: &Hemmelig, nu: i64) -> Result<(), Fejl> {
+    /// Har tokenet de to rettigheder? Ét kald til /zones og én lille GraphQL-forespørgsel. `Err` er en manglende rettighed; `Ok(true)`: Cloudflare bekræftede
+    /// begge; `Ok(false)`: Cloudflare sagde noget andet (net, 5xx, kvote), og tokenet står ikke til doms her (køen melder selv fejlen). Se `efter_verificering`.
+    async fn rettigheder(&self, t: &Hemmelig, nu: i64) -> Result<bool, Fejl> {
         let svar = self.get(t, "zones?per_page=1").await.map(|j| {
             j.get("result")
                 .and_then(Value::as_array)
@@ -695,36 +766,34 @@ impl Klient {
                 .map(str::to_string)
         });
         let Some(zone) = mangler_ret_zoner(svar)? else {
-            return Ok(());
+            return Ok(false);
         };
-        mangler_ret_analytics(
-            &self
-                .graphql(t, RET_QUERY, doegn_variabler(&zone, &dag_noegle(nu - DOEGN_MS))?)
-                .await,
-        )
+        let svar = self
+            .graphql(t, RET_QUERY, doegn_variabler(&zone, &dag_noegle(nu - DOEGN_MS))?)
+            .await;
+        mangler_ret_analytics(&svar)?;
+        Ok(svar.is_ok())
     }
 
-    /// GET /zones?per_page=50 (side 2+ hvis der er flere), sorteret efter navn.
-    pub async fn zoner(&self, t: &Hemmelig) -> Result<Vec<Zone>, Fejl> {
+    /// Et nyt token, før det gemmes: verificeret og med de to rettigheder (`token_set`, `forbindelse_tilfoej`, `forbindelse_skift`). Se `efter_verificering`.
+    pub async fn godkend(&self, t: &Hemmelig, nu: i64) -> Result<(), Fejl> {
+        let v = self.verificer(t).await;
+        efter_verificering(v, || self.rettigheder(t, nu)).await
+    }
+
+    /// GET /zones?per_page=50 (side 2+ hvis der er flere), sorteret efter navn, med kontoens navn (`Zoneliste`).
+    pub async fn zoner(&self, t: &Hemmelig) -> Result<Zoneliste, Fejl> {
         let mut alle = Vec::new();
+        let mut konti = BTreeMap::new();
         for side in 1..=MAKS_ZONESIDER {
             let j = self.get(t, &format!("zones?per_page=50&page={side}")).await?;
-            for z in j.get("result").and_then(Value::as_array).into_iter().flatten() {
-                let (Some(id), Some(navn)) = (z.get("id").and_then(Value::as_str), z.get("name").and_then(Value::as_str)) else {
-                    continue;
-                };
-                alle.push(Zone {
-                    id: id.into(),
-                    navn: navn.into(),
-                });
-            }
+            zoneside(&j, &mut alle, &mut konti);
             let sider = j.pointer("/result_info/total_pages").and_then(Value::as_u64).unwrap_or(1);
             if u64::from(side) >= sider {
                 break;
             }
         }
-        alle.sort_by(|a, b| a.navn.cmp(&b.navn));
-        Ok(alle)
+        Ok(zoneliste(alle, &konti))
     }
 
     /// Cloudflares egne sikkerhedsfund (`sikkerhed.rs`): kontoerne fra GET /zones, og for hver GET accounts/{id}/security-center/insights. Kontoens id bruges kun i
@@ -1307,5 +1376,91 @@ mod tests {
             3300,
             "ingen forbindelse: ingen pause i begrænseren (køen venter selv)"
         );
+    }
+
+    /// V-KONTI.1 (Q8): en status, der ikke er `active`, afviser som før; et afvist kald til `user/tokens/verify` afgøres af rettighederne, og kun et
+    /// bekræftende svar godkender. Ellers gælder den oprindelige fejl. Med en verificering, der lykkes, er det som i 1.0.0.
+    #[tokio::test]
+    async fn verificer_afvist_afgoeres_af_rettighederne() {
+        let ret = |r: Result<bool, Fejl>| move || async move { r };
+        let inaktiv = Fejl::TokenInaktiv("disabled".into());
+        assert_eq!(
+            efter_verificering(Err(inaktiv.clone()), ret(Ok(true))).await,
+            Err(inaktiv),
+            "inaktiv afvises uden at spørge"
+        );
+        assert_eq!(
+            efter_verificering(Err(Fejl::Afvist(401)), ret(Ok(true))).await,
+            Ok(()),
+            "kontotoken: rettighederne bekræfter"
+        );
+        assert_eq!(efter_verificering(Err(Fejl::Api("x".into())), ret(Ok(true))).await, Ok(()));
+        assert_eq!(
+            efter_verificering(Err(Fejl::Afvist(401)), ret(Err(Fejl::ManglerZone))).await,
+            Err(Fejl::Afvist(401)),
+            "afviser rettighederne også, gælder den oprindelige fejl"
+        );
+        assert_eq!(
+            efter_verificering(Err(Fejl::Afvist(403)), ret(Ok(false))).await,
+            Err(Fejl::Afvist(403)),
+            "intet svar om rettighederne er ingen godkendelse"
+        );
+        assert_eq!(
+            efter_verificering(Err(Fejl::Forbindelse), ret(Ok(true))).await,
+            Err(Fejl::Forbindelse),
+            "net: ingen dom"
+        );
+        assert_eq!(
+            efter_verificering(Ok(()), ret(Ok(false))).await,
+            Ok(()),
+            "som i 1.0.0: intet svar står ikke til doms"
+        );
+        assert_eq!(
+            efter_verificering(Ok(()), ret(Err(Fejl::ManglerAnalytics))).await,
+            Err(Fejl::ManglerAnalytics)
+        );
+    }
+
+    /// D5: kontoens navn renses (kontroltegn, længde) og bruges ellers uændret, også med æøå. Det står kun i `Zoneliste`, aldrig i en fejl.
+    #[test]
+    fn kontonavn_renses_og_ender_aldrig_i_fejl() {
+        assert_eq!(rens_kontonavn("  Ærø\u{0007} Rådgivning\n "), Some("Ærø Rådgivning".into()));
+        assert_eq!(rens_kontonavn("\u{0000}\t "), None);
+        let langt = "å".repeat(150);
+        assert_eq!(rens_kontonavn(&langt).unwrap().chars().count(), KONTONAVN_MAKS);
+        let navn = "Hemmeligt Kontonavn ApS";
+        let side = json!({ "result": [
+            { "id": "z2", "name": "b.wi24rd.com", "account": { "id": "k2", "name": "Øvrig Konto" } },
+            { "id": "z1", "name": "a.wi24rd.com", "account": { "id": "k1", "name": format!("{navn}\u{0001}") } },
+            { "id": "z3", "name": "c.wi24rd.com", "account": { "id": "k1", "name": navn } },
+            { "name": "uden-id.wi24rd.com", "account": { "id": "k3" } }
+        ] });
+        let (mut alle, mut konti) = (Vec::new(), BTreeMap::new());
+        zoneside(&side, &mut alle, &mut konti);
+        let l = zoneliste(alle, &konti);
+        assert_eq!(
+            l.zoner.iter().map(|z| z.id.as_str()).collect::<Vec<_>>(),
+            ["z1", "z2", "z3"],
+            "efter navn; uden id springes over"
+        );
+        assert_eq!(l.konto_navn.as_deref(), Some(navn), "den første konto efter navn");
+        assert_eq!(l.konti, 3, "tre forskellige konti (id'erne tælles, gemmes ikke)");
+        let tom = zoneliste(Vec::new(), &BTreeMap::new());
+        assert_eq!((tom.konto_navn, tom.konti), (None, 0));
+        for f in [Fejl::Svar, Fejl::Api(rens_fejl("bad")), Fejl::Afvist(403), Fejl::ManglerZone] {
+            let ud = format!("{f} {f:?} {}", som_json(&f));
+            assert!(!ud.contains(navn) && !ud.contains("k1"), "{ud}");
+        }
+    }
+
+    /// D5: et navn med en e-mailadresse (Cloudflares standard) bruges uændret; der foreslås intet andet.
+    #[test]
+    fn kontonavn_med_e_mail_bruges_uaendret() {
+        let navn = "test@wi24rd.com's Account";
+        assert_eq!(rens_kontonavn(navn).as_deref(), Some(navn));
+        let side = json!({ "result": [{ "id": "z1", "name": "a.wi24rd.com", "account": { "id": "k1", "name": navn } }] });
+        let (mut alle, mut konti) = (Vec::new(), BTreeMap::new());
+        zoneside(&side, &mut alle, &mut konti);
+        assert_eq!(zoneliste(alle, &konti).konto_navn.as_deref(), Some(navn));
     }
 }

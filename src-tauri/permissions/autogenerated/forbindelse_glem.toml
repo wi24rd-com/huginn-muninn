@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-forbindelse-glem"
+description = "Enables the forbindelse_glem command without any pre-configured scope."
+commands.allow = ["forbindelse_glem"]
+
+[[permission]]
+identifier = "deny-forbindelse-glem"
+description = "Denies the forbindelse_glem command without any pre-configured scope."
+commands.deny = ["forbindelse_glem"]

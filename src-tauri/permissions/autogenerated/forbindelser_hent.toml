@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-forbindelser-hent"
+description = "Enables the forbindelser_hent command without any pre-configured scope."
+commands.allow = ["forbindelser_hent"]
+
+[[permission]]
+identifier = "deny-forbindelser-hent"
+description = "Denies the forbindelser_hent command without any pre-configured scope."
+commands.deny = ["forbindelser_hent"]

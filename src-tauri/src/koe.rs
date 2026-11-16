@@ -8,7 +8,7 @@
 //! lavest prioritet: enhver anmodning om en ny runde afbryder den, og en fejl i den rører hverken zonen eller køen. Kun valgte domæner hentes
 //! (`Store::zoner_til`, og igen ved turen, for et domæne kan være fravalgt undervejs), så uden valgte domæner henter køen intet. Et nyvalgt domæne
 //! får det, der mangler i hentevinduet (`dage_at_hente`), altså højst de seneste 30 dage, og står forrest (`prioriter`).
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::future::Future;
 use std::pin::pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -81,6 +81,10 @@ pub struct KoeStatus {
     /// Navnet på det første domæne, der ikke kunne hentes i runden (hører til `fejl`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fejl_navn: Option<String>,
+    /// De forbindelser, hvis token Cloudflare har afvist (V-KONTI.1), efter id. Deres domæner hentes ikke, til der er et nyt token eller "Hent nu".
+    /// Kun id'er: webvisningen slår navnet op (`forbindelser_hent`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub afviste: Vec<i64>,
 }
 
 /// Det, køen skal bruge udefra: hent én zone (fælles med `vaern_oversigt`) og begrænserens pause.
@@ -129,6 +133,15 @@ pub trait Henter: Sync {
     /// Henter og gemmer Cloudflares egne sikkerhedsfund for kontoen, højst én gang i timen (`sikkerhed::skal_hente`). Udfaldet noteres af henteren selv.
     fn fund(&self) -> impl Future<Output = ()> + Send + '_ {
         async {}
+    }
+    /// Den forbindelse, zonen hentes med (V-KONTI.1, D3): lavest id blandt dem, der ser den, og hvis token ikke er afvist. `None`: ingen kan hente den.
+    /// Standarden er én forbindelse (1), som i 1.0.0.
+    fn forbindelse(&self, _zone: &str) -> Option<i64> {
+        Some(1)
+    }
+    /// Forbindelserne med et token i denne runde. Er de alle afvist, stopper køen.
+    fn forbindelser(&self) -> Vec<i64> {
+        vec![1]
     }
 }
 
@@ -302,6 +315,8 @@ pub struct Koe {
     net_igen: AtomicBool,
     /// Domæner og slags (fejlpræfiks + zone), hvor Cloudflare ikke svarede på besøgstallene: der spørges ikke igen, før programmet starter igen.
     besoeg_opgivet: Mutex<HashSet<String>>,
+    /// Forbindelser, hvis token Cloudflare har afvist (401/403) i en runde (V-KONTI.1). Ryddes af `fortsaet` (nyt token, "Hent nu", programstart) og `ryd_afvist`.
+    afviste: Mutex<BTreeSet<i64>>,
 }
 
 impl Koe {
@@ -345,7 +360,30 @@ impl Koe {
 
     pub fn fortsaet(&self) {
         self.grund.lock().unwrap_or_else(|e| e.into_inner()).take();
+        self.afviste.lock().unwrap_or_else(|e| e.into_inner()).clear();
         self.stop.store(false, Ordering::SeqCst);
+    }
+
+    /// De afviste forbindelser.
+    pub fn afviste(&self) -> HashSet<i64> {
+        self.afviste.lock().unwrap_or_else(|e| e.into_inner()).iter().copied().collect()
+    }
+
+    fn afviste_sorteret(&self) -> Vec<i64> {
+        self.afviste.lock().unwrap_or_else(|e| e.into_inner()).iter().copied().collect()
+    }
+
+    fn afvis(&self, forbindelse: i64) {
+        self.afviste.lock().unwrap_or_else(|e| e.into_inner()).insert(forbindelse);
+    }
+
+    /// Forbindelsen har fået et nyt token eller er glemt: dens afvisning gælder ikke længere.
+    pub fn ryd_afvist(&self, forbindelse: i64) {
+        self.afviste.lock().unwrap_or_else(|e| e.into_inner()).remove(&forbindelse);
+        let mut g = self.status.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(s) = g.as_mut() {
+            s.afviste.retain(|f| *f != forbindelse);
+        }
     }
 
     pub fn stoppet(&self) -> bool {
@@ -459,7 +497,14 @@ impl Koe {
         tempo: Duration,
         paa_gemt: &(dyn Fn(&str) + Sync),
     ) -> bool {
-        let zoner = lager.lock().ok().and_then(|s| s.zoner_til().ok()).unwrap_or_default();
+        let zoner: Vec<Zone> = lager
+            .lock()
+            .ok()
+            .and_then(|s| s.zoner_til().ok())
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|z| h.forbindelse(&z.id).is_some())
+            .collect();
         // Zonens tilstand: ét lille kald pr. valgt domæne og runde. En fejl her stopper ingenting, og tilstanden fra sidst står.
         for z in &zoner {
             if self.stoppet() {
@@ -740,6 +785,7 @@ impl Koe {
                 fejl: None,
                 fortsaetter_kl: None,
                 fejl_navn: None,
+                afviste: Vec::new(),
             });
             f(s);
             s.clone()
@@ -783,6 +829,7 @@ impl Koe {
                 fejl: None,
                 fortsaetter_kl: None,
                 fejl_navn: None,
+                afviste: self.afviste_sorteret(),
             }
         });
         let mut net_trin = 0;
@@ -794,7 +841,8 @@ impl Koe {
                 return Slut::Stoppet;
             }
             let mut p = rest.remove(i);
-            if !slaaet_til(lager, &p.zone.id) {
+            // Fravalgt undervejs, eller ingen forbindelse kan hente den (alle, der ser den, er afvist): den springes over.
+            if !slaaet_til(lager, &p.zone.id) || h.forbindelse(&p.zone.id).is_none() {
                 self.meld(meld, |s| {
                     s.zoner_faerdige += 1;
                     s.doegn_i_alt -= p.rest.min(s.doegn_i_alt);
@@ -845,14 +893,34 @@ impl Koe {
                         s.zoner_opdateret += usize::from(gjort > 0);
                     });
                 }
+                // Kun zonens forbindelse er afvist (V-KONTI.1): resten af runden fortsætter, og zonen prøves med den næste forbindelse, der ser den.
+                // Er alle forbindelser afvist, stopper køen som i 1.0.0, til der er et nyt token.
                 Err(e @ Fejl::Afvist(_)) => {
-                    self.stop.store(true, Ordering::SeqCst);
-                    self.meld(meld, |s| {
-                        s.tilstand = Fase::Fejl;
-                        s.fejl = Some(e);
-                        s.fortsaetter_kl = None;
-                    });
-                    return Slut::Stoppet;
+                    if let Some(f) = h.forbindelse(&p.zone.id) {
+                        self.afvis(f);
+                    }
+                    let afviste = self.afviste();
+                    let liste = self.afviste_sorteret();
+                    if h.forbindelser().iter().all(|f| afviste.contains(f)) {
+                        self.stop.store(true, Ordering::SeqCst);
+                        self.meld(meld, |s| {
+                            s.tilstand = Fase::Fejl;
+                            s.fejl = Some(e);
+                            s.fortsaetter_kl = None;
+                            s.afviste = liste;
+                        });
+                        return Slut::Stoppet;
+                    }
+                    if h.forbindelse(&p.zone.id).is_some() && p.forsoeg < MAKS_FORSOEG {
+                        self.meld(meld, |s| s.afviste = liste);
+                        rest.push(p);
+                    } else {
+                        self.meld(meld, |s| {
+                            s.zoner_faerdige += 1;
+                            s.doegn_i_alt -= p.rest.min(s.doegn_i_alt);
+                            s.afviste = liste;
+                        });
+                    }
                 }
                 Err(e) if forbigaaende(&e) && p.forsoeg < MAKS_FORSOEG => {
                     if e == Fejl::Forbindelse {
@@ -936,6 +1004,7 @@ mod tests {
             fejl: None,
             fortsaetter_kl: None,
             fejl_navn: None,
+            afviste: Vec::new(),
         }
     }
 
@@ -1048,6 +1117,9 @@ mod tests {
         log: Mutex<Vec<&'static str>>,
         ekstra_lager: Option<&'a Mutex<Store>>,
         ekstra_vaek: bool,
+        /// V-KONTI.1: zone → de forbindelser, der ser den (laveste først), og rundens forbindelser. Tomme = én forbindelse (1).
+        ejere: HashMap<String, Vec<i64>>,
+        alle_forbindelser: Vec<i64>,
     }
 
     impl Henter for Falsk<'_> {
@@ -1203,6 +1275,22 @@ mod tests {
             self.log.lock().unwrap().push("fund");
         }
 
+        fn forbindelse(&self, zone: &str) -> Option<i64> {
+            let afviste = self.koe.afviste();
+            match self.ejere.get(zone) {
+                Some(v) => v.iter().copied().find(|f| !afviste.contains(f)),
+                None => (!afviste.contains(&1)).then_some(1),
+            }
+        }
+
+        fn forbindelser(&self) -> Vec<i64> {
+            if self.alle_forbindelser.is_empty() {
+                vec![1]
+            } else {
+                self.alle_forbindelser.clone()
+            }
+        }
+
         async fn ekstra(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
             self.ekstra_kald.lock().unwrap().push((zone.to_string(), dag.to_string()));
             let svar = self.ekstra_svar.get(zone).cloned().unwrap_or(Ok(()));
@@ -1220,7 +1308,7 @@ mod tests {
 
     fn lager_med(zoner: &[(&str, &str, Option<&str>)]) -> Mutex<Store> {
         let mut s = Store::i_hukommelse().unwrap();
-        s.gem_zoner(&zoner.iter().map(|(id, navn, _)| zone(id, navn)).collect::<Vec<_>>(), "t")
+        s.gem_zoner(1, &zoner.iter().map(|(id, navn, _)| zone(id, navn)).collect::<Vec<_>>(), "t")
             .unwrap();
         s.gem_valgte(&zoner.iter().map(|z| z.0.to_string()).collect::<Vec<_>>()).unwrap();
         for (id, _, hentet) in zoner {
@@ -1263,6 +1351,8 @@ mod tests {
             log: Mutex::default(),
             ekstra_lager: None,
             ekstra_vaek: false,
+            ejere: HashMap::new(),
+            alle_forbindelser: Vec::new(),
         }
     }
 
@@ -1324,8 +1414,70 @@ mod tests {
         let sidst = h.last().unwrap();
         assert_eq!((sidst.tilstand, sidst.fejl.clone()), (Fase::Fejl, Some(Fejl::Afvist(403))));
         assert_eq!(serde_json::to_value(sidst).unwrap()["fejl"]["kode"], "afvist");
+        assert_eq!(sidst.afviste, [1], "V-KONTI.1: den eneste forbindelse er afvist");
         koe.fortsaet();
         assert!(!koe.stoppet(), "et nyt token starter køen igen");
+        assert!(koe.afviste().is_empty(), "og afvisningen er glemt");
+    }
+
+    /// V-KONTI.1: et afvist token stopper kun sin egen forbindelses domæner. En delt zone hentes med den næste forbindelse, der ser den (D3), og et
+    /// domæne, kun den afviste ser, springes over. Køen kører videre, og statussen har den afviste forbindelses id.
+    #[tokio::test(start_paused = true)]
+    async fn afvist_forbindelse_stopper_kun_sine_domaener() {
+        let lager = lager_med(&[
+            ("a", "a.wi24rd.com", None),
+            ("b", "b.wi24rd.com", None),
+            ("c", "c.wi24rd.com", None),
+            ("d", "d.wi24rd.com", None),
+        ]);
+        let koe = Koe::default();
+        let mut f = falsk(&koe);
+        f.svar.insert("a".into(), vec![Err(Fejl::Afvist(403))]);
+        f.ejere = HashMap::from([
+            ("a".to_string(), vec![1]),
+            ("b".to_string(), vec![2]),
+            ("c".to_string(), vec![1, 2]),
+            ("d".to_string(), vec![1]),
+        ]);
+        f.alle_forbindelser = vec![1, 2];
+        let (slut, h) = koer(&koe, &lager, &f).await;
+        assert_eq!(slut, Slut::Faerdig, "køen stopper ikke");
+        assert!(!koe.stoppet());
+        assert_eq!(
+            *f.lager.lock().unwrap(),
+            ["a", "b", "c"],
+            "c med forbindelse 2; d kun med den afviste"
+        );
+        let sidst = h.last().unwrap();
+        assert_eq!(sidst.tilstand, Fase::Faerdig);
+        assert_eq!((sidst.afviste.clone(), sidst.fejl.clone()), (vec![1], None));
+        assert_eq!(sidst.zoner_faerdige, 4);
+        assert_eq!(serde_json::to_value(sidst).unwrap()["afviste"], serde_json::json!([1]));
+        koe.ryd_afvist(1);
+        assert!(
+            koe.afviste().is_empty() && koe.status().unwrap().afviste.is_empty(),
+            "nyt token på forbindelsen"
+        );
+    }
+
+    /// V-KONTI.1: først når alle forbindelser er afvist, stopper køen som i 1.0.0.
+    #[tokio::test(start_paused = true)]
+    async fn alle_afvist_stopper_koeen() {
+        let lager = lager_med(&[("a", "a.wi24rd.com", None), ("b", "b.wi24rd.com", None)]);
+        let koe = Koe::default();
+        let mut f = falsk(&koe);
+        f.svar.insert("a".into(), vec![Err(Fejl::Afvist(403))]);
+        f.svar.insert("b".into(), vec![Err(Fejl::Afvist(401))]);
+        f.ejere = HashMap::from([("a".to_string(), vec![1]), ("b".to_string(), vec![2])]);
+        f.alle_forbindelser = vec![1, 2];
+        let (slut, h) = koer(&koe, &lager, &f).await;
+        assert_eq!(slut, Slut::Stoppet);
+        assert!(koe.stoppet());
+        let sidst = h.last().unwrap();
+        assert_eq!((sidst.tilstand, sidst.fejl.clone()), (Fase::Fejl, Some(Fejl::Afvist(401))));
+        assert_eq!(sidst.afviste, [1, 2]);
+        koe.fortsaet();
+        assert!(koe.afviste().is_empty(), "Hent nu eller et nyt token prøver dem igen");
     }
 
     /// "Nulstil historik" stopper køen midt i en zone: runden må ikke melde "færdig" (det ville sætte notifikationerne i
