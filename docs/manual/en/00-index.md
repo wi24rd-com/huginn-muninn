@@ -7,7 +7,7 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 - **Huginn (thought)** is what is happening now: the attacks, what was stopped and how.
 - **Muninn (memory)** is what has happened: every finished day is kept locally.
 
-> **Status:** version 1.0.0 for macOS (Apple silicon). The program is signed with Developer ID and notarised by Apple. This guide follows that version.
+> **Status:** version 1.1.0 for macOS (Apple silicon). The program is signed with Developer ID and notarised by Apple. This guide follows that version.
 
 ## How the guide is organised
 

@@ -22,7 +22,7 @@ body:
     id: version
     attributes:
       label: Version of Huginn and Muninn
-      placeholder: "1.0.0"
+      placeholder: "1.1.0"
   - type: input
     id: macos
     attributes:

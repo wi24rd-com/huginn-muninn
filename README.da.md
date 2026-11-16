@@ -9,7 +9,7 @@
 [![Licens: Apache-2.0](https://img.shields.io/badge/licens-Apache--2.0-blue)](LICENSE)
 ![macOS på Apple silicon](https://img.shields.io/badge/macOS-Apple%20silicon-lightgrey)
 
-### [⬇ Hent Huginn and Muninn 1.0.0 til macOS](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
+### [⬇ Hent Huginn and Muninn 1.1.0 til macOS](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
 Signeret og notariseret af Apple · Apple silicon · macOS 11 eller nyere · åbn zip-filen, og træk programmet til Programmer
 
 **Windows:** ikke udgivet endnu. En Windows-udgave er på vej.
@@ -21,7 +21,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 
 **Privatliv:** programmet taler kun med `api.cloudflare.com` med dit eget API Token, der kun kan læse (ét pr. Cloudflare-konto, hvis du har flere), gemt i styresystemets nøglering. Intet sendes til Wi24rd. Ingen telemetri.
 
-**Status:** version 1.0.0 til macOS (Apple silicon), signeret med Developer ID og notariseret af Apple. Hent den under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). Windows-udgaven er ikke udgivet endnu, og der findes ingen Linux-udgave.
+**Status:** version 1.1.0 til macOS (Apple silicon), signeret med Developer ID og notariseret af Apple. Hent den under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). Windows-udgaven er ikke udgivet endnu, og der findes ingen Linux-udgave.
 
 **Brugervejledning:** [Dansk](docs/manual/da/00-index.md) · [English](docs/manual/en/00-index.md)
 
@@ -92,7 +92,7 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - macOS spørger om lov første gang, en notifikation vises. **Slå dem helt fra:** Systemindstillinger → Notifikationer → Huginn and Muninn.
 
 ## Installation
-Hent `Huginn-Muninn-1.0.0.zip` under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest), åbn den, og træk **Huginn and Muninn** til din Programmer-mappe. Kræver macOS 11 eller nyere og en Mac med Apple silicon. Se [Installation](docs/manual/da/20-installation.md) og [Afinstallation](docs/manual/da/90-afinstallation.md).
+Hent `Huginn-Muninn-1.1.0.zip` under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest), åbn den, og træk **Huginn and Muninn** til din Programmer-mappe. Kræver macOS 11 eller nyere og en Mac med Apple silicon. Se [Installation](docs/manual/da/20-installation.md) og [Afinstallation](docs/manual/da/90-afinstallation.md).
 
 
 ## Hvad programmet sender, og hvorhen
@@ -108,7 +108,7 @@ Du kan tjekke, at den fil, du har hentet, er den, der blev udgivet, og at progra
 
 **1. Zip-filens kontrolsum**
 ```
-shasum -a 256 ~/Downloads/Huginn-Muninn-1.0.0.zip
+shasum -a 256 ~/Downloads/Huginn-Muninn-1.1.0.zip
 ```
 Linjen skal begynde med den SHA-256, der står i [udgivelsesteksten](https://github.com/wi24rd-com/huginn-muninn/releases/latest). GitHub viser samme værdi ved filen under **Assets**. For 1.0.0 er den:
 ```

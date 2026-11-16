@@ -7,7 +7,7 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 - **Huginn (tanke)** er det, der sker nu: angrebene, hvad der blev stoppet og hvordan.
 - **Muninn (hukommelse)** er det, der er sket: hver færdig dag gemmes lokalt.
 
-> **Status:** version 1.0.0 til macOS (Apple silicon). Programmet er signeret med Developer ID og notariseret af Apple. Denne vejledning følger den udgave.
+> **Status:** version 1.1.0 til macOS (Apple silicon). Programmet er signeret med Developer ID og notariseret af Apple. Denne vejledning følger den udgave.
 
 ## Sådan er vejledningen bygget op
 

@@ -1,12 +1,12 @@
 # Installation
 
-> **Status today:** Version 1.0.0 is available for macOS on a Mac with Apple silicon. There is no version for Windows or Linux yet.
+> **Status today:** Version 1.1.0 is available for macOS on a Mac with Apple silicon. There is no version for Windows or Linux yet.
 
 ## macOS
 
 Requires macOS 11 or newer and a Mac with Apple silicon.
 
-1. Download `Huginn-Muninn-1.0.0.zip` from the release on GitHub.
+1. Download `Huginn-Muninn-1.1.0.zip` from the release on GitHub.
 2. Open the zip file. It unpacks **Huginn and Muninn**.
 3. Drag **Huginn and Muninn** to your Applications folder (`/Applications`).
 4. Open the program.

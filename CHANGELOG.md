@@ -4,6 +4,10 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-11-16
+
+Anden udgave til macOS: flere API Tokens side om side og subdomæner i Besøgende og Angreb; den lokale database opgraderes til skema 20.
+
 ### 2026-11-16 23:30 — Subdomæner i Besøgende og Angreb
 #### Tilføjet
 - **Subdomæner i Besøgende og Angreb:** har et domæne trafik på mindst to navne (fx `wi24rd.com`, `www.wi24rd.com` og `shop.wi24rd.com`), står afsnittet **Subdomæner** med besøg, forespørgsler, angreb og andel pr. subdomæne i den valgte periode. Det står kun, når ét domæne er valgt; et domæne uden subdomæner ser ud som før. Flere end 20 navne samles i **Andre (n)**, og opslag med en IP-adresse, et andet navn eller et ugyldigt navn står for sig og kan ikke åbnes.

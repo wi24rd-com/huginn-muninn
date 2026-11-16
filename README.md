@@ -9,7 +9,7 @@
 [![Licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue)](LICENSE)
 ![macOS on Apple silicon](https://img.shields.io/badge/macOS-Apple%20silicon-lightgrey)
 
-### [⬇ Download Huginn and Muninn 1.0.0 for macOS](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
+### [⬇ Download Huginn and Muninn 1.1.0 for macOS](https://github.com/wi24rd-com/huginn-muninn/releases/latest)
 Signed and notarised by Apple · Apple silicon · macOS 11 or newer · open the zip and drag the app to Applications
 
 **Windows:** not released yet. A Windows version is on its way.
@@ -21,7 +21,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 
 **Privacy:** the app talks only to `api.cloudflare.com` with your own read-only API Token (one per Cloudflare account, if you have several), stored in your OS keychain. Nothing is sent to Wi24rd. No telemetry.
 
-**Status:** version 1.0.0 for macOS (Apple silicon), signed with Developer ID and notarised by Apple. Download it from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). The Windows version is not released yet, and there is no Linux version.
+**Status:** version 1.1.0 for macOS (Apple silicon), signed with Developer ID and notarised by Apple. Download it from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). The Windows version is not released yet, and there is no Linux version.
 
 **User guide:** [English](docs/manual/en/00-index.md) · [Dansk](docs/manual/da/00-index.md)
 
@@ -92,7 +92,7 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - macOS asks for permission the first time a notification is shown. **To turn them off completely:** System Settings → Notifications → Huginn and Muninn.
 
 ## Install
-Download `Huginn-Muninn-1.0.0.zip` from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest), open it, and drag **Huginn and Muninn** to your Applications folder. Requires macOS 11 or newer and a Mac with Apple silicon. See [Installation](docs/manual/en/20-installation.md) and [Uninstalling](docs/manual/en/90-afinstallation.md).
+Download `Huginn-Muninn-1.1.0.zip` from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest), open it, and drag **Huginn and Muninn** to your Applications folder. Requires macOS 11 or newer and a Mac with Apple silicon. See [Installation](docs/manual/en/20-installation.md) and [Uninstalling](docs/manual/en/90-afinstallation.md).
 
 
 ## What the app sends, and where
@@ -108,7 +108,7 @@ You can check that the file you downloaded is the one that was published, and th
 
 **1. The checksum of the zip file**
 ```
-shasum -a 256 ~/Downloads/Huginn-Muninn-1.0.0.zip
+shasum -a 256 ~/Downloads/Huginn-Muninn-1.1.0.zip
 ```
 The line must begin with the SHA-256 stated in the [release notes](https://github.com/wi24rd-com/huginn-muninn/releases/latest). GitHub shows the same value next to the file under **Assets**. For 1.0.0 it is:
 ```

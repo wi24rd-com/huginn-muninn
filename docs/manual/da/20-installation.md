@@ -1,12 +1,12 @@
 # Installation
 
-> **Status i dag:** Version 1.0.0 findes til macOS på en Mac med Apple silicon. Der findes endnu ingen udgave til Windows eller Linux.
+> **Status i dag:** Version 1.1.0 findes til macOS på en Mac med Apple silicon. Der findes endnu ingen udgave til Windows eller Linux.
 
 ## macOS
 
 Kræver macOS 11 eller nyere og en Mac med Apple silicon.
 
-1. Hent `Huginn-Muninn-1.0.0.zip` fra udgivelsen på GitHub.
+1. Hent `Huginn-Muninn-1.1.0.zip` fra udgivelsen på GitHub.
 2. Åbn zip-filen. Den pakker **Huginn and Muninn** ud.
 3. Træk **Huginn and Muninn** til din Programmer-mappe (`/Applications`).
 4. Åbn programmet.

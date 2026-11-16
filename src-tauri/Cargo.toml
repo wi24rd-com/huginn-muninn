@@ -1,6 +1,6 @@
 [package]
 name = "huginn-muninn"
-version = "1.0.0"
+version = "1.1.0"
 description = "Wi24rd Huginn and Muninn — for Cloudflare®"
 license = "Apache-2.0"
 edition = "2021"

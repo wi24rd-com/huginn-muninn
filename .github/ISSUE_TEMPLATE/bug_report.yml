@@ -12,7 +12,7 @@ body:
     attributes:
       label: Version of Huginn and Muninn
       description: Shown in the footer and under About (the i at the top right).
-      placeholder: "1.0.0"
+      placeholder: "1.1.0"
     validations:
       required: true
   - type: input
