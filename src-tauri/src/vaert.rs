@@ -419,7 +419,8 @@ where
 }
 
 // ── Visningen (B2): kommandoen `subdomaener` ───────────────────────────────────────────────────────────────────────
-/// Én dag for én vært. `None`: ingen tal for dagen (ikke hentet, eller Cloudflare sendte 10.000 rækker), og det er noget andet end 0.
+/// Én dag for én vært. `None`: ingen tal for dagen (ikke hentet, eller Cloudflare sendte 10.000 rækker), og det er noget andet end 0. Et tal står, når døgnet er
+/// hentet, eller når der ligger gemte tal for det, selv om køen skal hente det igen (V-SUBDOM.1 FIX 2, F3).
 #[derive(Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct VaertDag {
     pub dag: String,
@@ -458,6 +459,13 @@ pub struct SubdomaenerUd {
     /// Cloudflare afviste forespørgslen pr. vært for domænet (trafik / angreb). Domænets egne tal er uberørte.
     pub trafik_afvist: bool,
     pub angreb_afvist: bool,
+    /// V-SUBDOM.1 FIX 2 (F3): dage i perioden uden tal pr. vært, som køen stadig har til gode at hente (færdige døgn i hentevinduet `besoeg::hentevindue`,
+    /// ikke afvist, ikke på loftet). Antallet er længden. Ældre dage er ikke med (dem dækker `trafik_fra`/`angreb_fra`).
+    pub trafik_mangler: Vec<String>,
+    pub angreb_mangler: Vec<String>,
+    /// Antal dage i perioden med tal pr. vært (0: intet i perioden er hentet endnu, og visningen viser "–", ikke 0).
+    pub trafik_dage: usize,
+    pub angreb_dage: usize,
 }
 
 /// Det, `regn` skal bruge fra databasen.
@@ -473,11 +481,14 @@ pub struct Laest {
     pub angreb_afvist: bool,
     /// Hovedhentningen afviste værtsfeltet for domænet i dag (`uden_gaelder`, sat af kommandoen). Det giver kun `angreb_afvist`, når perioden ingen `v_fw` har.
     pub uden_vaert: bool,
+    /// Uret (ms, sat af kommandoen) til hentevinduet for `trafik_mangler`/`angreb_mangler`. 0: intet vindue, så intet mangler.
+    pub nu: i64,
 }
 
 pub fn laes(lager: &Store, zone: &str, fra: &str) -> Result<Laest, Fejl> {
     Ok(Laest {
         uden_vaert: false,
+        nu: 0,
         raekker: lager
             .raekker_art(&[zone.to_string()], TABEL_ARTER, fra)?
             .into_iter()
@@ -533,8 +544,18 @@ pub fn regn(l: &Laest, fra: &str, til: &str) -> SubdomaenerUd {
             x[i] += n;
         }
     }
-    let trafik = |d: &str| l.hentet.contains(d) && !trafik_afsk.contains(d);
-    let angreb = |d: &str| l.hentet_fw.contains(d) && !fw_afsk.contains(d);
+    // V-SUBDOM.1 FIX 2 (F3): gemte tal tæller, også når døgnet venter på en genhentning (ikke i `hentet_*`, fx efter `store::vaert_land_en_gang`); `hentet_*`
+    // styrer kun, hvad køen henter. Et døgn uden gemte tal er hentet med 0, når det står i `hentet_*`. S4: et døgn med mærket for loftet tæller aldrig.
+    let gemt = |arter: &[&str]| -> BTreeSet<&str> {
+        i_perioden
+            .iter()
+            .filter(|r| arter.contains(&r.art.as_str()))
+            .map(|r| r.dag.as_str())
+            .collect()
+    };
+    let (trafik_gemt, fw_gemt) = (gemt(&[V_ALLE, V_BESOEG]), gemt(&[V_FW]));
+    let trafik = |d: &str| (l.hentet.contains(d) || trafik_gemt.contains(d)) && !trafik_afsk.contains(d);
+    let angreb = |d: &str| (l.hentet_fw.contains(d) || fw_gemt.contains(d)) && !fw_afsk.contains(d);
     let mut vaerter: Vec<VaertUd> = t
         .into_iter()
         .map(|(vaert, pr_dag)| {
@@ -565,12 +586,39 @@ pub fn regn(l: &Laest, fra: &str, til: &str) -> SubdomaenerUd {
         .collect();
     vaerter.sort_by_key(|v| (v.vaert.starts_with('['), Reverse(v.foresp), Reverse(v.angreb), v.vaert.clone()));
     let i_perioden_dage = |m: &BTreeSet<&str>| m.iter().map(|d| d.to_string()).collect::<Vec<_>>();
+    // V-SUBDOM.1 FIX 1 (V1): noteringen fra hovedhentningen giver kun et afslag, når perioden ingen tal pr. vært har for angrebene; har den, vises de.
+    let angreb_afvist = l.angreb_afvist || (l.uden_vaert && !i_perioden.iter().any(|r| r.art == V_FW));
+    // Det, køen stadig henter: færdige døgn i hentevinduet og perioden uden tal, ikke på loftet, og ikke for et domæne, der har afvist forespørgslen.
+    let vindue: BTreeSet<String> = if l.nu > 0 {
+        crate::besoeg::hentevindue(l.nu).into_iter().collect()
+    } else {
+        BTreeSet::new()
+    };
+    let mangler = |afvist: bool, med: &dyn Fn(&str) -> bool, afsk: &BTreeSet<&str>| -> Vec<String> {
+        if afvist {
+            return Vec::new();
+        }
+        dage.iter()
+            .filter(|d| vindue.contains(*d) && !med(d) && !afsk.contains(d.as_str()))
+            .cloned()
+            .collect()
+    };
+    let (trafik_mangler, angreb_mangler) = (
+        mangler(l.trafik_afvist, &trafik, &trafik_afsk),
+        mangler(angreb_afvist, &angreb, &fw_afsk),
+    );
+    let (trafik_dage, angreb_dage) = (dage.iter().filter(|d| trafik(d)).count(), dage.iter().filter(|d| angreb(d)).count());
+    // Den første dag med tal pr. vært: hentet, eller med gemte tal (FIX 2).
+    let foerste = |hentet: &HashSet<String>, arter: &[&str]| -> Option<String> {
+        let gemt = l.raekker.iter().filter(|r| arter.contains(&r.art.as_str())).map(|r| r.dag.as_str());
+        hentet.iter().map(String::as_str).chain(gemt).min().map(str::to_string)
+    };
     SubdomaenerUd {
         fra: fra.to_string(),
         til: til.to_string(),
         vaerter,
-        trafik_fra: l.hentet.iter().min().cloned(),
-        angreb_fra: l.hentet_fw.iter().min().cloned(),
+        trafik_fra: foerste(&l.hentet, &[V_ALLE, V_BESOEG]),
+        angreb_fra: foerste(&l.hentet_fw, &[V_FW]),
         trafik_afskaaret: i_perioden_dage(&trafik_afsk),
         angreb_afskaaret: i_perioden_dage(&fw_afsk),
         sider_afskaaret: l
@@ -578,8 +626,11 @@ pub fn regn(l: &Laest, fra: &str, til: &str) -> SubdomaenerUd {
             .as_ref()
             .is_some_and(|(a, b)| a.as_str() <= til && b.as_str() >= fra),
         trafik_afvist: l.trafik_afvist,
-        // V-SUBDOM.1 FIX 1 (V1): noteringen fra hovedhentningen giver kun et afslag, når perioden ingen tal pr. vært har for angrebene; har den, vises de.
-        angreb_afvist: l.angreb_afvist || (l.uden_vaert && !i_perioden.iter().any(|r| r.art == V_FW)),
+        angreb_afvist,
+        trafik_mangler,
+        angreb_mangler,
+        trafik_dage,
+        angreb_dage,
     }
 }
 
@@ -594,10 +645,11 @@ pub struct VaertLr {
 }
 
 /// Lande og robotter for værten `vaert` (labelen; `""` = domænet selv) ud fra rækkerne `rk` (`LR_ARTER`), de hentede døgn `hentet` (`hentet_vaert`) og den
-/// første dag med lande og robotter pr. vært (`fra`, `store::VAERT_LAND_V1`; `None`: ingen). Et døgn har tal for en art, når det er hentet fra og med `fra`,
-/// og hverken hele svaret (`v_afskaaret`) eller artens alias (`v_land_afskaaret`/`v_robot_afskaaret`) stod på loftet. Ren funktion.
+/// første dag med lande og robotter pr. vært (`fra`, `store::VAERT_LAND_V1`; `None`: ingen). Et døgn har tal for en art, når det er hentet fra og med `fra`
+/// eller har gemte tal for arten (V-SUBDOM.1 FIX 2: også når køen skal hente det igen), og hverken hele svaret (`v_afskaaret`) eller artens alias
+/// (`v_land_afskaaret`/`v_robot_afskaaret`) stod på loftet. Ren funktion.
 pub fn lr(rk: &[Raekke], hentet: &HashSet<String>, fra: Option<&str>, vaert: &str) -> VaertLr {
-    let dage: BTreeSet<&str> = hentet.iter().map(String::as_str).filter(|d| fra.is_some_and(|f| *d >= f)).collect();
+    let hentet_fra: BTreeSet<&str> = hentet.iter().map(String::as_str).filter(|d| fra.is_some_and(|f| *d >= f)).collect();
     let maerket = |art: &str| -> HashSet<&str> {
         rk.iter()
             .filter(|r| r.art == art || r.art == V_AFSKAARET)
@@ -605,13 +657,17 @@ pub fn lr(rk: &[Raekke], hentet: &HashSet<String>, fra: Option<&str>, vaert: &st
             .collect()
     };
     let (uden_land, uden_robot) = (maerket(V_LAND_AFSKAARET), maerket(V_ROBOT_AFSKAARET));
-    let med = |uden: &HashSet<&str>| {
-        dage.iter()
-            .filter(|d| !uden.contains(*d))
-            .map(|d| d.to_string())
+    let med = |art: &str, uden: &HashSet<&str>| {
+        let gemt = rk.iter().filter(|r| r.art == art).map(|r| r.dag.as_str());
+        hentet_fra
+            .iter()
+            .copied()
+            .chain(gemt)
+            .filter(|d| !uden.contains(d))
+            .map(str::to_string)
             .collect::<HashSet<_>>()
     };
-    let (land_hentet, robot_hentet) = (med(&uden_land), med(&uden_robot));
+    let (land_hentet, robot_hentet) = (med(V_LAND, &uden_land), med(V_ROBOT, &uden_robot));
     let af = |art: &str, hentet: &HashSet<String>| -> Vec<Raekke> {
         rk.iter()
             .filter(|r| r.art == art && hentet.contains(&r.dag))

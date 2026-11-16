@@ -983,7 +983,8 @@ fn lande_og_robotter_hentes_igen_en_gang() {
     assert_eq!(s.vaert_land_fra().unwrap().as_deref(), Some(fra.as_str()));
 }
 
-/// Værtens lande og robotter: kun dage hentet fra og med genhentningen, ikke dage på loftet (hele svaret eller artens alias), og kun værtens rækker.
+/// Værtens lande og robotter: dage hentet fra og med genhentningen og dage med gemte tal for arten (FIX 2), ikke dage på loftet (hele svaret eller artens
+/// alias), og kun værtens rækker. Et hentet døgn før genhentningen uden gemte tal for arten har ingen tal (ikke 0).
 #[test]
 fn lande_og_robotter_for_en_vaert() {
     let r = |dag: &str, art: &str, k: &str, n: i64| Raekke {
@@ -1001,8 +1002,9 @@ fn lande_og_robotter_for_en_vaert() {
         r("2026-11-02", V_ROBOT, "shop\tAI Crawler", 3),
         r("2026-11-03", V_AFSKAARET, "", LOFT),
         r("2026-11-04", V_LAND, "shop\tSE", 1),
+        r("2026-11-05", V_ROBOT, "shop\tSearch Engine Crawler", 4),
     ];
-    let hentet: HashSet<String> = ["2026-10-01", "2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04"]
+    let hentet: HashSet<String> = ["2026-10-01", "2026-10-02", "2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04"]
         .iter()
         .map(|d| d.to_string())
         .collect();
@@ -1010,20 +1012,42 @@ fn lande_og_robotter_for_en_vaert() {
     let dage = |m: &HashSet<String>| m.iter().cloned().collect::<BTreeSet<_>>();
     assert_eq!(
         dage(&v.land_hentet),
-        ["2026-11-01", "2026-11-04"].iter().map(|d| d.to_string()).collect()
+        ["2026-10-01", "2026-11-01", "2026-11-04"].iter().map(|d| d.to_string()).collect(),
+        "10-01: gemte tal før genhentningen; 10-02: hentet uden lande; 11-02/11-03: loftet"
     );
     assert_eq!(
         dage(&v.robot_hentet),
-        ["2026-11-01", "2026-11-02", "2026-11-04"].iter().map(|d| d.to_string()).collect()
+        ["2026-11-01", "2026-11-02", "2026-11-04", "2026-11-05"]
+            .iter()
+            .map(|d| d.to_string())
+            .collect(),
+        "11-05: gemte tal, ikke i hentet_vaert (venter på genhentningen)"
     );
-    assert_eq!(v.land, [r("2026-11-01", V_LAND, "DK", 5), r("2026-11-04", V_LAND, "SE", 1)]);
-    assert_eq!(v.robot.iter().map(|x| x.n).sum::<i64>(), 5);
+    assert_eq!(
+        v.land,
+        [
+            r("2026-10-01", V_LAND, "DK", 99),
+            r("2026-11-01", V_LAND, "DK", 5),
+            r("2026-11-04", V_LAND, "SE", 1)
+        ]
+    );
+    assert_eq!(v.robot.iter().map(|x| x.n).sum::<i64>(), 9);
     assert_eq!(
         lr(&rk, &hentet, Some("2026-10-20"), "").land,
         [r("2026-11-01", V_LAND, "DK", 70)],
         "domænet selv"
     );
-    assert_eq!(lr(&rk, &hentet, None, "shop"), VaertLr::default(), "uden genhentning: ingen dage");
+    let uden = lr(&rk, &hentet, None, "shop");
+    assert_eq!(
+        dage(&uden.land_hentet),
+        ["2026-10-01", "2026-11-01", "2026-11-04"].iter().map(|d| d.to_string()).collect(),
+        "uden markør: kun dage med gemte tal"
+    );
+    assert_eq!(
+        lr(&[], &hentet, None, "shop"),
+        VaertLr::default(),
+        "uden markør og uden tal: ingen dage"
+    );
 }
 
 /// Besøgende med filter pr. vært: lande, robotter og filtrene land og robot er værtens; IP-klasserne og domænets noter er væk.
@@ -1126,4 +1150,150 @@ fn en_fejl_i_lande_og_robotter_indeholder_aldrig_en_vaert() {
         let t = format!("{e} {e:?} {}", serde_json::to_string(&e).unwrap_or_default());
         assert!(!t.contains("hemmelig"), "{t}");
     }
+}
+
+// ── V-SUBDOM.1 FIX 2 (F3): aldrig 0, før dagen er hentet ─────────────────────────────────────────────────────────────
+const ZF2: &str = "0123456789abcdef0123456789abcdef";
+
+fn d2(i: i64) -> String {
+    dag_noegle(nu() - i * DOEGN_MS)
+}
+
+/// Et lager med trafik og angreb pr. vært for d-1 … d-35 (alle hentet). d-3 er hentet uden trafik (0), d-5 stod på loftet for trafikken.
+fn lager_fix2() -> Store {
+    let mut s = Store::i_hukommelse().unwrap();
+    let dage: Vec<String> = (1..=35).map(d2).collect();
+    let mut trafik = Vec::new();
+    let mut fw = Vec::new();
+    for (i, d) in (1..=35).zip(&dage) {
+        fw.push(rk(d, V_FW, "shop\tfirewallManaged\tblock", 2));
+        match i {
+            3 => {}
+            5 => trafik.push(rk(d, V_AFSKAARET, "", LOFT)),
+            _ => trafik.extend([
+                rk(d, V_ALLE, "", 100),
+                rk(d, V_BESOEG, "", 10),
+                rk(d, V_ALLE, "shop", 20),
+                rk(d, V_BESOEG, "shop", 2),
+            ]),
+        }
+    }
+    s.gem_vaert(ZF2, &dage, &trafik, "t").unwrap();
+    s.gem_vaert_fw(ZF2, &dage, &fw, "t").unwrap();
+    s
+}
+
+fn regn_nu(s: &Store, fra: &str, til: &str) -> SubdomaenerUd {
+    let mut l = laes(s, ZF2, fra).unwrap();
+    l.nu = nu();
+    regn(&l, fra, til)
+}
+
+/// Jans tilfælde: `vaert_land_en_gang` glemmer døgnene i `hentet_vaert`, men tallene står. `subdomaener` giver de samme tal som før; kun døgnet uden gemte
+/// tal (hentet med 0 før) mangler nu, og det er `None`, ikke 0. Afskårne døgn tæller hverken som tal eller som "mangler".
+#[test]
+fn gemte_tal_taeller_uden_hentet_vaert() {
+    let mut s = lager_fix2();
+    let (fra, til) = (d2(7), d2(1));
+    let foer = regn_nu(&s, &fra, &til);
+    assert!(foer.trafik_mangler.is_empty() && foer.angreb_mangler.is_empty(), "alt er hentet");
+    assert_eq!((foer.trafik_dage, foer.angreb_dage), (6, 7), "d-5 på loftet");
+    let apex = |u: &SubdomaenerUd| u.vaerter.iter().find(|v| v.vaert.is_empty()).cloned().unwrap();
+    assert_eq!((apex(&foer).foresp, apex(&foer).besoeg), (500, 50));
+    assert_eq!(apex(&foer).dage[4].foresp, Some(0), "d-3 hentet uden trafik: 0");
+
+    assert!(s.vaert_land_en_gang(&d2(HENT_DAGE)).unwrap());
+    assert!(
+        s.hentet_vaert(ZF2).unwrap().keys().all(|d| *d < d2(HENT_DAGE)),
+        "døgnene i vinduet er glemt"
+    );
+    let efter = regn_nu(&s, &fra, &til);
+    let navne = |u: &SubdomaenerUd| {
+        u.vaerter
+            .iter()
+            .map(|v| (v.vaert.clone(), v.foresp, v.besoeg, v.angreb))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(navne(&efter), navne(&foer), "samme tal som før genhentningen");
+    assert_eq!(
+        efter.trafik_mangler,
+        [d2(3)],
+        "kun døgnet uden gemte tal; d-5 (loftet) er ikke 'mangler'"
+    );
+    assert!(efter.angreb_mangler.is_empty());
+    assert_eq!(apex(&efter).dage[4].foresp, None, "ikke hentet: intet tal, ikke 0");
+    assert_eq!(apex(&efter).dage[2].foresp, None, "loftet: intet tal");
+    assert_eq!(efter.trafik_dage, 5);
+    assert_eq!(efter.trafik_afskaaret, [d2(5)]);
+
+    // Køen henter d-3 igen (stadig ingen trafik): så er det 0, og intet mangler.
+    s.gem_vaert(ZF2, &[d2(3)], &[], "t").unwrap();
+    let hentet = regn_nu(&s, &fra, &til);
+    assert!(hentet.trafik_mangler.is_empty());
+    assert_eq!(apex(&hentet).dage[4].foresp, Some(0), "hentet, og tallet er 0");
+}
+
+/// 0 kun for hentede døgn; døgn ældre end hentevinduet er ikke "mangler" (dem dækker "Pr. subdomæne fra …"); i dag er ikke færdig og mangler ikke; et
+/// afslag giver intet "mangler".
+#[test]
+fn mangler_kun_i_hentevinduet() {
+    let mut s = Store::i_hukommelse().unwrap();
+    s.gem_vaert(ZF2, &[d2(2)], &[rk(&d2(2), V_ALLE, "shop", 4)], "t").unwrap();
+    let u = regn_nu(&s, &d2(40), &d2(0));
+    let vindue: Vec<String> = (1..=crate::besoeg::BESOEG_DAGE).rev().map(d2).filter(|d| *d != d2(2)).collect();
+    assert_eq!(u.trafik_mangler, vindue, "d-1 … d-30 uden d-2; ikke d-31 … d-40 og ikke i dag");
+    assert_eq!(
+        u.angreb_mangler.len(),
+        crate::besoeg::BESOEG_DAGE as usize,
+        "intet angreb pr. vært hentet"
+    );
+    let shop = u.vaerter.iter().find(|v| v.vaert == "shop").unwrap();
+    assert_eq!(shop.dage.iter().filter(|d| d.foresp.is_some()).count(), 1, "kun d-2 har et tal");
+    assert!(
+        shop.dage.iter().all(|d| d.foresp != Some(0)),
+        "intet 0 for et døgn, der ikke er hentet"
+    );
+    assert_eq!(u.trafik_dage, 1);
+
+    s.gem_afsnit_fejl(VAERT_FEJL, ZF2, Some("afvist")).unwrap();
+    s.gem_afsnit_fejl(VAERT_FW_FEJL, ZF2, Some("afvist")).unwrap();
+    let afvist = regn_nu(&s, &d2(7), &d2(1));
+    assert!(
+        afvist.trafik_mangler.is_empty() && afvist.angreb_mangler.is_empty(),
+        "afvist: køen henter det ikke"
+    );
+    let mut l = laes(&s, ZF2, &d2(7)).unwrap();
+    l.nu = 0;
+    assert!(regn(&l, &d2(7), &d2(1)).trafik_mangler.is_empty(), "uden ur: intet vindue");
+}
+
+/// Opgraderingen fra 1.0.0: angreb pr. vært kommer med hovedrunden (`v_fw`, `hentet_vaert_fw`), trafikken først med ekstrarunden. Så mangler trafikken for
+/// hele perioden: ingen dage med tal, intet 0, og værterne står med deres angreb.
+#[test]
+fn opgraderingen_giver_mangler_for_hele_perioden() {
+    let mut s = Store::i_hukommelse().unwrap();
+    let dage: Vec<String> = (1..=7).map(d2).collect();
+    let fw: Vec<Raekke4> = dage
+        .iter()
+        .flat_map(|d| [rk(d, V_FW, "\tfirewallManaged\tblock", 5), rk(d, V_FW, "shop\twaf\tblock", 3)])
+        .collect();
+    s.gem_vaert_fw(ZF2, &dage, &fw, "t").unwrap();
+    let u = regn_nu(&s, &d2(7), &d2(1));
+    let mut alle = dage.clone();
+    alle.reverse();
+    assert_eq!(u.trafik_mangler, alle, "hele perioden");
+    assert_eq!((u.trafik_dage, u.angreb_dage), (0, 7));
+    assert!(u.angreb_mangler.is_empty());
+    assert_eq!(
+        u.vaerter.iter().map(|v| (v.vaert.as_str(), v.angreb)).collect::<Vec<_>>(),
+        [("", 35), ("shop", 21)]
+    );
+    assert!(
+        u.vaerter
+            .iter()
+            .flat_map(|v| &v.dage)
+            .all(|d| d.foresp.is_none() && d.besoeg.is_none()),
+        "trafikken er aldrig 0, før den er hentet"
+    );
+    assert_eq!(u.trafik_fra, None);
 }

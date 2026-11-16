@@ -14,6 +14,8 @@ Your history, your settings and your API Token stay where they are. Replacing th
 
 The version with more than one connection upgrades the local database by itself the first time it starts. Nothing is lost: your API Token becomes connection 1 with all your choices.
 
+The figures per subdomain in Visitors and Attacks arrive within the first few minutes after an update; until then **–** is shown, which means "not fetched yet", not 0.
+
 Afterwards version 1.0.0 cannot open the database. It says "The local database is from a newer version of the program (schema 20)." and leaves the file alone.
 
 **Might you want to go back to 1.0.0?** Then take a copy of the database file `huginn-muninn.sqlite` before you open the new version for the first time. The program must be closed while you copy. Where the file is, is in [Data and history](70-data.md).

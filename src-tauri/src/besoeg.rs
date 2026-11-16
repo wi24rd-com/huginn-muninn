@@ -52,12 +52,17 @@ pub const TOP_SIDER: usize = 50;
 /// Perioder med flere dage end dette vises med én søjle pr. uge.
 pub const UGE_GRAENSE: usize = 90;
 
+/// Hentevinduet: de færdige døgn, køen henter for de ekstra tal (d-1 … d-`BESOEG_DAGE`), nyeste først. Ren funktion.
+pub fn hentevindue(nu: i64) -> Vec<String> {
+    (1..=BESOEG_DAGE)
+        .map(|i| dag_noegle(nu - i * DOEGN_MS))
+        .filter(|d| er_faerdig(d, &iso(nu)))
+        .collect()
+}
+
 /// De færdige døgn i hentevinduet, der mangler: (ældste, nyeste). Ét kald dækker alt derimellem. Ren funktion.
 pub fn mangler(hentet: &HashMap<String, String>, nu: i64) -> Option<(String, String)> {
-    let dage: Vec<String> = (1..=BESOEG_DAGE)
-        .map(|i| dag_noegle(nu - i * DOEGN_MS))
-        .filter(|d| er_faerdig(d, &iso(nu)) && !hentet.contains_key(d))
-        .collect();
+    let dage: Vec<String> = hentevindue(nu).into_iter().filter(|d| !hentet.contains_key(d)).collect();
     Some((dage.last()?.clone(), dage.first()?.clone()))
 }
 

@@ -11,6 +11,7 @@ Posterne står efter dato, nyeste først.
 - **Hvert tal i tabellen Subdomæner åbner det, det tæller:** Angreb åbner Angreb for subdomænet, Besøg og Forespørgsler Besøgende, med samme periode. Navnet åbner den visning, tabellen står i. Et tal, der er 0, kan ikke klikkes.
 - **Lande og kendte robotter pr. subdomæne** hentes i samme kald som trafikken pr. subdomæne (intet ekstra kald pr. dag). De sidste ca. 30 dage hentes én gang igen pr. domæne ved første start.
 - Noterne **Pr. subdomæne fra …**, **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.**, **Cloudflare svarede ikke på subdomænerne for dette domæne.** og **{n} dage er ikke med: Cloudflare sendte flere rækker, end programmet kan hente på én gang.**
+- **Et tal pr. subdomæne, der ikke er hentet endnu, står som –, aldrig som 0:** de gemte tal vises, mens dagene hentes igen, og en linje under tabellen siger **Henter besøg og forespørgsler pr. subdomæne …** eller **Henter {n} dage endnu.**, indtil køen er færdig. Det gælder også det filtrerede og de første minutter efter en opdatering.
 #### Ændret
 - **Den lokale database opgraderes endnu et trin** (skema 20) ved første start: to nye tabeller over, hvilke dage der er hentet pr. subdomæne. Ingen gemte tal ændres. Version 1.0.0 siger bagefter "(skema 20)".
 - **Mest besøgte sider skelner mellem subdomæner:** samme sti på to subdomæner står som to rækker, med subdomænet ved stien, og et klik viser stien på det subdomæne. Står svaret på Cloudflares loft, siger en note, at kun de mest besøgte sider er med.

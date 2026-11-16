@@ -46,7 +46,7 @@ Unique visitors and the IP classes do not exist per subdomain at Cloudflare. The
 
 The figure under **Attacks** in the table opens [Attacks](vaernet.md) for the subdomain with the same period (**A year** becomes **All history**). A figure that is 0 cannot be clicked.
 
-Countries and known robots per subdomain exist from the update to this version and about 30 days back. The program fetches those days once more per domain.
+Countries and known robots per subdomain exist from the update to this version and about 30 days back. The program fetches those days once more per domain. Right after an update, the figures per subdomain arrive within the first few minutes: until then **–** (not fetched yet) is shown instead of a figure, and below the table it says **Fetching visits and requests per subdomain …** or **Still fetching {n} days.**
 
 In **Most visited pages**, the same path on two subdomains is two rows. The row for a subdomain has the name next to the path, e.g. `/` with `shop.wi24rd.com`. Days saved before the update that are older than about 30 days cannot be told apart and count as the domain itself. If Cloudflare sent the highest number of rows for a day, the note **Only the most visited pages are included: Cloudflare sent at most 10,000 rows.** is shown.
 

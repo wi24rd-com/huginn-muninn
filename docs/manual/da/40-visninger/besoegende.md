@@ -46,7 +46,7 @@ Unikke besøgende og IP-klasserne findes ikke pr. subdomæne hos Cloudflare. De 
 
 Tallet under **Angreb** i tabellen åbner [Angreb](vaernet.md) for subdomænet med samme periode (**Et år** bliver **Hele historikken**). Et tal, der er 0, kan ikke klikkes.
 
-Lande og kendte robotter pr. subdomæne findes fra opdateringen til denne version og ca. 30 dage tilbage. Programmet henter de dage én gang igen pr. domæne.
+Lande og kendte robotter pr. subdomæne findes fra opdateringen til denne version og ca. 30 dage tilbage. Programmet henter de dage én gang igen pr. domæne. Lige efter en opdatering kommer tallene pr. subdomæne i løbet af de første minutter: indtil da står **–** (ikke hentet endnu) i stedet for et tal, og under tabellen står **Henter besøg og forespørgsler pr. subdomæne …** eller **Henter {n} dage endnu.**
 
 I **Mest besøgte sider** er samme sti på to subdomæner to rækker. Rækken for et subdomæne har navnet ved stien, fx `/` med `shop.wi24rd.com`. Dage, der er gemt før opdateringen og er ældre end ca. 30 dage, kan ikke skilles ad og tæller som domænet selv. Sendte Cloudflare det højeste antal rækker for en dag, står noten **Kun de mest besøgte sider er med: Cloudflare sendte højst 10.000 rækker.**
 

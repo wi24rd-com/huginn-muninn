@@ -623,6 +623,9 @@
     /* Samme mål som chippens ×: er subdomænet det eneste filter, siden uden filtre. */
     const hele = har('dag') || har('fra') ? udenFilter('vaert') : { gaa: oversigt(udenFilter('vaert')) };
     const dele = [bjaelke, V.subUden(U.udenAng, domaene, hele, 'ang-sub-uden'), vaelger];
+    /* FIX 2 (F3): angrebene pr. subdomæne, køen stadig henter for perioden. Fliserne viser "–", søjlerne huller, aldrig 0. */
+    const henter = sub && !sub.angreb_afvist ? V.subHenter(sub, ['angreb']) : null;
+    if (henter) dele.push(henter);
     if (!sub || sub.angreb_afvist) dele.push(el('p', { className: 'vg-advarsel vg-gul sub-ikke-tilg', textContent: U.ikkeTilg }));
     /* Fliserne fører til søjlerne (én dag har ingen søjler, og så fører de ingen steder hen). */
     const under = med < dage.length ? fmt(T.dagMed, { m: tal(med), n: tal(dage.length) }) : periodeTekst();
@@ -696,8 +699,8 @@
     aktiv = null;
     for (const f of afmeld.splice(0)) f();
   }
-  /* Tallene for perioden og filtrene, kun fra cachen. */
-  async function hentTal(g) {
+  /* Tallene for perioden og filtrene, kun fra cachen. igen: køen meldte nye tal, så fokus og rullepositionen bliver, hvor de er (V-SUBDOM.1 FIX 2). */
+  async function hentTal(g, igen) {
     let d, t = null;
     const vaert = vaertHost() !== null, trafik = erTrafik() && !vaert;
     try {
@@ -711,7 +714,9 @@
     const medSub = !samlet() && zone() && (vaert || (!filtre().length && !har('slags') && !erRobot()));
     const sub = medSub ? await invoke('subdomaener', { zone: zone(), ...V.subSpaend(d.periode.fra, d.periode.til) }).catch(() => null) : null;
     if (g !== gen) return;
+    const gendan = igen ? V.huskFokus(rod) : null;
     if (vaert) tegnVaert(d, sub); else tegn(d, t, sub);
+    if (gendan) gendan();
   }
   /* Én side i "De seneste": samme kald som hentTal med den nye side, men kun afsnittet byttes ud. Fokus bliver på knappen, der blev trykket, eller på
      "Side N af M", når den knap ikke er der mere (første/sidste side). */
@@ -736,6 +741,16 @@
       ventende = setTimeout(() => { ventende = null; sidst = Date.now(); igen(); }, Math.max(0, sidst + 3000 - Date.now()));
     };
     afmeld.push(R.paa('hentekoe', k => { k = k || {}; if (!k.zone || gaelder(k.zone)) snart(); }), () => clearTimeout(ventende));
+  }
+  /* V-SUBDOM.1 FIX 2: tallene pr. subdomæne gemmes af køens ekstra runde, som melder 'ekstra' med zonen. Domænets egen side (med og uden filtre) tegnes da
+     igen fra cachen, højst hvert 3. sekund, så tabellen og det filtrerede viser de nye tal. */
+  function lytPaaEkstra(z, igen) {
+    let sidst = Date.now(), ventende = null;
+    const snart = () => {
+      if (ventende) return;
+      ventende = setTimeout(() => { ventende = null; sidst = Date.now(); igen(); }, Math.max(0, sidst + 3000 - Date.now()));
+    };
+    afmeld.push(R.paa('ekstra', x => { if (!x || x === z) snart(); }), () => clearTimeout(ventende));
   }
   /* Filtrene og "Hent nu" ændrer ikke, hvor man står, når man kommer tilbage ad sidebjælken: kun domænet og perioden huskes. */
   const husket = p => { const q = new URLSearchParams(); for (const [k, v] of p) if (['zone', 'navn', 'samlet', 'periode'].includes(k)) q.set(k, v); return q.toString(); };
@@ -779,7 +794,10 @@
       /* Et filter eller en periode: kun det gemte. Køen kan stadig melde nyt. */
       stat = { tekst: vaern ? fmt(L.opdateret, { t: kl(vaern.genereret) }) : '', henter: false, advarsel: null };
       await hentTal(g);
-      if (g === gen) lytPaaKoe(x => x === z, () => hentTal(g));
+      if (g === gen) {
+        lytPaaKoe(x => x === z, () => hentTal(g, true));
+        lytPaaEkstra(z, () => hentTal(g, true));
+      }
       return;
     }
     if (vaern) {
@@ -811,6 +829,8 @@
     const gf = window.hmGenforsoeg($('vg-genforsoeg'), hent);
     afmeld.push(gf.fjern);
     await gf.start();
+    /* Kun når der er gemte tal at tegne (ellers står fejlen eller "Henter …"). */
+    if (g === gen) lytPaaEkstra(z, () => (vaern ? hentTal(g, true) : null));
   }
   /* Det samlede: valget fra Rust, tallene fra cachen; køen henter, og siden tegnes igen, når den melder nyt. */
   async function startSamlet(g) {

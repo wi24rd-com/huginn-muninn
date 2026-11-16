@@ -11,7 +11,9 @@
    kun uden filter. vaert=<navn> er filteret pr. subdomæne: fliser og grafer for besøg og forespørgsler pr. dag, lande, kendte robotter og Mest besøgte sider
    for værten (V-SUBDOM.1 FIX 1: lande og robotter pr. vært fra Rust). Unikke besøgende og IP-klasserne findes ikke pr. subdomæne: de står ikke, og én linje
    under chippen siger det og fører til hele domænet. Et afsnit uden tal for værten i perioden står ikke. Det kan stå sammen med sti, land eller robot
-   (et klik på et land eller en robotgruppe beholder værten) og nulstilles, når et andet domæne vælges. Værtsnavnene sættes kun som tekst. */
+   (et klik på et land eller en robotgruppe beholder værten) og nulstilles, når et andet domæne vælges. Værtsnavnene sættes kun som tekst.
+   V-SUBDOM.1 FIX 2: et tal pr. subdomæne, der ikke er hentet endnu, er "–", aldrig 0, og en linje (role=status) siger, hvad køen stadig henter. Når køen
+   melder nye tal, tegnes siden igen med fokus og rulleposition, hvor de var. */
 (function () {
   'use strict';
   const S = window.hmSprog, T = S.T, B = T.bes, R = window.hmRamme, V = window.hmTegn;
@@ -191,7 +193,8 @@
       const rk = d.robotter.map(x => { const navn = gruppeNavn(x.id); return { navn, maal: gaa(medFilter('robot', x.id)), label: fmt(B.gruppeAabn, { navn, n: tal(x.n) }), tal: [tal(x.n), procent(x.n, i_alt)] }; });
       dele.push(el('div', { className: 'vg-tabel-rul' }, tabel('besoeg-robotter', [B.thGruppe, B.thBesoeg, B.thAndel], rk)));
     } else if (!d.robot_ikke.length || d.robot_fra) dele.push(el('p', { className: 'vg-status dyk-tom', textContent: d.robot_fra ? B.robotIngen : B.robotIkkeHentet }));
-    dele.push(el('p', { className: 'vg-note besoeg-robot-note', textContent: B.robotNote }));
+    /* Med et filter pr. subdomæne står IP-klasserne ikke, så noten nævner dem ikke (FIX 2). */
+    dele.push(el('p', { className: 'vg-note besoeg-robot-note', textContent: vaertHost() !== null ? B.robotNoteVaert : B.robotNote }));
     const s = V.blok(B.robotH, B.robotP, ...dele);
     s.id = 'besoeg-robotter';
     return s;
@@ -245,6 +248,9 @@
     if (chips.length) dele.push(el('div', { className: 'login-stier besoeg-chips' }, ...chips));
     /* Én linje under chippen: det, der ikke findes pr. subdomæne, og vejen til hele domænet (samme mål som chippens ×). */
     if (vaert) dele.push(V.subUden(U.udenBes, domaene, gaa(udenFilter('vaert')), 'besoeg-sub-uden'));
+    /* FIX 2 (F3): trafikken pr. subdomæne, køen stadig henter for perioden. Fliserne og graferne viser "–" og huller, aldrig 0. */
+    const henter = vaert ? V.subHenter(sub, ['trafik']) : null;
+    if (henter) dele.push(henter);
     dele.push(...(vaert && !sti() && !land() && !robot() ? grafVaert(d, sub) : [graf(d)]));
     /* Subdomæner: kun for ét domæne, uden filter, og kun med tal på mindst to værter (eller når Cloudflare afviste forespørgslen). Navnet åbner Besøgende
        for subdomænet, Besøg og Forespørgsler også, Angreb Angreb (samme periode). */
@@ -294,7 +300,8 @@
       R.visVaelger();
     }
     const omfang = samlet() ? { zoner } : { zone: p.get('zone') || '' };
-    async function hent() {
+    /* igen: køen meldte nye tal, så fokus og rullepositionen bliver, hvor de er (FIX 2). */
+    async function hent(igen) {
       let d;
       try { d = await invoke('besoegende', { omfang, periode: periodeArg(), land: land(), sti: sti(), robot: robot(), vaert: vaertN() }); } catch (e) { if (g === gen) besked(S.fejl(e)); return; }
       if (g !== gen) return;
@@ -304,7 +311,10 @@
         const spm = (fra, til) => invoke('subdomaener', { zone: omfang.zone, ...V.subSpaend(fra, til) }).catch(() => null);
         [sub, sub30] = await Promise.all([spm(d.periode.fra, d.periode.til), vaertHost() !== null && !sti() && !land() ? spm(dagFoer(d.i_gaar_dag, 29), d.i_gaar_dag) : null]);
       }
-      if (g === gen) tegn(d, sub, sub30);
+      if (g !== gen) return;
+      const gendan = igen ? V.huskFokus(rod) : null;
+      tegn(d, sub, sub30);
+      if (gendan) gendan();
     }
     await hent();
     if (g !== gen) return;
@@ -312,7 +322,7 @@
     let sidstHentet = Date.now(), ventende = null;
     const snart = () => {
       if (ventende) return;
-      ventende = setTimeout(() => { ventende = null; sidstHentet = Date.now(); hent(); }, Math.max(0, sidstHentet + 3000 - Date.now()));
+      ventende = setTimeout(() => { ventende = null; sidstHentet = Date.now(); hent(true); }, Math.max(0, sidstHentet + 3000 - Date.now()));
     };
     afmeld.push(R.paa('hentekoe', snart), R.paa('ekstra', snart), () => clearTimeout(ventende));
   }

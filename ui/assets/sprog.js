@@ -165,6 +165,7 @@
         robotIkkeTilg: 'Kendte robotter er ikke tilgængelige hos Cloudflare for {d}. Resten af siden virker.',
         klasseLinje: '{p} af trafikken det seneste år kom fra kendte robotter og scannere.', klasseDage: '({m} af 365 dage)',
         robotNote: 'Kendte robotter er dem, Cloudflare har verificeret, fx Googlebot. Robotter, der udgiver sig for at være en almindelig browser, kan ikke ses her og tæller som besøgende. Andelen af trafikken bygger på Cloudflares IP-klasser: søgemaskiner, overvågning, scannere, Tor og kendte dårlige adresser.',
+        robotNoteVaert: 'Kendte robotter er dem, Cloudflare har verificeret, fx Googlebot. Robotter, der udgiver sig for at være en almindelig browser, kan ikke ses her og tæller som besøgende.',
         sideH: 'Mest besøgte sider', sideP: 'Sider (html) i perioden: visninger, besøg udefra og andel af visningerne. Et klik på en sti viser visningerne af siden pr. dag.',
         thSti: 'Side', thVisninger: 'Visninger', thBesoegUde: 'Besøg udefra', stiAabn: 'Vis visninger af {sti} pr. dag ({n} {n|visning|visninger})',
         visAlleSider: 'Vis alle {n} {n|side|sider}', side404H: 'Sider, der ikke findes', side404P: 'Stier, der svarede 404 (ikke fundet), ofte robotter, der prøver kendte adresser. Ikke alle forsøg står her: svarer sitet med sin almindelige side, kommer stien ikke på denne liste.',
@@ -191,6 +192,8 @@
         afskDage: '{n} {n|dag|dage} er ikke med: Cloudflare sendte flere rækker, end programmet kan hente på én gang.',
         udenBes: 'Unikke besøgende findes ikke pr. subdomæne. Se dem for {link}.', udenAng: 'Regler, lande og stier vises for {link}, ikke pr. subdomæne.',
         hele: 'hele {domaene}', heleAria: 'Fjern filteret pr. subdomæne og vis hele {domaene}',
+        henterBes: 'Henter besøg og forespørgsler pr. subdomæne …', henterAng: 'Henter angreb pr. subdomæne …', henterDage: 'Henter {n} {n|dag|dage} endnu.',
+        henterBesDage: 'Henter besøg og forespørgsler for {n} {n|dag|dage} endnu.', henterAngDage: 'Henter angreb for {n} {n|dag|dage} endnu.', ikkeHentet: 'ikke hentet endnu',
       },
       ang: {
     henter: 'Henter tallene fra Cloudflare …', opdateret: 'Hentet fra Cloudflare {t}', opdaterer: 'Viser de gemte tal fra {t} · henter nye fra Cloudflare …',
@@ -543,6 +546,7 @@
         robotIkkeTilg: 'Known robots are not available at Cloudflare for {d}. The rest of the page works.',
         klasseLinje: '{p} of the traffic in the last year came from known robots and scanners.', klasseDage: '({m} of 365 days)',
         robotNote: 'Known robots are the ones Cloudflare has verified, for example Googlebot. Robots that pretend to be an ordinary browser cannot be seen here and count as visitors. The share of the traffic is based on Cloudflare’s IP classes: search engines, monitoring, scanners, Tor and known bad addresses.',
+        robotNoteVaert: 'Known robots are the ones Cloudflare has verified, for example Googlebot. Robots that pretend to be an ordinary browser cannot be seen here and count as visitors.',
         sideH: 'Most visited pages', sideP: 'Pages (html) in the period: views, visits from outside and share of the views. A click on a path shows the views of the page per day.',
         thSti: 'Page', thVisninger: 'Views', thBesoegUde: 'Visits from outside', stiAabn: 'Show views of {sti} per day ({n} {n|view|views})',
         visAlleSider: 'Show all {n} {n|page|pages}', side404H: 'Pages that do not exist', side404P: 'Paths that answered 404 (not found), often robots trying well-known addresses. Not every attempt is here: when the site answers with its ordinary page, the path does not end up on this list.',
@@ -569,6 +573,8 @@
         afskDage: '{n} {n|day is|days are} not included: Cloudflare sent more rows than the program can fetch at once.',
         udenBes: 'Unique visitors are not available per subdomain. See them for {link}.', udenAng: 'Rules, countries and paths are shown for {link}, not per subdomain.',
         hele: 'all of {domaene}', heleAria: 'Remove the subdomain filter and show all of {domaene}',
+        henterBes: 'Fetching visits and requests per subdomain …', henterAng: 'Fetching attacks per subdomain …', henterDage: 'Still fetching {n} {n|day|days}.',
+        henterBesDage: 'Still fetching visits and requests for {n} {n|day|days}.', henterAngDage: 'Still fetching attacks for {n} {n|day|days}.', ikkeHentet: 'not fetched yet',
       },
       ang: {
     henter: 'Fetching the figures from Cloudflare …', opdateret: 'Fetched from Cloudflare {t}', opdaterer: 'Showing the saved figures from {t} · fetching new ones from Cloudflare …',

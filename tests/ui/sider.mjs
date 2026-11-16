@@ -152,17 +152,20 @@ export const BESOEG_AAR = { ...BESOEG_UD, periode: { ...BESOEG_UD.periode, fra: 
 export const BES_NOEGLE = "c==='subdomaener'&&a.zone!=='z1'?'subdomaener_en':c==='besoegende'&&a.vaert==='api'?'besoegende_vaert_tom':c==='besoegende'&&a.vaert!=null&&!a.sti?'besoegende_vaert':c==='besoegende'&&a.land?'besoegende_land':c==='besoegende'&&a.sti?'besoegende_side':c==='besoegende'&&a.periode==='alt'?'besoegende_aar':c";
 
 /* V-SUBDOM.1 B2: svaret fra subdomaener. Værterne er labels under domænet ("" = domænet selv) med tal pr. dag: [vært, forespørgsler, besøg, angreb, afviste]
-   pr. dag, så summerne passer til dagene. Kun opdigtede navne under wi24rd.com. huller: dage uden tal (null, ikke 0). */
+   pr. dag, så summerne passer til dagene. Kun opdigtede navne under wi24rd.com. huller: dage uden tal (null, ikke 0). trafikHuller (V-SUBDOM.1 FIX 2): dage
+   uden trafik pr. vært (besøg og forespørgsler null), men med angreb. trafik_dage og angreb_dage tælles som i Rust; trafik_mangler/angreb_mangler er tomme,
+   medmindre posten sætter dem. */
 export const dageFraTil = (fra, til) => { const ud = []; for (let t = Date.parse(`${fra}T00:00:00Z`); t <= Date.parse(`${til}T00:00:00Z`); t += 864e5) ud.push(new Date(t).toISOString().slice(0, 10)); return ud; };
 export const subSvar = (fra, til, spec, x = {}) => {
-  const dage = dageFraTil(fra, til), hul = new Set(x.huller || []);
+  const dage = dageFraTil(fra, til), hul = new Set(x.huller || []), tHul = new Set(x.trafikHuller || []);
   const vaerter = spec.map(([vaert, f, b, a, af]) => {
-    const dg = dage.map(dag => (hul.has(dag) ? { dag, foresp: null, besoeg: null, angreb: null, afvist: null } : { dag, foresp: f, besoeg: b, angreb: a, afvist: af }));
+    const dg = dage.map(dag => (hul.has(dag) ? { dag, foresp: null, besoeg: null, angreb: null, afvist: null } : tHul.has(dag) ? { dag, foresp: null, besoeg: null, angreb: a, afvist: af } : { dag, foresp: f, besoeg: b, angreb: a, afvist: af }));
     const sum = k => dg.reduce((n, d) => n + (d[k] || 0), 0);
     return { vaert, foresp: sum('foresp'), besoeg: sum('besoeg'), angreb: sum('angreb'), afvist: sum('afvist'), dage: dg };
   });
-  const { huller, ...resten } = x;
-  return { fra, til, vaerter, trafik_fra: '2026-10-07', angreb_fra: '2026-10-07', trafik_afskaaret: [], angreb_afskaaret: [], sider_afskaaret: false, trafik_afvist: false, angreb_afvist: false, ...resten };
+  const { huller, trafikHuller, ...resten } = x;
+  const tDage = dage.filter(d => !hul.has(d) && !tHul.has(d)).length, aDage = dage.filter(d => !hul.has(d)).length;
+  return { fra, til, vaerter, trafik_fra: '2026-10-07', angreb_fra: '2026-10-07', trafik_afskaaret: [], angreb_afskaaret: [], sider_afskaaret: false, trafik_afvist: false, angreb_afvist: false, trafik_mangler: [], angreb_mangler: [], trafik_dage: tDage, angreb_dage: aDage, ...resten };
 };
 /* wi24rd.com med fire subdomæner (www, shop, api, blog) og et opslag med IP-adressen; sorteret som i Rust (navne efter forespørgsler, kategorierne sidst). */
 export const SUB_FIRE = [['', 5559, 492, 539, 600], ['api', 900, 0, 25, 30], ['www', 441, 0, 0, 1], ['shop', 143, 3, 77, 80], ['blog', 60, 12, 2, 2], ['[ip]', 30, 0, 12, 14]];
@@ -230,6 +233,9 @@ export const BES_SHOP = { ...BES_VAERT, sider: BES_SIDER_VAERT.filter(x => x.vae
 export const BES_API = { ...BES_SHOP, sider: BES_SIDER_VAERT.filter(x => x.vaert === 'api'), sider_i_alt: 60, lande: [], lande_i_alt: 0, robotter: [] };
 /* To dage i perioden stod på Cloudflares loft (V2): noten under tabellen. */
 const SUB = { subdomaener: subSvar(...SUB_PERIODE, SUB_FIRE, { sider_afskaaret: true, trafik_afskaaret: ['2026-11-01'], angreb_afskaaret: ['2026-11-01', '2026-11-02'] }), subdomaener_en: subSvar(...SUB_PERIODE, SUB_EN), besoegende: BES_VAERT, besoegende_vaert: BES_SHOP, besoegende_vaert_tom: BES_API };
+/* FIX 2: trafikken pr. vært mangler for hele perioden (opgraderingen eller genhentningen); køen har de seneste 30 dage til gode. */
+const SUB_HENTER_DAGE = dageFraTil(...SUB_PERIODE);
+export const SUB_HENTER = { ...SUB, subdomaener: subSvar(...SUB_PERIODE, SUB_FIRE, { trafikHuller: SUB_HENTER_DAGE, trafik_mangler: SUB_HENTER_DAGE.slice(-30) }) };
 /* Uden subdomæner: kun domænet selv i subdomaener, og Besøgendes almindelige svar (siderne har ingen vært). */
 const SUB_UDEN = { subdomaener_en: subSvar(...SUB_PERIODE, SUB_EN) }, domUden = 'zone=z2&navn=xyz.wi24rd.com';
 SIDER.push(
@@ -242,6 +248,9 @@ SIDER.push(
   { id: 'subdom-angreb-filter', navn: 'Angreb filtreret til shop.wi24rd.com', hash: 'vaernet?' + dom + '&periode=30&vaert=shop.wi24rd.com', ekstra: SUB },
   { id: 'subdom-besoegende-uden', navn: 'Besøgende for et domæne uden subdomæner (uændret)', hash: 'besoegende?' + domUden, ekstra: SUB_UDEN },
   { id: 'subdom-angreb-uden', navn: 'Angreb for et domæne uden subdomæner (uændret)', hash: 'vaernet?' + domUden, ekstra: SUB_UDEN },
+  /* FIX 2 (F3): lige efter en opdatering har angrebene pr. subdomæne tal, men trafikken er ikke hentet endnu: "–" i Besøg, Forespørgsler og Andel, og linjen
+     "Henter besøg og forespørgsler pr. subdomæne …" under tabellen. */
+  { id: 'subdom-besoegende-henter', navn: 'Besøgende: Subdomæner, mens trafikken pr. subdomæne hentes (angreb med tal, trafik "–")', hash: 'besoegende?' + dom, rul: '#besoeg-sub', ekstra: SUB_HENTER },
 );
 
 /* V-KONTI.1 FIX 1: Jans forsøg. Forbindelse 1 ser hele kontoen (tre domæner), forbindelse 2 er et API Token til ét af dem på samme konto. Begge hedder

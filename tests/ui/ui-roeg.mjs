@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import http from 'node:http';
 import { spawn, spawnSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
-import { dykFraVaern, SIDER, svar, VURD7, dom, NU_MS, UR_AAR, UR_STUB, flytAar, siderIAar, B2, B2C_HULLER, B2C_TEK, B2C_TRAFIK, B2C_VERDEN, KORT, LAND_UD, BESOEG_AAR, BESOEG_LAND, BESOEG_SIDE, BESOEG_UD, BES_404, BES_NOEGLE, BES_SIDER, LOGIN_STIER, LOGIN_UD, MED_TOKEN, NU_ISO, OVERBLIK, REACT, REGEL_HOVED, ROBOT_UD, SIDEN_RK, dage, dykDage, dykSvar, kortRegel, landDage, loginDage, raekke, vaernUd , subSvar, SUB_FIRE, SUB_EN, BES_VAERT, BES_SHOP, BES_API } from './sider.mjs';
+import { dykFraVaern, SIDER, svar, VURD7, dom, NU_MS, UR_AAR, UR_STUB, flytAar, siderIAar, B2, B2C_HULLER, B2C_TEK, B2C_TRAFIK, B2C_VERDEN, KORT, LAND_UD, BESOEG_AAR, BESOEG_LAND, BESOEG_SIDE, BESOEG_UD, BES_404, BES_NOEGLE, BES_SIDER, LOGIN_STIER, LOGIN_UD, MED_TOKEN, NU_ISO, OVERBLIK, REACT, REGEL_HOVED, ROBOT_UD, SIDEN_RK, dage, dykDage, dykSvar, kortRegel, landDage, loginDage, raekke, vaernUd , subSvar, SUB_FIRE, SUB_EN, BES_VAERT, BES_SHOP, BES_API, dageFraTil } from './sider.mjs';
 const repo = process.env.HM_REPO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 if (!process.env.HM_NOTIF_IIFE) {
   const lock = fs.readFileSync(path.join(repo, 'src-tauri', 'Cargo.lock'), 'utf8');
@@ -5274,14 +5274,14 @@ const DOMV = (fravalgte = [], x) => {
   // da/en-paritet, sikkerhedsporten og notifikationerne.
   const Tda = side('', B2(), 'da').w.hmSprog.T.sub, Ten = side('', B2(), 'en').w.hmSprog.T.sub;
   const ph = t => [...new Set(t.match(/\{\w+/g) || [])].sort().join();
-  tjek('SUB da/en-paritet: samme nøgler, ingen tomme, samme pladsholdere, og forskellig tekst', Object.keys(Tda).sort().join() === Object.keys(Ten).sort().join() && Object.keys(Tda).length === 41 && Object.keys(Tda).every(k => typeof Tda[k] === 'string' && Tda[k] && Ten[k] && ph(Tda[k]) === ph(Ten[k]) && Tda[k] !== Ten[k]), Object.keys(Tda).filter(k => ph(Tda[k]) !== ph(Ten[k]) || Tda[k] === Ten[k]).join());
+  tjek('SUB da/en-paritet: samme nøgler, ingen tomme, samme pladsholdere, og forskellig tekst', Object.keys(Tda).sort().join() === Object.keys(Ten).sort().join() && Object.keys(Tda).length === 47 && Object.keys(Tda).every(k => typeof Tda[k] === 'string' && Tda[k] && Ten[k] && ph(Tda[k]) === ph(Ten[k]) && Tda[k] !== Ten[k]), Object.keys(Tda).filter(k => ph(Tda[k]) !== ph(Ten[k]) || Tda[k] === Ten[k]).join());
   const brugere = fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => f.endsWith('.js') && /'subdomaener'/.test(ui('assets/' + f)));
   const notif = ['notify.rs', 'agent.rs', 'overblik.rs'].map(f => fs.readFileSync(path.join(repo, 'src-tauri', 'src', f), 'utf8')).join('\n');
   tjek('SUB ingen vært i notifikationerne: kun Besøgende og Angreb spørger om subdomænerne, og notifikationer, menulinje og Overblik kender dem ikke', brugere.sort().join() === 'visning-besoegende.js,visning-vaernet.js' && !/vaert::|v_fw|subdomaen|clientRequestHTTPHost/.test(notif), brugere.join());
   const kode = ['visning-besoegende.js', 'visning-vaernet.js', 'vg-tegn.js'].map(f => udenKommentarer(ui('assets/' + f))).join('\n');
   tjek('SUB værtsnavne kun som tekst: ingen innerHTML, insertAdjacentHTML eller outerHTML =, og kommandoen er tilladt', !/innerHTML|insertAdjacentHTML|outerHTML\s*=|document\.write/.test(kode) && cap.permissions.includes('allow-subdomaener') && fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8').includes('"subdomaener",'));
   const fotoSub = SIDER.filter(x => x.id.startsWith('subdom-'));
-  tjek('SUB fotobogen har Besøgende og Angreb ufiltreret og filtreret for wi24rd.com og et domæne uden subdomæner', fotoSub.map(x => x.id).join() === 'subdom-besoegende,subdom-besoegende-sider,subdom-besoegende-filter,subdom-besoegende-filter-lande,subdom-besoegende-filter-tom,subdom-angreb,subdom-angreb-filter,subdom-besoegende-uden,subdom-angreb-uden' && fotoSub.every(x => x.ekstra));
+  tjek('SUB fotobogen har Besøgende og Angreb ufiltreret og filtreret for wi24rd.com og et domæne uden subdomæner', fotoSub.map(x => x.id).join() === 'subdom-besoegende,subdom-besoegende-sider,subdom-besoegende-filter,subdom-besoegende-filter-lande,subdom-besoegende-filter-tom,subdom-angreb,subdom-angreb-filter,subdom-besoegende-uden,subdom-angreb-uden,subdom-besoegende-henter' && fotoSub.every(x => x.ekstra));
 }
 
 // ── V-SUBDOM.1 FIX 1: ingen overskrift uden tal, hvert tal sit mål, lande og robotter pr. subdomæne, noten om dage på loftet ──
@@ -5372,6 +5372,85 @@ const DOMV = (fravalgte = [], x) => {
   tjek('FIX1 da/en-paritet: de nye nøgler findes på begge sprog med samme pladsholdere og forskellig tekst', NYE.every(k => typeof Tda.hmSprog.T.sub[k] === 'string' && Tda.hmSprog.T.sub[k] && ph(Tda.hmSprog.T.sub[k]) === ph(Ten.hmSprog.T.sub[k]) && Tda.hmSprog.T.sub[k] !== Ten.hmSprog.T.sub[k]));
   const kildeUI = ['visning-besoegende.js', 'visning-vaernet.js', 'vg-tegn.js'].map(f => udenKommentarer(ui('assets/' + f))).join('\n');
   tjek('FIX1 de ubrugte nøgler fra B2 (ikke, hRegler) og subIkke er fjernet fra begge sprog og fra koden', ['ikke', 'hRegler'].every(k => !(k in Tda.hmSprog.T.sub) && !(k in Ten.hmSprog.T.sub)) && !('subIkke' in Tda.hmTegn) && !/subIkke|U\.ikke\b|sub\.ikke\b|U\.hRegler/.test(kildeUI));
+}
+
+// ── V-SUBDOM.1 FIX 2 (F3): aldrig 0, før dagen er hentet; robotnoten i det filtrerede ──
+{
+  const DOM = 'zone=z1&navn=wi24rd.com', FULD = a => subSvar(a.fra, a.til, SUB_FIRE);
+  /* Trafikken mangler for hele perioden (køen har de seneste 30 dage til gode); x lægges oven på. */
+  const HELE = (x = {}) => a => { const dg = dageFraTil(a.fra, a.til); return subSvar(a.fra, a.til, SUB_FIRE, { trafikHuller: dg, trafik_mangler: dg.slice(-30), ...x }); };
+  /* Kun nogle dage mangler: tallene for de hentede står. */
+  const DELE = (n, k = 'trafik') => a => subSvar(a.fra, a.til, SUB_FIRE, { [`${k}_mangler`]: dageFraTil(a.fra, a.til).slice(-n) });
+  /* Angrebene mangler for hele perioden. */
+  const ANG_HELE = a => { const dg = dageFraTil(a.fra, a.til); return { ...subSvar(a.fra, a.til, SUB_FIRE.map(([v, f, b]) => [v, f, b, 0, 0])), angreb_dage: 0, angreb_mangler: dg.slice(-30), vaerter: subSvar(a.fra, a.til, SUB_FIRE).vaerter.map(v => ({ ...v, angreb: 0, afvist: 0, dage: v.dage.map(d => ({ ...d, angreb: null, afvist: null })) })) }; };
+  const BES = sub => DYK({ besoegende: a => (a.vaert != null ? BES_SHOP : BES_VAERT), trafik_dag: B2C_TRAFIK, subdomaener: sub });
+  const ANG = sub => DYK({ subdomaener: sub, sti200_oversigt: null, sikkerhedsfund_oversigt: null, email_oversigt: null, besoegende: a => (a.vaert != null ? BES_SHOP : BES_VAERT) });
+  const celleTekst = (x, rod) => [...x.d.querySelectorAll(rod + ' tbody tr')].map(r => [...r.querySelectorAll('td')].map(c => c.textContent));
+  const linje = (x, sel = '.sub-henter') => x.d.querySelector(sel);
+  const klikbar = e => Boolean(e && e.querySelector('button, a, [data-gaa], [data-dyk], [tabindex]'));
+
+  // Hele perioden mangler (Jans billede efter FIX 1, og en opgraderet bruger): "–" i Besøg, Forespørgsler og Andel, Angreb har tal, og linjen.
+  const h = side(`#besoegende?${DOM}`, BES(HELE())), hEn = side(`#besoegende?${DOM}`, BES(HELE()), 'en');
+  const d1 = side(`#besoegende?${DOM}`, BES(DELE(1))), d3 = side(`#besoegende?${DOM}`, BES(DELE(3))), e1 = side(`#besoegende?${DOM}`, BES(DELE(1)), 'en'), e3 = side(`#besoegende?${DOM}`, BES(DELE(3)), 'en');
+  const ah = side(`#vaernet?${DOM}&periode=30`, ANG(ANG_HELE)), ad = side(`#vaernet?${DOM}&periode=30`, ANG(DELE(2, 'angreb')));
+  const blandet = side(`#vaernet?${DOM}&periode=30`, ANG(HELE({ angreb_mangler: ['2026-11-01', '2026-11-02'] })));
+  const intet = side(`#besoegende?${DOM}`, BES(FULD));
+  await sov(250);
+  const ht = celleTekst(h, '#besoeg-sub');
+  tjek('FIX2 hele perioden: Besøg, Forespørgsler og Andel er "–" i alle rækker (også IP og Andre), Angreb har tal', ht.length >= 5 && ht.every(r => [0, 1, 3].every(i => r[i].startsWith('–'))) && ht.some(r => /^\d/.test(r[2]) && r[2] !== '0'), JSON.stringify(ht));
+  tjek('FIX2 intet 0 i en kolonne, der mangler (Besøg og Forespørgsler)', ht.every(r => r[0] !== '0' && r[1] !== '0' && !/^0/.test(r[0]) && !/^0/.test(r[1])));
+  tjek('FIX2 "–" er ikke klikbar (ingen knap, intet mål, ingen tabindex), og skærmlæseren hører "ikke hentet endnu"', [...h.d.querySelectorAll('#besoeg-sub td .sub-streg')].length >= 10 && [...h.d.querySelectorAll('#besoeg-sub td .sub-streg')].every(c => c.textContent === '–' && !klikbar(c.closest('td')) && c.closest('td').querySelector('.sr-only')?.textContent === ' (ikke hentet endnu)') && !h.d.querySelector('#besoeg-sub thead .sub-streg'), [...h.d.querySelectorAll('#besoeg-sub .sub-streg')].slice(0, 2).map(c => c.closest('td, th').outerHTML).join(' '));
+  tjek('FIX2 hele perioden: linjen "Henter besøg og forespørgsler pr. subdomæne …" står under tabellen (da/en), role=status, ikke klikbar', linje(h)?.textContent === 'Henter besøg og forespørgsler pr. subdomæne …' && linje(hEn)?.textContent === 'Fetching visits and requests per subdomain …' && linje(h).getAttribute('role') === 'status' && !klikbar(linje(h)) && linje(h).closest('#besoeg-sub') && Boolean(linje(h).compareDocumentPosition(h.d.querySelector('#besoeg-sub table')) & 2), linje(h)?.textContent);
+  tjek('FIX2 afsnittet står, når der kun er angreb pr. subdomæne (mindst to rigtige navne i en hvilken som helst kolonne)', Boolean(h.d.querySelector('#besoeg-sub table')) && h.d.querySelectorAll('#besoeg-sub tbody tr[data-raekke="sub-raekke"]').length >= 2);
+  const dTal = celleTekst(d3, '#besoeg-sub');
+  tjek('FIX2 kun nogle dage mangler: tallene for de hentede står, og linjen siger "Henter {n} dage endnu." (ental og flertal, da og en)', dTal.every(r => !r[0].startsWith('–')) && linje(d1)?.textContent === 'Henter 1 dag endnu.' && linje(d3)?.textContent === 'Henter 3 dage endnu.' && linje(e1)?.textContent === 'Still fetching 1 day.' && linje(e3)?.textContent === 'Still fetching 3 days.', [linje(d1), linje(d3), linje(e1), linje(e3)].map(x => x?.textContent).join(' | '));
+  tjek('FIX2 Angreb: angrebene mangler for hele perioden: Angreb er "–", trafikken har tal, og linjen "Henter angreb pr. subdomæne …"', celleTekst(ah, '#vg-sub').every(r => r[2].startsWith('–') && !r[0].startsWith('–')) && linje(ah)?.textContent === 'Henter angreb pr. subdomæne …' && linje(ad)?.textContent === 'Henter 2 dage endnu.', [linje(ah), linje(ad)].map(x => x?.textContent).join(' | '));
+  tjek('FIX2 trafikken mangler helt og angrebene for nogle dage: linjen siger, hvilken kolonne dagene hører til', linje(blandet)?.textContent === 'Henter besøg og forespørgsler pr. subdomæne … Henter angreb for 2 dage endnu.', linje(blandet)?.textContent);
+  tjek('FIX2 linjen står ikke, når intet mangler, og tabellen har ingen "–"', !linje(intet) && !intet.d.querySelector('#besoeg-sub .sub-streg') && Boolean(intet.d.querySelector('#besoeg-sub table')));
+
+  // Det filtrerede følger samme regel: fliserne "–", graferne huller (ingen søjle med 0), og linjen.
+  const f = side(`#besoegende?${DOM}&vaert=shop.wi24rd.com`, BES(HELE())), fEn = side(`#besoegende?${DOM}&vaert=shop.wi24rd.com`, BES(HELE()), 'en');
+  const fd = side(`#besoegende?${DOM}&vaert=shop.wi24rd.com`, BES(DELE(2)));
+  const fa = side(`#vaernet?${DOM}&periode=30&vaert=shop.wi24rd.com`, ANG(ANG_HELE)), fad = side(`#vaernet?${DOM}&periode=30&vaert=shop.wi24rd.com`, ANG(DELE(4, 'angreb')));
+  await sov(250);
+  const fliser = x => [...x.d.querySelectorAll('.besoeg-fliser > *, .sub-fliser > *')].map(e => e.textContent);
+  tjek('FIX2 Besøgende filtreret, hele perioden: begge fliser "–" (ikke 0), graferne uden tal, og linjen (da/en)', fliser(f).length === 2 && fliser(f).every(t => t.includes('–') && !/\b0\b/.test(t)) && linje(f)?.textContent === 'Henter besøg og forespørgsler pr. subdomæne …' && linje(fEn)?.textContent === 'Fetching visits and requests per subdomain …' && linje(f).getAttribute('role') === 'status' && !klikbar(linje(f)) && !f.d.querySelector('#besoeg-graf .dyk-soejle[data-gaa]'), fliser(f).join(' | '));
+  tjek('FIX2 Besøgende filtreret, nogle dage: tallene står, og "Henter 2 dage endnu."', linje(fd)?.textContent === 'Henter 2 dage endnu.' && fliser(fd).every(t => !t.startsWith('–')), linje(fd)?.textContent);
+  tjek('FIX2 Angreb filtreret: fliserne "–" og "Henter angreb pr. subdomæne …"; nogle dage: "Henter 4 dage endnu."', fliser(fa).length === 2 && fliser(fa).every(t => t.includes('–')) && linje(fa)?.textContent === 'Henter angreb pr. subdomæne …' && linje(fad)?.textContent === 'Henter 4 dage endnu.' && !klikbar(linje(fa)), [fliser(fa).join(' / '), linje(fa)?.textContent, linje(fad)?.textContent].join(' | '));
+
+  // Robotnoten: i det filtrerede uden IP-klasser; for hele domænet uændret.
+  const rn = x => x.d.querySelector('.besoeg-robot-note')?.textContent || '';
+  const shop = side(`#besoegende?${DOM}&vaert=shop.wi24rd.com`, BES(FULD)), shopEn = side(`#besoegende?${DOM}&vaert=shop.wi24rd.com`, BES(FULD), 'en');
+  await sov(200);
+  tjek('FIX2 robotnoten i Besøgende filtreret nævner ikke IP-klasser (da/en); for hele domænet er noten uændret', rn(shop) && !/IP-klasse|IP class/i.test(rn(shop)) && rn(shopEn) && !/IP class/i.test(rn(shopEn)) && rn(intet) === intet.w.hmSprog.T.bes.robotNote && /IP-klasser/.test(rn(intet)), [rn(shop), rn(shopEn), rn(intet)].join(' | '));
+
+  // Køen melder nye tal ('ekstra'): linjen forsvinder, tallene står, og fokus og rullepositionen bliver.
+  let tilstand = 'hele';
+  const skift = sub => a => (tilstand === 'hele' ? HELE()(a) : FULD(a));
+  const b = side(`#besoegende?${DOM}`, BES(skift())), an = side(`#vaernet?${DOM}&periode=30`, ANG(skift()));
+  await sov(250);
+  const huskRul = x => { const r = x.d.getElementById('indhold'); let top = 0; Object.defineProperty(r, 'scrollTop', { configurable: true, get: () => top, set: v => { top = v; } }); r.scrollTop = 420; return r; };
+  const rb = huskRul(b), ra = huskRul(an);
+  const navnKnap = (x, rod) => [...x.d.querySelectorAll(rod + ' tbody tr')].find(r => r.querySelector('th').textContent === 'shop.wi24rd.com')?.querySelector('th button');
+  const gammelB = navnKnap(b, '#besoeg-sub'), gammelA = navnKnap(an, '#vg-sub');
+  gammelB.focus();
+  an.d.defaultView.focus && gammelA.focus();
+  const foerB = b.kald.filter(k => k[0] === 'subdomaener').length, foerA = an.kald.filter(k => k[0] === 'subdomaener').length, hashB = b.w.location.hash, hashA = an.w.location.hash;
+  const linjeFoer = Boolean(linje(b)) && Boolean(linje(an));
+  tilstand = 'fuld';
+  b.emit('ekstra', 'z1');
+  an.emit('ekstra', 'z1');
+  await sov(3300);
+  const nyB = navnKnap(b, '#besoeg-sub'), nyA = navnKnap(an, '#vg-sub');
+  tjek('FIX2 køens melding (ekstra) tegner tabellen igen fra cachen i Besøgende og Angreb', b.kald.filter(k => k[0] === 'subdomaener').length > foerB && an.kald.filter(k => k[0] === 'subdomaener').length > foerA, `${foerB}→${b.kald.filter(k => k[0] === 'subdomaener').length} ${foerA}→${an.kald.filter(k => k[0] === 'subdomaener').length}`);
+  tjek('FIX2 efter meldingen: linjen er væk, og tallene står (ingen "–")', linjeFoer && !linje(b) && !linje(an) && !b.d.querySelector('#besoeg-sub .sub-streg') && celleTekst(b, '#besoeg-sub').every(r => !r[0].startsWith('–')));
+  tjek('FIX2 efter meldingen: fokus er på samme subdomæne (ny knap), rullepositionen og adressen er uændrede', nyB && nyB !== gammelB && !gammelB.isConnected && b.d.activeElement === nyB && rb.scrollTop === 420 && b.w.location.hash === hashB, `${b.d.activeElement?.textContent} ${rb.scrollTop}`);
+  tjek('FIX2 efter meldingen i Angreb: fokus og rulleposition bliver', nyA && nyA !== gammelA && an.d.activeElement === nyA && ra.scrollTop === 420 && an.w.location.hash === hashA, `${an.d.activeElement?.textContent} ${ra.scrollTop}`);
+
+  // da/en-paritet for de nye nøgler.
+  const Tda = side('', B2(), 'da').w.hmSprog.T, Ten = side('', B2(), 'en').w.hmSprog.T;
+  const NYE = ['henterBes', 'henterAng', 'henterDage', 'henterBesDage', 'henterAngDage', 'ikkeHentet'], ph = t => [...new Set(t.match(/\{\w+/g) || [])].sort().join();
+  tjek('FIX2 da/en-paritet: de nye nøgler (T.sub og T.bes.robotNoteVaert) findes på begge sprog med samme pladsholdere og forskellig tekst', NYE.every(k => typeof Tda.sub[k] === 'string' && Tda.sub[k] && ph(Tda.sub[k]) === ph(Ten.sub[k]) && Tda.sub[k] !== Ten.sub[k]) && Tda.bes.robotNoteVaert && Ten.bes.robotNoteVaert && Tda.bes.robotNoteVaert !== Ten.bes.robotNoteVaert && Tda.bes.robotNote.startsWith(Tda.bes.robotNoteVaert.slice(0, -1)) && Ten.bes.robotNote.startsWith(Ten.bes.robotNoteVaert.slice(0, -1)));
 }
 
 console.log(`\n${ok} bestået, ${fejl} fejlet`);

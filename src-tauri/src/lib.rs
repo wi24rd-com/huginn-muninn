@@ -1243,6 +1243,8 @@ async fn subdomaener(zone: String, fra: String, til: String, tilstand: State<'_,
         .map_err(|_| Fejl::Lager)?
         .get(&zone)
         .is_some_and(|t| vaert::uden_gaelder(*t, nu_ms()));
+    // V-SUBDOM.1 FIX 2: hentevinduet for "mangler".
+    laest.nu = nu_ms();
     Ok(vaert::regn(&laest, &fra, &til))
 }
 
