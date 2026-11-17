@@ -21,6 +21,7 @@ const KOMMANDOER: &[&str] = &[
     "robotter",
     "besoegende",
     "subdomaener",
+    "drift",
     "login",
     "login_stier",
     "login_sti_saet",

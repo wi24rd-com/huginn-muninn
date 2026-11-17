@@ -412,7 +412,7 @@ pub fn zoneliste(mut alle: Vec<Zone>, konti: &BTreeMap<String, Option<String>>) 
 }
 
 /// Den mindste forespørgsel, der kræver `Zone › Analytics › Read`.
-const RET_QUERY: &str = "query Ret($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) { httpRequestsAdaptiveGroups(limit:1, filter:{datetime_geq:$since, datetime_lt:$until}) { count } } } }";
+pub(crate) const RET_QUERY: &str = "query Ret($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) { httpRequestsAdaptiveGroups(limit:1, filter:{datetime_geq:$since, datetime_lt:$until}) { count } } } }";
 
 /// Svaret fra /zones: den første zone, `None`, hvis svaret ikke siger noget om rettigheden, eller `ManglerZone`. Tokenet er netop verificeret som aktivt, så en afvisning her handler om rettigheden.
 /// Cloudflares dokumentation siger ikke, om svaret er 403 eller en tom liste, så begge tæller. Ren funktion.

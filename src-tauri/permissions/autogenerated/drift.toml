@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-drift"
+description = "Enables the drift command without any pre-configured scope."
+commands.allow = ["drift"]
+
+[[permission]]
+identifier = "deny-drift"
+description = "Denies the drift command without any pre-configured scope."
+commands.deny = ["drift"]

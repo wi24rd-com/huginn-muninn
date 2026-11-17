@@ -789,7 +789,9 @@ fn vaertsforespoergslen_har_lande_og_robotter() {
         );
         assert!(linje.contains("sum { visits }") && linje.contains("limit:10000"), "{linje}");
     }
-    assert!(VAERT_QUERY.contains("vr: httpRequestsAdaptiveGroups") && VAERT_QUERY.matches("httpRequestsAdaptiveGroups").count() == 4);
+    assert!(
+        VAERT_QUERY.contains("vr: httpRequestsAdaptiveGroups") && uden_vf(VAERT_QUERY).matches("httpRequestsAdaptiveGroups").count() == 4
+    );
     for f in ["clientIP", "userAgent", "clientRequestPath", "$zone:", "$dag"] {
         assert!(!VAERT_QUERY.contains(f), "{f}");
     }
@@ -1296,4 +1298,154 @@ fn opgraderingen_giver_mangler_for_hele_perioden() {
         "trafikken er aldrig 0, før den er hentet"
     );
     assert_eq!(u.trafik_fra, None);
+}
+
+// ── V-DRIFT.1: fejl pr. vært (`vf`) ─────────────────────────────────────────────────────────────────────────────────
+/// Svaret med `vf`: alle værterne fra `vaerter()` har fejl, 522 og 503, så der er flere end `TOP_VAERTER`.
+fn vaert_svar_vf(dag: &str) -> Value {
+    let mut s = vaert_svar(dag);
+    let vf: Vec<Value> = vaerter()
+        .into_iter()
+        .enumerate()
+        .flat_map(|(i, h)| {
+            [
+                json!({ "count": 3 + i as i64, "dimensions": { "date": dag, "clientRequestHTTPHost": h, "edgeResponseStatus": 522 } }),
+                json!({ "count": 1, "dimensions": { "date": dag, "clientRequestHTTPHost": h, "edgeResponseStatus": 503 } }),
+            ]
+        })
+        .collect();
+    s["viewer"]["zones"][0]["vf"] = json!(vf);
+    s
+}
+
+/// `vf` i samme kald: eyeball, kun kant ≥ 500, dag × vært × kode, og uden `vf` er forespørgslen tegn for tegn den fra før.
+#[test]
+fn vaertsforespoergslen_har_fejl_pr_vaert() {
+    let linje = VAERT_QUERY.lines().find(|l| l.trim_start().starts_with("vf: ")).unwrap();
+    assert!(linje.contains(r#"requestSource:"eyeball", edgeResponseStatus_geq:500"#), "{linje}");
+    assert!(linje.contains("dimensions { date clientRequestHTTPHost edgeResponseStatus }") && linje.contains("limit:10000"));
+    assert_eq!(uden_vf(VAERT_QUERY).lines().count(), VAERT_QUERY.lines().count() - 1);
+    assert!(!uden_vf(VAERT_QUERY).contains("vf:") && !uden_vf(VAERT_QUERY).contains("edgeResponseStatus"));
+    assert!(ARTER.contains(&V_FEJL) && ALLE_ARTER.contains(&V_FEJL_AFSKAARET) && ALLE_ARTER.contains(&V_FEJL_AFVIST));
+    assert!(
+        !TABEL_ARTER.contains(&V_FEJL) && !LR_ARTER.contains(&V_FEJL),
+        "Subdomæner og Besøgende er uberørte"
+    );
+}
+
+/// Top 20 + `[andre]` som `v_alle`, summen over værterne er svarets sum (og dermed ≤ zonens fejl), og de andre arter er bit for bit som uden `vf`.
+#[test]
+fn fejl_pr_vaert_top_20_og_summen() {
+    let dag = "2026-11-05".to_string();
+    let dage = std::slice::from_ref(&dag);
+    let (rk, afskaaret) = trafik_raekker(&vaert_svar_vf(&dag), dage, Z).unwrap();
+    assert!(!afskaaret);
+    let (uden, _) = trafik_raekker(&vaert_svar(&dag), dage, Z).unwrap();
+    assert_eq!(
+        rk.iter().filter(|r| r.1 != V_FEJL).cloned().collect::<Vec<_>>(),
+        uden,
+        "de andre arter er uændrede"
+    );
+    let raa: i64 = vaert_svar_vf(&dag)["viewer"]["zones"][0]["vf"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|g| g["count"].as_i64().unwrap())
+        .sum();
+    assert_eq!(sum4(&rk, V_FEJL), raa, "summen over værterne er svarets");
+    let zonens_fejl = raa + 7; // domænets d_fejl (kant ≥ 500) tæller også svar uden vært
+    assert!(sum4(&rk, V_FEJL) <= zonens_fejl);
+    let alle: HashSet<&str> = rk.iter().filter(|r| r.1 == V_ALLE).map(|r| r.2.as_str()).collect();
+    let fejl_vaerter: HashSet<&str> = rk
+        .iter()
+        .filter(|r| r.1 == V_FEJL)
+        .map(|r| r.2.split('\t').next().unwrap())
+        .collect();
+    assert!(fejl_vaerter.is_subset(&alle), "samme værter som v_alle: {fejl_vaerter:?}");
+    assert!(fejl_vaerter.contains(ANDRE) && fejl_vaerter.len() <= TOP_VAERTER + 1);
+    assert!(rk
+        .iter()
+        .filter(|r| r.1 == V_FEJL)
+        .all(|r| r.2.ends_with("\t522") || r.2.ends_with("\t503")));
+    assert!(
+        rk.iter().all(|r| !r.2.contains("wi24rd.com") && !r.2.contains("192.0.2")),
+        "ingen rå værter"
+    );
+}
+
+/// Loftet: kun mærket `v_fejl_afskaaret` for hvert døgn, intet tal; de andre arter er uberørte (S4).
+#[test]
+fn fejl_pr_vaert_paa_loftet_giver_kun_maerket() {
+    let dage = ["2026-11-05".to_string(), "2026-11-06".to_string()];
+    let mut svar = vaert_svar_vf("2026-11-05");
+    svar["viewer"]["zones"][0]["vf"] = json!((0..LOFT)
+        .map(|i| json!({ "count": 1, "dimensions": { "date": "2026-11-05", "clientRequestHTTPHost": format!("s{i}.wi24rd.com"), "edgeResponseStatus": 522 } }))
+        .collect::<Vec<_>>());
+    let (rk, afskaaret) = trafik_raekker(&svar, &dage, Z).unwrap();
+    assert!(!afskaaret, "ikke døgn for døgn: kun vf står på loftet");
+    assert!(!rk.iter().any(|r| r.1 == V_FEJL));
+    let m: Vec<&Raekke4> = rk.iter().filter(|r| r.1 == V_FEJL_AFSKAARET).collect();
+    assert_eq!(m.len(), 2);
+    let (uden, _) = trafik_raekker(&vaert_svar("2026-11-05"), &dage, Z).unwrap();
+    assert_eq!(rk.iter().filter(|r| r.1 != V_FEJL_AFSKAARET).cloned().collect::<Vec<_>>(), uden);
+}
+
+/// Et afslag på `vf` alene koster ikke `v_alle` og `v_besoeg`: der hentes uden, domænet huskes, og døgnene får mærket `v_fejl_afvist` (aldrig 0).
+#[tokio::test]
+async fn afslag_paa_vf_roerer_ikke_de_andre_vaertstal() {
+    let dag = "2026-11-05".to_string();
+    let dage = std::slice::from_ref(&dag);
+    let kald: RefCell<Vec<bool>> = RefCell::default();
+    let afviser = |q: String| {
+        let med = q.contains("vf: ");
+        kald.borrow_mut().push(med);
+        let d = dag.clone();
+        async move {
+            if med {
+                Err(valideringsfejl())
+            } else {
+                Ok(vaert_svar(&d))
+            }
+        }
+    };
+    let (svar, ny) = hent_med_vf(false, &afviser).await;
+    assert!(ny && *kald.borrow() == vec![true, false]);
+    let (rk, _) = trafik_raekker(&svar.unwrap(), dage, Z).unwrap();
+    let rk = med_vf_afvist(rk, dage, true);
+    let (uden, _) = trafik_raekker(&vaert_svar(&dag), dage, Z).unwrap();
+    let kun = |arter: &[&str]| rk.iter().filter(|r| arter.contains(&r.1.as_str())).cloned().collect::<Vec<_>>();
+    assert_eq!(
+        kun(&[V_ALLE, V_BESOEG]),
+        uden.iter()
+            .filter(|r| r.1 == V_ALLE || r.1 == V_BESOEG)
+            .cloned()
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(kun(&[V_FEJL_AFVIST]), [(dag.clone(), V_FEJL_AFVIST.to_string(), String::new(), 0)]);
+    assert!(kun(&[V_FEJL]).is_empty());
+    // Et husket domæne spørges kun uden; en anden fejl prøves ikke igen; uden afslag intet mærke.
+    kald.borrow_mut().clear();
+    let (svar, ny) = hent_med_vf(true, &afviser).await;
+    assert!(svar.is_ok() && !ny && *kald.borrow() == vec![false]);
+    let ude = |_q: String| async {
+        Err::<Value, Fejl>(Fejl::GraphQl {
+            dag: None,
+            detalje: "cannot request data older than 31 days".into(),
+        })
+    };
+    assert!(hent_med_vf(false, ude).await.0.is_err());
+    let (rk, _) = trafik_raekker(&vaert_svar_vf(&dag), dage, Z).unwrap();
+    assert_eq!(med_vf_afvist(rk.clone(), dage, false), rk);
+    assert_eq!(med_vf_afvist(rk.clone(), dage, true), rk, "et døgn med fejltal får intet mærke");
+}
+
+/// Hovedhentningens fald tilbage uden `clientRequestHTTPHost` virker stadig: `vf` står kun i `VAERT_QUERY`, aldrig i hovedforespørgslen.
+#[test]
+fn vf_roerer_ikke_hovedforespoergslen() {
+    let q = crate::sti200::hoved_query();
+    assert!(!q.contains("vf:") && !q.contains("edgeResponseStatus_geq"));
+    assert_eq!(
+        uden_vaertsfelt(&q).matches("clientRequestHTTPHost").count(),
+        q.matches("clientRequestHTTPHost").count() - 1
+    );
 }

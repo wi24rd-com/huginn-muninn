@@ -11,6 +11,9 @@
 //! - `v_land` ("vært\tland" → besøg, eyeball) og `v_robot` ("vært\tkategori" → besøg fra en kendt robot, eyeball) (V-SUBDOM.1 FIX 1): to aliaser mere i
 //!   `VAERT_QUERY`, så det er samme kald. Står et af dem på loftet, gemmes ingen tal for den art for døgnene, kun mærket `v_land_afskaaret`/`v_robot_afskaaret`.
 //!   Døgn hentet før FIX 1 har ingen (`store::VAERT_LAND_V1`: fra den dag har døgnene i `hentet_vaert` dem).
+//! - `v_fejl` ("vært\tkant" → svar med kant ≥ 500, eyeball) (V-DRIFT.1): aliaset `vf` i `VAERT_QUERY`, samme kald og samme top 20 som `v_alle`. På loftet kun
+//!   mærket `v_fejl_afskaaret`; afviser Cloudflare aliaset, hentes resten uden det, og døgnene får mærket `v_fejl_afvist`. Døgn hentet før V-DRIFT.1 har ingen
+//!   (`store::VAERT_5XX_V1`).
 //!
 //! Ingen af arterne læses af Overblik, Angreb eller notifikationerne (`Store::raekker` udelader dem), og et værtsnavn står aldrig i en `Fejl`. Visningens tal
 //! regnes her (`laes`, `regn`), kun fra cachen.
@@ -51,8 +54,25 @@ pub const V_LAND: &str = "v_land";
 pub const V_ROBOT: &str = "v_robot";
 pub const V_LAND_AFSKAARET: &str = "v_land_afskaaret";
 pub const V_ROBOT_AFSKAARET: &str = "v_robot_afskaaret";
+/// Fejl pr. vært (V-DRIFT.1): svar med kant ≥ 500, og mærkerne for loftet og for et afslag på aliaset (begge: ingen tal for døgnet).
+pub const V_FEJL: &str = "v_fejl";
+pub const V_FEJL_AFSKAARET: &str = "v_fejl_afskaaret";
+pub const V_FEJL_AFVIST: &str = "v_fejl_afvist";
 /// Arterne fra `VAERT_QUERY`: dem, `Store::gem_vaert` erstatter.
-pub const ARTER: &[&str] = &[V_ALLE, V_BESOEG, V_AFSKAARET, V_LAND, V_ROBOT, V_LAND_AFSKAARET, V_ROBOT_AFSKAARET];
+pub const ARTER: &[&str] = &[
+    V_ALLE,
+    V_BESOEG,
+    V_AFSKAARET,
+    V_LAND,
+    V_ROBOT,
+    V_LAND_AFSKAARET,
+    V_ROBOT_AFSKAARET,
+    V_FEJL,
+    V_FEJL_AFSKAARET,
+    V_FEJL_AFVIST,
+];
+/// Arterne til fejl pr. vært i `drift` (V-DRIFT.1).
+pub const FEJL_ARTER: &[&str] = &[V_AFSKAARET, V_FEJL, V_FEJL_AFSKAARET, V_FEJL_AFVIST];
 /// Arterne, tabellen "Subdomæner" regner med (`laes`).
 pub const TABEL_ARTER: &[&str] = &[V_ALLE, V_BESOEG, V_AFSKAARET, V_FW, V_FW_AFSKAARET];
 /// Arterne til lande og robotter pr. vært i Besøgende (`laes_lr`).
@@ -70,18 +90,51 @@ pub const ALLE_ARTER: &[&str] = &[
     V_ROBOT,
     V_LAND_AFSKAARET,
     V_ROBOT_AFSKAARET,
+    V_FEJL,
+    V_FEJL_AFSKAARET,
+    V_FEJL_AFVIST,
 ];
 
 /// Trafik pr. dag og vært: `v` = besøg udefra (eyeball; `count` og `sum { visits }`), `va` = forespørgsler fra alle kilder (`count`, samme tal som art `alle`).
 /// V-SUBDOM.1 FIX 1: `vl` = besøg pr. vært og land og `vr` = besøg pr. vært og robotkategori (eyeball, som `besoeg::BESOEG_QUERY` og `besoeg::ROBOT_QUERY`
 /// med værten; målt i fase A, INVESTIGATION Q3). Samme kald: ingen ekstra kald pr. dag.
+/// V-DRIFT.1: `vf` = svar med kant ≥ 500 pr. dag, vært og kode (eyeball). Samme kald.
 /// Kun zone og tider er variabler (`besoeg::variabler`). Ingen IP-adresser, stier eller brugeragenter.
 pub const VAERT_QUERY: &str = r#"query Vaert($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
     v: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}, orderBy:[count_DESC]) { count sum { visits } dimensions { date clientRequestHTTPHost } }
     va: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[count_DESC]) { count dimensions { date clientRequestHTTPHost } }
     vl: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}) { sum { visits } dimensions { date clientRequestHTTPHost clientCountryName } }
     vr: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}) { count sum { visits } dimensions { date clientRequestHTTPHost verifiedBotCategory } }
+    vf: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", edgeResponseStatus_geq:500}, orderBy:[count_DESC]) { count dimensions { date clientRequestHTTPHost edgeResponseStatus } }
   } } }"#;
+
+/// `VAERT_QUERY` uden `vf`: tegn for tegn forespørgslen fra før V-DRIFT.1.
+pub fn uden_vf(q: &str) -> String {
+    q.lines()
+        .filter(|l| !l.trim_start().starts_with("vf: "))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Henter med `VAERT_QUERY`. `uden`: domænet har afvist `vf` tidligere i kørslen. Ellers: fejler kaldet med en GraphQL-fejl (`vaertsfelt_maaske_afvist`),
+/// prøves det én gang uden `vf`. Lykkes det, er det andet tal `true` (den, der kalder, husker domænet), og svaret har intet `vf` (`trafik_raekker` giver så
+/// mærket `v_fejl_afvist`). Fejler også det, er svaret den første fejl. Et afslag på `vf` koster altså aldrig de andre tal pr. vært. Ren bortset fra `graphql`.
+pub async fn hent_med_vf<G, Fut>(uden: bool, graphql: G) -> (Result<Value, Fejl>, bool)
+where
+    G: Fn(String) -> Fut,
+    Fut: Future<Output = Result<Value, Fejl>>,
+{
+    if uden {
+        return (graphql(uden_vf(VAERT_QUERY)).await, false);
+    }
+    match graphql(VAERT_QUERY.to_string()).await {
+        Err(e) if vaertsfelt_maaske_afvist(&e) => match graphql(uden_vf(VAERT_QUERY)).await {
+            Ok(v) => (Ok(v), true),
+            Err(_) => (Err(e), false),
+        },
+        svar => (svar, false),
+    }
+}
 
 /// Kun værten, vægten, kilden og handlingen for hændelserne: til døgn, der blev hentet uden værten (før V-SUBDOM.1). Skriver kun art `v_fw`, aldrig `fw`.
 pub const VAERT_FW_QUERY: &str = r#"query VaertFw($zoneTag: string!, $since: Time!, $until: Time!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
@@ -209,6 +262,9 @@ struct VDim {
     /// Kun i `vr` (tom = ikke en kendt robot; den gemmes ikke).
     #[serde(default, deserialize_with = "tom_ved_null", rename = "verifiedBotCategory")]
     kategori: String,
+    /// Kun i `vf` (V-DRIFT.1).
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "edgeResponseStatus")]
+    status: i64,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -237,6 +293,9 @@ struct VSvar {
     vl: Vec<VGruppe>,
     #[serde(default, deserialize_with = "tom_ved_null")]
     vr: Vec<VGruppe>,
+    /// V-DRIFT.1: `None`, når forespørgslen var uden `vf` (`hent_med_vf`); så mærker `med_vf_afvist` døgnene.
+    #[serde(default)]
+    vf: Option<Vec<VGruppe>>,
 }
 
 /// `VAERT_QUERY`-svaret som (dag, `v_alle`/`v_besoeg`, vært, n) for døgnene `dage` (kun n > 0), og om `v` eller `va` står på loftet (så er rækkerne ikke
@@ -286,9 +345,27 @@ pub fn trafik_raekker(data: &Value, dage: &[String], zone: &str) -> Result<(Vec<
         };
         *m.entry(dag).or_default().entry((vaert, k)).or_default() += g.sum.visits;
     }
+    // V-DRIFT.1: dag → (vært, kant) → svar med kant ≥ 500. Værterne lægges ikke i `tal`, så top 20 og de andre arter er præcis som før; en vært, der ikke er
+    // blandt døgnets værter (kan kun ske, hvis `va` mangler den), tæller som `[andre]`.
+    let fejl_loft = svar.vf.as_ref().is_some_and(|v| v.len() as i64 >= LOFT);
+    let mut pr_fejl: BTreeMap<&str, BTreeMap<(String, i64), i64>> = BTreeMap::new();
+    for g in svar.vf.iter().flatten().filter(|_| !fejl_loft) {
+        if let Some(dag) = dag_af(g).filter(|_| g.count > 0) {
+            *pr_fejl
+                .entry(dag)
+                .or_default()
+                .entry((ren_vaert(&g.dimensions.vaert, zone), g.dimensions.status))
+                .or_default() += g.count;
+        }
+    }
     let mut ud = Vec::new();
     for (dag, vaerter) in tal {
         let noegle = top(&vaerter.iter().map(|(k, x)| (k.clone(), x.0)).collect());
+        let mut fejl: BTreeMap<String, i64> = BTreeMap::new();
+        for ((v, kode), n) in pr_fejl.remove(dag).unwrap_or_default() {
+            let k = noegle.get(&v).map_or(ANDRE, String::as_str);
+            *fejl.entry(format!("{k}\t{kode}")).or_default() += n;
+        }
         let mut samlet: BTreeMap<String, (i64, i64)> = BTreeMap::new();
         for (k, (a, b)) in vaerter {
             let x = samlet.entry(noegle[&k].clone()).or_default();
@@ -310,13 +387,44 @@ pub fn trafik_raekker(data: &Value, dage: &[String], zone: &str) -> Result<(Vec<
             }
             ud.extend(samlet.into_iter().map(|(k, n)| (dag.to_string(), art.to_string(), k, n)));
         }
+        ud.extend(fejl.into_iter().map(|(k, n)| (dag.to_string(), V_FEJL.to_string(), k, n)));
+    }
+    // Fejl på et døgn uden andre tal pr. vært: alle som `[andre]`.
+    for (dag, m) in pr_fejl {
+        let mut fejl: BTreeMap<String, i64> = BTreeMap::new();
+        for ((_, kode), n) in m {
+            *fejl.entry(format!("{ANDRE}\t{kode}")).or_default() += n;
+        }
+        ud.extend(fejl.into_iter().map(|(k, n)| (dag.to_string(), V_FEJL.to_string(), k, n)));
     }
     for (loft, maerke) in [(land_loft, V_LAND_AFSKAARET), (robot_loft, V_ROBOT_AFSKAARET)] {
         if loft {
             ud.extend(dage.iter().map(|d| (d.clone(), maerke.to_string(), String::new(), LOFT)));
         }
     }
+    // V-DRIFT.1: loftet (S4) giver kun mærket, aldrig 0. Et svar uden `vf` giver intet her; det mærker `med_vf_afvist`, når forespørgslen var uden det.
+    if fejl_loft {
+        ud.extend(dage.iter().map(|d| (d.clone(), V_FEJL_AFSKAARET.to_string(), String::new(), LOFT)));
+    }
     Ok((ud, afskaaret))
+}
+
+/// V-DRIFT.1: blev mindst ét af kaldene for døgnene `dage` sendt uden `vf` (`uden`), får hvert døgn uden fejltal og uden loftmærke mærket `v_fejl_afvist`
+/// (S4: et døgn uden `v_fejl` er ellers "hentet og nul"). Ren funktion.
+pub fn med_vf_afvist(mut rk: Vec<Raekke4>, dage: &[String], uden: bool) -> Vec<Raekke4> {
+    if uden {
+        let med: HashSet<String> = rk
+            .iter()
+            .filter(|r| r.1 == V_FEJL || r.1 == V_FEJL_AFSKAARET)
+            .map(|r| r.0.clone())
+            .collect();
+        rk.extend(
+            dage.iter()
+                .filter(|d| !med.contains(*d))
+                .map(|d| (d.clone(), V_FEJL_AFVIST.to_string(), String::new(), 0)),
+        );
+    }
+    rk
 }
 
 // ── Angreb pr. vært ────────────────────────────────────────────────────────────────────────────────────────────────

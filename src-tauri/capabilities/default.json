@@ -33,6 +33,7 @@
     "allow-robotter",
     "allow-besoegende",
     "allow-subdomaener",
+    "allow-drift",
     "allow-login",
     "allow-login-stier",
     "allow-login-sti-saet",

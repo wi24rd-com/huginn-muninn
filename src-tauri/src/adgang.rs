@@ -21,7 +21,206 @@ pub const ADGANG_QUERY: &str = r#"query Adgang($zoneTag: string!, $since: Time!,
     lande: httpRequestsAdaptiveGroups(limit:20, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}, orderBy:[count_DESC]) { count dimensions { clientCountryName } }
     login: httpRequestsAdaptiveGroups(limit:500, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", clientRequestPath_in:$stier}, orderBy:[count_DESC]) { count dimensions { clientRequestPath clientRequestHTTPMethodName edgeResponseStatus originResponseStatus clientCountryName clientAsn } }
     stoppet: firewallEventsAdaptive(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[datetime_DESC]) { action source userAgent clientAsn clientASNDescription }
+    d_time: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}, orderBy:[count_DESC]) { count dimensions { datetimeHour edgeResponseStatus } }
+    d_fejl: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", edgeResponseStatus_geq:500}, orderBy:[count_DESC]) { count dimensions { datetimeHour edgeResponseStatus originResponseStatus } }
+    d_fejl_o: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", edgeResponseStatus_lt:500, originResponseStatus_geq:500}, orderBy:[count_DESC]) { count dimensions { datetimeHour edgeResponseStatus originResponseStatus } }
+    d_forside: httpRequestsAdaptiveGroups(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", clientRequestPath:"/", edgeResponseStatus_geq:500}, orderBy:[count_DESC]) { count dimensions { datetimeHour edgeResponseStatus } }
+    cache: httpRequestsAdaptiveGroups(limit:50, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}, orderBy:[count_DESC]) { count sum { edgeResponseBytes } dimensions { cacheStatus } }
   } } }"#;
+
+// ── Fejl og cache (V-DRIFT.1) ─────────────────────────────────────────────────────────────────────────────────────────
+/// De fem aliaser for fejl og cache, sidst i `ADGANG_QUERY` (én linje hver). "Kant eller origin ≥ 500" er to aliaser uden overlap: `d_fejl` er kant ≥ 500
+/// (alle origin-koder), `d_fejl_o` er kant < 500 med origin ≥ 500. `edgeResponseStatus_geq`/`_lt` er dokumenteret for alle planer (Cloudflare, AI Crawl
+/// Control › GraphQL API, "Key filters"); `originResponseStatus_geq` er ikke prøvet: afviser Cloudflare det, hentes døgnet uden fejl og cache (`hent_med_fald`).
+pub const DRIFT_ALIASER: &[&str] = &["d_time", "d_fejl", "d_fejl_o", "d_forside", "cache"];
+/// Loftet for `cache` (som `status`): Cloudflare har 9 dokumenterede værdier.
+pub const CACHE_LOFT: usize = 50;
+/// Loftet for de fire aliaser pr. time (`maxPageSize`).
+pub const TIME_LOFT: usize = 10_000;
+/// Arterne fra de fem aliaser: dem, `Store::gem_drift` erstatter. `d_afskaaret` (nøgle = arten, n = rækker i svaret): et alias stod på sit loft, eller
+/// svaret kunne ikke læses, så der er ingen tal for arten det døgn (S4). `d_udenfor` (nøgle ""): Cloudflare havde ikke længere døgnet; det er "ikke hentet".
+pub const DRIFT_ARTER: &[&str] = &["d_time", "d_fejl", "d_forside", "d_cache", "d_cache_b", "d_afskaaret", "d_udenfor"];
+
+fn er_drift_linje(l: &str) -> bool {
+    let t = l.trim_start();
+    DRIFT_ALIASER.iter().any(|a| t.starts_with(&format!("{a}: ")))
+}
+
+/// `ADGANG_QUERY` uden de fem aliaser: tegn for tegn forespørgslen fra før V-DRIFT.1.
+pub fn query_uden_drift() -> String {
+    ADGANG_QUERY.lines().filter(|l| !er_drift_linje(l)).collect::<Vec<_>>().join("\n")
+}
+
+/// Forespørgslen med eller uden `clientAsn` og de fem aliaser. Rækkefølgen er ligegyldig: de rører hver sine linjer.
+pub fn query(uden_asn: bool, uden_drift: bool) -> String {
+    match (uden_asn, uden_drift) {
+        (false, false) => ADGANG_QUERY.to_string(),
+        (true, false) => query_uden_asn(),
+        (false, true) => query_uden_drift(),
+        (true, true) => query_uden_drift().replace(" clientAsn }", " }"),
+    }
+}
+
+/// Kun de fem aliaser, til døgn, der blev hentet før V-DRIFT.1 (`koe::ekstra_runde`). Samme linjer som i `ADGANG_QUERY`; variablerne er `doegn_variabler`.
+pub fn drift_query() -> String {
+    let linjer: Vec<&str> = ADGANG_QUERY.lines().filter(|l| er_drift_linje(l)).collect();
+    format!(
+        "query Drift($zoneTag: string!, $since: Time!, $until: Time!) {{ viewer {{ zones(filter:{{zoneTag:$zoneTag}}) {{\n{}\n  }} }} }}",
+        linjer.join("\n")
+    )
+}
+
+/// Kan en GraphQL-fejl skyldes de nye aliaser? Cloudflares tekst nævner ikke altid feltet, så alle GraphQL-fejl tæller, undtagen et døgn uden for
+/// opbevaringen (det svar er det samme uden aliaserne), som `vaert::vaertsfelt_maaske_afvist`.
+pub fn drift_maaske_afvist(e: &Fejl) -> bool {
+    matches!(e, Fejl::GraphQl { .. }) && !e.uden_for_opbevaring()
+}
+
+/// Udfaldet af `hent_med_fald`: svaret, om de fem aliaser var med i det, og hvad der skal huskes for domænet resten af kørslen.
+#[derive(Debug)]
+pub struct Udfald {
+    pub svar: Result<Value, Fejl>,
+    pub drift_med: bool,
+    pub ny_uden_asn: bool,
+    pub ny_uden_drift: bool,
+}
+
+/// Henter ét døgn med `ADGANG_QUERY`. `uden_asn`/`uden_drift`: domænet har afvist feltet/aliaserne tidligere i kørslen. Fejler et kald med de fem aliaser,
+/// prøves der først uden dem: derfra er alt som før V-DRIFT.1 (afvist `clientAsn` → uden). Uden de fem aliaser huskes kun, når forespørgslen uden dem
+/// lykkedes med samme `clientAsn`-valg: så var det dem. Højst tre kald, og svaret på en fejl er den sidste fejl, som før. Ren bortset fra `graphql`.
+pub async fn hent_med_fald<G, Fut>(uden_asn: bool, uden_drift: bool, graphql: G) -> Udfald
+where
+    G: Fn(String) -> Fut,
+    Fut: std::future::Future<Output = Result<Value, Fejl>>,
+{
+    let (mut asn, mut drift) = (uden_asn, uden_drift);
+    let mut drift_droppet_alene = false;
+    loop {
+        match graphql(query(asn, drift)).await {
+            Ok(v) => {
+                return Udfald {
+                    svar: Ok(v),
+                    drift_med: !drift,
+                    ny_uden_asn: asn && !uden_asn,
+                    ny_uden_drift: drift && !uden_drift && drift_droppet_alene,
+                }
+            }
+            Err(e) if !drift && drift_maaske_afvist(&e) => {
+                drift = true;
+                drift_droppet_alene = true;
+            }
+            Err(e) if !asn && felt_afvist(&e) => {
+                asn = true;
+                drift_droppet_alene = false;
+            }
+            Err(e) => {
+                return Udfald {
+                    svar: Err(e),
+                    drift_med: false,
+                    ny_uden_asn: false,
+                    ny_uden_drift: false,
+                }
+            }
+        }
+    }
+}
+
+/// Cache-status med små bogstaver, renset til `[a-z_]` (højst 40 tegn); tom efter rensningen er `[ukendt]`. Ren funktion.
+pub fn ren_cache(s: &str) -> String {
+    let r: String = s
+        .to_ascii_lowercase()
+        .chars()
+        .filter(|c| c.is_ascii_lowercase() || *c == '_')
+        .take(40)
+        .collect();
+    if r.is_empty() {
+        "[ukendt]".to_string()
+    } else {
+        r
+    }
+}
+
+/// Timen (UTC, to cifre) fra `datetimeHour` (`2026-11-16T05:00:00Z`), kun for døgnet `dag`. Ren funktion.
+fn time_af(t: &str, dag: &str) -> Option<String> {
+    let (d, rest) = t.split_once('T')?;
+    let hh = rest.get(0..2)?;
+    (d == dag && hh.bytes().all(|b| b.is_ascii_digit()) && hh < "24").then(|| hh.to_string())
+}
+
+/// De fem aliaser → rækker (art, nøgle, n) for døgnet `dag`. `None`: svaret har ikke alle fem (de var ikke med i forespørgslen), så intet må gemmes som
+/// hentet. Et alias på sit loft, eller med en time, der ikke kan læses, giver ingen tal for arten, kun `d_afskaaret` (S4: hellere intet tal end et for
+/// lavt). `d_fejl` og `d_fejl_o` er én art: står den ene på loftet, gemmes ingen af dem. Ren funktion.
+pub fn drift_raekker(a: &Adgang, dag: &str) -> Option<Vec<(String, String, i64)>> {
+    let (tid, fejl, fejl_o, forside, cache) = (
+        a.d_time.as_ref()?,
+        a.d_fejl.as_ref()?,
+        a.d_fejl_o.as_ref()?,
+        a.d_forside.as_ref()?,
+        a.cache.as_ref()?,
+    );
+    let mut rk = Taeller::default();
+    let mut afskaaret: Vec<(&str, usize)> = Vec::new();
+    let timer = |gr: &[Gruppe]| gr.iter().map(|g| time_af(&g.dimensions.time, dag)).collect::<Option<Vec<_>>>();
+    // d_time: svar pr. time, lagt sammen over koderne.
+    match timer(tid).filter(|_| tid.len() < TIME_LOFT) {
+        Some(hh) => {
+            for (g, h) in tid.iter().zip(hh) {
+                rk.inc(&format!("d_time\u{1}{h}"), g.count);
+            }
+        }
+        None => afskaaret.push(("d_time", tid.len())),
+    }
+    // d_fejl: "HH\tkant\torigin". `d_fejl_o` med kant ≥ 500 kan ikke forekomme (filteret), men springes over, så intet tælles to gange.
+    let begge: Vec<&Gruppe> = fejl.iter().chain(fejl_o.iter().filter(|g| g.dimensions.status < 500)).collect();
+    let hh: Option<Vec<String>> = begge.iter().map(|g| time_af(&g.dimensions.time, dag)).collect();
+    match hh.filter(|_| fejl.len() < TIME_LOFT && fejl_o.len() < TIME_LOFT) {
+        Some(hh) => {
+            for (g, h) in begge.iter().zip(hh) {
+                rk.inc(
+                    &format!("d_fejl\u{1}{h}\t{}\t{}", g.dimensions.status, g.dimensions.origin),
+                    g.count,
+                );
+            }
+        }
+        None => afskaaret.push(("d_fejl", fejl.len() + fejl_o.len())),
+    }
+    match timer(forside).filter(|_| forside.len() < TIME_LOFT) {
+        Some(hh) => {
+            for (g, h) in forside.iter().zip(hh) {
+                rk.inc(&format!("d_forside\u{1}{h}\t{}", g.dimensions.status), g.count);
+            }
+        }
+        None => afskaaret.push(("d_forside", forside.len())),
+    }
+    if cache.len() < CACHE_LOFT {
+        for g in cache {
+            let k = ren_cache(&g.dimensions.cache);
+            rk.inc(&format!("d_cache\u{1}{k}"), g.count);
+            rk.inc(&format!("d_cache_b\u{1}{k}"), g.sum.bytes);
+        }
+    } else {
+        afskaaret.push(("d_cache", cache.len()));
+    }
+    let mut ud: Vec<(String, String, i64)> = rk
+        .orden
+        .into_iter()
+        .map(|(k, n)| {
+            let (art, noegle) = k.split_once('\u{1}').unwrap_or((&k, ""));
+            (art.to_string(), noegle.to_string(), n)
+        })
+        .collect();
+    ud.extend(
+        afskaaret
+            .into_iter()
+            .map(|(art, n)| ("d_afskaaret".to_string(), art.to_string(), n as i64)),
+    );
+    Some(ud)
+}
+
+/// Rækkerne fra `drift_query` (kun de fem aliaser). Ren funktion.
+pub fn drift_fra_svar(data: &Value, dag: &str) -> Result<Vec<(String, String, i64)>, Fejl> {
+    drift_raekker(&fra_svar(data)?, dag).ok_or(Fejl::Svar)
+}
 
 /// Lækkede kodeord. Sin egen forespørgsel, så `ADGANG_QUERY` er uændret. Hverken kodeord, brugernavne eller IP-adresser findes i svaret. Uden sti-filter (Cloudflare afgør selv, hvad der er et login), og
 /// uden krav om POST: siden 20. aug. 2026 skanner Cloudflare også `Authorization: Basic`, som kan være GET. Tre aliaser, så et rigtigt fund aldrig drukner i de andre svar:
@@ -117,6 +316,18 @@ pub struct Dim {
     pub asn: String,
     #[serde(default, deserialize_with = "tom_ved_null", rename = "leakedCredentialCheckResult")]
     pub laek: String,
+    /// V-DRIFT.1: timen (`datetimeHour`) og cache-status.
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "datetimeHour")]
+    pub time: String,
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "cacheStatus")]
+    pub cache: String,
+}
+
+/// V-DRIFT.1: `sum { edgeResponseBytes }` (kun i `cache`).
+#[derive(Deserialize, Default, Debug, Clone)]
+pub struct Sum {
+    #[serde(default, deserialize_with = "tom_ved_null", rename = "edgeResponseBytes")]
+    pub bytes: i64,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -125,6 +336,8 @@ pub struct Gruppe {
     pub count: i64,
     #[serde(default, deserialize_with = "tom_ved_null")]
     pub dimensions: Dim,
+    #[serde(default, deserialize_with = "tom_ved_null")]
+    pub sum: Sum,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -154,6 +367,17 @@ pub struct Adgang {
     pub login: Vec<Gruppe>,
     #[serde(default, deserialize_with = "tom_ved_null")]
     pub stoppet: Vec<Stoppet>,
+    /// V-DRIFT.1: `None`, når aliaset ikke var i svaret (forespørgslen uden dem). `raekker` læser dem aldrig.
+    #[serde(default)]
+    pub d_time: Option<Vec<Gruppe>>,
+    #[serde(default)]
+    pub d_fejl: Option<Vec<Gruppe>>,
+    #[serde(default)]
+    pub d_fejl_o: Option<Vec<Gruppe>>,
+    #[serde(default)]
+    pub d_forside: Option<Vec<Gruppe>>,
+    #[serde(default)]
+    pub cache: Option<Vec<Gruppe>>,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -376,6 +600,7 @@ mod tests {
     }
     use crate::store::EKSTRA_ARTER;
     use crate::vaern::{dag_ms, DOEGN_QUERY};
+    use std::collections::BTreeSet;
 
     /// 2026-11-04T08:00:00Z.
     const NU: i64 = 1_793_779_200_000;
@@ -390,7 +615,9 @@ mod tests {
         for q in [ADGANG_QUERY, query_uden_asn().as_str(), DOEGN_QUERY] {
             assert!(!q.to_lowercase().contains("clientip"), "beder aldrig om IP-adresser");
         }
-        let alle = noder(ADGANG_QUERY);
+        // V-DRIFT.1: tællingen gælder forespørgslen uden de fem nye aliaser (tegn for tegn den fra før; se `drift_aliaserne_*`).
+        let gamle = query_uden_drift();
+        let alle = noder(&gamle);
         assert_eq!(alle.len(), 5, "højst 6 noder");
         let http: Vec<&&str> = alle.iter().filter(|l| l.contains("httpRequestsAdaptiveGroups")).collect();
         assert_eq!(http.len(), 4);
@@ -413,7 +640,8 @@ mod tests {
             q.contains("userAgent clientAsn clientASNDescription"),
             "firewallEventsAdaptive: målt live"
         );
-        assert_eq!(q.matches("originResponseStatus").count(), 2);
+        // V-DRIFT.1: `d_fejl` og `d_fejl_o` har også feltet; tællingen gælder de gamle aliaser.
+        assert_eq!(query(true, true).matches("originResponseStatus").count(), 2);
     }
 
     #[test]
@@ -498,5 +726,227 @@ mod tests {
     fn manglende_noder_er_ikke_en_fejl() {
         assert!(raekker(&fra_svar(&json!({ "viewer": { "zones": [{}] } })).unwrap()).is_empty());
         assert_eq!(fra_svar(&json!({ "viewer": { "zones": [] } })).err(), Some(Fejl::ZoneUkendt));
+    }
+
+    // ── V-DRIFT.1 ──────────────────────────────────────────────────────────────────────────────────────────────────────
+    /// `ADGANG_QUERY` ved grundlaget 771bb9e (version 1.1.0), kopieret fra git.
+    const GAMMEL_ADGANG_QUERY: &str = r#"query Adgang($zoneTag: string!, $since: Time!, $until: Time!, $stier: [string!]!) { viewer { zones(filter:{zoneTag:$zoneTag}) {
+    post: httpRequestsAdaptiveGroups(limit:500, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", clientRequestHTTPMethodName:"POST"}, orderBy:[count_DESC]) { count dimensions { clientRequestPath edgeResponseStatus originResponseStatus clientCountryName clientAsn } }
+    status: httpRequestsAdaptiveGroups(limit:50, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}, orderBy:[count_DESC]) { count dimensions { edgeResponseStatus } }
+    lande: httpRequestsAdaptiveGroups(limit:20, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball"}, orderBy:[count_DESC]) { count dimensions { clientCountryName } }
+    login: httpRequestsAdaptiveGroups(limit:500, filter:{datetime_geq:$since, datetime_lt:$until, requestSource:"eyeball", clientRequestPath_in:$stier}, orderBy:[count_DESC]) { count dimensions { clientRequestPath clientRequestHTTPMethodName edgeResponseStatus originResponseStatus clientCountryName clientAsn } }
+    stoppet: firewallEventsAdaptive(limit:10000, filter:{datetime_geq:$since, datetime_lt:$until}, orderBy:[datetime_DESC]) { action source userAgent clientAsn clientASNDescription }
+  } } }"#;
+
+    /// Uden de fem aliaser er forespørgslen tegn for tegn den fra før, og `clientAsn` og aliaserne kan fjernes i begge rækkefølger.
+    #[test]
+    fn drift_aliaserne_roerer_intet_andet_i_forespoergslen() {
+        assert_eq!(query_uden_drift(), GAMMEL_ADGANG_QUERY);
+        assert_eq!(query(false, true), GAMMEL_ADGANG_QUERY);
+        assert_eq!(query(false, false), ADGANG_QUERY);
+        assert_eq!(query(true, false), query_uden_asn());
+        let asn_foerst: String = query_uden_asn()
+            .lines()
+            .filter(|l| !er_drift_linje(l))
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert_eq!(query(true, true), asn_foerst, "samme i begge rækkefølger");
+        assert_eq!(query(true, true), GAMMEL_ADGANG_QUERY.replace(" clientAsn }", " }"));
+        assert!(ADGANG_QUERY.starts_with(&GAMMEL_ADGANG_QUERY[..GAMMEL_ADGANG_QUERY.len() - "  } } }".len()]));
+    }
+
+    /// De fem aliaser: eyeball og samme tidsfilter som `status`, fejl kun ≥ 500 uden overlap, forsiden og cachen med bytes, og tiden pr. time.
+    #[test]
+    fn drift_aliaserne_som_aftalt() {
+        let linje = |a: &str| {
+            ADGANG_QUERY
+                .lines()
+                .find(|l| l.trim_start().starts_with(&format!("{a}: ")))
+                .unwrap_or_else(|| panic!("{a}"))
+        };
+        let status = linje("status");
+        let filter = &status[status.find("filter:{").unwrap()..status.find(", requestSource").unwrap()];
+        for a in DRIFT_ALIASER {
+            let l = linje(a);
+            assert!(l.contains(filter) && l.contains(r#"requestSource:"eyeball""#), "{l}");
+            assert!(l.contains("httpRequestsAdaptiveGroups"), "{l}");
+        }
+        assert!(linje("d_time").contains("dimensions { datetimeHour edgeResponseStatus }"));
+        assert!(
+            linje("d_fejl").contains("edgeResponseStatus_geq:500")
+                && linje("d_fejl").contains("datetimeHour edgeResponseStatus originResponseStatus")
+        );
+        assert!(
+            linje("d_fejl_o").contains("edgeResponseStatus_lt:500, originResponseStatus_geq:500"),
+            "intet overlap med d_fejl"
+        );
+        assert!(linje("d_forside").contains(r#"clientRequestPath:"/", edgeResponseStatus_geq:500"#));
+        assert!(linje("cache").contains("count sum { edgeResponseBytes } dimensions { cacheStatus }"));
+        for a in ["d_time", "d_fejl", "d_fejl_o", "d_forside"] {
+            assert!(linje(a).contains(&format!("limit:{TIME_LOFT}")), "{a}");
+        }
+        assert!(linje("cache").contains(&format!("limit:{CACHE_LOFT}")));
+        let d = drift_query();
+        assert_eq!(noder(&d).len(), 5);
+        assert!(!d.contains("$stier") && d.starts_with("query Drift($zoneTag: string!, $since: Time!, $until: Time!)"));
+        assert_eq!(noder(ADGANG_QUERY).len(), 10);
+    }
+
+    fn drift_svar() -> Value {
+        json!({ "viewer": { "zones": [{
+            "post": [{ "count": 4, "dimensions": { "clientRequestPath": "/login", "edgeResponseStatus": 200, "originResponseStatus": 200, "clientCountryName": "PL", "clientAsn": "64500" } }],
+            "status": [{ "count": 90, "dimensions": { "edgeResponseStatus": 200 } }, { "count": 12, "dimensions": { "edgeResponseStatus": 522 } }],
+            "lande": [{ "count": 80, "dimensions": { "clientCountryName": "DK" } }],
+            "login": [],
+            "stoppet": [{ "action": "block", "source": "firewallManaged", "userAgent": "GPTBot/1.2", "clientAsn": "64500", "clientASNDescription": "Eksempel Net" }],
+            "d_time": [
+                { "count": 50, "dimensions": { "datetimeHour": "2026-11-03T05:00:00Z", "edgeResponseStatus": 200 } },
+                { "count": 10, "dimensions": { "datetimeHour": "2026-11-03T05:00:00Z", "edgeResponseStatus": 522 } },
+                { "count": 40, "dimensions": { "datetimeHour": "2026-11-03T23:00:00Z", "edgeResponseStatus": 200 } },
+            ],
+            "d_fejl": [
+                { "count": 10, "dimensions": { "datetimeHour": "2026-11-03T05:00:00Z", "edgeResponseStatus": 522, "originResponseStatus": 0 } },
+                { "count": 2, "dimensions": { "datetimeHour": "2026-11-03T23:00:00Z", "edgeResponseStatus": 503, "originResponseStatus": 503 } },
+            ],
+            "d_fejl_o": [
+                { "count": 3, "dimensions": { "datetimeHour": "2026-11-03T23:00:00Z", "edgeResponseStatus": 200, "originResponseStatus": 500 } },
+                { "count": 99, "dimensions": { "datetimeHour": "2026-11-03T23:00:00Z", "edgeResponseStatus": 503, "originResponseStatus": 503 } },
+            ],
+            "d_forside": [{ "count": 4, "dimensions": { "datetimeHour": "2026-11-03T05:00:00Z", "edgeResponseStatus": 522 } }],
+            "cache": [
+                { "count": 70, "sum": { "edgeResponseBytes": 7000 }, "dimensions": { "cacheStatus": "dynamic" } },
+                { "count": 20, "sum": { "edgeResponseBytes": 9000 }, "dimensions": { "cacheStatus": "HIT" } },
+                { "count": 2, "sum": { "edgeResponseBytes": 10 }, "dimensions": { "cacheStatus": "Ny-Værdi 2!" } },
+                { "count": 1, "sum": { "edgeResponseBytes": 5 }, "dimensions": { "cacheStatus": "" } },
+            ],
+        }] } })
+    }
+
+    /// Time som "HH", kode-par, forsiden, cache med bytes og en ukendt cache-status renset til `[a-z_]` eller `[ukendt]`. `d_fejl_o` med kant ≥ 500 tælles
+    /// ikke (filteret udelukker den; den tælles aldrig to gange).
+    #[test]
+    fn drift_raekker_fra_de_nye_aliaser() {
+        let a = fra_svar(&drift_svar()).unwrap();
+        let rk = drift_raekker(&a, "2026-11-03").unwrap();
+        let n = |art: &str, k: &str| rk.iter().find(|r| r.0 == art && r.1 == k).map(|r| r.2);
+        assert_eq!(n("d_time", "05"), Some(60), "lagt sammen over koderne");
+        assert_eq!(n("d_time", "23"), Some(40));
+        assert_eq!(n("d_fejl", "05\t522\t0"), Some(10));
+        assert_eq!(n("d_fejl", "23\t503\t503"), Some(2), "kun fra d_fejl, aldrig to gange");
+        assert_eq!(n("d_fejl", "23\t200\t500"), Some(3), "origin-fejl uden kant-fejl");
+        assert_eq!(n("d_forside", "05\t522"), Some(4));
+        assert_eq!((n("d_cache", "dynamic"), n("d_cache_b", "dynamic")), (Some(70), Some(7000)));
+        assert_eq!(
+            (n("d_cache", "hit"), n("d_cache_b", "hit")),
+            (Some(20), Some(9000)),
+            "små bogstaver"
+        );
+        assert_eq!(n("d_cache", "nyvrdi"), Some(2), "renset til [a-z_]");
+        assert_eq!((n("d_cache", "[ukendt]"), n("d_cache_b", "[ukendt]")), (Some(1), Some(5)));
+        assert!(rk.iter().all(|r| DRIFT_ARTER.contains(&r.0.as_str())));
+        assert!(!rk.iter().any(|r| r.0 == "d_afskaaret"));
+        assert_eq!(ren_cache("REVALIDATED"), "revalidated");
+        assert_eq!(ren_cache("!!"), "[ukendt]");
+    }
+
+    /// De gamle arter er bit for bit de samme med og uden de nye aliaser i svaret, og uden aliaserne er der intet at gemme som hentet.
+    #[test]
+    fn de_gamle_arter_er_uaendrede_med_de_nye_aliaser() {
+        let med = drift_svar();
+        let mut uden = med.clone();
+        for a in DRIFT_ALIASER {
+            uden["viewer"]["zones"][0].as_object_mut().unwrap().remove(*a);
+        }
+        let (rm, ru) = (raekker(&fra_svar(&med).unwrap()), raekker(&fra_svar(&uden).unwrap()));
+        assert_eq!(rm, ru);
+        assert!(!ru.is_empty() && ru.iter().all(|r| EKSTRA_ARTER.contains(&r.0.as_str())));
+        assert!(
+            drift_raekker(&fra_svar(&uden).unwrap(), "2026-11-03").is_none(),
+            "intet i hentet_drift"
+        );
+        let mut et_mangler = med.clone();
+        et_mangler["viewer"]["zones"][0]["cache"] = Value::Null;
+        assert!(drift_raekker(&fra_svar(&et_mangler).unwrap(), "2026-11-03").is_none());
+        assert!(EKSTRA_ARTER.iter().all(|a| !DRIFT_ARTER.contains(a)));
+    }
+
+    /// Et alias på sit loft, eller en time, der ikke kan læses, giver kun `d_afskaaret` for arten; de andre arter er uberørte.
+    #[test]
+    fn drift_paa_loftet_giver_kun_maerket() {
+        let mange = |n: usize, felt: &str| -> Vec<Value> {
+            (0..n)
+                .map(|i| json!({ "count": 1, "dimensions": { "datetimeHour": "2026-11-03T01:00:00Z", "edgeResponseStatus": 500 + (i % 99), felt: i } }))
+                .collect()
+        };
+        let mut svar = drift_svar();
+        svar["viewer"]["zones"][0]["d_fejl_o"] = json!(mange(TIME_LOFT, "originResponseStatus"));
+        svar["viewer"]["zones"][0]["cache"] = json!((0..CACHE_LOFT)
+            .map(|i| json!({ "count": 1, "dimensions": { "cacheStatus": format!("s{i}") } }))
+            .collect::<Vec<_>>());
+        svar["viewer"]["zones"][0]["d_forside"] =
+            json!([{ "count": 1, "dimensions": { "datetimeHour": "2026-11-02T23:00:00Z", "edgeResponseStatus": 502 } }]);
+        let rk = drift_raekker(&fra_svar(&svar).unwrap(), "2026-11-03").unwrap();
+        let arter: BTreeSet<&str> = rk.iter().map(|r| r.0.as_str()).collect();
+        assert!(
+            !arter.contains("d_fejl") && !arter.contains("d_cache") && !arter.contains("d_cache_b") && !arter.contains("d_forside"),
+            "{arter:?}"
+        );
+        assert!(arter.contains("d_time"), "d_time er uberørt");
+        let afsk: BTreeSet<&str> = rk.iter().filter(|r| r.0 == "d_afskaaret").map(|r| r.1.as_str()).collect();
+        assert_eq!(afsk, BTreeSet::from(["d_fejl", "d_cache", "d_forside"]));
+    }
+
+    /// Fald tilbage: afviser Cloudflare de nye aliaser, hentes døgnet uden dem, og kun da huskes domænet. Med `clientAsn` i begge rækkefølger.
+    #[test]
+    fn fald_tilbage_uden_drift_og_uden_asn() {
+        use std::cell::RefCell;
+        let gql = |d: &str| Fejl::GraphQl {
+            dag: None,
+            detalje: d.into(),
+        };
+        // `afvis(q)`: fejlen for forespørgslen, eller `None` = svar.
+        let koer = |uden_asn: bool, uden_drift: bool, afvis: &dyn Fn(&str) -> Option<Fejl>| {
+            let sendt = RefCell::new(Vec::<String>::new());
+            let u = tauri::async_runtime::block_on(hent_med_fald(uden_asn, uden_drift, |q: String| {
+                sendt.borrow_mut().push(q.clone());
+                let svar = match afvis(&q) {
+                    Some(e) => Err(e),
+                    None => Ok(drift_svar()),
+                };
+                async move { svar }
+            }));
+            (u, sendt.into_inner())
+        };
+        let med_drift = |q: &str| q.contains("d_time:");
+        let med_asn = |q: &str| q.contains("clientCountryName clientAsn }");
+        // 1. Alt går: ét kald med det hele.
+        let (u, s) = koer(false, false, &|_| None);
+        assert!(u.svar.is_ok() && u.drift_med && !u.ny_uden_asn && !u.ny_uden_drift && s.len() == 1);
+        // 2. Cloudflare afviser et af de nye felter: døgnet hentes uden, domænet huskes, de gamle arter er som før, og intet til hentet_drift.
+        let (u, s) = koer(false, false, &|q| med_drift(q).then(|| gql("unknown field cacheStatus")));
+        assert!(u.svar.is_ok() && !u.drift_med && u.ny_uden_drift && !u.ny_uden_asn, "{s:?}");
+        assert_eq!(s, [ADGANG_QUERY.to_string(), GAMMEL_ADGANG_QUERY.to_string()]);
+        let a = fra_svar(&u.svar.unwrap()).unwrap();
+        assert_eq!(raekker(&a), raekker(&fra_svar(&drift_svar()).unwrap()));
+        // 3. clientAsn afvist, drift kendt afvist: som før V-DRIFT.1.
+        let (u, s) = koer(false, true, &|q| {
+            med_asn(q).then(|| gql("zone does not have access to the field clientAsn"))
+        });
+        assert!(u.svar.is_ok() && u.ny_uden_asn && !u.ny_uden_drift && !u.drift_med);
+        assert_eq!(s, [GAMMEL_ADGANG_QUERY.to_string(), query(true, true)]);
+        // 4. clientAsn kendt afvist, så afviser Cloudflare drift: uden begge, og drift huskes.
+        let (u, s) = koer(true, false, &|q| med_drift(q).then(|| gql("unknown field datetimeHour")));
+        assert!(u.svar.is_ok() && u.ny_uden_drift && !u.ny_uden_asn && s.len() == 2);
+        // 5. Kun clientAsn er galt, men med drift: drift droppes først, så clientAsn; drift huskes ikke (det var ikke dem), og køen henter dem senere.
+        let (u, s) = koer(false, false, &|q| {
+            med_asn(q).then(|| gql("zone does not have access to the field clientAsn"))
+        });
+        assert!(u.svar.is_ok() && u.ny_uden_asn && !u.ny_uden_drift && !u.drift_med, "{s:?}");
+        assert_eq!(s.len(), 3);
+        // 6. En anden fejl: samme fejl som før, og intet huskes.
+        let (u, s) = koer(false, false, &|_| Some(Fejl::Vent));
+        assert!(u.svar == Err(Fejl::Vent) && s.len() == 1 && !u.ny_uden_drift);
+        let (u, s) = koer(false, false, &|_| Some(gql("cannot request data older than 2678400s")));
+        assert!(u.svar.is_err() && s.len() == 1, "uden for opbevaringen: intet nyt forsøg");
     }
 }

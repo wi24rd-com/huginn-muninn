@@ -11,6 +11,7 @@ mod cf;
 mod dagligt;
 mod dmarc;
 mod dns;
+mod drift;
 mod dyk;
 mod historik;
 mod huller;
@@ -60,6 +61,11 @@ struct Tilstand {
     siden_sidst: AtomicBool,
     /// Domæner, hvor Cloudflare afviste et felt i `ADGANG_QUERY`: de hentes uden `clientAsn`, mens programmet kører.
     uden_asn: Mutex<HashSet<String>>,
+    /// V-DRIFT.1: domæner, hvor Cloudflare afviste de fem aliaser for fejl og cache (`adgang::hent_med_fald`): de hentes uden dem, og køen spørger ikke igen,
+    /// mens programmet kører. Robotter- og Login-tallene er som før.
+    uden_drift: Mutex<HashSet<String>>,
+    /// V-DRIFT.1: domæner, hvor Cloudflare afviste aliaset `vf` (fejl pr. vært): trafikken pr. vært hentes uden det, mens programmet kører.
+    uden_vf: Mutex<HashSet<String>>,
     /// Domæner, hvor Cloudflare afviste hovedforespørgslen med værtsfeltet (V-SUBDOM.1 B2, trin 0), med tidspunktet (ms): de hentes uden
     /// `clientRequestHTTPHost` på `fw` til næste UTC-døgn, højst 24 timer (`vaert::uden_gaelder`, FIX 1). Domænets egne tal er som før; døgnene får intet `v_fw`,
     /// og `subdomaener` melder `angreb_afvist`, når perioden ingen tal pr. vært har for angrebene.
@@ -482,24 +488,46 @@ async fn hent_zone(
 }
 
 /// Henter og gemmer de ekstra tal for ét færdigt døgn. Afviser Cloudflare et felt, prøves der én gang til uden `clientAsn`, og
-/// domænet huskes, så det ikke koster to kald pr. døgn.
+/// domænet huskes, så det ikke koster to kald pr. døgn. V-DRIFT.1: samme kald har fejl og cache med; fejler det, prøves der først uden dem
+/// (`adgang::hent_med_fald`), så Robotter- og Login-tallene aldrig koster dem. Uden dem noteres døgnet ikke i `hentet_drift`.
 async fn hent_ekstra(tilstand: &Tilstand, token: &Hemmelig, zone: &str, dag: &str) -> Result<(), Fejl> {
     let stier = adgang::stier_til_hentning(&laas(tilstand)?.login_stier(zone)?);
     let variabler = adgang::variabler(zone, dag, &stier)?;
-    let uden = tilstand.uden_asn.lock().map_err(|_| Fejl::Lager)?.contains(zone);
-    let mut svar = if uden {
-        tilstand.klient.graphql(token, &adgang::query_uden_asn(), variabler.clone()).await
-    } else {
-        tilstand.klient.graphql(token, adgang::ADGANG_QUERY, variabler.clone()).await
-    };
-    if !uden && svar.as_ref().err().is_some_and(adgang::felt_afvist) {
-        svar = tilstand.klient.graphql(token, &adgang::query_uden_asn(), variabler).await;
-        if svar.is_ok() {
-            tilstand.uden_asn.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string());
-        }
+    let uden_asn = tilstand.uden_asn.lock().map_err(|_| Fejl::Lager)?.contains(zone);
+    let uden_drift = tilstand.uden_drift.lock().map_err(|_| Fejl::Lager)?.contains(zone);
+    let u = adgang::hent_med_fald(uden_asn, uden_drift, |q| {
+        let v = variabler.clone();
+        async move { tilstand.klient.graphql(token, &q, v).await }
+    })
+    .await;
+    if u.ny_uden_asn {
+        tilstand.uden_asn.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string());
     }
-    let raekker = adgang::raekker(&adgang::fra_svar(&svar.map_err(|e| e.for_dag(dag))?)?);
-    laas(tilstand)?.gem_ekstra(zone, dag, &raekker, &vaern::iso(nu_ms()))
+    if u.ny_uden_drift {
+        tilstand.uden_drift.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string());
+    }
+    let a = adgang::fra_svar(&u.svar.map_err(|e| e.for_dag(dag))?)?;
+    let raekker = adgang::raekker(&a);
+    let mut l = laas(tilstand)?;
+    l.gem_ekstra(zone, dag, &raekker, &vaern::iso(nu_ms()))?;
+    if let Some(d) = adgang::drift_raekker(&a, dag).filter(|_| u.drift_med) {
+        l.gem_drift(zone, dag, &d, &vaern::iso(nu_ms()))?;
+    }
+    Ok(())
+}
+
+/// V-DRIFT.1: fejl og cache for ét færdigt døgn, der blev hentet før skema 21: ét kald med `adgang::drift_query`. Afviser Cloudflare aliaserne, huskes domænet
+/// (`uden_drift`), og der spørges ikke igen, mens programmet kører. Rører kun `adgang::DRIFT_ARTER` og `hentet_drift`.
+async fn hent_drift(tilstand: &Tilstand, token: &Hemmelig, zone: &str, dag: &str) -> Result<(), Fejl> {
+    let svar = tilstand
+        .klient
+        .graphql(token, &adgang::drift_query(), vaern::doegn_variabler(zone, dag)?)
+        .await;
+    if svar.as_ref().err().is_some_and(adgang::drift_maaske_afvist) {
+        tilstand.uden_drift.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string());
+    }
+    let rk = adgang::drift_fra_svar(&svar.map_err(|e| e.for_dag(dag))?, dag)?;
+    laas(tilstand)?.gem_drift(zone, dag, &rk, &vaern::iso(nu_ms()))
 }
 
 /// Enkelthændelserne for et gammelt døgn: ét kald med `vaern::ANGREB_QUERY`, kun for færdige døgn og i `ekstra_runde`s tempo.
@@ -616,15 +644,31 @@ async fn hent_side(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str,
 }
 
 /// Trafik pr. vært for døgnene `fra`…`til` (V-SUBDOM.1): ét kald med `vaert::VAERT_QUERY`; står svaret på loftet, ét pr. døgn (`vaert::hent_opdelt`).
+/// V-DRIFT.1: afviser Cloudflare aliaset `vf`, hentes der uden det (`vaert::hent_med_vf`), og domænet huskes; de andre tal pr. vært er som før.
 async fn hent_vaert(tilstand: &Tilstand, token: &Hemmelig, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
     let navn = laas(tilstand)?.zone_navn(zone)?.ok_or(Fejl::ZoneUkendt)?;
-    let hent = |f: String, t: String| async move {
-        tilstand
-            .klient
-            .graphql(token, vaert::VAERT_QUERY, besoeg::variabler(zone, &f, &t)?)
-            .await
+    let uden_brugt = AtomicBool::new(false);
+    let hent = |f: String, t: String| {
+        let uden_brugt = &uden_brugt;
+        async move {
+            let v = besoeg::variabler(zone, &f, &t)?;
+            let uden = tilstand.uden_vf.lock().map_err(|_| Fejl::Lager)?.contains(zone);
+            let (svar, ny) = vaert::hent_med_vf(uden, |q| {
+                let v = v.clone();
+                async move { tilstand.klient.graphql(token, &q, v).await }
+            })
+            .await;
+            if ny {
+                tilstand.uden_vf.lock().map_err(|_| Fejl::Lager)?.insert(zone.to_string());
+            }
+            if svar.is_ok() && (uden || ny) {
+                uden_brugt.store(true, Ordering::SeqCst);
+            }
+            svar
+        }
     };
     let (dage, rk) = vaert::hent_opdelt(fra, til, hent, |d, dage| vaert::trafik_raekker(d, dage, &navn), vaert::V_AFSKAARET).await?;
+    let rk = vaert::med_vf_afvist(rk, &dage, uden_brugt.load(Ordering::SeqCst));
     laas(tilstand)?.gem_vaert(zone, &dage, &rk, &vaern::iso(nu_ms()))
 }
 
@@ -1248,6 +1292,41 @@ async fn subdomaener(zone: String, fra: String, til: String, tilstand: State<'_,
     Ok(vaert::regn(&laest, &fra, &til))
 }
 
+/// Drift (V-DRIFT.1, til B2): fejl pr. dag og time og cache for ét domæne eller de valgte tilsammen i `fra`…`til` (højst et år), kun fra cachen (intet netværk).
+/// `vaert` (labelen under domænet, kun med ét domæne): fejl for værten fra `v_fejl`; cachen gælder stadig hele domænet. Svaret har ingen id'er og ingen
+/// værtsnavne ud over den valgte label.
+#[tauri::command]
+async fn drift(
+    zone: Option<String>,
+    fra: String,
+    til: String,
+    vaert: Option<String>,
+    tilstand: State<'_, Tilstand>,
+) -> Svar<drift::DriftUd> {
+    vaert::tjek_periode(&fra, &til)?;
+    let vaert = besoeg::tjek_vaert(vaert)?;
+    let zone = zone.map(|z| vaern::tjek_zone(&z)).transpose()?;
+    if vaert.is_some() && zone.is_none() {
+        return Err(Fejl::UgyldigtFilter);
+    }
+    let mut laest = {
+        let lager = laas(&tilstand)?;
+        let zoner: Vec<String> = match &zone {
+            Some(z) => vec![z.clone()],
+            None => lager.zoner_til()?.into_iter().map(|z| z.id).collect(),
+        };
+        drift::laes(&lager, &zoner, &fra, vaert.as_deref())?
+    };
+    {
+        let uden = tilstand.uden_drift.lock().map_err(|_| Fejl::Lager)?;
+        laest.afvist = laest.zoner.iter().any(|z| uden.contains(z));
+    }
+    if let Some(z) = &zone {
+        laest.vaert_afvist_nu = tilstand.uden_vf.lock().map_err(|_| Fejl::Lager)?.contains(z);
+    }
+    Ok(drift::regn(&laest, &fra, &til))
+}
+
 /// Login: de gemte tal for domænets login-stier, kun fra cachen (intet netværk).
 #[tauri::command]
 async fn login(omfang: dyk::Omfang, periode: dyk::Periode, filter: login::Filter, tilstand: State<'_, Tilstand>) -> Svar<login::LoginUd> {
@@ -1483,6 +1562,12 @@ impl Henter for KoeHenter<'_> {
     }
     async fn vaert_fw(&self, zone: &str, fra: &str, til: &str) -> Result<(), Fejl> {
         hent_vaert_fw(self.tilstand, self.token(zone)?, zone, fra, til).await
+    }
+    async fn drift(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
+        hent_drift(self.tilstand, self.token(zone)?, zone, dag).await
+    }
+    fn drift_mulig(&self, zone: &str) -> bool {
+        self.tilstand.uden_drift.lock().is_ok_and(|s| !s.contains(zone))
     }
     async fn tilstand(&self, zone: &str) -> Result<(), Fejl> {
         hent_tilstand(self.tilstand, self.token(zone)?, zone).await
@@ -2208,6 +2293,8 @@ pub fn run() {
             );
             // V-SUBDOM.1 FIX 1: én gang hentes trafikkens døgn pr. vært i hentevinduet igen, nu med lande og robotter pr. vært. Ét kald pr. domæne.
             let _ = lager.vaert_land_en_gang(&vaern::dag_noegle(nu_ms() - besoeg::BESOEG_DAGE * vaern::DOEGN_MS));
+            // V-DRIFT.1: én gang hentes trafikkens døgn pr. vært i hentevinduet igen, nu med fejl pr. vært (`v_fejl`). Ét kald pr. domæne.
+            let _ = lager.vaert_5xx_en_gang(&vaern::dag_noegle(nu_ms() - besoeg::BESOEG_DAGE * vaern::DOEGN_MS));
             let sprog = sprog_fra(&lager);
             app.manage(Tilstand {
                 lager: Mutex::new(lager),
@@ -2218,6 +2305,8 @@ pub fn run() {
                 token: token::Huske::default(),
                 siden_sidst: AtomicBool::new(false),
                 uden_asn: Mutex::default(),
+                uden_drift: Mutex::default(),
+                uden_vf: Mutex::default(),
                 uden_vaert: Mutex::default(),
                 laek_uden_filter: AtomicBool::new(false),
                 dagligt: AtomicBool::new(dagligt::startet_dagligt(setup_args.iter().cloned())),
@@ -2272,6 +2361,7 @@ pub fn run() {
             robotter,
             besoegende,
             subdomaener,
+            drift,
             login,
             login_stier,
             login_sti_saet,
@@ -2750,6 +2840,75 @@ mod tests {
                         let v = |art: &str, n: i64| (dag(i), art.to_string(), "hemmelig".to_string(), n);
                         s.gem_vaert(z, &[dag(i)], &[v("v_alle", 99), v("v_besoeg", 9)], "t").unwrap();
                         s.noter_vaert_fw(z, &dag(i), "t").unwrap();
+                    }
+                }
+            }
+            s
+        };
+        let (mut med, mut uden) = (byg(true), byg(false));
+        let (rm, ru) = (byg_overblik(&med, NU).unwrap(), byg_overblik(&uden, NU).unwrap());
+        assert_eq!(
+            serde_json::to_value(&rm).unwrap(),
+            serde_json::to_value(&ru).unwrap(),
+            "Overblik er det samme"
+        );
+        assert!(!serde_json::to_string(&rm).unwrap().contains("hemmelig"));
+        let (im, iu) = (notify::indst(&med).unwrap(), notify::indst(&uden).unwrap());
+        let bm = naeste_besked(&mut med, &rm, &im, NU).unwrap();
+        let bu = naeste_besked(&mut uden, &ru, &iu, NU).unwrap();
+        assert_eq!(bm, bu, "samme notifikation");
+        let b = bm.expect("a er rød: der er en notifikation at se på");
+        for sprog in [agent::Sprog::Da, agent::Sprog::En] {
+            let (titel, tekst) = notify::tekst(&b, sprog, &notify::dato_format(&med).unwrap());
+            assert!(!titel.contains("hemmelig") && !tekst.contains("hemmelig"), "{titel} / {tekst}");
+        }
+    }
+
+    /// V-DRIFT.1: fejl, cache og fejl pr. vært i databasen ændrer hverken Overblik, statussen eller notifikationen, og et værtsnavn står aldrig i dem. `status`
+    /// (52x) står i begge, så "Din server svarer ikke" regnes som før.
+    #[test]
+    fn drift_tal_naar_aldrig_overblik_eller_notifikationer() {
+        const NU: i64 = 1_793_693_280_000; // 2026-11-03T08:08:00Z
+        let dag = |i: i64| vaern::dag_noegle(NU - i * vaern::DOEGN_MS);
+        let byg = |med_drift: bool| {
+            let mut s = Store::i_hukommelse().unwrap();
+            let zoner: Vec<Zone> = ["a", "b"].iter().map(|z| zone(z, &format!("{z}.wi24rd.com"))).collect();
+            s.gem_zoner(1, &zoner, "t").unwrap();
+            s.gem_valgte(&["a".to_string(), "b".to_string()]).unwrap();
+            for z in ["a", "b"] {
+                for i in 1..=9 {
+                    let n = if z == "a" && i == 1 { 400 } else { 1 };
+                    let fw = (
+                        "fw".to_string(),
+                        ["Regel", "US", "AS", "/", "CPH", "GET", "firewallManaged", "block"].join("\t"),
+                        n,
+                    );
+                    s.gem_doegn(z, &dag(i), &[fw], &vaern::iso(NU - 3_600_000)).unwrap();
+                    s.gem_ekstra(
+                        z,
+                        &dag(i),
+                        &[("status".into(), "522".into(), 40), ("status".into(), "200".into(), 60)],
+                        "t",
+                    )
+                    .unwrap();
+                    if med_drift {
+                        let d = |art: &str, k: &str, n: i64| (art.to_string(), k.to_string(), n);
+                        s.gem_drift(
+                            z,
+                            &dag(i),
+                            &[
+                                d("d_time", "05", 100),
+                                d("d_fejl", "05\t530\t0", 90),
+                                d("d_forside", "05\t530", 9),
+                                d("d_cache", "hit", 3),
+                                d("d_cache_b", "hit", 9),
+                            ],
+                            "t",
+                        )
+                        .unwrap();
+                        let v = |art: &str, k: &str| (dag(i), art.to_string(), k.to_string(), 50);
+                        s.gem_vaert(z, &[dag(i)], &[v("v_fejl", "hemmelig\t530"), v("v_fejl_afvist", "")], "t")
+                            .unwrap();
                     }
                 }
             }

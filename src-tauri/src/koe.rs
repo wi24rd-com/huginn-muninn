@@ -136,6 +136,15 @@ pub trait Henter: Sync {
     fn vaert_fw<'a>(&'a self, _zone: &'a str, _fra: &'a str, _til: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
         async { Ok(()) }
     }
+    /// Henter og gemmer fejl- og cachetallene (`adgang::drift_query`) for ét færdigt døgn, der blev hentet før V-DRIFT.1 (V-DRIFT.1).
+    fn drift<'a>(&'a self, _zone: &'a str, _dag: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a {
+        async { Ok(()) }
+    }
+    /// Skal fejl- og cachetallene hentes for zonen? Nej, når Cloudflare har afvist aliaserne for den i denne kørsel (så spørges der ikke igen). Standarden er
+    /// nej, så en henter uden `drift` (som før V-DRIFT.1) ingen ekstra runde får.
+    fn drift_mulig(&self, _zone: &str) -> bool {
+        false
+    }
     /// Henter og gemmer zonens tilstand hos Cloudflare.
     fn tilstand<'a>(&'a self, zone: &'a str) -> impl Future<Output = Result<(), Fejl>> + Send + 'a;
     /// Henter og gemmer Cloudflares egne sikkerhedsfund for kontoen, højst én gang i timen (`sikkerhed::skal_hente`). Udfaldet noteres af henteren selv.
@@ -293,6 +302,11 @@ pub fn skal_hente(nu: i64, sidste_runde_slut: i64, forrige_tik: i64) -> bool {
 /// Som `skal_hente`, med en anden ventetid end en time (`NET_IGEN` efter en runde med netfejl). Ren funktion.
 pub fn skal_hente_efter(nu: i64, sidste_runde_slut: i64, forrige_tik: i64, vent_ms: i64) -> bool {
     nu.saturating_sub(sidste_runde_slut) >= vent_ms || nu.saturating_sub(forrige_tik) > TIK_MS + SPRING_MS
+}
+
+/// Mærket for et døgn, Cloudflare ikke længere har fejl og cache for (V-DRIFT.1): "ikke hentet", aldrig 0.
+fn drift_udenfor() -> Vec<(String, String, i64)> {
+    vec![("d_udenfor".to_string(), String::new(), 0)]
 }
 
 /// Er domænet stadig valgt? Kan listen ikke læses, gælder det, der stod ved rundens start.
@@ -556,6 +570,8 @@ impl Koe {
                     Err(e) if e.uden_for_opbevaring() => {
                         if let Ok(mut s) = lager.lock() {
                             let _ = s.gem_ekstra(&z.id, &dag, &[], &iso(nu()));
+                            // V-DRIFT.1: døgnet er "ikke hentet" for fejl og cache, aldrig 0, og spørges der ikke om igen.
+                            let _ = s.gem_drift(&z.id, &dag, &drift_udenfor(), &iso(nu()));
                         }
                     }
                     Err(e) if forbigaaende(&e) => return false,
@@ -781,6 +797,39 @@ impl Koe {
                     Err(e) => {
                         noter(Some(&e.to_string()));
                         opgiv();
+                    }
+                }
+                if self.sov(tempo).await {
+                    return true;
+                }
+            }
+        }
+        // V-DRIFT.1: fejl og cache for de døgn i hentevinduet, der blev hentet før skema 21 (eller uden aliaserne): ét kald pr. domæne og døgn, sidst og i
+        // samme tempo, så alt andet hentes som før. Nye døgn får tallene med i de ekstra tal ovenfor, så her er det kun efter opgraderingen. Afviser Cloudflare
+        // aliaserne for et domæne, spørges der ikke igen, mens programmet kører (`drift_mulig`). Kun en forbigående fejl gemmer resten til næste runde.
+        let mut opgivet: HashSet<&str> = HashSet::new();
+        for dag in adgang::vinduet(nu()) {
+            for z in &zoner {
+                if self.stoppet() {
+                    return false;
+                }
+                if opgivet.contains(z.id.as_str()) || !h.drift_mulig(&z.id) || !slaaet_til(lager, &z.id) {
+                    continue;
+                }
+                let hentet = lager.lock().ok().and_then(|s| s.hentet_drift(&z.id).ok()).unwrap_or_default();
+                if !adgang::mangler(&dag, &hentet, nu()) {
+                    continue;
+                }
+                match h.drift(&z.id, &dag).await {
+                    Ok(()) => paa_gemt(&z.id),
+                    Err(e) if e.uden_for_opbevaring() => {
+                        if let Ok(mut s) = lager.lock() {
+                            let _ = s.gem_drift(&z.id, &dag, &drift_udenfor(), &iso(nu()));
+                        }
+                    }
+                    Err(e) if forbigaaende(&e) => return false,
+                    Err(_) => {
+                        opgivet.insert(&z.id);
                     }
                 }
                 if self.sov(tempo).await {
@@ -1147,9 +1196,27 @@ mod tests {
         /// V-KONTI.1: zone → de forbindelser, der ser den (laveste først), og rundens forbindelser. Tomme = én forbindelse (1).
         ejere: HashMap<String, Vec<i64>>,
         alle_forbindelser: Vec<i64>,
+        /// V-DRIFT.1: `drift` slået til (som `KoeHenter`), kaldene og svar pr. zone (ingen = det går godt og gemmes i `ekstra_lager`).
+        drift_til: bool,
+        drift_kald: Mutex<Vec<(String, String)>>,
+        drift_svar: HashMap<String, Result<(), Fejl>>,
     }
 
     impl Henter for Falsk<'_> {
+        async fn drift(&self, zone: &str, dag: &str) -> Result<(), Fejl> {
+            self.drift_kald.lock().unwrap().push((zone.to_string(), dag.to_string()));
+            self.drift_svar.get(zone).cloned().unwrap_or(Ok(()))?;
+            if let Some(l) = self.ekstra_lager {
+                l.lock()
+                    .unwrap()
+                    .gem_drift(zone, dag, &[("d_time".into(), "05".into(), 1)], "t")
+                    .unwrap();
+            }
+            Ok(())
+        }
+        fn drift_mulig(&self, _zone: &str) -> bool {
+            self.drift_til
+        }
         async fn zone(&self, zone: &str, paa: &mut (dyn FnMut(&str, Doegnudfald<'_>) + Send)) -> Result<usize, Fejl> {
             let n = {
                 let mut l = self.lager.lock().unwrap();
@@ -1412,6 +1479,9 @@ mod tests {
             ekstra_vaek: false,
             ejere: HashMap::new(),
             alle_forbindelser: Vec::new(),
+            drift_til: false,
+            drift_kald: Mutex::default(),
+            drift_svar: HashMap::new(),
         }
     }
 
@@ -1917,6 +1987,94 @@ mod tests {
         f.angreb_kald.lock().unwrap().clear();
         assert!(!ekstra(&koe, &lager, &f).await);
         assert!(f.angreb_kald.lock().unwrap().is_empty(), "hentes kun én gang");
+    }
+
+    /// V-DRIFT.1: døgnene i vinduet uden `hentet_drift` hentes én gang, ét kald pr. domæne og døgn, sidst i runden og kun for valgte domæner. Et døgn uden
+    /// for opbevaringen får mærket (aldrig 0), en afvisning stopper kun domænets drift-tal i runden, og en henter uden `drift` (som før) får ingen ekstra kald.
+    #[tokio::test(start_paused = true)]
+    async fn fejl_og_cache_hentes_en_gang_for_doegn_fra_foer_opgraderingen() {
+        let koe = Koe::default();
+        let lager = lager_med(&[
+            ("a", "a.wi24rd.com", None),
+            ("b", "b.wi24rd.com", None),
+            ("c", "c.wi24rd.com", None),
+        ]);
+        lager.lock().unwrap().gem_valgte(&["a".to_string(), "b".to_string()]).unwrap();
+        let d = |i: i64| dag_noegle(NU - i * DOEGN_MS);
+        for z in ["a", "b", "c"] {
+            for i in 1..=HENT_DAGE {
+                lager.lock().unwrap().gem_ekstra(z, &d(i), &[], "t").unwrap(); // hentet før skema 21
+            }
+        }
+        lager.lock().unwrap().gem_drift("a", &d(2), &[], "t").unwrap(); // allerede hentet
+                                                                        // Uden drift (standarden): ingen kald.
+        let mut f = falsk(&koe);
+        f.ekstra_lager = Some(&lager);
+        assert!(!ekstra(&koe, &lager, &f).await);
+        assert!(f.drift_kald.lock().unwrap().is_empty() && f.ekstra_kald.lock().unwrap().is_empty());
+        // Med drift: a får de 29 døgn, der mangler; b afviser; c er ikke valgt.
+        f.drift_til = true;
+        f.drift_svar.insert(
+            "b".into(),
+            Err(Fejl::GraphQl {
+                dag: None,
+                detalje: "unknown field cacheStatus".into(),
+            }),
+        );
+        assert!(!ekstra(&koe, &lager, &f).await);
+        let kald = f.drift_kald.lock().unwrap().clone();
+        assert_eq!(
+            kald.iter().filter(|(z, _)| z == "a").count(),
+            HENT_DAGE as usize - 1,
+            "ét kald pr. døgn, der mangler"
+        );
+        assert_eq!(kald.iter().filter(|(z, _)| z == "b").count(), 1, "afvist: domænet opgives i runden");
+        assert!(!kald.iter().any(|(z, _)| z == "c"), "kun valgte");
+        assert!(!kald.iter().any(|(_, dag)| *dag == d(2)), "hentet: ikke igen");
+        assert_eq!(kald[0], ("a".to_string(), d(1)), "nyeste først");
+        assert!(f.ekstra_kald.lock().unwrap().is_empty(), "de ekstra tal hentes ikke igen");
+        // Næste runde: a er hentet (en forbigående fejl ville ellers stoppe runden), og b er uden for opbevaringen: mærket, ikke 0, og ikke igen.
+        f.drift_kald.lock().unwrap().clear();
+        f.drift_svar.clear();
+        f.drift_svar.insert("a".into(), Err(Fejl::Vent));
+        f.drift_svar.insert(
+            "b".into(),
+            Err(Fejl::GraphQl {
+                dag: None,
+                detalje: "cannot request data older than 2678400s".into(),
+            }),
+        );
+        assert!(!ekstra(&koe, &lager, &f).await);
+        let kald = f.drift_kald.lock().unwrap().clone();
+        assert_eq!(kald.iter().filter(|(z, _)| z == "a").count(), 0, "a er hentet: intet igen");
+        assert_eq!(kald.len(), HENT_DAGE as usize);
+        f.drift_kald.lock().unwrap().clear();
+        assert!(!ekstra(&koe, &lager, &f).await);
+        assert!(f.drift_kald.lock().unwrap().is_empty(), "alt er hentet eller mærket");
+        let s = lager.lock().unwrap();
+        assert_eq!(s.hentet_drift("b").unwrap().len(), HENT_DAGE as usize);
+        assert_eq!(s.doegn_art("b", &d(1), "d_udenfor").unwrap(), [(String::new(), 0)]);
+        assert!(s.raekker("b", "0000-00-00").unwrap().is_empty(), "aldrig i Overblik");
+    }
+
+    /// V-DRIFT.1: er et døgn uden for opbevaringen for de ekstra tal, er det også "ikke hentet" for fejl og cache (mærket), så køen ikke spørger igen.
+    #[tokio::test(start_paused = true)]
+    async fn ekstra_uden_for_opbevaringen_maerker_ogsaa_drift() {
+        let koe = Koe::default();
+        let lager = lager_med(&[("a", "a.wi24rd.com", None)]);
+        let mut f = falsk(&koe);
+        f.ekstra_lager = Some(&lager);
+        f.ekstra_svar.insert(
+            "a".into(),
+            Err(Fejl::GraphQl {
+                dag: None,
+                detalje: "cannot request data older than 2678400s".into(),
+            }),
+        );
+        assert!(!ekstra(&koe, &lager, &f).await);
+        let s = lager.lock().unwrap();
+        assert_eq!(s.hentet_drift("a").unwrap().len(), HENT_DAGE as usize);
+        assert_eq!(s.doegn_art("a", &dag_noegle(NU - DOEGN_MS), "d_udenfor").unwrap().len(), 1);
     }
 
     #[tokio::test(start_paused = true)]
