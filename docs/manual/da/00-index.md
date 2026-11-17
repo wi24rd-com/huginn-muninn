@@ -17,7 +17,7 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 | [Installation](20-installation.md) | skal have programmet på din computer |
 | [Opsætning](30-opsaetning.md) | skal forbinde programmet med Cloudflare og vælge domæner |
 | [Opret API Token hos Cloudflare](31-cloudflare.md) | vil se trin for trin med skærmbilleder, hvad du gør i Cloudflares dashboard |
-| [Visningerne](40-visninger/overblik.md) | bruger programmet i hverdagen: Overblik, Siden sidst, Angreb, Robotter, Login, dit land, Besøgende, Teknologi |
+| [Visningerne](40-visninger/overblik.md) | bruger programmet i hverdagen: Overblik, Siden sidst, Angreb, Robotter, Login, dit land, Besøgende, Drift, Teknologi |
 | [Indstillinger](50-indstillinger.md) | vil ændre sprog, udseende, notifikationer eller API Token, eller vælge domæner |
 | [Notifikationer og baggrund](60-notifikationer.md) | vil forstå, hvornår programmet siger til, og hvad der sker, når vinduet er lukket |
 | [Data og historik](70-data.md) | vil vide, hvor tallene ligger, hvor længe, og hvordan du nulstiller |

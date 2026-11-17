@@ -53,8 +53,18 @@ pub const TRAFIK_DAGE: usize = 7;
 /// svar, så en enkelt fejl på et stille domæne ikke giver Hold øje. Procent som heltal, så grænsen er præcis.
 pub const SERVER_PROCENT: i64 = 20;
 pub const SERVER_MIN_SVAR: i64 = 50;
-/// Cloudflare kunne ikke få et brugbart svar fra serveren. Cloudflares fejlside beskriver 520–526; 527 står med, så hele rækken er dækket.
-pub const SERVER_KODER: std::ops::RangeInclusive<i64> = 520..=527;
+/// Cloudflare kunne ikke få et brugbart svar fra serveren. Cloudflares fejlside beskriver 520–526; 527 står med, så hele rækken er dækket. 530
+/// (V-DRIFT.1 B2, D4): Cloudflares side "Error 530" siger, at Cloudflare ikke kan slå serverens værtsnavn op og derfor ikke kan få forbindelse til
+/// serveren. 528 og 529 er ikke med: Cloudflares oversigt over 5xx-fejl nævner dem ikke.
+pub struct ServerKoder;
+
+impl ServerKoder {
+    pub fn contains(&self, kode: &i64) -> bool {
+        (520..=527).contains(kode) || *kode == 530
+    }
+}
+
+pub const SERVER_KODER: ServerKoder = ServerKoder;
 /// "Ligner rekognoscering" (R1): døgnet har mindst så mange forskellige stier med 404 og mindst `REKOG_FAKTOR` gange medianen af de `REKOG_BASIS` døgn før.
 pub const REKOG_MIN: i64 = 100;
 pub const REKOG_FAKTOR: f64 = 3.0;
@@ -1094,6 +1104,16 @@ pub struct ServerFejl {
     pub fejl: i64,
     pub svar: i64,
     pub procent: i64,
+    /// V-DRIFT.1 B2: døgnets længste spænd af timer i træk med fejl (`drift::mellem`), i brugerens lokale tid. `None`: intet spænd, eller timetallene
+    /// er ikke hentet. Sættes af `byg_overblik`; ændrer aldrig status.
+    pub mellem: Option<Mellem>,
+}
+
+/// "mellem kl. {fra} og {til}": klokkeslæt som programmets øvrige ("02.00"), lokal tid.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct Mellem {
+    pub fra: String,
+    pub til: String,
 }
 
 /// Art `status` er svarkoderne fra Cloudflares edge (`adgang::ADGANG_QUERY`). Noget af det er svaret fra cachen eller stoppet undervejs og
@@ -1111,6 +1131,7 @@ pub fn server_fejl(rows: &[Raekke], dag: &str) -> Option<ServerFejl> {
         fejl,
         svar,
         procent: (fejl as f64 * 100.0 / svar as f64).round() as i64,
+        mellem: None,
     })
 }
 
@@ -2069,13 +2090,49 @@ mod tests {
         assert_eq!(server_fejl(&med(9, 41), &dag), None, "18 %");
         assert_eq!(server_fejl(&med(20, 80 + 1), &dag), None, "under 20 %");
         assert_eq!(server_fejl(&med(10, 39), &dag), None, "49 svar, selv om andelen er over 20 %");
-        for kode in ["520", "521", "523", "524", "525", "526", "527"] {
+        // V-DRIFT.1 B2 (D4): 530 er med; 528 og 529 er ikke.
+        for kode in ["520", "521", "523", "524", "525", "526", "527", "530"] {
             assert!(server_fejl(&[svarkode(1, kode, 60)], &dag).is_some(), "{kode}");
         }
-        for kode in ["519", "528", "530", "500", "502", "404", "x"] {
+        for kode in ["519", "528", "529", "531", "500", "502", "404", "x"] {
             assert_eq!(server_fejl(&[svarkode(1, kode, 60)], &dag), None, "{kode}");
         }
         assert_eq!(server_fejl(&[svarkode(2, "522", 60)], &dag), None, "et andet døgn");
+    }
+
+    /// V-DRIFT.1 B2 (D4): 530 alene, 530 sammen med 52x, og 528/529 tæller ikke som fejl (men som svar). Tærsklerne er de samme.
+    #[test]
+    fn server_fejl_med_530() {
+        let dag = d(1);
+        let alene = server_fejl(&[svarkode(1, "530", 10), svarkode(1, "200", 40)], &dag).unwrap();
+        assert_eq!(
+            (alene.fejl, alene.svar, alene.procent),
+            (10, 50, 20),
+            "530 alene, præcis på begge tærskler"
+        );
+        assert_eq!(server_fejl(&[svarkode(1, "530", 9), svarkode(1, "200", 41)], &dag), None, "18 %");
+        assert_eq!(
+            server_fejl(&[svarkode(1, "530", 10), svarkode(1, "200", 39)], &dag),
+            None,
+            "49 svar"
+        );
+        // Hverken 522 eller 530 når 20 % alene; sammen gør de.
+        let sammen = [svarkode(1, "522", 6), svarkode(1, "530", 6), svarkode(1, "200", 48)];
+        assert_eq!(server_fejl(&sammen[..1], &dag), None);
+        let s = server_fejl(&sammen, &dag).unwrap();
+        assert_eq!((s.fejl, s.svar, s.procent), (12, 60, 20));
+        // 528 og 529 er svar i nævneren, aldrig fejl i tælleren.
+        let med = [svarkode(1, "522", 10), svarkode(1, "528", 20), svarkode(1, "529", 20)];
+        let s = server_fejl(&med, &dag).unwrap();
+        assert_eq!((s.fejl, s.svar, s.procent), (10, 50, 20));
+        assert_eq!(server_fejl(&[svarkode(1, "528", 30), svarkode(1, "529", 30)], &dag), None);
+        assert!(SERVER_KODER.contains(&530) && !SERVER_KODER.contains(&528) && !SERVER_KODER.contains(&529));
+        assert_eq!(s.mellem, None, "spændet sættes kun af byg_overblik");
+        // Status er den samme som for 52x: Hold øje, aldrig Handl.
+        let z = zone("a.wi24rd.com");
+        let ro: Vec<Raekke> = (2..=30).map(|i| alle(i, 100)).collect();
+        let nede = [ro, vec![svarkode(1, "530", 30), svarkode(1, "200", 70)]].concat();
+        assert_eq!(raekke(&z, &hentet_alt(), &nede, NU).status, Status::Gul);
     }
 
     /// Et trafikspring kan være et overbelastningsforsøg, Cloudflare lod passere: det giver Hold øje. 52x giver også Hold øje, og ingen af dem sænker rød.

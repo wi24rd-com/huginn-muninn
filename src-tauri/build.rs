@@ -22,6 +22,7 @@ const KOMMANDOER: &[&str] = &[
     "besoegende",
     "subdomaener",
     "drift",
+    "drift_fejl",
     "login",
     "login_stier",
     "login_sti_saet",

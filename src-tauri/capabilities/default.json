@@ -34,6 +34,7 @@
     "allow-besoegende",
     "allow-subdomaener",
     "allow-drift",
+    "allow-drift-fejl",
     "allow-login",
     "allow-login-stier",
     "allow-login-sti-saet",

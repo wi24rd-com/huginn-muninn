@@ -73,6 +73,15 @@ Hedder de to forbindelser det samme (begge har kontoens navn hos Cloudflare), å
 
 **Mit subdomæne står der ikke.** Afsnittet **Subdomæner** viser kun navne med trafik i den valgte periode, og kun trafik, der går gennem Cloudflare. Tjek i Cloudflares DNS, om navnet har orange sky. Står det som «DNS only» (grå sky), går trafikken direkte til serveren, og Cloudflare har ingen tal for det. Har domænet kun trafik på ét navn, står afsnittet slet ikke. Programmet har tal pr. subdomæne fra ca. 30 dage før opdateringen; ældre dage har ingen tal pr. subdomæne, og så står der **Pr. subdomæne fra …**.
 
+## Drift
+
+| Teksten | Betyder | Gør |
+|---|---|---|
+| **Tallene er ikke hentet for perioden endnu.** eller **–** med **Ikke hentet** på en flise (i [Drift](40-visninger/drift.md)) | Fejl pr. time og cache er ikke hentet for dagene i perioden. De hentes i baggrunden efter de andre tal, og efter opdateringen tager de sidste ca. 30 dage lidt tid. Dage, der er ældre end det, Cloudflare gemmer, får aldrig tal. Et **–** er aldrig 0. | Vent, til fodlinjen siger, at alt er hentet. Vælg en kortere periode, hvis den går længere tilbage end linjen **Fejl pr. time fra …**. |
+| **Cloudflare afviste forespørgslen om fejl og cache for et domæne. Programmet prøver igen, næste gang det starter.** | Cloudflare tog ikke imod spørgsmålet om de nye tal for domænet, fx fordi planen ikke har et af felterne. Alle andre tal hentes og vises som før. | Ingenting. Programmet spørger igen ved næste start. |
+| **{n} dage er ikke med: Cloudflare sendte flere rækker, end programmet kan hente på én gang.** (i Drift) | De dage havde så mange forskellige svar, at Cloudflares svar stod på det højeste antal rækker. Programmet viser hellere intet tal for de dage end et for lavt. | Ingenting. |
+| **Findes ikke pr. subdomæne** | Timer med fejl, forsiden og din servers egne fejl findes kun for hele domænet. | Fjern filteret pr. subdomæne (**×** på chippen). |
+
 ## Det er ikke en fejl
 
 - **Status "Ukendt"** eller **"Ingen tal endnu – henter"**: domænet er lige valgt. Vent på hentningen.

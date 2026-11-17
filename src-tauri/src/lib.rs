@@ -883,6 +883,10 @@ fn byg_overblik(lager: &Store, nu: i64) -> Result<Vec<overblik::Raekke1>, Fejl> 
         let mut r = r.clone();
         r.tendens = overblik::efter_boelgen(radar::tendens_for(&r, rows, &waf), &andre, &r.status_dag);
         r.forstyrrelse = r.server.as_ref().and_then(|s| radar::forstyrrelse(&udfald, &land, &s.dag));
+        // V-DRIFT.1 B2: tidsrummet til "Din server svarer ikke". Kun teksten; status er afgjort ovenfor.
+        if let Some(s) = r.server.as_mut() {
+            s.mellem = drift::mellem(lager, &r.id, &s.dag, &tz)?;
+        }
         let m = overblik::moenstre(
             &r,
             rows,
@@ -1325,6 +1329,31 @@ async fn drift(
         laest.vaert_afvist_nu = tilstand.uden_vf.lock().map_err(|_| Fejl::Lager)?.contains(z);
     }
     Ok(drift::regn(&laest, &fra, &til))
+}
+
+/// Drift (V-DRIFT.1 B2): tabellen "Svarede dit website?" (ét kode-par pr. domæne med første og sidste time), spændene pr. domæne og, for ét domæne,
+/// værterne med fejl. Kun fra cachen (intet netværk). Samme omfang og periode som `drift`; domænerne står med programmets nøgle som i Overblikket, og
+/// værterne er de rensede labels som i `subdomaener`.
+#[tauri::command]
+async fn drift_fejl(
+    zone: Option<String>,
+    fra: String,
+    til: String,
+    vaert: Option<String>,
+    tilstand: State<'_, Tilstand>,
+) -> Svar<drift::FejlUd> {
+    vaert::tjek_periode(&fra, &til)?;
+    let vaert = besoeg::tjek_vaert(vaert)?;
+    let zone = zone.map(|z| vaern::tjek_zone(&z)).transpose()?;
+    if vaert.is_some() && zone.is_none() {
+        return Err(Fejl::UgyldigtFilter);
+    }
+    let lager = laas(&tilstand)?;
+    let zoner: Vec<String> = match &zone {
+        Some(z) => vec![z.clone()],
+        None => lager.zoner_til()?.into_iter().map(|z| z.id).collect(),
+    };
+    Ok(drift::regn_fejl(&drift::laes(&lager, &zoner, &fra, vaert.as_deref())?, &fra, &til))
 }
 
 /// Login: de gemte tal for domænets login-stier, kun fra cachen (intet netværk).
@@ -2360,6 +2389,7 @@ pub fn run() {
             dyk,
             robotter,
             besoegende,
+            drift_fejl,
             subdomaener,
             drift,
             login,
@@ -2930,6 +2960,93 @@ mod tests {
         for sprog in [agent::Sprog::Da, agent::Sprog::En] {
             let (titel, tekst) = notify::tekst(&b, sprog, &notify::dato_format(&med).unwrap());
             assert!(!titel.contains("hemmelig") && !tekst.contains("hemmelig"), "{titel} / {tekst}");
+        }
+    }
+
+    /// V-DRIFT.1 B2: tre timer i træk med fejl i statusdøgnet giver "mellem kl. … og …" i Overblik og i notifikationen, i lokal tid. Status og hvem der
+    /// får besked er de samme som uden timetallene, og et værtsnavn står hverken i rækken eller i beskeden.
+    #[test]
+    fn timespaendet_staar_i_overblik_og_notifikation() {
+        const NU: i64 = 1_793_693_280_000; // 2026-11-03T08:08:00Z
+        let dag = |i: i64| vaern::dag_noegle(NU - i * vaern::DOEGN_MS);
+        let byg = |med_timer: bool| {
+            let mut s = Store::i_hukommelse().unwrap();
+            s.gem_zoner(1, &[zone("a", "a.wi24rd.com")], "t").unwrap();
+            s.gem_valgte(&["a".to_string()]).unwrap();
+            // Vintertid i København: UTC+1.
+            s.gem_indstilling(notify::TIDSZONE, "[[0,60]]").unwrap();
+            s.gem_indstilling(notify::NIVEAU, "alt").unwrap();
+            for i in 1..=9 {
+                let fw = (
+                    "fw".to_string(),
+                    ["Regel", "US", "AS", "/", "CPH", "GET", "firewallManaged", "block"].join("\t"),
+                    1,
+                );
+                s.gem_doegn("a", &dag(i), &[fw], &vaern::iso(NU - 3_600_000)).unwrap();
+                s.gem_ekstra(
+                    "a",
+                    &dag(i),
+                    &[
+                        ("status".into(), "530".into(), if i == 1 { 40 } else { 0 }),
+                        ("status".into(), "200".into(), 60),
+                    ],
+                    "t",
+                )
+                .unwrap();
+            }
+            if med_timer {
+                let d = |art: &str, k: &str, n: i64| (art.to_string(), k.to_string(), n);
+                let mut rk = Vec::new();
+                for hh in ["22", "23"] {
+                    rk.extend([d("d_time", hh, 10), d("d_fejl", &format!("{hh}\t530\t0"), 10)]);
+                }
+                rk.extend([d("d_time", "21", 20), d("d_fejl", "21\t530\t0", 20), d("d_time", "12", 60)]);
+                s.gem_drift("a", &dag(1), &rk, "t").unwrap();
+                let v = |art: &str, k: &str| (dag(1), art.to_string(), k.to_string(), 40);
+                s.gem_vaert("a", &[dag(1)], &[v("v_fejl", "hemmelig\t530")], "t").unwrap();
+            }
+            s
+        };
+        let (mut med, mut uden) = (byg(true), byg(false));
+        let (rm, ru) = (byg_overblik(&med, NU).unwrap(), byg_overblik(&uden, NU).unwrap());
+        let (sm, su) = (rm[0].server.clone().expect("530 tæller"), ru[0].server.clone().expect("530 tæller"));
+        assert_eq!(
+            sm.mellem,
+            Some(overblik::Mellem {
+                fra: "22.00".into(),
+                til: "01.00".into()
+            }),
+            "21–23 UTC er 22.00–01.00 lokal tid, hen over midnat"
+        );
+        assert_eq!(su.mellem, None, "uden timetal er teksten som før");
+        assert_eq!((sm.fejl, sm.svar, sm.procent), (su.fejl, su.svar, su.procent));
+        assert_eq!(
+            (rm[0].status, rm[0].angreb_status),
+            (ru[0].status, ru[0].angreb_status),
+            "timerne ændrer aldrig status"
+        );
+        assert_eq!(rm[0].status, overblik::Status::Gul);
+        // Bortset fra spændet er rækken den samme.
+        let uden_mellem = |r: &overblik::Raekke1| {
+            let mut v = serde_json::to_value(r).unwrap();
+            v["server"]["mellem"] = serde_json::Value::Null;
+            v
+        };
+        assert_eq!(uden_mellem(&rm[0]), uden_mellem(&ru[0]));
+        assert!(!serde_json::to_string(&rm).unwrap().contains("hemmelig"));
+        let (im, iu) = (notify::indst(&med).unwrap(), notify::indst(&uden).unwrap());
+        let bm = naeste_besked(&mut med, &rm, &im, NU).unwrap().expect("gul melder på Alt");
+        let bu = naeste_besked(&mut uden, &ru, &iu, NU).unwrap().expect("gul melder på Alt");
+        for (sprog, mellem) in [
+            (agent::Sprog::Da, ", mellem kl. 22.00 og 01.00."),
+            (agent::Sprog::En, ", between 22.00 and 01.00."),
+        ] {
+            let fmt = notify::dato_format(&med).unwrap();
+            let ((titel, tekst), (titel_u, tekst_u)) = (notify::tekst(&bm, sprog, &fmt), notify::tekst(&bu, sprog, &fmt));
+            assert!(tekst.contains(mellem), "{tekst}");
+            assert_eq!(titel, titel_u);
+            assert_eq!(tekst.replace(&mellem[..mellem.len() - 1], ""), tekst_u, "kun tidsrummet er nyt");
+            assert!(!format!("{titel}{tekst}").contains("hemmelig") && !format!("{titel}{tekst}").contains('@'));
         }
     }
 

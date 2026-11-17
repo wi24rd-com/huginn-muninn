@@ -27,6 +27,7 @@ At night (until 03:00 UTC), before yesterday is fully fetched, it shows the stat
 | A domain card | [Attacks](vaernet.md) for the domain |
 | The chip with the status or label ("Act", "Looks …") | The guide: what it means, and what you do |
 | A combined line ("2 domains: nothing unusual") | [Overview](overblik.md) |
+| **Your server did not answer: see the hours in Health** (on a domain whose server did not answer) | [Health](drift.md) for the domain and the day |
 | The line about a new AI robot | The robot in [Attacks](vaernet.md) |
 | **To the overview** | [Overview](overblik.md) |
 

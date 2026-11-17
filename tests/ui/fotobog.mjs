@@ -1,6 +1,7 @@
 // Fotobog: et skærmbillede af hver visning i sider.mjs, i headless Chrome, uden at starte programmet og uden netværk ud af maskinen.
 // Brug: npm run test:foto. Matrix: tema × sprog × størrelse; HM_FOTO_MATRIX=lille giver kun light/da/1200×860.
 // Output: tests/ui/out/<dato>/fotobog/<id>--<tema>-<sprog>-<BxH>.png + manifest.json. HM_FOTO_UD overstyrer mappen.
+// HM_FOTO_STR vælger størrelserne (fx HM_FOTO_STR='1100x800,1400x900'; V-DRIFT.1 B2).
 // HM_FOTO_SIDER vælger sider efter id, kommasepareret; * til sidst er et præfiks (fx HM_FOTO_SIDER='konti-*').
 // En side kan have fokus: en vælger, der skal have fokus og stå helt inden for sin dialogs rulleflade, når billedet tages.
 // HM_CHROME peger på Chrome, HM_REPO på en anden kopi af repoet, HM_NU sætter uret (som i ui-roeg.mjs).
@@ -26,7 +27,7 @@ const CHROME = [process.env.HM_CHROME, '/Applications/Google Chrome.app/Contents
 if (!CHROME) { console.log('Chrome findes ikke (sæt HM_CHROME)'); process.exit(1); }
 const MINDST = 5 * 1024, VENT = 4500, TID = 120000;
 const lille = process.env.HM_FOTO_MATRIX === 'lille';
-const TEMAER = lille ? ['light'] : ['light', 'dark'], SPROG = lille ? ['da'] : ['da', 'en'], STOERRELSER = lille ? [[1200, 860]] : [[1200, 860], [1100, 560]];
+const TEMAER = lille ? ['light'] : ['light', 'dark'], SPROG = lille ? ['da'] : ['da', 'en'], STOERRELSER = process.env.HM_FOTO_STR ? process.env.HM_FOTO_STR.split(',').map(x => x.trim().split('x').map(Number)) : lille ? [[1200, 860]] : [[1200, 860], [1100, 560]];
 
 /* Mappen hedder efter kørslens rigtige dato, ikke testens ur: billederne skal kunne findes igen. */
 const nu = new Date(), to = n => String(n).padStart(2, '0'), dato = `${nu.getFullYear()}-${to(nu.getMonth() + 1)}-${to(nu.getDate())}`;

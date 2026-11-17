@@ -54,7 +54,7 @@
   function server(r) {
     if (!r.server) return '';
     const f = r.forstyrrelse, land = f && window.hmTegn.land(f.land);
-    const t = fmt(forgaars(r) ? T.hvServerNat : T.hvServer, { p: `${S.tal(r.server.procent)}${S.lang === 'da' ? ' %' : '%'}`, n: S.tal(r.server.svar) });
+    const t = fmt(forgaars(r) ? T.hvServerNat : T.hvServer, { p: `${S.tal(r.server.procent)}${S.lang === 'da' ? ' %' : '%'}`, n: S.tal(r.server.svar), mellem: r.server.mellem ? fmt(T.hvServerMellem, { a: r.server.mellem.fra, b: r.server.mellem.til }) : '' });
     return ` ${t}${f ? ' ' + (f.netvaerk ? fmt(T.hvForstyrrelseNet, { net: f.netvaerk, land }) : fmt(T.hvForstyrrelse, { land })) : ''}`;
   }
   /* Det, valgene under "Dit sites teknologi" gør (notify::tek_tekst), med mellemrum foran. */
@@ -243,14 +243,15 @@
     boks.hidden = false;
   }
 
-  /* "Din server svarer ikke" står på sin egen gule linje: hvert domæne åbner guiden for netop det. */
+  /* "Din server svarer ikke" står på sin egen gule linje: hvert domæne åbner Drift for domænet og dagen (V-DRIFT.1 B2), hvor timerne står. Guiden
+     åbnes stadig af "Hvad gør jeg?" i rækken. */
   function tegnServer() {
     const linje = $('server-linje'), rk = st.raekker.filter(r => r.server && !r.gammel);
     linje.hidden = !rk.length;
     linje.replaceChildren(...(rk.length ? [T.serverLinje, ' '] : []), ...rk.flatMap((r, i) => {
       const b = el('button', { type: 'button', className: 'link', textContent: r.navn });
-      b.setAttribute('aria-label', fmt(T.serverAabn, { navn: r.navn }));
-      b.addEventListener('click', () => guide(r.id));
+      b.setAttribute('aria-label', fmt(T.serverDrift, { navn: r.navn, d: S.datoLang(r.server.dag) }));
+      b.dataset.gaa = 'drift?' + new URLSearchParams({ zone: r.id, navn: r.navn, dag: r.server.dag });
       return [...(i ? [', '] : []), b];
     }));
   }

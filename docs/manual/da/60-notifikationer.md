@@ -53,7 +53,7 @@ Teksten er den samme, som står under **Hvorfor** i Overblik, på programmets sp
 | **Usædvanligt mange angreb** | Angreb i går mod ugen før, med hvad de gik efter. | Handl / Hold øje |
 | **Ligner målrettet** | Angrebene steg her, men ikke på dine andre domæner, og en stor del kom fra ét netværk. Sammenligner kun med dine valgte domæner, kræver mindst 3, og giver først besked, når døgnet efter er hentet. Til da står det som foreløbigt. Kommer også på et roligt domæne. | Standard og Alt |
 | **Ligner rekognoscering** og **Ligner DNS-rekognoscering** | Mange forskellige stier eller mange opslag på navne, der ikke findes, på én dag. Kun første døgn i en episode. | Kun hvis **Giv besked ved »Ligner rekognoscering«** er slået til |
-| **Din server svarer ikke** | En stor del af svarene i går var fejl 520–527. | Følger status |
+| **Din server svarer ikke** | En stor del af svarene i går var fejl, fordi Cloudflare ikke kunne nå eller finde din server (fejl 520–527 og 530). Havde tre eller flere timer i træk fejl, nævner beskeden tidsrummet i din lokale tid: "mellem kl. 01.00 og 05.00". | Følger status |
 | **Usædvanlig meget trafik** | Langt flere forespørgsler end normalt på én dag. | Følger status |
 | **Mails i dit domænes navn** | En ny afsender fejlede DMARC, eller andelen steg markant. Kræver DMARC Management hos Cloudflare. | Hold øje |
 | **Kodeord fra kendte læk** | Login-forsøg med lækkede kodeord. Mindst Hold øje; Handl, hvis serveren svarede 2xx eller 302. | Følger status |

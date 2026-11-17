@@ -4,6 +4,18 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-17 23:30 — Fanen Drift: fejl pr. time og cache
+#### Tilføjet
+- **Fanen Drift** (⌘8, Windows Ctrl+8), den ottende fane, med to afsnit. **Svarede dit website?** viser svar med fejl pr. dag og pr. time: fliserne **Kunne ikke nås**, **Din server svarede med en fejl**, **Timer med fejl** og **Forsiden svarede ikke**, en graf, hvor et klik på en dag viser dagens 24 timer i lokal tid, og en tabel med fejlen i klart sprog og første og sidste time. Tre eller flere timer i træk med fejl giver linjen **Mellem kl. … og … kunne Cloudflare ikke nå din server.** **Hvor meget Cloudflare klarede selv** viser, hvor stor en del af forespørgslerne Cloudflare svarede på fra sit lager, hvor meget data din server slap for at sende, og hvad der skete med resten.
+- **Fejl pr. subdomæne:** har ét domæne fejl på mindst to navne, står tabellen **Subdomæner med fejl**, og et klik viser fejlene for det subdomæne. Cachen gælder altid hele domænet.
+- Et tal, der ikke er hentet, står som **–** eller "Ikke hentet", aldrig som 0. API Tokenet skal ikke have flere rettigheder.
+#### Ændret
+- **Fejl 530 tæller med i "Din server svarer ikke"** sammen med 520–527: Cloudflare kunne ikke slå serverens navn op. Grænserne er de samme (mindst 20 % af mindst 50 svar), og det giver stadig Hold øje, aldrig Handl.
+- **Beskeden og Hvorfor nævner tidsrummet**, når tre eller flere timer i træk havde fejl: "mellem kl. 01.00 og 05.00", i din lokale tid. Linjen **Din server svarer ikke** i Overblik åbner Drift for domænet og dagen.
+- **Den lokale database opgraderes et trin** (skema 21) ved første start: én ny tabel over, hvilke dage der er hentet med fejl og cache. Ingen gemte tal ændres.
+- **Fejl og cache hentes ca. 30 dage tilbage ved opgraderingen**, én gang pr. domæne i det langsomme tempo. Ældre dage har ingen af tallene.
+- Vejledningen har et nyt kapitel om Drift og beskriver ændringerne i Overblik, Notifikationer, Data og historik, Fejlfinding, Tastaturgenveje og ordlisten.
+
 ## [1.1.0] — 2026-11-16
 
 Anden udgave til macOS: flere API Tokens side om side og subdomæner i Besøgende og Angreb; den lokale database opgraderes til skema 20.

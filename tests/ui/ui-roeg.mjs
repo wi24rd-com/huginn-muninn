@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import http from 'node:http';
 import { spawn, spawnSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
-import { dykFraVaern, SIDER, svar, VURD7, dom, NU_MS, UR_AAR, UR_STUB, flytAar, siderIAar, B2, B2C_HULLER, B2C_TEK, B2C_TRAFIK, B2C_VERDEN, KORT, LAND_UD, BESOEG_AAR, BESOEG_LAND, BESOEG_SIDE, BESOEG_UD, BES_404, BES_NOEGLE, BES_SIDER, LOGIN_STIER, LOGIN_UD, MED_TOKEN, NU_ISO, OVERBLIK, REACT, REGEL_HOVED, ROBOT_UD, SIDEN_RK, dage, dykDage, dykSvar, kortRegel, landDage, loginDage, raekke, vaernUd , subSvar, SUB_FIRE, SUB_EN, BES_VAERT, BES_SHOP, BES_API, dageFraTil } from './sider.mjs';
+import { dykFraVaern, SIDER, svar, VURD7, dom, NU_MS, UR_AAR, UR_STUB, flytAar, siderIAar, B2, B2C_HULLER, B2C_TEK, B2C_TRAFIK, B2C_VERDEN, KORT, LAND_UD, BESOEG_AAR, BESOEG_LAND, BESOEG_SIDE, BESOEG_UD, BES_404, BES_NOEGLE, BES_SIDER, LOGIN_STIER, LOGIN_UD, MED_TOKEN, NU_ISO, OVERBLIK, REACT, REGEL_HOVED, ROBOT_UD, SIDEN_RK, dage, dykDage, dykSvar, kortRegel, landDage, loginDage, raekke, vaernUd , subSvar, SUB_FIRE, SUB_EN, BES_VAERT, BES_SHOP, BES_API, dageFraTil, driftModel, DRIFT_NAT, DRIFT_ROLIG, DRIFT_IKKE, D_OVERBLIK, D_NAT } from './sider.mjs';
 const repo = process.env.HM_REPO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 if (!process.env.HM_NOTIF_IIFE) {
   const lock = fs.readFileSync(path.join(repo, 'src-tauri', 'Cargo.lock'), 'utf8');
@@ -631,7 +631,7 @@ const MED_SIDEN = { ...MED_TOKEN, hent_nu: { udfald: 'intet_at_hente', faerdige:
 {
   const html = ui('index.html');
   const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map(m => m[0]);
-  tjek('S CSP: ingen inline-scripts (hvert <script> har src og defer) og ingen style= i index.html', scripts.length === 17 && scripts.every(t => / src="assets\/(kit2\/)?[a-z-]+\.js"/.test(t) && (/ defer/.test(t) || /assets\/(gamle-valg|kit2\/tema)\.js/.test(t))) && !/<script\b[^>]*>[^<]+<\/script>/.test(html) && !/\sstyle=/.test(html) && !/\son[a-z]+=/.test(html), scripts.join(' '));
+  tjek('S CSP: ingen inline-scripts (hvert <script> har src og defer) og ingen style= i index.html', scripts.length === 18 && scripts.every(t => / src="assets\/(kit2\/)?[a-z-]+\.js"/.test(t) && (/ defer/.test(t) || /assets\/(gamle-valg|kit2\/tema)\.js/.test(t))) && !/<script\b[^>]*>[^<]+<\/script>/.test(html) && !/\sstyle=/.test(html) && !/\son[a-z]+=/.test(html), scripts.join(' '));
   const nye = ['gamle-valg.js', 'ramme.js', 'vg-tegn.js', 'velkomst.js', 'visning-vaernet.js', 'visning-overblik.js', 'visning-siden.js', 'visning-indstillinger.js', 'sprog.js', 'genforsoeg.js'].map(f => [f, udenKommentarer(ui('assets/' + f))]);
   tjek('S nyt UI: ingen innerHTML og ingen style-attributter i ramme og visninger', nye.every(([, k]) => !/innerHTML|setAttribute\(\s*'style'|\.style\./.test(k)), nye.filter(([, k]) => /innerHTML|\.style\./.test(k)).map(([f]) => f).join());
   const alleUi = ['index.html', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => f.endsWith('.js')).map(f => 'assets/' + f)].map(f => [f, udenKommentarer(ui(f))]);
@@ -1027,14 +1027,14 @@ const F3_SVAR = (v, overblik = OVERBLIK) => ({ ...MED_TOKEN, overblik, kortdata:
   await sov(60);
   const q = x => d.querySelector(x);
   tjek('Skallen: titellinje, bånd, navigationsrude, arbejdsflade med fodlinje og sidepanel står som kittets AppShell; intet window.Sprog', Boolean(q('.vindue > header.titel') && q('.vindue > #baand.cmd.enkel') && q('.vindue > .midte > nav#side.nav') && q('.vindue > .midte > .arb > main#indhold.flade') && q('.vindue > .midte > .arb > footer.fodl') && q('.vindue > .midte > aside#hjaelp.sidepanel')) && !w.Sprog && Boolean(w.Kit));
-  tjek('Skallen: de syv visninger er båndets faner (kittets som: faner) i fast rækkefølge, og ingen står til højre (Indstillinger er tandhjulet i titellinjen, med Om ved siden af); ingen gruppe Visninger, Hjælp eller Program i båndet, og Hent nu står forrest', [...d.querySelectorAll('#baand a.vk')].map(a => a.dataset.visning).join() === 'overblik,siden-sidst,vaernet,robotter,login,land,besoegende' && q('#baand').classList.contains('med-faner') && d.querySelectorAll('#baand .cmd-faner a.vfane').length === 7 && !q('#baand .cmd-faner .hoejre a') && !q('#baand [data-visning="indstillinger"]') && q('#baand .grp:first-child .cap').textContent === 'Data' && q('#baand .grp:first-child #hent-nu') !== null && ![...d.querySelectorAll('#baand .grp .cap')].some(c => ['Visninger', 'Hjælp', 'Program'].includes(c.textContent)) && !q('#skift') && !q('.vfaner, .skift') && q('header.titel').nextElementSibling.id === 'baand' && q('.titel .hoejre > button#hjaelp-knap + button#indst-knap.rk + button#om-knap.rk') !== null && q('#indst-knap').getAttribute('aria-label') === 'Indstillinger' && q('#baand a.vk[aria-current="page"]').dataset.visning === 'overblik', [...d.querySelectorAll('#baand a.vk')].map(a => a.dataset.visning).join());
+  tjek('Skallen: de otte visninger (V-DRIFT.1: Drift sidst) er båndets faner (kittets som: faner) i fast rækkefølge, og ingen står til højre (Indstillinger er tandhjulet i titellinjen, med Om ved siden af); ingen gruppe Visninger, Hjælp eller Program i båndet, og Hent nu står forrest', [...d.querySelectorAll('#baand a.vk')].map(a => a.dataset.visning).join() === 'overblik,siden-sidst,vaernet,robotter,login,land,besoegende,drift' && q('#baand').classList.contains('med-faner') && d.querySelectorAll('#baand .cmd-faner a.vfane').length === 8 && !q('#baand .cmd-faner .hoejre a') && !q('#baand [data-visning="indstillinger"]') && q('#baand .grp:first-child .cap').textContent === 'Data' && q('#baand .grp:first-child #hent-nu') !== null && ![...d.querySelectorAll('#baand .grp .cap')].some(c => ['Visninger', 'Hjælp', 'Program'].includes(c.textContent)) && !q('#skift') && !q('.vfaner, .skift') && q('header.titel').nextElementSibling.id === 'baand' && q('.titel .hoejre > button#hjaelp-knap + button#indst-knap.rk + button#om-knap.rk') !== null && q('#indst-knap').getAttribute('aria-label') === 'Indstillinger' && q('#baand a.vk[aria-current="page"]').dataset.visning === 'overblik', [...d.querySelectorAll('#baand a.vk')].map(a => a.dataset.visning).join());
   tjek('Skallen: båndet er uden faner med Hent nu som eneste primære kommando; landegruppen er skjult uden for Land', !q('#baand .tabs') && d.querySelectorAll('#baand .cb.pri').length === 1 && q('#baand .cb.pri').id === 'hent-nu' && q('#band-land').hidden && q('#baand').getAttribute('role') === 'group' && q('#baand').getAttribute('aria-label') === 'Kommandoer', q('#baand').getAttribute('aria-label'));
   { /* V-FANER.1: båndet under fanerne viser kun fanens egne grupper (Jans skitse 2026-11-13); Hent nu står forrest i alle. */
     const grp = [...d.querySelectorAll('#baand .grupper > .grp')], cap = g => g.querySelector('.cap').textContent;
     const forV = v => grp.filter(g => (g.dataset.kun || '').split(' ').includes(v)).map(g => cap(g) + ':' + (g.querySelector('.kn.baand-valg') ? g.querySelector('.kn').id : [...g.querySelectorAll('.cb, .baand-plads')].map(x => x.id).join('+'))).join(' | ');
-    const facit = { overblik: 'Vis:samlet | Domæner:vaelg-dom | Besked:giv-besked', 'siden-sidst': 'Vis:siden-skjul', vaernet: 'Periode:dyk-periode | Vis:dyk-slags | Filtre:dyk-nulstil | Teknologi:ret-tek | Egne datoer:dyk-datoer', robotter: 'Periode:robotter-periode | Vis:robot-angreb | Egne datoer:robotter-datoer', login: 'Periode:login-periode | Stier:login-ret-knap | Egne datoer:login-datoer', land: 'Vis:land-faner | Periode:land-mod', besoegende: 'Periode:besoegende-periode | Egne datoer:besoegende-datoer', teknologi: 'Teknologi:tek-tilbage+tek-nulstil-alle' };
+    const facit = { overblik: 'Vis:samlet | Domæner:vaelg-dom | Besked:giv-besked', 'siden-sidst': 'Vis:siden-skjul', vaernet: 'Periode:dyk-periode | Vis:dyk-slags | Filtre:dyk-nulstil | Teknologi:ret-tek | Egne datoer:dyk-datoer', robotter: 'Periode:robotter-periode | Vis:robot-angreb | Egne datoer:robotter-datoer', login: 'Periode:login-periode | Stier:login-ret-knap | Egne datoer:login-datoer', land: 'Vis:land-faner | Periode:land-mod', besoegende: 'Periode:besoegende-periode | Egne datoer:besoegende-datoer', drift: 'Periode:drift-periode | Egne datoer:drift-datoer', teknologi: 'Teknologi:tek-tilbage+tek-nulstil-alle' };
     const galt = Object.keys(facit).filter(v => forV(v) !== facit[v]);
-    tjek('V-FANER.1 hver fane har sine egne grupper i båndet, i skitsens rækkefølge (Egne datoer sidst), og Periode og Vis er store knapper (.cb), ikke segmentknapper', galt.length === 0 && !d.querySelector('#baand .seg') && d.querySelectorAll('#baand .baand-valg > .cb').length === 19, galt.map(v => v + ': ' + forV(v)).join(' || '));
+    tjek('V-FANER.1 hver fane har sine egne grupper i båndet, i skitsens rækkefølge (Egne datoer sidst), og Periode og Vis er store knapper (.cb), ikke segmentknapper', galt.length === 0 && !d.querySelector('#baand .seg') && d.querySelectorAll('#baand .baand-valg > .cb').length === 22, galt.map(v => v + ': ' + forV(v)).join(' || '));
     const synlige2 = () => grp.filter(g => !g.hidden).map(cap).join();
     tjek('V-FANER.1 på Overblik står kun Data, Vis, Domæner og Besked i båndet, og Hent nu er første gruppe i alle faner', synlige2() === 'Data,Vis,Domæner,Besked' && grp[0].querySelector('#hent-nu.pri') && !grp[0].dataset.kun, synlige2());
     tjek('V-FANER.1 det, der flyttede op, står ikke længere nede i visningerne', !d.querySelector('main #samlet, main #siden-skjul, main #dyk-periode, main #robotter-periode, main #login-periode, main #land-faner, main .land-mod-valg, main .dato-raekke, main .dyk-nulstil, main .seg[data-navn$="periode"]') && !/id="(samlet|siden-skjul|dyk-periode|robotter-periode|login-periode|land-faner)"/.test(ui('index.html')));
@@ -1387,7 +1387,7 @@ const dagFor = n => new Date(urNu() - n * 864e5).toISOString().slice(0, 10);
   tjek('P4 "?" på engelsk', hje.querySelector('[data-t=edgeH]').textContent === 'Edge – first line of defence' && ['network of data centres', 'anycast', 'nearest the attacker', 'orange cloud', 'own IP address', 'only accepts traffic from Cloudflare'].every(x => edgeE.includes(x)), edgeE);
   const filer = ['ui/assets/sprog.js', 'ui/index.html', 'README.md', 'README.da.md', ...fs.readdirSync(path.join(repo, 'ui', 'assets')).filter(f => /^visning-.*\.js$/.test(f)).map(f => 'ui/assets/' + f)];
   const fund = filer.filter(f => /\b(ved )?porten\b|\bkanten\b|\bthe gate\b/i.test(fs.readFileSync(path.join(repo, f), 'utf8')));
-  tjek(`P4 ingen "porten", "ved porten", "kanten" eller "the gate" (${filer.length} filer)`, fund.length === 0 && filer.length === 13, fund.join());
+  tjek(`P4 ingen "porten", "ved porten", "kanten" eller "the gate" (${filer.length} filer)`, fund.length === 0 && filer.length === 14, fund.join());
 }
 // ── P5: kortet ──
 {
@@ -2258,7 +2258,7 @@ const klik = async (s, e, ms = 40) => { e.dispatchEvent(new s.w.MouseEvent('clic
   const sidst = (x, c) => x.kald.filter(k => k[0] === c).pop();
   tjek('BES visningen står, og kaldet har zonen, 7 dage og intet land', synlige(d).join() === 'besoegende' && sidst(s, 'besoegende')[1].omfang.zone === 'z1' && sidst(s, 'besoegende')[1].periode === 'd7' && sidst(s, 'besoegende')[1].land === null, JSON.stringify(sidst(s, 'besoegende')));
   const punkt = x => x.d.querySelector('a[data-visning="besoegende"]');
-  tjek('BES menupunktet efter Land lige nu med Ctrl+7 (dansk, Windows) og ⌘7 (engelsk, macOS), og det er det aktuelle', [...s.d.querySelectorAll('#baand a.vk')].at(-2).dataset.visning === 'land' && [...s.d.querySelectorAll('#baand a.vk')].at(-1) === punkt(s) && punkt(s).textContent === 'Besøgende' && punkt(s).getAttribute('aria-keyshortcuts') === 'Control+7' && punkt(en).textContent === 'Visitors' && punkt(en).getAttribute('aria-keyshortcuts') === 'Meta+7' && punkt(s).getAttribute('aria-current') === 'page' && punkt(s).matches('.vfane'), punkt(s).textContent + ' / ' + punkt(en).textContent);
+  tjek('BES menupunktet efter Land lige nu (og før Drift, V-DRIFT.1) med Ctrl+7 (dansk, Windows) og ⌘7 (engelsk, macOS), og det er det aktuelle', [...s.d.querySelectorAll('#baand a.vk')].at(-3).dataset.visning === 'land' && [...s.d.querySelectorAll('#baand a.vk')].at(-2) === punkt(s) && punkt(s).textContent === 'Besøgende' && punkt(s).getAttribute('aria-keyshortcuts') === 'Control+7' && punkt(en).textContent === 'Visitors' && punkt(en).getAttribute('aria-keyshortcuts') === 'Meta+7' && punkt(s).getAttribute('aria-current') === 'page' && punkt(s).matches('.vfane'), punkt(s).textContent + ' / ' + punkt(en).textContent);
   tjek('BES titel og hjælp følger visningen, og Genveje i hjælpen har ⌘7/Ctrl+7', d.title.startsWith('Besøgende · wi24rd.com') && en.d.title.startsWith('Visitors · wi24rd.com') && !d.querySelector('.hjaelp-del[data-hjaelp=besoegende]').hidden && d.querySelector('[data-t=hjBesoeg]').textContent.startsWith('Her ser du') && d.getElementById('genveje').textContent.includes('Ctrl+7Besøgende') && en.d.getElementById('genveje').textContent.includes('⌘7Visitors'), d.title + ' / ' + en.d.getElementById('genveje').textContent);
   const fl = qa('.besoeg-fliser > *'), flise = t => fl.find(x => x.textContent.includes(t));
   tjek('BES fem fliser med tallene og "N af M dage"', fl.length === 5 && flise('i går').querySelector('.sflise-tal').textContent === '412' && flise('på 7 dage').textContent === 'Unikke besøgende på 7 dage2.3806 af 7 dage' && flise('på 30 dage').querySelector('.sflise-under') === null && flise('på et år').textContent === 'Unikke besøgende på et år131.900340 af 365 dage' && flise('Besøg på 30 dage').querySelector('.sflise-tal').textContent === '4.210', fl.map(x => x.textContent).join(' | '));
@@ -3322,7 +3322,7 @@ const DOMV = (fravalgte = [], x) => {
   tjek(`KS ingen rest i UI, menu, README og tests (${filer.length} filer)`, filer.length > 15 && fund.length === 0, fund.join());
   const s = side('', B2());
   await sov(30);
-  tjek('KS båndet har de syv visninger (Indstillinger er tandhjulet i titellinjen), og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('#baand [data-visning]').length === 7 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('a[data-visning]').length);
+  tjek('KS båndet har de otte visninger (Indstillinger er tandhjulet i titellinjen), og intet punkt er slået fra', !s.d.getElementById('kommer') && s.d.querySelectorAll('#baand [data-visning]').length === 8 && !s.d.querySelector('#side details') && !/\.kommer|kommerSnart/.test(ui('assets/app.css') + ui('assets/sprog.js')), s.d.querySelectorAll('a[data-visning]').length);
 }
 
 // ── Angreb er én side: overskriften, chips og Nulstil ──
@@ -3854,8 +3854,8 @@ const DOMV = (fravalgte = [], x) => {
     tjek('Land og site, egen gul linje med domænerne', !linje.hidden && /--warn-soft/.test(ui('assets/vagt.css').match(/\.server-linje \{[^}]*\}/)[0]) && linje.textContent === 'Din server svarer ikke: roed.wi24rd.com, nede.wi24rd.com', linje.textContent);
     tjek('Land og site, uden 52x står linjen ikke', ingen.d.getElementById('server-linje').hidden);
     const hv = rk('s1').querySelector('.hv-tekst').textContent;
-    tjek('Land og site, Hvorfor er ordret den samme som notify::aarsag, plus forstyrrelsen', hv === 'Ingen angreb i går. Din server svarer ikke: 33 % af 120 svar i går var fejl 520–527, så Cloudflare kunne ikke få svar fra din server. Se »Hvad gør jeg?«. Samme dag var der en forstyrrelse hos Fjord Net i Danmark.', hv);
-    tjek('Land og site, Hvorfor på engelsk', ove.d.querySelector('tr[data-zone="s1"] .hv-tekst').textContent === 'No attacks yesterday. Your server is not answering: 33% of 120 responses yesterday were errors 520–527, so Cloudflare could not get an answer from your server. See “What do I do?”. The same day there was a disruption at Fjord Net in Denmark.', ove.d.querySelector('tr[data-zone="s1"] .hv-tekst').textContent);
+    tjek('Land og site, Hvorfor er ordret den samme som notify::aarsag, plus forstyrrelsen', hv === 'Ingen angreb i går. Din server svarer ikke: 33 % af 120 svar i går var fejl, fordi Cloudflare ikke kunne nå eller finde din server. Se »Hvad gør jeg?«. Samme dag var der en forstyrrelse hos Fjord Net i Danmark.', hv);
+    tjek('Land og site, Hvorfor på engelsk', ove.d.querySelector('tr[data-zone="s1"] .hv-tekst').textContent === 'No attacks yesterday. Your server is not answering: 33% of 120 responses yesterday were errors because Cloudflare could not reach or find your server. See “What do I do?”. The same day there was a disruption at Fjord Net in Denmark.', ove.d.querySelector('tr[data-zone="s1"] .hv-tekst').textContent);
     tjek('Land og site, rød forbliver rød, og Hvorfor nævner også serveren', rk('r1').querySelector('.chip').className.includes('danger') && rk('r1').querySelector('.hv-tekst').textContent.includes('Din server svarer ikke'));
     const m = rk('t1').querySelector('.trafik-maerke'), mQ = new URLSearchParams(m.dataset.dyk);
     tjek('Trafik og huller, mærket åbner trafik-dyk for dagen og siger, hvad det er', m.textContent === 'Usædvanlig meget trafik' && mQ.get('dag') === '2026-11-02' && mQ.get('trafik') === '1' && mQ.get('zone') === 't1' && m.getAttribute('aria-label').includes('350.000'), m.getAttribute('aria-label'));
@@ -3864,7 +3864,7 @@ const DOMV = (fravalgte = [], x) => {
     rk('s1').querySelector('.hv-guide').click();
     await sov(40);
     const g = ov.d.getElementById('guide-indhold');
-    tjek('Land og site, Hvorfor uden angreb har et lille link til guiden, som forklarer 52x og DNS-posten', g && g.textContent.includes('Fejl 520–527') && g.textContent.includes('Din DNS peger måske på en IP-adresse, du ikke ejer længere') && g.textContent.includes('DNS → Records') && g.textContent.includes('Content') && g.textContent.includes('den, der har adressen nu') && !g.querySelector('.g-se') && !g.querySelector('.g-slut') && w0(ov).location.hash === '#overblik', g && g.textContent.slice(0, 200));
+    tjek('Land og site, Hvorfor uden angreb har et lille link til guiden, som forklarer 52x og DNS-posten', g && g.textContent.includes('Fejl 520–527 og 530') && g.textContent.includes('Din DNS peger måske på en IP-adresse, du ikke ejer længere') && g.textContent.includes('DNS → Records') && g.textContent.includes('Content') && g.textContent.includes('den, der har adressen nu') && !g.querySelector('.g-se') && !g.querySelector('.g-slut') && w0(ov).location.hash === '#overblik', g && g.textContent.slice(0, 200));
     const b2 = at.d.querySelectorAll('#vagt .vg-trafik .trafik-maerke'), n2 = at.d.querySelector('#vagt .vg-trafik-note');
     tjek('Land og site, Angreb: hver dag er en knap til dyk, med ental ved 1.000 og flertal ellers', b2.length === 2 && b2[0].textContent === 'Usædvanlig meget trafik den 27. oktober: 350.000 forespørgsler. Cloudflare stoppede 67 som angreb, og 349.933 slap igennem' && new URLSearchParams(b2[0].dataset.dyk).get('dag') === '2026-10-27' && new URLSearchParams(b2[0].dataset.dyk).get('trafik') === '1', b2[0] && b2[0].textContent);
     tjek('Trafik og huller, Angreb: noten påstår ikke, at det er harmløst', n2.textContent === 'Det, Cloudflare ikke stoppede, tæller ikke som angreb. Det kan være et forsøg på at overbelaste siden (DDoS), en robot, der løber løbsk, eller en fejl. En normal dag har 2.000 forespørgsler.', n2.textContent);
@@ -3882,8 +3882,8 @@ const DOMV = (fravalgte = [], x) => {
     tjek('Trafik den …: spørger trafik_dag for dagen, og resten af siden følger dagen', kald && kald[1].dag === '2026-11-02' && JSON.stringify(kald[1].omfang) === '{"zone":"z1"}' && JSON.stringify(sidsteDyk(td).periode) === '{"dag":"2026-11-02"}', JSON.stringify(kald));
     tjek('Trafik den …: overskrift, tal og normal', td.d.getElementById('vaernet-h').textContent === 'Angreb · wi24rd.com' && td.d.querySelector('#vg-trafik-dag h2').textContent === 'Trafik den 2. november' && tt.includes('410.000') && tt.includes('normalt 1.500') && tt.includes('Cloudflare stoppede'), td.d.getElementById('vaernet-h').textContent);
     tjek('Trafik-dyk: de tre fordelinger', ['Besøgende pr. land', 'Svarkoder', 'Robotter'].every(x => [...rodT.querySelectorAll('h3')].some(h => h.textContent === x)), [...rodT.querySelectorAll('h3')].map(h => h.textContent).join());
-    tjek('Trafik-dyk: sætninger i klarsprog', tt.includes('92 % kom fra ét land (USA)') && tt.includes('84 % fik 52x (din server svarede ikke)') && tt.includes('De fleste var robotten Googlebot'), tt.slice(0, 300));
-    tjek('Trafik-dyk: engelsk', tde.d.getElementById('vagt').textContent.includes('84% got 52x (your server did not answer)') && tde.d.querySelector('#vg-trafik-dag h2').textContent === 'Traffic on 2 November', tde.d.querySelector('#vg-trafik-dag h2')?.textContent);
+    tjek('Trafik-dyk: sætninger i klarsprog', tt.includes('92 % kom fra ét land (USA)') && tt.includes('84 % var fejl, fordi Cloudflare ikke kunne nå eller finde din server.') && tt.includes('De fleste var robotten Googlebot'), tt.slice(0, 300));
+    tjek('Trafik-dyk: engelsk', tde.d.getElementById('vagt').textContent.includes('84% were errors because Cloudflare could not reach or find your server.') && tde.d.querySelector('#vg-trafik-dag h2').textContent === 'Traffic on 2 November', tde.d.querySelector('#vg-trafik-dag h2')?.textContent);
     const raek = h => [...rodT.querySelectorAll('.dyk-lister > div')].find(x => x.querySelector('h3').textContent === h);
     const usa = raek('Besøgende pr. land').querySelectorAll('li');
     tjek('Trafik-dyk: et land med stoppede åbner dyk; et land uden har intet at åbne', usa[0].querySelector('button') && new URLSearchParams(usa[0].querySelector('button').dataset.dyk).get('land') === 'US' && !new URLSearchParams(usa[0].querySelector('button').dataset.dyk).has('trafik') && !usa[1].querySelector('button'));
@@ -4185,7 +4185,7 @@ const DOMV = (fravalgte = [], x) => {
       /* DMARC-afsnittet og den åbne kolonnemenu. */
       const TEK5 = { domaener: [{ zone: 'z1', navn: 'eksempel.wi24rd.com', valg: { react: ['bruger', false] }, antal: { react: 4 } }], katalog: [{ tek: 'react', navn: 'React', gruppe: 'ramme', angreb: 4, set: true, vis: true, ny: false }] };
       const FIX5 = koer('fix5', tema, { email_oversigt: { mails: 1200, fejlet: 41, afsendere: 2, hentede_dage: 30, fejl: null, liste: [{ afsender: 'Ond Afsender', land: 'RU', mails: 40, fejlet: 40 }, { afsender: '', land: '', mails: 9, fejlet: 1 }] }, teknologi_side: TEK5 }, [{ navn: 'Angreb med DMARC', hash: 'vaernet?' + dom }, { navn: '#teknologi med åben kolonnemenu', hash: 'teknologi', aabn: ['.tek-kol-knap'] }]);
-      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [OPS]), koer('guide1', tema, G1.ekstra, [G1]), koer('guide2', tema, G2.ekstra, [G2]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST]), ...[...new Set(SIDER.filter(s => s.id.startsWith('konti-') || s.id.startsWith('subdom-')).map(s => s.ekstra))].map((e, i) => koer('ekstra' + i, tema, e, SIDER.filter(s => s.ekstra === e)))];
+      const r = [koer('alt', tema, {}, MED), B3, FIX3, FIX5, KAL, koer('serveren', tema, { overblik: B2B_OVERBLIK, vaern_cache: { ...vaern, trafik: B2B_TRAFIK }, vaern_oversigt: { ...vaern, trafik: B2B_TRAFIK } }, [{ navn: 'Overblik med server og trafik', hash: 'overblik' }, { navn: 'Angreb med trafik', hash: 'vaernet?' + dom }]), koer('opsaetning', tema, OPS.ekstra, [OPS]), koer('guide1', tema, G1.ekstra, [G1]), koer('guide2', tema, G2.ekstra, [G2]), koer('velkomst', tema, FRA.ekstra, [FRA]), koer('estimat', tema, EST.ekstra, [EST]), ...[...new Set(SIDER.filter(s => s.ekstra && (s.id.startsWith('konti-') || s.id.startsWith('subdom-') || s.id.startsWith('drift-'))).map(s => s.ekstra))].map((e, i) => koer('ekstra' + i, tema, e, SIDER.filter(s => s.ekstra === e)))];
       /* Gradienten er lysest længst mod højre, så båndet måles også i det smalleste vindue og i standardvinduet. */
       const smalle = [1100, 1200].map(b => koer('baand' + b, tema, {}, [{ navn: `skallen ved ${b} px`, hash: 'vaernet?samlet=1' }], b));
       const sider = r.flatMap(x => (x ? x.sider : [])), ud = [...r, ...smalle].flatMap(x => (x ? x.ud : [])), klasser = new Set(sider.flatMap(s => s.klasser));
@@ -5491,6 +5491,234 @@ const DOMV = (fravalgte = [], x) => {
   const Tda = side('', B2(), 'da').w.hmSprog.T, Ten = side('', B2(), 'en').w.hmSprog.T;
   const NYE = ['henterBes', 'henterAng', 'henterDage', 'henterBesDage', 'henterAngDage', 'ikkeHentet'], ph = t => [...new Set(t.match(/\{\w+/g) || [])].sort().join();
   tjek('FIX2 da/en-paritet: de nye nøgler (T.sub og T.bes.robotNoteVaert) findes på begge sprog med samme pladsholdere og forskellig tekst', NYE.every(k => typeof Tda.sub[k] === 'string' && Tda.sub[k] && ph(Tda.sub[k]) === ph(Ten.sub[k]) && Tda.sub[k] !== Ten.sub[k]) && Tda.bes.robotNoteVaert && Ten.bes.robotNoteVaert && Tda.bes.robotNoteVaert !== Ten.bes.robotNoteVaert && Tda.bes.robotNote.startsWith(Tda.bes.robotNoteVaert.slice(0, -1)) && Ten.bes.robotNote.startsWith(Ten.bes.robotNoteVaert.slice(0, -1)));
+}
+
+// ── V-DRIFT.1 B2: fanen Drift (fejl pr. dag og time, cache, filteret pr. subdomæne) ──
+{
+  const DOM = 'zone=z1&navn=wi24rd.com', sidst = (x, c) => x.kald.filter(k => k[0] === c).pop();
+  const DR = (m, x) => DYK({ valg_hent: ['z1', 'z2', 'z3'], overblik: OVERBLIK, drift: m.drift, drift_fejl: m.drift_fejl, trafik_dag: B2C_TRAFIK, ...x });
+  const s = side('#drift?' + DOM, DR(DRIFT_NAT)), en = side('#drift?' + DOM, DR(DRIFT_NAT), 'en', 'macos');
+  await sov(120);
+  const { d, w } = s, q = x => d.querySelector('#visning-drift ' + x), qa = x => [...d.querySelectorAll('#visning-drift ' + x)];
+  const hash = x => x.w.location.hash, par = x => new URLSearchParams(hash(x).split('?')[1] || '');
+  const fliser = (x, k = '.drift-fliser:not(.drift-cache-fliser)') => [...x.d.querySelectorAll(`#visning-drift ${k} > *`)].map(f => [f.querySelector('.sflise-tal').textContent, f.textContent]);
+  const flise = (x, k) => x.d.querySelector(`#visning-drift .drift-${k}`), maalAf = f => (f ? (f.matches('[data-gaa]') ? f : f.querySelector('[data-gaa]')) : null);
+  const tabel = x => [...x.d.querySelectorAll('#visning-drift #drift-fejl .drift-tabel tbody tr')].map(r => [...r.children].map(c => c.textContent));
+
+  // Fanen, genvejen og rammen.
+  const faner = x => [...x.d.querySelectorAll('#baand a.vk')], punkt = x => x.d.querySelector('a[data-visning="drift"]');
+  tjek('DRIFT fanen er den ottende og sidste, efter Besøgende, med Ctrl+8 (dansk, Windows) og ⌘8 (engelsk, macOS), og den er den aktuelle', faner(s).length === 8 && faner(s).at(-2).dataset.visning === 'besoegende' && faner(s).at(-1) === punkt(s) && punkt(s).textContent === 'Drift' && punkt(s).getAttribute('aria-keyshortcuts') === 'Control+8' && punkt(en).textContent === 'Health' && punkt(en).getAttribute('aria-keyshortcuts') === 'Meta+8' && punkt(s).getAttribute('aria-current') === 'page' && punkt(s).matches('.vfane') && d.querySelectorAll('#baand a.vk[aria-current="page"]').length === 1, faner(s).map(a => a.dataset.visning).join());
+  tjek('DRIFT titel og hjælp følger visningen, og Genveje i hjælpen har ⌘8/Ctrl+8', synlige(d).join() === 'drift' && d.title.startsWith('Drift · wi24rd.com') && en.d.title.startsWith('Health · wi24rd.com') && !d.querySelector('.hjaelp-del[data-hjaelp=drift]').hidden && d.querySelector('[data-t=hjDrift]').textContent.startsWith('Her ser du') && d.getElementById('genveje').textContent.includes('Ctrl+8Drift') && en.d.getElementById('genveje').textContent.includes('⌘8Health'), d.title);
+  tjek('DRIFT kaldene: domænet, de seneste 7 hele dage (til og med i går) og intet subdomæne, til både drift og drift_fejl', JSON.stringify(sidst(s, 'drift')[1]) === JSON.stringify({ zone: 'z1', fra: '2026-10-30', til: '2026-11-05', vaert: null }) && JSON.stringify(sidst(s, 'drift_fejl')[1]) === JSON.stringify(sidst(s, 'drift')[1]), JSON.stringify(sidst(s, 'drift')));
+  tjek('DRIFT båndet: Periode (7 dage valgt, 30 dage, Et år) og Egne datoer hører til fanen', [...d.querySelectorAll('#drift-periode .cb:not([hidden])')].map(b => `${b.textContent.trim()}${b.getAttribute('aria-pressed') === 'true' ? '*' : ''}`).join() === '7 dage*,30 dage,Et år' && d.querySelectorAll('#drift-datoer .dato-knap').length === 2 && !d.getElementById('drift-periode').closest('.grp').hidden && d.getElementById('besoegende-periode').closest('.grp').hidden, [...d.querySelectorAll('#drift-periode .cb:not([hidden])')].map(b => b.textContent.trim()).join());
+  tjek('DRIFT to afsnit og ingen ændringslog (D6): "Svarede dit website?" og "Hvor meget Cloudflare klarede selv", plus Subdomæner med fejl', qa('.vg-blok > h2').map(h => h.textContent).join(' | ') === 'Svarede dit website? | Subdomæner med fejl | Hvor meget Cloudflare klarede selv' && !/ændring|aendr|audit/i.test(q('#drift-rod').textContent + ui('assets/visning-drift.js')), qa('.vg-blok > h2').map(h => h.textContent).join(' | '));
+
+  tjek('DRIFT datonoten er fanens egen: timerne gemmes, så den siger ikke, at tidspunktet på dagen ikke gemmes', q('.dato-vaelger > .vg-note').textContent === 'Dagene er hele døgn i UTC. Klokkeslæt i fanen er din lokale tid.' && !q('#drift-rod').textContent.includes('gemmes ikke'), q('.dato-vaelger > .vg-note')?.textContent);
+
+  // Fliserne.
+  const f0 = fliser(s);
+  tjek('DRIFT fliserne: Kunne ikke nås (svar og andel; 522 og 530 sammen), Din server svarede med en fejl, Timer med fejl og Forsiden svarede ikke (Ja)', f0.map(f => f[0]).join() === '123,6,4,Ja' && f0[0][1].includes('Kunne ikke nås') && f0[0][1].includes('1,5 % af alle svar') && f0[1][1].includes('Din server svarede med en fejl') && f0[2][1].includes('Timer med fejl') && f0[3][1].includes('Forsiden svarede ikke'), JSON.stringify(f0));
+  tjek('DRIFT hver flise med tal har aria-label, der siger, hvor den fører hen, og sit filter som mål', ['naa', 'server', 'timer', 'forside'].every(k => { const m = maalAf(flise(s, 'f-' + k)); return m && m.dataset.gaa === `drift?${DOM}&vis=${k}` && /Vis dem i tabellen\.$/.test(m.getAttribute('aria-label')); }) && maalAf(flise(s, 'f-naa')).getAttribute('aria-label') === 'Kunne ikke nås: 123. Vis dem i tabellen.', maalAf(flise(s, 'f-naa'))?.getAttribute('aria-label'));
+  const t0 = tabel(s);
+  tjek('DRIFT tabellen: Domæne · Hvad skete der · Svar · Første og sidste time, flest svar først, koden i klart sprog og tiden i lokal tid', qa('#drift-fejl .drift-tabel thead th').map(x => x.textContent).join(' · ') === 'Domæne · Hvad skete der · Svar · Første og sidste time' && JSON.stringify(t0) === JSON.stringify([['wi24rd.com', 'Cloudflare kunne ikke få forbindelse til din server i tide (svar 522)', '120', '3/11 kl. 01.00 – 3/11 kl. 04.00'], ['wi24rd.com', 'Din server svarede med en fejl (svar 500)', '6', '1/11 kl. 14.00'], ['wi24rd.com', 'Cloudflare kunne ikke finde din server: navnet kunne ikke slås op (svar 530)', '3', '31/10 kl. 09.00'], ['wi24rd.com', 'Cloudflare svarede med en fejl (svar 502)', '2', '4/11 kl. 20.00']]), JSON.stringify(t0));
+  tjek('DRIFT for ét domæne er domænet i tabellen tekst (det er allerede det, der vises), og intet i tabellen ser klikbart ud', !q('#drift-fejl .drift-tabel tbody').querySelector('button, a, [data-gaa], [data-dyk], [tabindex]'));
+  tjek('DRIFT linjen fra spændet: forsiden fejlede også, så teksten siger, at websitet ikke svarede, med dagen foran', qa('.drift-mellem').map(x => x.textContent).join('|') === '3. november: Mellem kl. 01.00 og 05.00 svarede dit website ikke: Cloudflare kunne ikke nå din server.' && !q('.drift-nogle'), qa('.drift-mellem').map(x => x.textContent).join('|'));
+  tjek('DRIFT nederst i afsnittet står altid, hvad programmet ikke ser', q('#drift-fejl > :last-child').matches('.drift-ser') && q('.drift-ser').textContent === 'Programmet ser kun trafik, der går gennem Cloudflare. Svarer Cloudflare med en gammel kopi, ser den besøgende siden, selv om din server er nede.' && !q('.drift-fra'), q('#drift-fejl > :last-child').textContent);
+
+  // Fliserne filtrerer tabellen; filteret kan fjernes; tilbage/frem.
+  await klik(s, maalAf(flise(s, 'f-naa')), 120);
+  tjek('DRIFT klik på Kunne ikke nås: adressen har vis=naa, flisen er valgt, chippen står, og tabellen har kun 522 og 530', hash(s) === `#drift?${DOM}&vis=naa` && maalAf(flise(s, 'f-naa')).getAttribute('aria-current') === 'true' && !maalAf(flise(s, 'f-server')).hasAttribute('aria-current') && q('.drift-vis-chip')?.textContent === 'Kun: Kunne ikke nås' && tabel(s).map(r => r[2]).join() === '120,3', hash(s) + ' ' + tabel(s).map(r => r[2]).join() + ' ' + flise(s, 'f-naa').outerHTML.slice(0, 200));
+  tjek('DRIFT den valgte flises aria-label siger, at et klik viser alle fejl igen, og dens mål er adressen uden filteret', maalAf(flise(s, 'f-naa')).getAttribute('aria-label') === 'Kunne ikke nås: 123. Vis alle fejl igen.' && maalAf(flise(s, 'f-naa')).dataset.gaa === `drift?${DOM}`);
+  await klik(s, maalAf(flise(s, 'f-server')), 120);
+  tjek('DRIFT klik på Din server svarede med en fejl: kun rækken med serverens 500', hash(s) === `#drift?${DOM}&vis=server` && tabel(s).map(r => r[1] + r[2]).join() === 'Din server svarede med en fejl (svar 500)6', tabel(s).map(r => r.join('/')).join());
+  await klik(s, maalAf(flise(s, 'f-timer')), 120);
+  tjek('DRIFT klik på Timer med fejl: svarene i de fire timer med fejl', hash(s) === `#drift?${DOM}&vis=timer` && tabel(s).map(r => r[2]).join() === '120', tabel(s).map(r => r.join('/')).join());
+  await klik(s, maalAf(flise(s, 'f-forside')), 120);
+  tjek('DRIFT klik på Forsiden svarede ikke: forsidens svar med første og sidste time', hash(s) === `#drift?${DOM}&vis=forside` && JSON.stringify(tabel(s)) === JSON.stringify([['wi24rd.com', 'Forsiden svarede med en fejl', '12', '3/11 kl. 02.00 – 3/11 kl. 03.00']]), JSON.stringify(tabel(s)));
+  await klik(s, q('.drift-vis-chip'), 120);
+  tjek('DRIFT × på chippen fjerner filteret: alle fire rækker igen', hash(s) === `#drift?${DOM}` && tabel(s).length === 4 && !q('.drift-vis-chip'), hash(s));
+  w.history.back(); await sov(150);
+  tjek('DRIFT tilbage: filteret Forsiden står igen', hash(s) === `#drift?${DOM}&vis=forside` && tabel(s).length === 1 && q('.drift-vis-chip')?.textContent === 'Kun: Forsiden svarede ikke', hash(s));
+  w.history.forward(); await sov(150);
+  tjek('DRIFT frem: uden filter', hash(s) === `#drift?${DOM}` && tabel(s).length === 4, hash(s));
+
+  // Grafen: dag → timer → tilbage.
+  const soejler = x => [...x.d.querySelectorAll('#visning-drift #drift-graf .dyk-soejle')];
+  const sj = soejler(s), nat = sj[4];
+  tjek('DRIFT grafen pr. dag: 7 søjler, én Tab-stop, og kun dage med fejl kan åbnes; hver har aria-label', sj.length === 7 && sj.filter(g => g.dataset.gaa).length === 4 && sj.filter(g => g.getAttribute('tabindex') === '0').length === 1 && sj.filter(g => g.dataset.gaa).every(g => g.getAttribute('role') === 'link' && g.getAttribute('aria-label')) && nat.getAttribute('aria-label') === '3. november: 120 svar med fejl. Vis dagens timer.' && nat.dataset.gaa === `drift?${DOM}&dag=${D_NAT}` && !sj[0].dataset.gaa && sj[0].querySelector('title').textContent === '30. oktober: ingen fejl' && q('#drift-graf svg').getAttribute('aria-label').startsWith('Svar med fejl pr. dag'), sj.map(g => g.getAttribute('aria-label') || '-').join(' | '));
+  const klikbare = sj.filter(g => g.dataset.gaa);
+  klikbare.at(-1).focus();
+  klikbare.at(-1).dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+  tjek('DRIFT piletasterne flytter mellem dagene med fejl i grafen (ét Tab-stop)', d.activeElement === klikbare.at(-2) && klikbare.at(-2).getAttribute('tabindex') === '0' && klikbare.at(-1).getAttribute('tabindex') === '-1', d.activeElement?.getAttribute('aria-label'));
+  nat.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  await sov(150);
+  const st = soejler(s);
+  tjek('DRIFT Enter på natten: dagens 24 timer i samme graf, kaldet er for dagen, og overskriften og chippen siger dagen', hash(s) === `#drift?${DOM}&dag=${D_NAT}` && JSON.stringify([sidst(s, 'drift')[1].fra, sidst(s, 'drift')[1].til]) === JSON.stringify([D_NAT, D_NAT]) && st.length === 24 && q('#drift-graf h3').textContent === 'Svar med fejl pr. time den 3. november' && q('.drift-dag-chip')?.textContent === '3. november' && q('.drift-valgt-h').textContent === 'Valgt periode: 3. november', hash(s) + ' ' + st.length);
+  tjek('DRIFT timerne: fire timer med fejl kan åbnes, klokkeslættene er lokal tid, og resten fører ingen steder hen', st.filter(g => g.dataset.gaa).length === 4 && st[1].getAttribute('aria-label') === 'Kl. 01.00 til 02.00: 30 svar med fejl. Vis timen i tabellen.' && st[1].dataset.gaa === `drift?${DOM}&dag=${D_NAT}&time=01` && st[0].querySelector('title').textContent === 'Kl. 00.00 til 01.00: ingen fejl' && !st[0].dataset.gaa && q('#drift-graf .dyk-x').textContent.startsWith('00.0003.00'), st[1].getAttribute('aria-label') + ' ' + q('#drift-graf .dyk-x').textContent);
+  tjek('DRIFT dagen: fliserne og tabellen er dagens, og linjen står uden dato foran', fliser(s).map(f => f[0]).join() === '120,0,4,Ja' && JSON.stringify(tabel(s)) === JSON.stringify([['wi24rd.com', 'Cloudflare kunne ikke få forbindelse til din server i tide (svar 522)', '120', '3/11 kl. 01.00 – 3/11 kl. 04.00']]) && q('.drift-mellem').textContent === 'Mellem kl. 01.00 og 05.00 svarede dit website ikke: Cloudflare kunne ikke nå din server.', JSON.stringify(fliser(s).map(f => f[0])) + JSON.stringify(tabel(s)));
+  tjek('DRIFT et 0 på en flise er ikke klikbart', !maalAf(flise(s, 'f-server')) && flise(s, 'f-server').tagName !== 'BUTTON');
+  const tilbage = q('.drift-tilbage'), angreb = q('.drift-angreb');
+  tjek('DRIFT dagen har en tydelig vej tilbage til perioden og et link til Trafik den dag på Angreb', tilbage && tilbage.textContent === 'Tilbage til perioden' && tilbage.getAttribute('aria-label') === 'Tilbage til perioden 7 dage' && tilbage.dataset.gaa === `drift?${DOM}` && angreb && angreb.dataset.dyk === `${DOM}&dag=${D_NAT}&trafik=1` && angreb.getAttribute('aria-label') === 'Åbn Trafik den 3. november på Angreb', tilbage?.outerHTML + angreb?.outerHTML);
+  await klik(s, st[2], 150);
+  tjek('DRIFT klik på en time filtrerer tabellen til timen, med chippen "Kl. 02.00–03.00"', hash(s) === `#drift?${DOM}&dag=${D_NAT}&time=02` && tabel(s).map(r => r[2]).join() === '30' && q('.drift-time-chip')?.textContent === 'Kl. 02.00–03.00' && q('.drift-time-chip').dataset.gaa === `drift?${DOM}&dag=${D_NAT}`, hash(s) + ' ' + JSON.stringify(tabel(s)));
+  await klik(s, q('.drift-tilbage'), 150);
+  tjek('DRIFT Tilbage til perioden: de 7 dage igen, uden dag og time', hash(s) === `#drift?${DOM}` && soejler(s).length === 7 && sidst(s, 'drift')[1].fra === '2026-10-30' && !q('.drift-dag-chip') && !q('.drift-tilbage'), hash(s));
+  w.history.back(); await sov(150);
+  tjek('DRIFT tilbage i historikken: timen står igen', hash(s) === `#drift?${DOM}&dag=${D_NAT}&time=02` && soejler(s).length === 24 && tabel(s).map(r => r[2]).join() === '30', hash(s));
+  w.history.forward(); await sov(150);
+
+  // Perioden.
+  await klik(s, [...d.querySelectorAll('#drift-periode .cb')][1], 150);
+  tjek('DRIFT 30 dage: kaldet går 30 hele dage tilbage, og grafen har 30 søjler', hash(s) === `#drift?${DOM}&periode=30` && JSON.stringify([sidst(s, 'drift')[1].fra, sidst(s, 'drift')[1].til]) === JSON.stringify(['2026-10-07', '2026-11-05']) && soejler(s).length === 30 && !q('.drift-fra'), hash(s) + ' ' + soejler(s).length);
+  await klik(s, [...d.querySelectorAll('#drift-periode .cb')][2], 200);
+  tjek('DRIFT et år: grafen står pr. uge, og linjen siger, hvorfra timetallene findes (foerste_dag fra kommandoen)', hash(s) === `#drift?${DOM}&periode=aar` && sidst(s, 'drift')[1].fra === '2025-11-06' && q('#drift-graf h3').textContent === 'Svar med fejl pr. uge' && soejler(s).length >= 52 && soejler(s).length <= 54 && q('.drift-fra')?.textContent === 'Fejl pr. time fra 7. oktober.' && soejler(s).filter(g => g.dataset.gaa).every(g => /fra=\d{4}-\d\d-\d\d&til=/.test(g.dataset.gaa)), hash(s) + ' ' + soejler(s).length + ' ' + q('.drift-fra')?.textContent);
+  tjek('DRIFT et år: fliserne siger, hvor mange dage tallene dækker, og summen er den samme som for de hentede dage', fliser(s)[0][0] === '123' && fliser(s)[0][1].includes('Tal for 30 af 365 dage'), fliser(s)[0][1]);
+
+  // Subdomænefilteret.
+  const u = side('#drift?' + DOM, DR(DRIFT_NAT));
+  await sov(120);
+  const uq = x => u.d.querySelector('#visning-drift ' + x), uqa = x => [...u.d.querySelectorAll('#visning-drift ' + x)];
+  const subRk = uqa('#drift-sub tbody tr'), www = subRk[0].querySelector('th button');
+  tjek('DRIFT Subdomæner med fejl: står for ét domæne med fejl på mindst to værter, flest først; domænet selv som sit eget navn, og [ip] som tekst uden mål', uq('#drift-sub h2').textContent === 'Subdomæner med fejl' && subRk.map(r => [...r.children].map(c => c.textContent).join('/')).join(' | ') === 'www.wi24rd.com/96/96 | wi24rd.com/23/23 | shop.wi24rd.com/10/4 | Kaldt med IP-adresse/2/0' && !subRk[3].querySelector('button, a, [data-gaa], [data-dyk], [tabindex]') && [...u.d.querySelectorAll('#drift-sub thead th')].map(x => x.textContent).join(' · ') === 'Subdomæne · Svar med fejl · Kunne ikke nås', subRk.map(r => [...r.children].map(c => c.textContent).join('/')).join(' | '));
+  tjek('DRIFT rækken: navnet er en knap med aria-label "Vis fejl for …", og tallene har intet mål', www.tagName === 'BUTTON' && www.getAttribute('aria-label') === 'Vis fejl for www.wi24rd.com' && www.dataset.gaa === `drift?${DOM}&vaert=www.wi24rd.com` && !subRk[0].querySelector('td button, td [data-gaa]'));
+  const cacheFoer = uqa('.drift-cache-fliser > *').length;
+  await klik(u, www, 150);
+  tjek('DRIFT klik på et subdomæne: adressen og kaldene har værten, og chippen "Subdomæne: www.wi24rd.com" står', hash(u) === `#drift?${DOM}&vaert=www.wi24rd.com` && sidst(u, 'drift')[1].vaert === 'www' && sidst(u, 'drift_fejl')[1].vaert === 'www' && uq('.drift-vaert-chip')?.textContent === 'Subdomæne: www.wi24rd.com' && uq('.drift-vaert-chip').dataset.gaa === `drift?${DOM}`, hash(u));
+  tjek('DRIFT filtreret: Kunne ikke nås er værtens; timer, forsiden og serverens egne fejl er "–" med "Findes ikke pr. subdomæne" og kan ikke klikkes', fliser(u).map(f => f[0]).join() === '96,–,–,–' && fliser(u).slice(1).every(f => f[1].includes('Findes ikke pr. subdomæne')) && ['server', 'timer', 'forside'].every(k => !maalAf(flise(u, 'f-' + k))) && uq('.drift-sub-uden').textContent === 'Timer med fejl, forsiden og din servers egne fejl findes ikke pr. subdomæne. Se dem for hele wi24rd.com.' && uq('.drift-sub-uden button').dataset.gaa === `drift?${DOM}`, JSON.stringify(fliser(u)));
+  tjek('DRIFT filtreret: tabellen har subdomænet, koden og første og sidste dag; afsnittet Subdomæner med fejl står ikke', [...u.d.querySelectorAll('#drift-fejl .drift-tabel thead th')].map(x => x.textContent).join(' · ') === 'Subdomæne · Hvad skete der · Svar · Første og sidste dag' && JSON.stringify(tabel(u)) === JSON.stringify([['www.wi24rd.com', 'Cloudflare kunne ikke få forbindelse til din server i tide (svar 522)', '96', '3/11']]) && !uq('#drift-sub'), JSON.stringify(tabel(u)));
+  tjek('DRIFT filtreret: Cache-afsnittet viser kun "Cache gælder hele domænet." og aldrig domænets tal', cacheFoer === 4 && uq('#drift-cache').textContent === 'Hvor meget Cloudflare klarede selvCache gælder hele domænet.' && !uq('#drift-cache .sflise, #drift-cache table, #drift-cache svg'), uq('#drift-cache').textContent);
+  u.w.history.back(); await sov(150);
+  tjek('DRIFT tilbage: uden filter, med Subdomæner med fejl og cachens tal', hash(u) === `#drift?${DOM}` && sidst(u, 'drift')[1].vaert === null && uq('#drift-sub') && !uq('.drift-vaert-chip') && uqa('.drift-cache-fliser > *').length === 4, hash(u));
+  u.w.history.forward(); await sov(150);
+  tjek('DRIFT frem: filteret igen', hash(u) === `#drift?${DOM}&vaert=www.wi24rd.com` && uq('.drift-vaert-chip') && !uq('#drift-sub'), hash(u));
+  await klik(u, uq('.drift-vaert-chip'), 150);
+  tjek('DRIFT × på chippen fjerner filteret', hash(u) === `#drift?${DOM}` && !uq('.drift-vaert-chip') && uq('#drift-sub'), hash(u));
+  await klik(u, uq('#drift-sub tbody tr th button'), 150);
+  zoneVaelger(u.d).value = 'z2'; zoneVaelger(u.d).dispatchEvent(); await sov(150);
+  tjek('DRIFT et andet domæne nulstiller filteret pr. subdomæne og beholder perioden', hash(u) === '#drift?zone=z2&navn=xyz.wi24rd.com' && sidst(u, 'drift')[1].zone === 'z2' && sidst(u, 'drift')[1].vaert === null && !uq('.drift-vaert-chip'), hash(u));
+  tjek('DRIFT et domæne uden fejl: "Ingen fejl i perioden.", alle tal 0 og Nej, ingen klikbare fliser eller søjler, og intet afsnit med subdomæner', uq('.drift-tom')?.textContent === 'Ingen fejl i perioden.' && fliser(u).map(f => f[0]).join() === '0,0,0,Nej' && !u.d.querySelector('#visning-drift #drift-fejl [data-gaa], #visning-drift #drift-fejl [data-dyk]') && !uq('#drift-sub') && !uq('.drift-mellem') && !uq('.drift-nogle'), JSON.stringify(fliser(u)));
+
+  // Et værtsnavn med tegn, der skal undslippes, står som tekst; et navn uden for domænet er ikke et filter.
+  const ond = '<img src=x onerror=alert(1)>', M_OND = driftModel({ z1: { [D_NAT]: { timer: 50, fejl: [[1, 522, 0, 9]], forside: [], cache: {} } } }, { z1: { [D_NAT]: [[ond, 522, 5], ['a&b', 522, 4]] } }, { vaertFra: '2026-10-07' });
+  const o = side('#drift?' + DOM, DR(M_OND));
+  await sov(120);
+  const ondRk = [...o.d.querySelectorAll('#drift-sub tbody tr')];
+  tjek('DRIFT en vært med tegn, der skal undslippes, vises som tekst: intet element fra navnet, og ingen innerHTML i visningen', ondRk.length === 2 && ondRk[0].querySelector('th').textContent === `${ond}.wi24rd.com` && ondRk[1].querySelector('th').textContent === 'a&b.wi24rd.com' && !o.d.querySelector('#visning-drift img') && !/innerHTML|insertAdjacentHTML|outerHTML/.test(udenKommentarer(ui('assets/visning-drift.js'))), ondRk.map(r => r.querySelector('th').innerHTML).join(' | '));
+  const ude = side(`#drift?${DOM}&vaert=udenfor`, DR(DRIFT_NAT));
+  await sov(120);
+  tjek('DRIFT et navn uden for domænet i adressen er ikke et filter: kaldet har intet subdomæne, og ingen chip står', sidst(ude, 'drift')[1].vaert === null && !ude.d.querySelector('.drift-vaert-chip') && !ude.d.getElementById('drift-rod').textContent.includes('udenfor'));
+
+  // Cache.
+  const c = side('#drift?' + DOM, DR(DRIFT_NAT));
+  await sov(120);
+  const cq = x => c.d.querySelector('#visning-drift ' + x), cqa = x => [...c.d.querySelectorAll('#visning-drift ' + x)];
+  const cf = fliser(c, '.drift-cache-fliser');
+  tjek('DRIFT cache: fire fliser: Fra Cloudflares lager (andel), Data, din server slap for at sende (læselige enheder), Svaret af Cloudflare selv og Hentet hos din server', cf.map(f => f[0]).join(' | ') === '15,3 % | 101,9 MB | 280 | 6.740' && cf[0][1].includes('Fra Cloudflares lager') && cf[0][1].includes('1.274 af 8.294 forespørgsler') && cf[1][1].includes('Data, din server slap for at sende') && cf[2][1].includes('Svaret af Cloudflare selv') && cf[3][1].includes('Hentet hos din server'), JSON.stringify(cf));
+  const sumTal = cq('.drift-cache-sum').textContent.match(/\d+,\d %/g).map(x => Number(x.replace(',', '.').replace(' %', '')));
+  tjek('DRIFT cachegrupperne summer til 100 %', sumTal.length === 3 && Math.round(sumTal.reduce((a, x) => a + x, 0) * 10) === 1000 && cq('.drift-cache-sum').textContent === 'Fra Cloudflares lager 15,3 % · Svaret af Cloudflare selv 3,4 % · Hentet hos din server 81,3 %', cq('.drift-cache-sum').textContent);
+  const ct = () => cqa('.drift-cache-tabel tbody tr').map(r => [...r.children].map(x => x.textContent));
+  tjek('DRIFT cachetabellen: cache-status i klart sprog, forespørgsler og data; ingen rå status, og intet er klikbart eller fører ud af programmet', JSON.stringify(ct().map(r => r[0])) === JSON.stringify(['Sider, der hentes hos din server hver gang', 'Fundet i Cloudflares lager', 'Ikke i lageret endnu, så svaret blev hentet hos din server', 'Svaret af Cloudflare selv, uden at spørge din server', 'Kopien i lageret var for gammel, så svaret blev hentet hos din server', 'Din server bekræftede, at kopien i lageret stadig gælder', 'En gammel kopi fra lageret, fordi din server ikke svarede']) && ct()[0][1] === '6.180' && ct()[0][2] === '185,4 MB' && !cq('#drift-cache table').querySelector('button, a, [data-gaa], [data-dyk]') && !cq('#drift-cache a[href], #drift-cache [data-cve], #drift-cache [data-radar]') && !/dynamic|revalidated|bypass/.test(cq('#drift-cache table').textContent), JSON.stringify(ct()));
+  tjek('DRIFT stale > 0 giver linjen om gamle kopier; noterne om sider, der hentes hver gang, og om data står', cq('.drift-gammel').textContent === 'Gamle kopier vist, fordi din server ikke svarede: 14' && cq('.drift-dynamisk').textContent.startsWith('De fleste sider på små websites hentes hos din server hver gang.') && cq('.drift-data-note').textContent === 'Data er det, Cloudflare sendte til den besøgende. Det kan være mindre end det, din server ville have sendt.' && !/Cache Rules|dash\.cloudflare|regel hos Cloudflare/i.test(cq('#drift-cache').textContent));
+  const cs = cqa('#drift-cache-graf .dyk-soejle');
+  tjek('DRIFT cachegrafen: to serier pr. dag side om side (fra lageret, hentet hos din server), og et klik åbner dagen', cs.length === 7 && cs.every(g => g.querySelectorAll('rect.vg-soejle').length === 2 && g.querySelector('.drift-lager') && g.querySelector('.drift-server') && Number(g.querySelector('.drift-lager').getAttribute('x')) < Number(g.querySelector('.drift-server').getAttribute('x'))) && cs[4].dataset.gaa === `drift?${DOM}&dag=${D_NAT}` && cs[4].getAttribute('aria-label') === '3. november: 194 fra Cloudflares lager, 860 hentet hos din server. Vis dagen.' && cqa('#drift-cache-graf .vg-legende li').map(x => x.textContent).join() === 'Fra Cloudflares lager,Hentet hos din server', cs[4]?.getAttribute('aria-label'));
+  const cm = k => maalAf(cq('.drift-c-' + k));
+  tjek('DRIFT hver cacheflise har aria-label og sit filter som mål', ['lager', 'data', 'selv', 'server'].every(k => cm(k) && cm(k).dataset.gaa === `drift?${DOM}&cache=${k}` && cm(k).getAttribute('aria-label').endsWith('Vis dem i tabellen.')));
+  await klik(c, cm('lager'), 150);
+  tjek('DRIFT klik på Fra Cloudflares lager: cachetabellen har kun lagerets rækker (ikke "bekræftet", som tæller som hentet hos serveren)', hash(c) === `#drift?${DOM}&cache=lager` && JSON.stringify(ct().map(r => r[0])) === JSON.stringify(['Fundet i Cloudflares lager', 'En gammel kopi fra lageret, fordi din server ikke svarede']) && cq('.drift-cache-chip')?.textContent === 'Kun: Fra Cloudflares lager', JSON.stringify(ct().map(r => r[0])));
+  await klik(c, cm('data'), 150);
+  tjek('DRIFT klik på Data, din server slap for: i data tæller "bekræftet" som fra lageret', hash(c) === `#drift?${DOM}&cache=data` && ct().length === 3 && ct().some(r => r[0] === 'Din server bekræftede, at kopien i lageret stadig gælder'), JSON.stringify(ct().map(r => r[0])));
+  await klik(c, cm('selv'), 150);
+  const selvRk = ct();
+  await klik(c, cm('server'), 150);
+  tjek('DRIFT Svaret af Cloudflare selv og Hentet hos din server filtrerer hver sin gruppe', JSON.stringify(selvRk.map(r => r[0])) === JSON.stringify(['Svaret af Cloudflare selv, uden at spørge din server']) && ct().length === 4 && hash(c) === `#drift?${DOM}&cache=server`, JSON.stringify(ct().map(r => r[0])));
+  const M_UK = driftModel({ z1: { [D_NAT]: { timer: 50, fejl: [], forside: [], cache: { dynamic: [70, 700], nyt_ord: [20, 200], '[ukendt]': [10, 100] } } } });
+  const uk = side(`#drift?${DOM}&dag=${D_NAT}`, DR(M_UK));
+  await sov(120);
+  const ukRk = [...uk.d.querySelectorAll('.drift-cache-tabel tbody tr')].map(r => [...r.children].map(x => x.textContent));
+  tjek('DRIFT en ukendt cache-status står som "Andet" (lagt sammen), og andelene summer stadig til 100 %', JSON.stringify(ukRk) === JSON.stringify([['Sider, der hentes hos din server hver gang', '70', '700 B'], ['Andet', '30', '300 B']]) && uk.d.querySelector('.drift-cache-sum').textContent === 'Fra Cloudflares lager 0,0 % · Svaret af Cloudflare selv 0,0 % · Hentet hos din server 70,0 % · Andet 30,0 %' && !uk.d.getElementById('drift-rod').textContent.includes('nyt_ord'), JSON.stringify(ukRk) + uk.d.querySelector('.drift-cache-sum')?.textContent);
+  tjek('DRIFT med en dag valgt står cachegrafen ikke (et klik ville føre til samme dag)', !uk.d.querySelector('#drift-cache-graf') && uk.d.querySelectorAll('.drift-cache-fliser > *').length === 4);
+
+  // Ikke hentet er aldrig 0; tom tilstand.
+  const ih = side('#drift?' + DOM, DR(DRIFT_IKKE));
+  await sov(120);
+  const iq = x => ih.d.querySelector('#visning-drift ' + x);
+  tjek('DRIFT ikke hentet: fliserne er "–" med "Ikke hentet", aldrig 0, og ingen kan klikkes', fliser(ih).map(f => f[0]).join() === '–,–,–,–' && fliser(ih).every(f => f[1].includes('Ikke hentet')) && !ih.d.querySelector('#visning-drift .drift-fliser [data-gaa], #visning-drift .drift-fliser button') && !/(^|\D)0(\D|$)/.test(fliser(ih).map(f => f[0]).join()), JSON.stringify(fliser(ih)));
+  tjek('DRIFT ikke hentet: "Tallene er ikke hentet for perioden endnu." i begge afsnit, søjlerne er huller uden mål, og "Ingen fejl" står ikke', iq('#drift-fejl .drift-ikke-hentet')?.textContent === 'Tallene er ikke hentet for perioden endnu.' && iq('#drift-cache .drift-cache-ikke')?.textContent === 'Tallene er ikke hentet for perioden endnu.' && !iq('.drift-tom') && [...ih.d.querySelectorAll('#drift-graf .dyk-soejle')].every(g => g.classList.contains('dyk-uhentet') && !g.dataset.gaa) && ih.d.querySelector('#drift-graf .dyk-soejle title').textContent === '30. oktober: ikke hentet' && !iq('#drift-cache .sflise'), iq('#drift-fejl')?.textContent.slice(0, 300));
+  /* Én af flere dage mangler: summen står med dækningen; forsiden er Nej for de dage, der er hentet. */
+  const M_DEL = driftModel({ z1: { '2026-11-04': { timer: 50, fejl: [[3, 522, 0, 2]], forside: [], cache: { hit: [5, 50] } }, '2026-11-05': { timer: 50, fejl: [], forside: [], cache: { hit: [5, 50] } } } });
+  const del = side('#drift?' + DOM, DR(M_DEL));
+  await sov(120);
+  tjek('DRIFT nogle dage hentet: tallene står med "Tal for 2 af 7 dage", og linjen siger, at forsiden virkede', fliser(del).map(f => f[0]).join() === '2,0,0,Nej' && fliser(del).every(f => f[1].includes('Tal for 2 af 7 dage')) && del.d.querySelector('.drift-nogle')?.textContent === 'Nogle sider svarede med fejl, men forsiden virkede.' && del.d.querySelector('.drift-fra')?.textContent === 'Fejl pr. time fra 4. november.', JSON.stringify(fliser(del)));
+  const M_AFSK = driftModel({ z1: { [D_NAT]: { timer: 50, fejl: [[3, 522, 0, 2]], forside: [], cache: { hit: [5, 50] }, afskaaret: ['d_fejl'] } } }, {}, { afvist: true });
+  const af = side(`#drift?${DOM}&dag=${D_NAT}`, DR(M_AFSK));
+  await sov(120);
+  tjek('DRIFT en dag på Cloudflares loft har ingen fejltal ("–", ikke 0), og linjerne om loftet og om et afslag står', fliser(af).map(f => f[0]).join() === '–,–,–,Nej' && af.d.querySelector('.drift-afskaaret')?.textContent === '1 dag er ikke med: Cloudflare sendte flere rækker, end programmet kan hente på én gang.' && af.d.querySelector('.drift-afvist')?.textContent.startsWith('Cloudflare afviste forespørgslen om fejl og cache'), JSON.stringify(fliser(af)));
+
+  // Alle domæner.
+  const al = side('#drift?samlet=1', DR(DRIFT_NAT));
+  await sov(150);
+  const alRk = [...al.d.querySelectorAll('#drift-fejl .drift-tabel tbody tr')], domKnap = alRk[0].querySelector('th button');
+  tjek('DRIFT Alle domæner er standarden fra fanen og spørger uden zone; domænet i tabellen åbner Drift for domænet med samme periode', sidst(al, 'drift')[1].zone === null && al.d.title.startsWith('Drift · 3 domæner') && domKnap && domKnap.textContent === 'wi24rd.com' && domKnap.getAttribute('aria-label') === 'Vis Drift for wi24rd.com' && domKnap.dataset.gaa === `drift?${DOM}` && !al.d.querySelector('#drift-sub') && al.d.querySelector('.drift-mellem').textContent.startsWith('wi24rd.com, 3. november: Mellem kl. 01.00 og 05.00'), al.d.title + ' ' + domKnap?.outerHTML);
+  const g = side('#overblik', DR(DRIFT_NAT)), gm = side('#overblik', DR(DRIFT_NAT), 'da', 'macos');
+  await sov(80);
+  g.tast('8', { ctrlKey: true }); gm.tast('8', { ctrlKey: true });
+  await sov(120);
+  tjek('DRIFT Ctrl+8 på Windows åbner Drift med det fælles domænevalg (Alle domæner); på macOS har programmenuen genvejen', hash(g) === '#drift?samlet=1' && synlige(g.d).join() === 'drift' && hash(gm) === '#overblik', hash(g) + ' ' + hash(gm));
+  gm.emit('visning', 'drift');
+  await sov(120);
+  tjek('DRIFT programmenuen: hændelsen visning åbner Drift', hash(gm).startsWith('#drift') && synlige(gm.d).join() === 'drift', hash(gm));
+  const pm = fs.readFileSync(path.join(repo, 'src-tauri', 'src', 'programmenu.rs'), 'utf8'), bygge = fs.readFileSync(path.join(repo, 'src-tauri', 'build.rs'), 'utf8'), cap = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'capabilities', 'default.json'), 'utf8')), conf = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8'));
+  tjek('DRIFT programmenuen har Drift/Health med CmdOrCtrl+8 efter Besøgende', pm.includes('GENVEJ_DRIFT: &str = "CmdOrCtrl+8"') && pm.includes('drift: "Drift"') && pm.includes('drift: "Health"') && pm.indexOf('&punkt(DRIFT, t.drift, GENVEJ_DRIFT)') > pm.indexOf('&punkt(BESOEG, t.besoeg, GENVEJ_BESOEG)'));
+  tjek('DRIFT sikkerhedsporten: kun app-kommandoerne drift og drift_fejl er nye; CSP er uændret, og visningen kalder kun dem og valg_hent', cap.permissions.includes('allow-drift') && cap.permissions.includes('allow-drift-fejl') && bygge.includes('"drift_fejl",') && conf.app.security.csp.includes("connect-src ipc: http://ipc.localhost") && [...new Set([...udenKommentarer(ui('assets/visning-drift.js')).matchAll(/invoke\('([a-z_]+)'/g)].map(m => m[1]))].sort().join() === 'drift,drift_fejl,valg_hent' && !/fetch\(|XMLHttpRequest|https?:\/\//.test(udenKommentarer(ui('assets/visning-drift.js'))), conf.app.security.csp);
+
+  // Engelsk.
+  const ef = fliser(en), et = tabel(en);
+  tjek('DRIFT engelsk: overskrifter, fliser, tabel og linjen', [...en.d.querySelectorAll('#visning-drift .vg-blok > h2')].map(h => h.textContent).join(' | ') === 'Did your website answer? | Subdomains with errors | How much Cloudflare handled itself' && ef[0][1].includes('Could not be reached') && ef[3][0] === 'Yes' && et[0][1] === 'Cloudflare could not connect to your server in time (response 522)' && et[0][3] === '3 Nov at 01.00 – 3 Nov at 04.00' && en.d.querySelector('.drift-mellem').textContent === '3 November: Between 01.00 and 05.00, your website did not answer: Cloudflare could not reach your server.' && en.d.querySelector('.drift-cache-sum').textContent === 'From Cloudflare’s store 15.3 % · Answered by Cloudflare itself 3.4 % · Fetched from your server 81.3 %', JSON.stringify(ef[0]) + JSON.stringify(et[0]) + en.d.querySelector('.drift-mellem')?.textContent + en.d.querySelector('.drift-cache-sum')?.textContent);
+
+  // da/en-paritet for alle nye nøgler.
+  const Tda = s.w.hmSprog.T, Ten = en.w.hmSprog.T, ph = t => [...new Set(String(t).match(/\{\w+/g) || [])].sort().join();
+  const flad = (o, p = '') => Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? flad(v, `${p}${k}.`) : [[p + k, v]]));
+  const da = new Map(flad(Tda.drift)), eng = new Map(flad(Ten.drift)), ENS = new Set(['medForan', 'sum']);
+  const skaeve = [...da.keys()].filter(k => !eng.has(k) || ph(da.get(k)) !== ph(eng.get(k)) || (!ENS.has(k) && da.get(k) === eng.get(k)));
+  tjek(`DRIFT da/en-paritet: alle ${da.size} nøgler i T.drift findes på begge sprog med samme pladsholdere og forskellig tekst`, da.size >= 100 && da.size === eng.size && !skaeve.length, skaeve.join());
+  const TOP = ['navDrift', 'hjDrift', 'hjDrift2', 'hvServer', 'hvServerNat', 'hvServerMellem', 'serverDrift', 'sidenServer', 'trafik52'];
+  tjek('DRIFT da/en-paritet: de nye og ændrede nøgler uden for T.drift, og titlen', TOP.every(k => typeof Tda[k] === 'string' && Tda[k] && ph(Tda[k]) === ph(Ten[k]) && Tda[k] !== Ten[k]) && Tda.titel.drift === 'Drift · {domaene}' && Ten.titel.drift === 'Health · {domaene}', TOP.filter(k => !(typeof Tda[k] === 'string' && ph(Tda[k]) === ph(Ten[k]) && Tda[k] !== Ten[k])).join());
+  const alle = flad(Tda.drift).concat(flad(Ten.drift)).map(x => x[1]).join(' ') + TOP.map(k => Tda[k] + Ten[k]).join(' ');
+  tjek('DRIFT klart sprog: ingen "origin", "5xx", "52x", "edge" eller "cache hit" i de nye tekster, og intet forkert tal-interval', !/\borigin\b|5xx|52x|\bedge\b|cache hit|520–527(?! og 530| and 530)/i.test(alle), (alle.match(/\borigin\b|5xx|52x|\bedge\b|cache hit/i) || []).join());
+
+  // Overblik og Siden sidst: timespændet i Hvorfor, og linjen åbner Drift for domænet og dagen.
+  const ov = side('#overblik', DR(DRIFT_NAT, { overblik: D_OVERBLIK })), ove = side('#overblik', DR(DRIFT_NAT, { overblik: D_OVERBLIK }), 'en');
+  await sov(120);
+  const hvT = x => x.d.querySelector('tr[data-zone="z1"] .hv-tekst').textContent;
+  tjek('DRIFT Overblik: Hvorfor nævner tidsrummet, ordret som notify::server_tekst', hvT(ov).includes('Din server svarer ikke: 10 % af 1.160 svar i går var fejl, fordi Cloudflare ikke kunne nå eller finde din server, mellem kl. 01.00 og 05.00. Se »Hvad gør jeg?«.') && hvT(ove).includes('Your server is not answering: 10% of 1,160 responses yesterday were errors because Cloudflare could not reach or find your server, between 01.00 and 05.00. See “What do I do?”.'), hvT(ov) + ' / ' + hvT(ove));
+  const uden = side('#overblik', DR(DRIFT_NAT, { overblik: [{ ...D_OVERBLIK[0], server: { ...D_OVERBLIK[0].server, mellem: null } }, OVERBLIK[1]] }));
+  await sov(120);
+  tjek('DRIFT Overblik: uden spænd er teksten som før (intet tidsrum)', hvT(uden).includes('var fejl, fordi Cloudflare ikke kunne nå eller finde din server. Se »Hvad gør jeg?«.') && !hvT(uden).includes('mellem kl.'), hvT(uden));
+  const lk = ov.d.querySelector('#server-linje button');
+  tjek('DRIFT Overblik: linjen "Din server svarer ikke" har domænet som knap med aria-label, og målet er Drift for domænet og dagen', ov.d.getElementById('server-linje').textContent === 'Din server svarer ikke: wi24rd.com' && lk.getAttribute('aria-label') === 'Vis Drift for wi24rd.com den 3. november' && lk.dataset.gaa === `drift?${DOM}&dag=${D_NAT}`, lk?.outerHTML);
+  await klik(ov, lk, 200);
+  tjek('DRIFT Overblik: et klik på linjen åbner Drift med dagens timer', hash(ov) === `#drift?${DOM}&dag=${D_NAT}` && synlige(ov.d).join() === 'drift' && ov.d.querySelectorAll('#drift-graf .dyk-soejle').length === 24 && sidst(ov, 'drift')[1].fra === D_NAT, hash(ov));
+  ov.w.history.back(); await sov(150);
+  tjek('DRIFT tilbage fra Drift lander på Overblik igen', hash(ov) === '#overblik' && synlige(ov.d).join() === 'overblik', hash(ov));
+  const ss = side('#siden-sidst', DR(DRIFT_NAT, { overblik: D_OVERBLIK, siden_sidst: { vis: true, nye: [], raekker: D_OVERBLIK } }));
+  await sov(150);
+  const sl = ss.d.querySelector('#siden-liste .hm-siden-drift');
+  tjek('DRIFT Siden sidst: domænet med "Din server svarer ikke" har et link til Drift for domænet og dagen; andre domæner har det ikke', sl && sl.textContent === 'Din server svarede ikke: se timerne i Drift' && sl.dataset.gaa === `drift?${DOM}&dag=${D_NAT}` && sl.getAttribute('aria-label') === 'Vis Drift for wi24rd.com den 3. november' && ss.d.querySelectorAll('#siden-liste .hm-siden-drift').length === 1, sl?.outerHTML);
+
+  tjek('DRIFT fotobogen og kontrasten: ti poster for Drift, og de syv med fejl er uden ekstra, så de også måles med Reduce motion', SIDER.filter(x => x.id.startsWith('drift-')).length === 10 && SIDER.filter(x => x.id.startsWith('drift-') && !x.ekstra).length === 7 && SIDER.filter(x => x.id.startsWith('drift-')).every(x => /^(drift\?|overblik$)/.test(x.hash) && !/(?<!wi24rd)\.com/.test(x.hash)), SIDER.filter(x => x.id.startsWith('drift-')).map(x => x.id + (x.ekstra ? '*' : '')).join());
+
+  // Køen melder nye tal: siden tegnes igen, og fokus bliver.
+  const k = side('#drift?' + DOM, DR(DRIFT_NAT));
+  await sov(120);
+  const foer = k.kald.filter(x => x[0] === 'drift').length, kn = maalAf(k.d.querySelector('#visning-drift .drift-f-naa'));
+  kn.focus();
+  k.emit('ekstra', { zone: 'z1' });
+  await sov(3400);
+  const ny = maalAf(k.d.querySelector('#visning-drift .drift-f-naa'));
+  tjek('DRIFT nye tal fra køen: visningen henter igen (højst hvert 3. sekund), og fokus står på samme flise', k.kald.filter(x => x[0] === 'drift').length === foer + 1 && ny !== kn && k.d.activeElement === ny, `${k.kald.filter(x => x[0] === 'drift').length - foer} ${k.d.activeElement?.className}`);
+  k.w.location.hash = '#overblik'; await sov(80);
+  k.emit('ekstra', { zone: 'z1' }); await sov(3300);
+  tjek('DRIFT skjult visning lytter ikke længere på køen', k.kald.filter(x => x[0] === 'drift').length === foer + 1 && k.w.hmRamme.antalAbonnenter('ekstra') <= side('#overblik', DR(DRIFT_NAT)).w.hmRamme.antalAbonnenter('ekstra'));
 }
 
 console.log(`\n${ok} bestået, ${fejl} fejlet`);

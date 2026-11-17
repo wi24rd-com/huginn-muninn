@@ -17,12 +17,13 @@ use crate::store::{Raekke, Store};
 use crate::vaern::{dag_ms, dag_noegle, DOEGN_MS};
 use crate::vaert::{FEJL_ARTER, V_AFSKAARET, V_FEJL, V_FEJL_AFSKAARET, V_FEJL_AFVIST};
 
-/// "Kunne ikke nås": Cloudflare fik intet brugbart svar fra serveren (INVESTIGATION Q2). 530 tælles for sig, så B2 kan vise den, uden at B1 ændrer reglen (D4).
+/// "Kunne ikke nås": Cloudflare fik intet brugbart svar fra serveren (INVESTIGATION Q2). 530 tælles for sig i svaret (`kunne_ikke_530`); fanen lægger
+/// de to sammen, og reglen for en time med fejl (`overblik::SERVER_KODER`) har begge med (B2, D4).
 pub const KUNNE_IKKE: RangeInclusive<i64> = 520..=527;
 pub const KODE_530: i64 = 530;
 /// "Serveren svarede med en fejl": origin 500–599. Ændrer aldrig status (D5).
 pub const SERVER_FEJL: RangeInclusive<i64> = 500..=599;
-/// En time med fejl: mindst så mange svar med `overblik::SERVER_KODER` (i dag 520–527, samme regel som "Din server svarer ikke") og mindst så mange
+/// En time med fejl: mindst så mange svar med `overblik::SERVER_KODER` (520–527 og 530, samme regel som "Din server svarer ikke") og mindst så mange
 /// procent af timens svar (INVESTIGATION Q2).
 pub const TIME_MIN_SVAR: i64 = 5;
 pub const TIME_PROCENT: i64 = 20;
@@ -48,6 +49,9 @@ pub struct CacheStatus {
     pub status: String,
     pub svar: i64,
     pub bytes: i64,
+    /// Gruppen for forespørgsler og for data: "lager", "selv", "server" eller "andet" (B2: fanens fliser filtrerer tabellen på dem).
+    pub gruppe: &'static str,
+    pub gruppe_data: &'static str,
 }
 
 #[derive(Serialize, Debug, Clone, Default, PartialEq, Eq)]
@@ -74,6 +78,8 @@ pub struct DriftDag {
     pub kunne_ikke_530: Option<i64>,
     /// Origin 500–599.
     pub server_fejl: Option<i64>,
+    /// B2: alle svar med kant eller origin ≥ 500 (hvert svar én gang), til grafen pr. dag.
+    pub fejl: Option<i64>,
     /// Svarede forsiden (`/`) med kant ≥ 500 mindst én gang?
     pub forside_fejl: Option<bool>,
     /// Timer (UTC, "HH") med fejl efter `TIME_MIN_SVAR`/`TIME_PROCENT` for mindst ét domæne.
@@ -193,7 +199,8 @@ pub fn laes(lager: &Store, zoner: &[String], fra: &str, vaert: Option<&str>) -> 
     for z in zoner {
         l.hentet.insert(z.clone(), lager.hentet_drift(z)?.into_keys().collect());
     }
-    if let (Some(_), [z]) = (vaert, zoner) {
+    // B2: også uden en valgt vært, så `regn_fejl` kan liste værterne med fejl. `regn` bruger dem kun med en valgt vært.
+    if let [z] = zoner {
         l.vaert_raekker = lager
             .raekker_art(std::slice::from_ref(z), FEJL_ARTER, fra)?
             .into_iter()
@@ -256,6 +263,8 @@ fn grupper(status: &str) -> (usize, usize) {
     }
 }
 
+const GRUPPE_NAVNE: [&str; 4] = ["lager", "selv", "server", "andet"];
+
 fn laeg_til(g: &mut Grupper, i: usize, n: i64) {
     match i {
         0 => g.lager += n,
@@ -278,6 +287,8 @@ fn cache_ud(m: &BTreeMap<String, (i64, i64)>) -> CacheUd {
             status: s.clone(),
             svar: *n,
             bytes: *b,
+            gruppe: GRUPPE_NAVNE[gs],
+            gruppe_data: GRUPPE_NAVNE[gd],
         });
     }
     c.status.sort_by(|a, b| b.svar.cmp(&a.svar).then_with(|| a.status.cmp(&b.status)));
@@ -310,10 +321,13 @@ fn spaend_af(timer: &BTreeMap<i64, bool>) -> Vec<Spaend> {
     ud
 }
 
-/// Tallene for `fra`…`til`. Ren funktion.
-pub fn regn(l: &Laest, fra: &str, til: &str) -> DriftUd {
-    let dage = dage_i(fra, til);
-    // (zone, dag) → døgnets tal.
+/// Døgnet er noteret i `hentet_drift` og ikke mærket uden for Cloudflares opbevaring.
+fn er_hentet(l: &Laest, z: &str, d: &str) -> bool {
+    l.hentet.get(z).is_some_and(|h| h.contains(d)) && !l.udenfor.contains(&(z.to_string(), d.to_string()))
+}
+
+/// (zone, dag) → døgnets tal for `fra`…`til`.
+fn doegn<'a>(l: &'a Laest, fra: &str, til: &str) -> HashMap<(&'a str, &'a str), Zd> {
     let mut zd: HashMap<(&str, &str), Zd> = HashMap::new();
     for (z, r) in l.raekker.iter().filter(|(_, r)| r.dag.as_str() >= fra && r.dag.as_str() <= til) {
         let d = zd.entry((z.as_str(), r.dag.as_str())).or_default();
@@ -344,8 +358,15 @@ pub fn regn(l: &Laest, fra: &str, til: &str) -> DriftUd {
             _ => {}
         }
     }
+    zd
+}
+
+/// Tallene for `fra`…`til`. Ren funktion.
+pub fn regn(l: &Laest, fra: &str, til: &str) -> DriftUd {
+    let dage = dage_i(fra, til);
+    let zd = doegn(l, fra, til);
     let tom = Zd::default();
-    let hentet = |z: &str, d: &str| l.hentet.get(z).is_some_and(|h| h.contains(d)) && !l.udenfor.contains(&(z.to_string(), d.to_string()));
+    let hentet = |z: &str, d: &str| er_hentet(l, z, d);
     let mut ud_dage = Vec::new();
     let mut periode_cache: BTreeMap<String, (i64, i64)> = BTreeMap::new();
     let mut cache_dage = 0;
@@ -401,6 +422,7 @@ pub fn regn(l: &Laest, fra: &str, til: &str) -> DriftUd {
             kunne_ikke: sum("d_fejl", &|d| d.fejl_sum(|k, _| KUNNE_IKKE.contains(&k))),
             kunne_ikke_530: sum("d_fejl", &|d| d.fejl_sum(|k, _| k == KODE_530)),
             server_fejl: sum("d_fejl", &|d| d.fejl_sum(|_, o| SERVER_FEJL.contains(&o))),
+            fejl: sum("d_fejl", &|d| d.fejl_sum(|_, _| true)),
             forside_fejl: sum("d_forside", &|d| d.forside.iter().sum()).map(|n| n > 0),
             timer_med_fejl: timer_med_fejl.into_iter().collect(),
             cache,
@@ -467,16 +489,24 @@ pub fn regn(l: &Laest, fra: &str, til: &str) -> DriftUd {
     }
 }
 
+fn vaert_maerket<'a>(l: &'a Laest, art: &str) -> BTreeSet<&'a str> {
+    l.vaert_raekker.iter().filter(|r| r.art == art).map(|r| r.dag.as_str()).collect()
+}
+
+/// Har døgnet fejltal pr. vært (reglen i `regn_vaert`)?
+fn vaert_med(l: &Laest, d: &str) -> bool {
+    let har = |art: &str| l.vaert_raekker.iter().any(|r| r.art == art && r.dag == d);
+    let hentet = l.vaert_hentet.contains(d) && l.vaert_fra.as_deref().is_some_and(|f| d >= f);
+    (hentet || har(V_FEJL)) && !har(V_AFSKAARET) && !har(V_FEJL_AFSKAARET) && !har(V_FEJL_AFVIST)
+}
+
 /// Fejl for værten `vaert`. Et døgn har tal, når det er hentet fra og med markøren (`store::VAERT_5XX_V1`) eller har gemte `v_fejl` (som V-SUBDOM.1 FIX 2),
 /// og hverken hele svaret (`v_afskaaret`), aliaset (`v_fejl_afskaaret`) eller et afslag (`v_fejl_afvist`) har mærket det. Ren funktion.
 fn regn_vaert(l: &Laest, vaert: &str, dage: &[String]) -> VaertUd {
-    let maerket = |art: &str| -> BTreeSet<&str> { l.vaert_raekker.iter().filter(|r| r.art == art).map(|r| r.dag.as_str()).collect() };
+    let maerket = |art: &str| vaert_maerket(l, art);
     let (hele, loft, afvist) = (maerket(V_AFSKAARET), maerket(V_FEJL_AFSKAARET), maerket(V_FEJL_AFVIST));
     let gemt = maerket(V_FEJL);
-    let med = |d: &str| {
-        let hentet = l.vaert_hentet.contains(d) && l.vaert_fra.as_deref().is_some_and(|f| d >= f);
-        (hentet || gemt.contains(d)) && !hele.contains(d) && !loft.contains(d) && !afvist.contains(d)
-    };
+    let med = |d: &str| vaert_med(l, d);
     let ud_dage = dage
         .iter()
         .map(|d| {
@@ -522,6 +552,225 @@ fn regn_vaert(l: &Laest, vaert: &str, dage: &[String]) -> VaertUd {
         afvist: i_perioden(&afvist),
         afvist_nu: l.vaert_afvist_nu,
     }
+}
+
+// ── B2: tabellen i fanen Drift ─────────────────────────────────────────────────────────────────────────────────────────
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct TimeN {
+    /// Timen (UTC, "HH").
+    pub time: String,
+    pub svar: i64,
+}
+
+/// Én række i tabellen "Svarede dit website?". `slags`: "kode" (ét par af kant- og origin-kode for et domæne, med timer), "forside" (svar på `/` med
+/// kant ≥ 500) eller "vaert" (én kant-kode for den valgte vært; kun dage, for timer findes ikke pr. vært).
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct FejlRaekke {
+    /// Domænets nøgle hos programmet (som i Overblikkets rækker); visningen slår navnet op.
+    pub zone: String,
+    pub slags: &'static str,
+    pub kant: i64,
+    pub origin: i64,
+    /// Kanten er en af `overblik::SERVER_KODER`: "kunne ikke nås".
+    pub naa: bool,
+    /// Origin 500–599: "din server svarede med en fejl".
+    pub server: bool,
+    pub svar: i64,
+    /// Så mange af svarene faldt i en time med fejl (`TIME_MIN_SVAR`/`TIME_PROCENT`).
+    pub i_fejltimer: i64,
+    /// Første og sidste time ("YYYY-MM-DDTHH", UTC); for "vaert" første og sidste dag ("YYYY-MM-DD").
+    pub foerste: String,
+    pub sidste: String,
+    /// Svar pr. time, kun når perioden er én dag.
+    pub timer: Vec<TimeN>,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct ZoneSpaend {
+    pub zone: String,
+    pub fra: String,
+    pub til: String,
+    pub timer: usize,
+    pub forside_fejlede: bool,
+}
+
+/// En vært med svar med kant ≥ 500 i perioden (labelen under domænet, eller en kategori i skarpe parenteser).
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct VaertSum {
+    pub vaert: String,
+    pub svar: i64,
+    pub kunne_ikke: i64,
+}
+
+/// Svaret fra kommandoen `drift_fejl`. Værtsnavnene er de rensede labels (`vaert::ren_vaert`), som i `subdomaener`.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq, Default)]
+pub struct FejlUd {
+    pub raekker: Vec<FejlRaekke>,
+    pub spaend: Vec<ZoneSpaend>,
+    /// Kun for ét domæne: værterne med fejl, flest først.
+    pub vaerter: Vec<VaertSum>,
+}
+
+#[derive(Default)]
+struct Saml {
+    svar: i64,
+    i_fejltimer: i64,
+    foerste: Option<String>,
+    sidste: Option<String>,
+    timer: BTreeMap<usize, i64>,
+}
+
+impl Saml {
+    fn laeg(&mut self, hvornaar: String, n: i64) {
+        self.svar += n;
+        if self.foerste.as_ref().is_none_or(|f| hvornaar < *f) {
+            self.foerste = Some(hvornaar.clone());
+        }
+        if self.sidste.as_ref().is_none_or(|s| hvornaar > *s) {
+            self.sidste = Some(hvornaar);
+        }
+    }
+}
+
+/// Tabellen, spændene pr. domæne og værterne med fejl for `fra`…`til`. Kun døgn, der er hentet, og kun arter, der ikke stod på loftet: en række, der
+/// mangler, er ikke et 0 (fliserne siger "–"). Ren funktion.
+pub fn regn_fejl(l: &Laest, fra: &str, til: &str) -> FejlUd {
+    let dage = dage_i(fra, til);
+    let en_dag = dage.len() == 1;
+    let zd = doegn(l, fra, til);
+    let mut rk: BTreeMap<(&str, &'static str, i64, i64), Saml> = BTreeMap::new();
+    let mut spaend = Vec::new();
+    for z in &l.zoner {
+        let mut fejltimer: BTreeMap<i64, bool> = BTreeMap::new();
+        for dag in dage.iter().filter(|d| er_hentet(l, z, d)) {
+            let Some(d) = zd.get(&(z.as_str(), dag.as_str())) else { continue };
+            if d.har("d_fejl") {
+                for ((t, k, o), n) in &d.fejl {
+                    let a = rk.entry((z.as_str(), "kode", *k, *o)).or_default();
+                    a.laeg(format!("{dag}T{t:02}"), *n);
+                    if d.time_med_fejl(*t) {
+                        a.i_fejltimer += n;
+                    }
+                    if en_dag {
+                        *a.timer.entry(*t).or_default() += n;
+                    }
+                }
+            }
+            if d.har("d_forside") {
+                for t in (0..24).filter(|t| d.forside[*t] > 0) {
+                    let a = rk.entry((z.as_str(), "forside", 0, 0)).or_default();
+                    a.laeg(format!("{dag}T{t:02}"), d.forside[t]);
+                    if d.time_med_fejl(t) {
+                        a.i_fejltimer += d.forside[t];
+                    }
+                    if en_dag {
+                        *a.timer.entry(t).or_default() += d.forside[t];
+                    }
+                }
+            }
+            let start = dag_ms(dag).unwrap_or(0);
+            for t in (0..24).filter(|t| d.time_med_fejl(*t)) {
+                fejltimer.insert(start + t as i64 * TIME_MS, d.har("d_forside") && d.forside[t] > 0);
+            }
+        }
+        spaend.extend(spaend_af(&fejltimer).into_iter().map(|s| ZoneSpaend {
+            zone: z.clone(),
+            fra: s.fra,
+            til: s.til,
+            timer: s.timer,
+            forside_fejlede: s.forside_fejlede,
+        }));
+    }
+    // Pr. vært: kun kant-koder og kun dage.
+    let mut vaerter: BTreeMap<&str, (i64, i64)> = BTreeMap::new();
+    if let [z] = l.zoner.as_slice() {
+        for r in l
+            .vaert_raekker
+            .iter()
+            .filter(|r| r.art == V_FEJL && dage.contains(&r.dag) && vaert_med(l, &r.dag))
+        {
+            let Some((v, k)) = r.noegle.split_once('\t') else { continue };
+            let Ok(k) = k.parse::<i64>() else { continue };
+            let x = vaerter.entry(v).or_default();
+            x.0 += r.n;
+            if SERVER_KODER.contains(&k) {
+                x.1 += r.n;
+            }
+            if l.vaert.as_deref() == Some(v) {
+                rk.entry((z.as_str(), "vaert", k, 0)).or_default().laeg(r.dag.clone(), r.n);
+            }
+        }
+    }
+    let mut raekker: Vec<FejlRaekke> = rk
+        .into_iter()
+        .filter(|((_, slags, ..), _)| (*slags == "vaert") == l.vaert.is_some())
+        .map(|((zone, slags, kant, origin), a)| FejlRaekke {
+            zone: zone.to_string(),
+            slags,
+            kant,
+            origin,
+            naa: slags != "forside" && SERVER_KODER.contains(&kant),
+            server: slags == "kode" && SERVER_FEJL.contains(&origin),
+            svar: a.svar,
+            i_fejltimer: a.i_fejltimer,
+            foerste: a.foerste.unwrap_or_default(),
+            sidste: a.sidste.unwrap_or_default(),
+            timer: a
+                .timer
+                .into_iter()
+                .map(|(t, svar)| TimeN {
+                    time: format!("{t:02}"),
+                    svar,
+                })
+                .collect(),
+        })
+        .collect();
+    raekker.sort_by(|a, b| {
+        b.svar
+            .cmp(&a.svar)
+            .then_with(|| (&a.zone, a.slags, a.kant, a.origin).cmp(&(&b.zone, b.slags, b.kant, b.origin)))
+    });
+    let mut vaerter: Vec<VaertSum> = vaerter
+        .into_iter()
+        .filter(|(_, (n, _))| *n > 0)
+        .map(|(v, (svar, kunne_ikke))| VaertSum {
+            vaert: v.to_string(),
+            svar,
+            kunne_ikke,
+        })
+        .collect();
+    vaerter.sort_by(|a, b| b.svar.cmp(&a.svar).then_with(|| a.vaert.cmp(&b.vaert)));
+    FejlUd { raekker, spaend, vaerter }
+}
+
+/// V-DRIFT.1 B2: "mellem kl. {a} og {b}" for statusdøgnet `dag` i lokal tid: døgnets længste spænd (ved lige mange timer det første). Slutningen er
+/// timen efter spændets sidste time. `None` uden spænd. Ren funktion.
+pub fn mellem_af(spaend: &[Spaend], tz: &crate::notify::Tidszone) -> Option<crate::overblik::Mellem> {
+    let ms = |t: &str| -> Option<i64> {
+        let (dag, hh) = t.split_once('T')?;
+        Some(dag_ms(dag)? + time_nr(hh)? as i64 * TIME_MS)
+    };
+    let kl = |ms: i64| {
+        let (t, m) = tz.kl(ms);
+        format!("{t:02}.{m:02}")
+    };
+    let mut bedst: Option<&Spaend> = None;
+    for s in spaend {
+        if bedst.is_none_or(|b| s.timer > b.timer) {
+            bedst = Some(s);
+        }
+    }
+    let s = bedst?;
+    Some(crate::overblik::Mellem {
+        fra: kl(ms(&s.fra)?),
+        til: kl(ms(&s.til)? + TIME_MS),
+    })
+}
+
+/// Spændet for ét domænes statusdøgn, kun fra cachen. Er timetallene ikke hentet eller afskåret, er der intet spænd (`regn`), og teksten er som uden.
+pub fn mellem(lager: &Store, zone: &str, dag: &str, tz: &crate::notify::Tidszone) -> Result<Option<crate::overblik::Mellem>, Fejl> {
+    let l = laes(lager, &[zone.to_string()], dag, None)?;
+    Ok(mellem_af(&regn(&l, dag, dag).spaend, tz))
 }
 
 #[cfg(test)]

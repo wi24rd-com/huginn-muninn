@@ -33,7 +33,7 @@ Kolonnerne:
 
 Nogle domæner får et mærke ved siden af status: **Ligner målrettet**, **Ligner rekognoscering** eller **Ligner DNS-rekognoscering**. Mærkerne siger noget om mønsteret, ikke om mængden, og altid som "ligner", aldrig som en sikker dom. I oversigten står de to sidste kort som **Recon** og **DNS-recon**; andre steder står navnet fuldt ud. Hvad de betyder, står i [Ordlisten](../99-ordliste.md) og i rådet bag **Hvad betyder det? →**.
 
-Overblik kan også fortælle, at et domæne er sat på pause hos Cloudflare, ikke er aktivt, er mistænkt for phishing eller står i udviklertilstand, og at din server ikke svarer (fejl 520–527). I Hvorfor kan der stå "Følger den globale tendens" eller "Verden var normal i går, så stigningen er din egen"; det sammenligner med hele verden og ændrer ikke status.
+Overblik kan også fortælle, at et domæne er sat på pause hos Cloudflare, ikke er aktivt, er mistænkt for phishing eller står i udviklertilstand, og at din server ikke svarer: en stor del af svarene i går var fejl, fordi Cloudflare ikke kunne nå eller finde din server (fejl 520–527 og 530). Havde tre eller flere timer i træk fejl, nævner forklaringen tidsrummet i din lokale tid, fx "mellem kl. 01.00 og 05.00". Over tabellen står så en gul linje, **Din server svarer ikke:**, med domænet; et klik på domænet åbner [Drift](drift.md) for domænet og dagen, hvor timerne står. I Hvorfor kan der stå "Følger den globale tendens" eller "Verden var normal i går, så stigningen er din egen"; det sammenligner med hele verden og ændrer ikke status.
 
 ## Huller i historikken
 
@@ -53,6 +53,7 @@ Kommer der et nyt domæne på din Cloudflare-konto, viser Overblik en diskret li
 | **Vælg domæner** (i båndet) | Dialogen **Domæner**; se [Indstillinger](../50-indstillinger.md) |
 | **Notifikationer** (klokken i båndet) | Dialogen **Notifikationer pr. domæne** |
 | **Hvad gør jeg?** / **Hvad betyder det? →** | Et råd i klart sprog til netop den situation |
+| Domænet i linjen **Din server svarer ikke:** | [Drift](drift.md) for domænet og dagen |
 | **mere** | Resten af forklaringen |
 | Et CVE-nummer i forklaringen | CVE'ens side på cve.org i din browser |
 | Linjen nederst om fravalgte domæner | Dialogen **Domæner** |

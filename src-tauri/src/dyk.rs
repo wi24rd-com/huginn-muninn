@@ -1040,7 +1040,7 @@ pub struct TrafikUd {
     pub lande_i_alt: i64,
     pub status: Vec<VaerdiN>,
     pub status_i_alt: i64,
-    /// Svar 520–527: Cloudflare kunne ikke få svar fra serveren.
+    /// Svar 520–527 og 530 (`overblik::SERVER_KODER`): Cloudflare kunne ikke få svar fra serveren.
     pub server_fejl: i64,
     pub robotter: Vec<VaerdiN>,
     /// De ekstra tal er hentet for dagen.

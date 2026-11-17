@@ -1,15 +1,15 @@
 /* Huginn and Muninn — programrammen. Én side med hash-navigation: #overblik, #siden-sidst, #vaernet?zone=<id>&navn=…
-   (eller ?samlet=1; perioden og filtrene står i samme adresse), #robotter?zone=…, #login?zone=…, #land?kode=DK (visning-land.js), #besoegende?zone=… og #indstillinger. Uden token står opsætningen i indholdsområdet, og visningerne er slået fra (kun
+   (eller ?samlet=1; perioden og filtrene står i samme adresse), #robotter?zone=…, #login?zone=…, #land?kode=DK (visning-land.js), #besoegende?zone=…, #drift?zone=… (visning-drift.js) og #indstillinger. Uden token står opsætningen i indholdsområdet, og visningerne er slået fra (kun
    Indstillinger kan åbnes). Rammen ejer den delte tilstand (token, zoner, overblikkets rækker, valget, køens status) og er
    den eneste, der lytter på Rust-hændelserne: 'hentekoe' (køen), 'siden_sidst' (menulinjen/en notifikation), 'visning'
-   (programmenuen på macOS: ⌘1–7, ⌘, og Om), 'historik' (Vis → Tilbage/Frem), 'ekstra' (de ekstra tal for et domæne er gemt) og 'radar' (nye tal fra Radar). Visningerne (visning-*.js) registrerer sig med
+   (programmenuen på macOS: ⌘1–8, ⌘, og Om), 'historik' (Vis → Tilbage/Frem), 'ekstra' (de ekstra tal for et domæne er gemt) og 'radar' (nye tal fra Radar). Visningerne (visning-*.js) registrerer sig med
    vis()/skjul() og abonnerer på rammens egne beskeder (paa → afmeld), så et skift aldrig efterlader lyttere. domaener: true
    på en visning lader domænetræet i navigationsruden styre den; visningen svarer med hvad() og skift(). Domænevalget er fælles (tilstand.domaeneValg, gemt i Rust som domaene_valg): enhver adresse med zone eller samlet=1 sætter det, og sidebjælken, ⌘ og
    programmenuen åbner visningen med det. Historikken beholder sin egen adresse. land: true viser landevælgeren, som visningen selv fylder. data-dyk, data-gaa, data-cve, data-radar og data-rul på et
    element gør det klikbart: én lytter her (klik, Enter, mellemrum), så det overlever, at visningerne tegner om. Et mål i hjælpeskuffen
    lukker skuffen. I en tegning (SVG) flytter piletasterne mellem mærkerne, så tegningen kun er ét Tab-stop; .dyk-hit er den usynlige,
    større klikflade under et mærke og tæller ikke med. Genveje: på macOS står de i programmenuen (Rust), på Windows/Linux fanger
-   rammen Ctrl+1–7, Ctrl+, og Ctrl+R/F5 (Hent nu). Tilbage/frem: ‹ › i båndet, ⌘[ ⌘] (menuen), ⌘← ⌘→ og Alt+← Alt+→ (keydown).
+   rammen Ctrl+1–8, Ctrl+, og Ctrl+R/F5 (Hent nu). Tilbage/frem: ‹ › i båndet, ⌘[ ⌘] (menuen), ⌘← ⌘→ og Alt+← Alt+→ (keydown).
    Tekststørrelse: ⌘+ ⌘− ⌘0 (Ctrl på Windows) i keydown på alle platforme, og i programmenuen (hændelsen 'tekst').
    <html data-platform> sættes af Rust (init-script).
    Vinduets titel følger visningen (document.title; Rust sætter vinduets titel ud fra den). Alt bygges med createElement/
@@ -47,11 +47,11 @@
     'hm-hent': [['path', { d: 'M20 11a8 8 0 1 0-2.3 5.7' }], ['path', { d: 'M20 4v7h-7' }]],
     'hm-klokke': [['path', { d: 'M6 9a6 6 0 1 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9z' }], ['path', { d: 'M10 20a2 2 0 0 0 4 0' }]],
   });
-  /* De syv visninger er båndets faner (kittets visninger med som: 'faner', fra 2.8.0), og Indstillinger står for sig til højre
+  /* De otte visninger (V-DRIFT.1: Drift er den ottende og sidste, kittets MAKS_VISNINGER) er båndets faner (kittets visninger med som: 'faner', fra 2.8.0), og Indstillinger står for sig til højre
      (Jans valg på skitsen 2026-11-13, V-FANER.1): tast, visning, tekstnøgle. Båndet under fanerne viser kun det, der hører til
      fanen: hver gruppe siger, hvilke visninger den hører til (kun), og rammen skjuler resten. Periode, egne datoer og Vis er
      pladser (baand-plads), som visningen selv fylder gennem iBaand; Hent nu står forrest i alle faner. */
-  const SKIFT = [['1', 'overblik', 'navOverblik'], ['2', 'siden-sidst', 'navSiden'], ['3', 'vaernet', 'navVaernet'], ['4', 'robotter', 'navRobotter'], ['5', 'login', 'navLogin'], ['6', 'land', 'navLand'], ['7', 'besoegende', 'navBesoeg']];
+  const SKIFT = [['1', 'overblik', 'navOverblik'], ['2', 'siden-sidst', 'navSiden'], ['3', 'vaernet', 'navVaernet'], ['4', 'robotter', 'navRobotter'], ['5', 'login', 'navLogin'], ['6', 'land', 'navLand'], ['7', 'besoegende', 'navBesoeg'], ['8', 'drift', 'navDrift']];
   /* Landevælgeren står i båndet og vises kun på visninger med land: true; visningen fylder den og lytter på 'landValg'. */
   const landVaelger = Kit.vaelger({ etiket: { t: 'landVaelg' }, soeg: { ph: 'landSoegPh', ariaT: 'landSoeg' }, ingen: { t: 'landIngen' }, punkter: [], vedValg: id => udsend('landValg', id) });
   const plads = id => ({ id: 'plads-' + id, element: el('div', { id, className: 'baand-plads' }) });
@@ -81,6 +81,8 @@
     [null, 'gLand', [{ id: 'land', element: landVaelger.rod }]],
     [['besoegende'], 'gPeriode', valg('besoegende-periode', 3, 'kalender')],
     [['besoegende'], 'gDatoer', [plads('besoegende-datoer')]],
+    [['drift'], 'gPeriode', valg('drift-periode', 3, 'kalender')],
+    [['drift'], 'gDatoer', [plads('drift-datoer')]],
   ];
   const baand = Kit.commandBar($('baand'), { ariaT: 'baandAria', udenFaner: true, mere: { t: 'baandMere' },
     visninger: { t: 'navH', som: 'faner', punkter: [
@@ -151,7 +153,7 @@
   S.anvend();
 
   /* ── visninger og router ── */
-  const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'robotter', 'login', 'land', 'besoegende', 'teknologi'];
+  const VISNINGER = ['overblik', 'siden-sidst', 'vaernet', 'robotter', 'login', 'land', 'besoegende', 'drift', 'teknologi'];
   const visninger = {};
   const registrer = (navn, v) => { visninger[navn] = v; };
   const sektion = navn => document.querySelector(`section[data-visning="${navn}"]`);
@@ -222,7 +224,7 @@
     if (!tilstand.sat) navn = 'opsaetning';
     /* Et domæne, der ikke er valgt, er væk overalt, også fra en gammel adresse. Adressen erstattes, så tilbage-knappen ikke sidder fast. */
     if (tilstand.uvalgt.has(params.get('zone'))) {
-      const ny = { vaernet: '#vaernet?samlet=1', robotter: '#robotter?samlet=1', login: '#login?samlet=1', besoegende: '#besoegende?samlet=1', teknologi: '#teknologi' }[navn] || '#overblik';
+      const ny = { vaernet: '#vaernet?samlet=1', robotter: '#robotter?samlet=1', login: '#login?samlet=1', besoegende: '#besoegende?samlet=1', drift: '#drift?samlet=1', teknologi: '#teknologi' }[navn] || '#overblik';
       history.replaceState(history.state, '', ny);
       return route();
     }
@@ -245,7 +247,7 @@
   /* En visning kan låne en anden visnings titel (titel()): Angreb med robotfilter hedder Robotter. */
   function opdaterTitel() { const v = visninger[tilstand.visning]; document.title = S.titel((v && v.titel && v.titel()) || tilstand.visning); }
   function navTilstand() {
-    /* Uden API Token er de syv visninger slået fra (kittets visningsskift), og fanens tip siger hvorfor; tandhjulet i titellinjen er altid frit. */
+    /* Uden API Token er de otte visninger slået fra (kittets visningsskift), og fanens tip siger hvorfor; tandhjulet i titellinjen er altid frit. */
     for (const [, id] of SKIFT) skift.saetPunkt(id, { deaktiveret: !tilstand.sat, hvorfor: tilstand.sat ? null : 'navUdenToken' });
   }
   // Altid gennem gaaTil: et klik på den adresse, der allerede står, ville ellers rydde history.state (trinets nummer).
@@ -440,7 +442,7 @@
   }
 
   /* ── genveje ── */
-  const GENVEJE = [['1', 'overblik', 'navOverblik'], ['2', 'siden-sidst', 'navSiden'], ['3', 'vaernet', 'navVaernet'], ['4', 'robotter', 'navRobotter'], ['5', 'login', 'navLogin'], ['6', 'land', 'navLand'], ['7', 'besoegende', 'navBesoeg'], [',', 'indstillinger', 'navIndst']];
+  const GENVEJE = [['1', 'overblik', 'navOverblik'], ['2', 'siden-sidst', 'navSiden'], ['3', 'vaernet', 'navVaernet'], ['4', 'robotter', 'navRobotter'], ['5', 'login', 'navLogin'], ['6', 'land', 'navLand'], ['7', 'besoegende', 'navBesoeg'], ['8', 'drift', 'navDrift'], [',', 'indstillinger', 'navIndst']];
   const genvejTekst = tast => (mac ? '⌘' : 'Ctrl+') + (tast === 'r' ? 'R' : tast);
   const histGenvej = [mac ? '⌘[' : 'Alt+←', mac ? '⌘]' : 'Alt+→'];
   for (const [id, tekst, genvej] of [['hist-tilbage', T.tilbage, histGenvej[0]], ['hist-frem', T.frem, histGenvej[1]]]) {

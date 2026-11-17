@@ -568,13 +568,18 @@ fn forgaars(r: &Raekke1) -> bool {
 fn server_tekst(r: &Raekke1, sprog: Sprog) -> String {
     let Some(s) = &r.server else { return String::new() };
     let (p, svar) = (n(s.procent, sprog), n(s.svar, sprog));
+    // V-DRIFT.1 B2: tidsrummet, når døgnet har et spænd (`overblik::Mellem`, lokal tid); ellers teksten uden.
+    let mellem = s.mellem.as_ref().map_or_else(String::new, |m| match sprog {
+        Sprog::Da => format!(", mellem kl. {} og {}", m.fra, m.til),
+        Sprog::En => format!(", between {} and {}", m.fra, m.til),
+    });
     match (sprog == Sprog::Da, forgaars(r)) {
         (true, nat) => format!(
-            " Din server svarer ikke: {p} % af {svar} svar {} var fejl 520–527, så Cloudflare kunne ikke få svar fra din server. Se »Hvad gør jeg?«.",
+            " Din server svarer ikke: {p} % af {svar} svar {} var fejl, fordi Cloudflare ikke kunne nå eller finde din server{mellem}. Se »Hvad gør jeg?«.",
             if nat { "i forgårs" } else { "i går" }
         ),
         (false, nat) => format!(
-            " Your server is not answering: {p}% of {svar} responses {} were errors 520–527, so Cloudflare could not get an answer from your server. See “What do I do?”.",
+            " Your server is not answering: {p}% of {svar} responses {} were errors because Cloudflare could not reach or find your server{mellem}. See “What do I do?”.",
             if nat { "the day before yesterday" } else { "yesterday" }
         ),
     }
@@ -2412,6 +2417,7 @@ mod tests {
                 fejl: 40,
                 svar: 120,
                 procent: 33,
+                mellem: None,
             }),
             ..r("s", "nede.wi24rd.com", Status::Gul, 0, 0.0)
         };
@@ -2423,11 +2429,11 @@ mod tests {
         assert_eq!(ids(&beslut(&rk, &ind(Niveau::Alt), &intet(), NU)), ["s"]);
         assert_eq!(
             aarsag(&nede, Sprog::Da),
-            "Ingen angreb i går. Din server svarer ikke: 33 % af 120 svar i går var fejl 520–527, så Cloudflare kunne ikke få svar fra din server. Se »Hvad gør jeg?«."
+            "Ingen angreb i går. Din server svarer ikke: 33 % af 120 svar i går var fejl, fordi Cloudflare ikke kunne nå eller finde din server. Se »Hvad gør jeg?«."
         );
         assert_eq!(
             aarsag(&nede, Sprog::En),
-            "No attacks yesterday. Your server is not answering: 33% of 120 responses yesterday were errors 520–527, so Cloudflare could not get an answer from your server. See “What do I do?”."
+            "No attacks yesterday. Your server is not answering: 33% of 120 responses yesterday were errors because Cloudflare could not reach or find your server. See “What do I do?”."
         );
         let nat = Raekke1 {
             opdateres: true,
@@ -2435,7 +2441,7 @@ mod tests {
         };
         assert_eq!(
             aarsag(&nat, Sprog::Da),
-            "Ingen angreb i forgårs. Din server svarer ikke: 33 % af 120 svar i forgårs var fejl 520–527, så Cloudflare kunne ikke få svar fra din server. Se »Hvad gør jeg?«. Opdateres …"
+            "Ingen angreb i forgårs. Din server svarer ikke: 33 % af 120 svar i forgårs var fejl, fordi Cloudflare ikke kunne nå eller finde din server. Se »Hvad gør jeg?«. Opdateres …"
         );
         let med_angreb = Raekke1 {
             status: Status::Roed,
@@ -2445,7 +2451,60 @@ mod tests {
             server: nede.server.clone(),
             ..med_angreb
         };
-        assert!(aarsag(&med_angreb, Sprog::Da).ends_with("Bed din webmand tjekke, at siden er opdateret. Din server svarer ikke: 33 % af 120 svar i går var fejl 520–527, så Cloudflare kunne ikke få svar fra din server. Se »Hvad gør jeg?«."));
+        assert!(aarsag(&med_angreb, Sprog::Da).ends_with("Bed din webmand tjekke, at siden er opdateret. Din server svarer ikke: 33 % af 120 svar i går var fejl, fordi Cloudflare ikke kunne nå eller finde din server. Se »Hvad gør jeg?«."));
+    }
+
+    /// V-DRIFT.1 B2: med et spænd står tidsrummet i linjen og i notifikationen; uden er teksten som før. Hverken et værtsnavn eller et `@` kan stå der:
+    /// teksten bygges kun af tal og de to klokkeslæt.
+    #[test]
+    fn server_teksten_naevner_tidsrummet() {
+        let med = |mellem: Option<(&str, &str)>| Raekke1 {
+            server: Some(ServerFejl {
+                dag: "2026-11-02".into(),
+                fejl: 40,
+                svar: 120,
+                procent: 33,
+                mellem: mellem.map(|(a, b)| crate::overblik::Mellem {
+                    fra: a.into(),
+                    til: b.into(),
+                }),
+            }),
+            ..r("s", "nede.wi24rd.com", Status::Gul, 0, 0.0)
+        };
+        let (spaend, uden) = (med(Some(("23.00", "02.00"))), med(None));
+        assert_eq!(
+            aarsag(&spaend, Sprog::Da),
+            "Ingen angreb i går. Din server svarer ikke: 33 % af 120 svar i går var fejl, fordi Cloudflare ikke kunne nå eller finde din server, mellem kl. 23.00 og 02.00. Se »Hvad gør jeg?«."
+        );
+        assert_eq!(
+            aarsag(&spaend, Sprog::En),
+            "No attacks yesterday. Your server is not answering: 33% of 120 responses yesterday were errors because Cloudflare could not reach or find your server, between 23.00 and 02.00. See “What do I do?”."
+        );
+        assert_eq!(
+            aarsag(&uden, Sprog::Da),
+            "Ingen angreb i går. Din server svarer ikke: 33 % af 120 svar i går var fejl, fordi Cloudflare ikke kunne nå eller finde din server. Se »Hvad gør jeg?«."
+        );
+        let nat = Raekke1 {
+            opdateres: true,
+            ..spaend.clone()
+        };
+        assert!(aarsag(&nat, Sprog::Da)
+            .contains("svar i forgårs var fejl, fordi Cloudflare ikke kunne nå eller finde din server, mellem kl. 23.00 og 02.00."));
+        // Notifikationen: samme linje, og status og regler er de samme med og uden spænd.
+        let b = beslut(std::slice::from_ref(&spaend), &ind(Niveau::Alt), &intet(), NU).expect("gul melder på Alt");
+        assert_eq!(
+            beslut(std::slice::from_ref(&uden), &ind(Niveau::Alt), &intet(), NU).map(|b| b.fund.len()),
+            Some(b.fund.len())
+        );
+        assert!(beslut(std::slice::from_ref(&spaend), &ind(Niveau::Standard), &intet(), NU).is_none());
+        for sprog in [Sprog::Da, Sprog::En] {
+            let (titel, tekst) = super::tekst(&b, sprog, &DatoFormat::default());
+            assert!(tekst.contains("23.00") && tekst.contains("02.00"), "{tekst}");
+            assert!(!titel.contains('@') && !tekst.contains('@'), "{titel} / {tekst}");
+            // Det eneste navn er domænet selv; ingen vært under det.
+            assert_eq!(format!("{titel} {tekst}").matches("wi24rd.com").count(), 1, "{titel} / {tekst}");
+            assert!(titel.starts_with("nede.wi24rd.com: "), "{titel}");
+        }
     }
 
     fn trafik(n: i64, stoppet: i64) -> Option<TrafikDag> {

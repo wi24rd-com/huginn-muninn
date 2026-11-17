@@ -53,7 +53,7 @@ The text is the same as under **Why** in the Overview, in the program's language
 | **Unusually many attacks** | Yesterday's attacks against the week before, with what they went for. | Act / Watch |
 | **Looks targeted** | The attacks rose here but not on your other domains, and a large share came from one network. Compares only with your chosen domains, needs at least 3, and notifies you only once the day after is fetched. Until then it is preliminary. Also comes on a calm domain. | Standard and Everything |
 | **Looks like reconnaissance** and **Looks like DNS reconnaissance** | Many different paths, or many lookups of names that do not exist, in one day. Only the first day of an episode. | Only if **Notify me of “Looks like reconnaissance”** is on |
-| **Your server is not answering** | A large part of yesterday's responses were errors 520–527. | Follows the status |
+| **Your server is not answering** | A large part of yesterday's responses were errors because Cloudflare could not reach or find your server (errors 520–527 and 530). If three or more hours in a row had errors, the message names the time span in your local time: "between 01.00 and 05.00". | Follows the status |
 | **Unusually much traffic** | Far more requests than usual in one day. | Follows the status |
 | **Mail in your domain's name** | A new sender failed DMARC, or the share rose markedly. Needs DMARC Management at Cloudflare. | Watch |
 | **Passwords from known leaks** | Login attempts with leaked passwords. At least Watch; Act if the server answered 2xx or 302. | Follows the status |

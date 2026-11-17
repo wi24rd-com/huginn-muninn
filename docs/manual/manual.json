@@ -499,6 +499,18 @@
    "billeder": []
   },
   {
+   "id": "40-visninger/drift",
+   "da": {
+    "fil": "da/40-visninger/drift.md",
+    "titel": "Drift"
+   },
+   "en": {
+    "fil": "en/40-visninger/drift.md",
+    "titel": "Health"
+   },
+   "billeder": []
+  },
+  {
    "id": "40-visninger/dyk",
    "da": {
     "fil": "da/40-visninger/dyk.md",

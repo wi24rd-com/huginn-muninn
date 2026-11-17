@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-drift-fejl"
+description = "Enables the drift_fejl command without any pre-configured scope."
+commands.allow = ["drift_fejl"]
+
+[[permission]]
+identifier = "deny-drift-fejl"
+description = "Denies the drift_fejl command without any pre-configured scope."
+commands.deny = ["drift_fejl"]

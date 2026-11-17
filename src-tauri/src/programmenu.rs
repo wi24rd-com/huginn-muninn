@@ -18,6 +18,7 @@ pub const ROBOTTER: &str = "pm-robotter";
 pub const LOGIN: &str = "pm-login";
 pub const LAND: &str = "pm-land";
 pub const BESOEG: &str = "pm-besoeg";
+pub const DRIFT: &str = "pm-drift";
 pub const SIDEN: &str = "pm-siden";
 pub const ANGREB: &str = "pm-angreb";
 pub const HENT: &str = "pm-hent";
@@ -28,7 +29,7 @@ pub const TEKST_NORMAL: &str = "pm-tekst-normal";
 /// Hvad et klik i programmenuen gør.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Handling {
-    /// Skift til visningen (rammens navn: "overblik", "siden-sidst", "vaernet", "robotter", "login", "land", "besoegende", "indstillinger"; "om" = Indstillinger → Om).
+    /// Skift til visningen (rammens navn: "overblik", "siden-sidst", "vaernet", "robotter", "login", "land", "besoegende", "drift", "indstillinger"; "om" = Indstillinger → Om).
     Visning(&'static str),
     /// Et trin i webvisningens historik ("tilbage" | "frem").
     Historik(&'static str),
@@ -51,6 +52,7 @@ pub fn handling(id: &str) -> Option<Handling> {
         LOGIN => Some(Handling::Visning("login")),
         LAND => Some(Handling::Visning("land")),
         BESOEG => Some(Handling::Visning("besoegende")),
+        DRIFT => Some(Handling::Visning("drift")),
         HENT => Some(Handling::HentNu),
         TEKST_STOERRE => Some(Handling::Tekst("stoerre")),
         TEKST_MINDRE => Some(Handling::Tekst("mindre")),
@@ -70,6 +72,7 @@ pub const GENVEJ_ROBOTTER: &str = "CmdOrCtrl+4";
 pub const GENVEJ_LOGIN: &str = "CmdOrCtrl+5";
 pub const GENVEJ_LAND: &str = "CmdOrCtrl+6";
 pub const GENVEJ_BESOEG: &str = "CmdOrCtrl+7";
+pub const GENVEJ_DRIFT: &str = "CmdOrCtrl+8";
 pub const GENVEJ_HENT: &str = "CmdOrCtrl+R";
 /// På macOS giver NumpadAdd tegnet + i menuen (muda 0.20), så ⌘+ virker på et dansk tastatur. Equal ville være tegnet =.
 pub const GENVEJ_TEKST_STOERRE: &str = "CmdOrCtrl+NumpadAdd";
@@ -103,6 +106,7 @@ pub struct Tekster {
     pub login: &'static str,
     pub land: &'static str,
     pub besoeg: &'static str,
+    pub drift: &'static str,
     pub hent: &'static str,
     pub tekst_stoerre: &'static str,
     pub tekst_mindre: &'static str,
@@ -144,6 +148,7 @@ pub fn tekster(sprog: Sprog) -> Tekster {
             login: "Login",
             land: "Land lige nu",
             besoeg: "Besøgende",
+            drift: "Drift",
             hent: "Hent nu",
             tekst_stoerre: "Større tekst",
             tekst_mindre: "Mindre tekst",
@@ -179,6 +184,7 @@ pub fn tekster(sprog: Sprog) -> Tekster {
             login: "Login",
             land: "Country now",
             besoeg: "Visitors",
+            drift: "Health",
             hent: "Fetch now",
             tekst_stoerre: "Larger Text",
             tekst_mindre: "Smaller Text",
@@ -245,6 +251,7 @@ pub fn byg(app: &tauri::AppHandle, sprog: Sprog) -> tauri::Result<tauri::menu::M
             &punkt(LOGIN, t.login, GENVEJ_LOGIN)?,
             &punkt(LAND, t.land, GENVEJ_LAND)?,
             &punkt(BESOEG, t.besoeg, GENVEJ_BESOEG)?,
+            &punkt(DRIFT, t.drift, GENVEJ_DRIFT)?,
             &P::separator(app)?,
             &punkt(HENT, t.hent, GENVEJ_HENT)?,
             &P::separator(app)?,
@@ -345,6 +352,14 @@ mod tests {
         assert_eq!((tekster(Sprog::Da).besoeg, tekster(Sprog::En).besoeg), ("Besøgende", "Visitors"));
         assert_eq!(handling(BESOEG), Some(Handling::Visning("besoegende")));
         assert_eq!(GENVEJ_BESOEG, "CmdOrCtrl+7");
+    }
+
+    /// V-DRIFT.1 B2 (D1): Drift er den ottende visning, med ⌘8 / Ctrl+8.
+    #[test]
+    fn drift_i_menuen() {
+        assert_eq!((tekster(Sprog::Da).drift, tekster(Sprog::En).drift), ("Drift", "Health"));
+        assert_eq!(handling(DRIFT), Some(Handling::Visning("drift")));
+        assert_eq!(GENVEJ_DRIFT, "CmdOrCtrl+8");
     }
 
     #[test]

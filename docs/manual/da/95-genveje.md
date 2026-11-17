@@ -11,6 +11,7 @@ Genvejene står også i hjælpen (**?** øverst til højre) og i menuen **Vis** 
 | Login | ⌘5 | Ctrl+5 |
 | Dit land lige nu | ⌘6 | Ctrl+6 |
 | Besøgende | ⌘7 | Ctrl+7 |
+| Drift | ⌘8 | Ctrl+8 |
 | Indstillinger | ⌘, | Ctrl+, |
 | Hent nu | ⌘R | Ctrl+R eller F5 |
 | Tilbage | ⌘[ eller ⌘← | Alt+← |

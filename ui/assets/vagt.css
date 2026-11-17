@@ -463,3 +463,17 @@ tr[data-raekke="hul-raekke"] > * { color: var(--text-muted); font-style: italic;
 .tek-forslag { margin: 0 0 8px; font-size: var(--font-size-sm); }
 /* V-SUBDOM.1 B2: subdomænet ved en sti i Mest besøgte sider (samme sti på to subdomæner er to rækker). Kun tekst. */
 .besoeg-vaert { margin-left: 0.5em; color: var(--text-muted); font-size: var(--font-size-xs); font-family: var(--font-sans); }
+/* V-DRIFT.1 B2: fanen Drift. Fejlsøjlerne er gule (--warn-mark), så de ikke læses som angreb; cachens to serier er grønne (fra Cloudflares lager) og blå
+   (hentet hos din server). En time og en uge åbnes med data-gaa. */
+.vg-soejle.drift-soejle { fill: var(--warn-mark); }
+.vg-soejle.drift-lager, .drift-leg-lager { fill: var(--ok-mark); background: var(--ok-mark); }
+.vg-soejle.drift-server, .drift-leg-server { fill: var(--info-mark); background: var(--info-mark); }
+.dyk-soejle[data-gaa]:hover .drift-soejle, .dyk-soejle[data-gaa]:focus-visible .drift-soejle,
+.dyk-soejle[data-gaa]:hover .drift-lager, .dyk-soejle[data-gaa]:focus-visible .drift-lager,
+.dyk-soejle[data-gaa]:hover .drift-server, .dyk-soejle[data-gaa]:focus-visible .drift-server { filter: brightness(1.25); }
+.drift-graf { margin: 14px 0 12px; }
+.drift-graf-h { margin: 0 0 2px; font-size: var(--font-size-md); }
+.drift-veje { margin: 0 0 8px; }
+.drift-fliser { margin-bottom: 12px; }
+.drift-hvad { min-width: 14rem; }
+.drift-hvornaar { white-space: nowrap; }

@@ -40,6 +40,8 @@
       const under = underLinje(r);
       aabn.title = [r.navn, under.title].filter(Boolean).join(' · '); // knappen ligger hen over kortet, så tooltippen skal sidde på den
       li.append(under);
+      /* V-DRIFT.1 B2: "Din server svarer ikke" fører til Drift for domænet og dagen. */
+      if (r.server && !r.gammel) li.append(window.hmTegn.knap(T.sidenServer, { gaa: 'drift?' + new URLSearchParams({ zone: r.id, navn: r.navn, dag: r.server.dag }) }, 'link hm-siden-drift', fmt(T.serverDrift, { navn: r.navn, d: S.datoLang(r.server.dag) })));
       liste.append(li);
     }
     if (!usaed.length && groenne.length) {

@@ -23,6 +23,7 @@
 <script src="assets/visning-login.js" defer></script>
 <script src="assets/visning-land.js" defer></script>
 <script src="assets/visning-besoegende.js" defer></script>
+<script src="assets/visning-drift.js" defer></script>
 <script src="assets/visning-teknologi.js" defer></script>
 <script src="assets/visning-indstillinger.js" defer></script>
 </head>
@@ -118,6 +119,11 @@
   <section class="visning" id="visning-besoegende" data-visning="besoegende" aria-labelledby="besoegende-h" hidden>
     <div class="titelrad"><h1 id="besoegende-h" tabindex="-1" data-t="navBesoeg">Besøgende</h1><span class="under" id="besoegende-under"></span></div>
     <div class="vg" id="besoegende-rod"></div>
+  </section>
+
+  <section class="visning" id="visning-drift" data-visning="drift" aria-labelledby="drift-h" hidden>
+    <div class="titelrad"><h1 id="drift-h" tabindex="-1" data-t="navDrift">Drift</h1><span class="under" id="drift-under"></span></div>
+    <div class="vg" id="drift-rod"></div>
   </section>
 
   <section class="visning" id="visning-teknologi" data-visning="teknologi" aria-labelledby="teknologi-h" hidden>
@@ -327,6 +333,10 @@
   <div class="hjaelp-del" data-hjaelp="besoegende">
     <p data-t="hjBesoeg"></p>
     <p data-t="hjBesoeg2"></p>
+  </div>
+  <div class="hjaelp-del" data-hjaelp="drift">
+    <p data-t="hjDrift"></p>
+    <p data-t="hjDrift2"></p>
   </div>
   <div class="hjaelp-del" data-hjaelp="teknologi">
     <p data-t="tekP"></p>

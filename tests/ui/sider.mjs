@@ -149,7 +149,9 @@ const aarDage = Array.from({ length: 365 }, (_, i) => { const dag = besDag('2026
 const ugerAf = dage => dage.reduce((u, d) => { const ms = Date.parse(d.dag + 'T00:00:00Z'), man = new Date(ms - ((new Date(ms).getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10); const sidst = u[u.length - 1]; const x = sidst && sidst.dag === man ? sidst : (u.push({ dag: man, fra: d.dag, til: d.dag, n: null, med: 0, dage: 0 }), u[u.length - 1]); x.til = d.dag; x.dage++; if (d.n !== null) { x.n = (x.n || 0) + d.n; x.med++; } return u; }, []);
 export const BESOEG_AAR = { ...BESOEG_UD, periode: { ...BESOEG_UD.periode, fra: '2025-11-06', dage: 365, med: 336 }, dage: aarDage, uger: ugerAf(aarDage), lande_med: 30 };
 /* Stubbene vælger svaret efter kaldet (som dyk_regel): land, sti, et år, ellers 7 dage. */
-export const BES_NOEGLE = "c==='subdomaener'&&a.zone!=='z1'?'subdomaener_en':c==='besoegende'&&a.vaert==='api'?'besoegende_vaert_tom':c==='besoegende'&&a.vaert!=null&&!a.sti?'besoegende_vaert':c==='besoegende'&&a.land?'besoegende_land':c==='besoegende'&&a.sti?'besoegende_side':c==='besoegende'&&a.periode==='alt'?'besoegende_aar':c";
+/* V-DRIFT.1 B2: drift og drift_fejl svarer efter argumenterne (domæne, periode, subdomæne), når posten har et svar for netop dem (driftSvarFor). */
+const DRIFT_NOEGLE = "(c==='drift'||c==='drift_fejl')&&((c+'|'+(a.zone||'')+'|'+a.fra+'|'+a.til+'|'+(a.vaert==null?'-':a.vaert)) in SVAR)?c+'|'+(a.zone||'')+'|'+a.fra+'|'+a.til+'|'+(a.vaert==null?'-':a.vaert):";
+export const BES_NOEGLE = DRIFT_NOEGLE + "c==='subdomaener'&&a.zone!=='z1'?'subdomaener_en':c==='besoegende'&&a.vaert==='api'?'besoegende_vaert_tom':c==='besoegende'&&a.vaert!=null&&!a.sti?'besoegende_vaert':c==='besoegende'&&a.land?'besoegende_land':c==='besoegende'&&a.sti?'besoegende_side':c==='besoegende'&&a.periode==='alt'?'besoegende_aar':c";
 
 /* V-SUBDOM.1 B2: svaret fra subdomaener. Værterne er labels under domænet ("" = domænet selv) med tal pr. dag: [vært, forespørgsler, besøg, angreb, afviste]
    pr. dag, så summerne passer til dagene. Kun opdigtede navne under wi24rd.com. huller: dage uden tal (null, ikke 0). trafikHuller (V-SUBDOM.1 FIX 2): dage
@@ -267,4 +269,138 @@ SIDER.push(
   { id: 'konti-delt-domaener', navn: 'Domæner: et delt domæne i begge grupper med noten', hash: 'overblik', aabn: ['#vaelg-dom'], rod: '#domaener-grupper [data-forbindelse="2"]', luk: '#domaener-luk', ekstra: DELT },
   { id: 'konti-ens-omdoeb', navn: 'Tilføj API Token… med samme navn: Omdøb med noten', hash: 'overblik', aabn: ['#indst-knap', '#forb-tilfoej', ['#skift-felt', 'x'.repeat(40)], '#skift-gem'], rod: '#omdoeb-dialog', fokus: '#omdoeb-felt', luk: '#omdoeb-nej', ekstra: DELT_TILFOEJ },
   { id: 'konti-omdoeb-gemt', navn: 'Omdøb og Gem: beskeden i rækken og fokus på Omdøb…', hash: 'overblik', aabn: ['#indst-knap', '#forb-2-omdoeb', '#omdoeb-gem'], rod: '#forb-liste [data-forbindelse="2"]', fokus: '#forb-2-omdoeb', luk: '#indst-luk', ekstra: DELT },
+);
+
+/* ── V-DRIFT.1 B2: fanen Drift. En lille model af Rusts drift::regn og drift::regn_fejl, så testene kan spørge med de samme argumenter som visningen (domæne,
+   periode, subdomæne) og få tal, der passer sammen. zoner: { id: { dag: { timer: svar pr. time (tal eller liste med 24), fejl: [[time, kant, origin, n]],
+   forside: [[time, n]], cache: { status: [svar, bytes] }, afskaaret: [arter] } } }; en dag, der mangler, er ikke hentet. vaerter: { id: { dag: [[vært,
+   kant, n]] } }. Reglerne er Rusts: en time med fejl har mindst 5 svar 520–527/530 og mindst 20 % af timens svar; tre timer i træk er et spænd. ── */
+const D_NAA = k => (k >= 520 && k <= 527) || k === 530;
+const D_GRP = { hit: ['lager', 'lager'], stale: ['lager', 'lager'], updating: ['lager', 'lager'], revalidated: ['server', 'lager'], none: ['selv', 'selv'], unknown: ['selv', 'selv'], miss: ['server', 'server'], expired: ['server', 'server'], bypass: ['server', 'server'], dynamic: ['server', 'server'] };
+export const driftCache = m => {
+  const tom = () => ({ lager: 0, selv: 0, server: 0, andet: 0 }), ud = { status: [], svar: tom(), data: tom(), stale: 0 };
+  for (const [status, [n, bytes]] of Object.entries(m)) {
+    const [g, gd] = D_GRP[status] || ['andet', 'andet'];
+    ud.svar[g] += n; ud.data[gd] += bytes;
+    if (status === 'stale') ud.stale += n;
+    ud.status.push({ status, svar: n, bytes, gruppe: g, gruppe_data: gd });
+  }
+  ud.status.sort((a, b) => b.svar - a.svar || (a.status < b.status ? -1 : 1));
+  return ud;
+};
+export function driftModel(zoner, vaerter = {}, x = {}) {
+  const to = n => String(n).padStart(2, '0');
+  const timer = d => (Array.isArray(d.timer) ? d.timer : Array(24).fill(d.timer || 0));
+  const har = (d, art) => !(d.afskaaret || []).includes(art);
+  const naaTime = (d, t) => (d.fejl || []).filter(f => f[0] === t && D_NAA(f[1])).reduce((a, f) => a + f[3], 0);
+  const medFejl = (d, t) => har(d, 'd_time') && har(d, 'd_fejl') && naaTime(d, t) >= 5 && naaTime(d, t) * 100 >= 20 * timer(d)[t];
+  const forside = (d, t) => (d.forside || []).filter(f => f[0] === t).reduce((a, f) => a + f[1], 0);
+  const zs = a => (a.zone ? [a.zone] : Object.keys(zoner));
+  const spaendFor = (z, dage) => {
+    const ud = []; let loeb = [];
+    const slut = () => { if (loeb.length >= 3) ud.push({ zone: z, fra: loeb[0][0], til: loeb.at(-1)[0], timer: loeb.length, forside_fejlede: loeb.some(l => l[1]) }); loeb = []; };
+    for (const dag of dage) for (let t = 0; t < 24; t++) { const d = (zoner[z] || {})[dag]; if (d && medFejl(d, t)) loeb.push([`${dag}T${to(t)}`, har(d, 'd_forside') && forside(d, t) > 0]); else slut(); }
+    slut();
+    return ud;
+  };
+  const vaertDag = (z, dag, v) => ((vaerter[z] || {})[dag] || []).filter(r => r[0] === v);
+  const vaertHentet = (z, dag) => Boolean(x.vaertFra && dag >= x.vaertFra && (zoner[z] || {})[dag]);
+  function drift(a) {
+    const z = zs(a), dage = dageFraTil(a.fra, a.til), periodeCache = {};
+    let cacheDage = 0;
+    const ud = dage.map(dag => {
+      const tal = z.map(id => (zoner[id] || {})[dag]), alle = z.length > 0 && tal.every(Boolean);
+      if (!alle) return { dag, hentet: false, svar: null, kunne_ikke: null, kunne_ikke_530: null, server_fejl: null, fejl: null, forside_fejl: null, timer_med_fejl: [], cache: null, afskaaret: [] };
+      const afsk = [...new Set(tal.flatMap(d => d.afskaaret || []))], med = art => !afsk.includes(art);
+      const fejl = p => (med('d_fejl') ? tal.reduce((n, d) => n + (d.fejl || []).filter(p).reduce((b, f) => b + f[3], 0), 0) : null);
+      const c = {};
+      if (med('d_cache')) { for (const d of tal) for (const [s, [n, b]] of Object.entries(d.cache || {})) { for (const m of [c, periodeCache]) { m[s] ||= [0, 0]; m[s][0] += n; m[s][1] += b; } } cacheDage++; }
+      return { dag, hentet: true, svar: med('d_time') ? tal.reduce((n, d) => n + timer(d).reduce((b, y) => b + y, 0), 0) : null, kunne_ikke: fejl(f => f[1] >= 520 && f[1] <= 527), kunne_ikke_530: fejl(f => f[1] === 530),
+        server_fejl: fejl(f => f[2] >= 500 && f[2] <= 599), fejl: fejl(() => true), forside_fejl: med('d_forside') ? tal.some(d => (d.forside || []).length > 0) : null,
+        timer_med_fejl: [...new Set(tal.flatMap(d => Array.from({ length: 24 }, (_, t) => t).filter(t => medFejl(d, t)).map(to)))].sort(), cache: med('d_cache') ? driftCache(c) : null, afskaaret: afsk };
+    });
+    const en = dage.length === 1 && ud[0].hentet ? z.map(id => zoner[id][dage[0]]) : null;
+    const timerUd = en ? Array.from({ length: 24 }, (_, t) => {
+      const par = new Map();
+      for (const d of en) for (const f of (d.fejl || []).filter(f => f[0] === t)) par.set(`${f[1]}/${f[2]}`, (par.get(`${f[1]}/${f[2]}`) || 0) + f[3]);
+      return { time: to(t), svar: ud[0].svar === null ? null : en.reduce((n, d) => n + timer(d)[t], 0), fejl: ud[0].kunne_ikke === null ? [] : [...par.entries()].map(([k, svar]) => ({ kant: Number(k.split('/')[0]), origin: Number(k.split('/')[1]), svar })),
+        forside: ud[0].forside_fejl === null ? null : en.reduce((n, d) => n + forside(d, t), 0), med_fejl: ud[0].timer_med_fejl.includes(to(t)) };
+    }) : [];
+    const foerste = z.flatMap(id => Object.keys(zoner[id] || {})).sort()[0] || null;
+    const v = a.vaert == null ? null : { vaert: a.vaert, dage: dage.map(dag => {
+      const h = vaertHentet(z[0], dag), rk = vaertDag(z[0], dag, a.vaert), sum = p => (h ? rk.filter(r => p(r[1])).reduce((n, r) => n + r[2], 0) : null);
+      return { dag, hentet: h, kunne_ikke: sum(k => k >= 520 && k <= 527), kunne_ikke_530: sum(k => k === 530), andre_5xx: sum(k => !D_NAA(k)) };
+    }), fra: x.vaertFra || null, afskaaret: [], afvist: [], afvist_nu: false };
+    return { fra: a.fra, til: a.til, dage: ud, timer: timerUd, spaend: z.flatMap(id => spaendFor(id, dage)).map(({ zone, ...s }) => s), cache: cacheDage ? driftCache(periodeCache) : null, cache_hele_domaenet: a.vaert != null,
+      foerste_dag: foerste, afskaaret: ud.filter(d => d.afskaaret.length).map(d => d.dag), afvist: Boolean(x.afvist), vaert: v };
+  }
+  function fejl(a) {
+    const z = zs(a), dage = dageFraTil(a.fra, a.til), en = dage.length === 1, rk = new Map();
+    const laeg = (noegle, grund, hvornaar, n, iFejl, t) => {
+      const r = rk.get(noegle) || rk.set(noegle, { ...grund, svar: 0, i_fejltimer: 0, foerste: hvornaar, sidste: hvornaar, timer: new Map() }).get(noegle);
+      r.svar += n; if (iFejl) r.i_fejltimer += n; if (hvornaar < r.foerste) r.foerste = hvornaar; if (hvornaar > r.sidste) r.sidste = hvornaar;
+      if (en && t != null) r.timer.set(to(t), (r.timer.get(to(t)) || 0) + n);
+    };
+    for (const id of z) for (const dag of dage) {
+      const d = (zoner[id] || {})[dag];
+      if (!d) continue;
+      if (har(d, 'd_fejl')) for (const [t, k, o, n] of d.fejl || []) laeg(`${id}|kode|${k}|${o}`, { zone: id, slags: 'kode', kant: k, origin: o, naa: D_NAA(k), server: o >= 500 && o <= 599 }, `${dag}T${to(t)}`, n, medFejl(d, t), t);
+      if (har(d, 'd_forside')) for (const [t, n] of d.forside || []) laeg(`${id}|forside`, { zone: id, slags: 'forside', kant: 0, origin: 0, naa: false, server: false }, `${dag}T${to(t)}`, n, medFejl(d, t), t);
+    }
+    const vs = new Map();
+    if (z.length === 1) for (const dag of dage.filter(dag => vaertHentet(z[0], dag))) for (const [v, k, n] of (vaerter[z[0]] || {})[dag] || []) {
+      const s = vs.get(v) || vs.set(v, { vaert: v, svar: 0, kunne_ikke: 0 }).get(v);
+      s.svar += n; if (D_NAA(k)) s.kunne_ikke += n;
+      if (a.vaert === v) laeg(`${z[0]}|vaert|${k}`, { zone: z[0], slags: 'vaert', kant: k, origin: 0, naa: D_NAA(k), server: false }, dag, n, false, null);
+    }
+    const raekker = [...rk.values()].filter(r => (r.slags === 'vaert') === (a.vaert != null)).map(r => ({ ...r, timer: [...r.timer.entries()].sort().map(([time, svar]) => ({ time, svar })) })).sort((p, q) => q.svar - p.svar);
+    return { raekker, spaend: z.flatMap(id => spaendFor(id, dage)), vaerter: [...vs.values()].sort((p, q) => q.svar - p.svar || (p.vaert < q.vaert ? -1 : 1)) };
+  }
+  return { drift, drift_fejl: fejl };
+}
+/* Svarene som faste poster til fotobogen og kontrasttesten (deres stub kan ikke bære funktioner): ét pr. sæt argumenter, plus drift/drift_fejl uden nøgle
+   som det første sæt. sæt: [[zone eller null, fra, til, vært eller null], …]. */
+export const driftSvarFor = (model, saet) => {
+  const ud = {};
+  saet.forEach(([zone, fra, til, vaert], i) => {
+    const a = { zone, fra, til, vaert }, n = `|${zone || ''}|${fra}|${til}|${vaert == null ? '-' : vaert}`;
+    ud['drift' + n] = model.drift(a); ud['drift_fejl' + n] = model.drift_fejl(a);
+    if (!i) { ud.drift = ud['drift' + n]; ud.drift_fejl = ud['drift_fejl' + n]; }
+  });
+  return ud;
+};
+/* wi24rd.com: en almindelig dag har 50 svar i timen og mest "dynamic" i cachen. Natten til den 3. november kunne Cloudflare ikke få forbindelse (522) i fire
+   timer, mest på www, og forsiden svarede heller ikke. Dertil et par spredte fejl: serverens egen fejl (500), et navn, der ikke kunne slås op (530), og en 502. */
+const D_ALM = { dynamic: [900, 27_000_000], hit: [180, 14_400_000], miss: [60, 4_800_000], none: [40, 20_000], expired: [12, 960_000], revalidated: [8, 3_200] };
+const dDag = (fejl = [], forside = [], cache = D_ALM, timer = 50) => ({ timer, fejl, forside, cache });
+export const D_DAGE = dageFraTil('2026-10-07', '2026-11-05'), D_UGE = ['2026-10-30', '2026-11-05'], D_NAT = '2026-11-03';
+const natTimer = Array.from({ length: 24 }, (_, t) => (t >= 1 && t <= 4 ? 40 : 50));
+const D_Z1 = Object.fromEntries(D_DAGE.map(dag => [dag, dDag()]));
+D_Z1[D_NAT] = dDag([1, 2, 3, 4].map(t => [t, 522, 0, 30]), [[2, 6], [3, 6]], { ...D_ALM, stale: [14, 1_120_000], dynamic: [780, 23_400_000] }, natTimer);
+D_Z1['2026-11-01'] = dDag([[14, 500, 500, 6]]);
+D_Z1['2026-10-31'] = dDag([[9, 530, 0, 3]]);
+D_Z1['2026-11-04'] = dDag([[20, 502, 0, 2]]);
+const D_ROLIGE = Object.fromEntries(D_DAGE.map(dag => [dag, dDag()]));
+export const D_VAERTER = { z1: { [D_NAT]: [['www', 522, 96], ['', 522, 20], ['shop', 522, 4]], '2026-10-31': [['', 530, 3]], '2026-11-01': [['shop', 500, 6]], '2026-11-04': [['[ip]', 502, 2]] } };
+export const DRIFT_NAT = driftModel({ z1: D_Z1, z2: D_ROLIGE, z3: D_ROLIGE }, D_VAERTER, { vaertFra: '2026-10-07' });
+export const DRIFT_ROLIG = driftModel({ z1: D_ROLIGE, z2: D_ROLIGE, z3: D_ROLIGE }, {}, { vaertFra: '2026-10-07' });
+export const DRIFT_IKKE = driftModel({ z1: {}, z2: {}, z3: {} });
+const D_SAET = [['z1', ...D_UGE, null], ['z1', D_NAT, D_NAT, null], ['z1', ...D_UGE, 'www'], [null, ...D_UGE, null]];
+const D_NAT_SVAR = driftSvarFor(DRIFT_NAT, D_SAET), D_ROLIG_SVAR = driftSvarFor(DRIFT_ROLIG, D_SAET), D_IKKE_SVAR = driftSvarFor(DRIFT_IKKE, D_SAET);
+/* Natten med 522 er standardsvaret, så Drift med fejl også er med i de kørsler, der kun tager poster uden ekstra (kontrasten med Reduce motion). */
+Object.assign(svar, D_NAT_SVAR);
+/* Overblik med timespændet i "Hvorfor" (og linjen "Din server svarer ikke", der åbner Drift for domænet og dagen). */
+export const D_OVERBLIK = [{ ...OVERBLIK[0], status_dag: D_NAT, server: { dag: D_NAT, fejl: 120, svar: 1160, procent: 10, mellem: { fra: '01.00', til: '05.00' } } }, OVERBLIK[1], OVERBLIK[2]];
+const D_OV = { overblik: D_OVERBLIK, siden_sidst: { vis: false, nye: [], raekker: [] } };
+SIDER.push(
+  { id: 'drift-nat', navn: 'Drift: en nat med 522 på www, og forsiden nede', hash: 'drift?' + dom },
+  { id: 'drift-nat-tabel', navn: 'Drift: grafen pr. dag, tabellen og det, programmet ikke ser', hash: 'drift?' + dom, rul: '#drift-graf', rulTekst: true },
+  { id: 'drift-timer', navn: 'Drift: dagens timer (3. november) i lokal tid', hash: `drift?${dom}&dag=${D_NAT}` },
+  { id: 'drift-sub', navn: 'Drift: Subdomæner med fejl', hash: 'drift?' + dom, rul: '#drift-sub' },
+  { id: 'drift-subdomaene', navn: 'Drift filtreret til www.wi24rd.com (Cache gælder hele domænet)', hash: `drift?${dom}&vaert=www.wi24rd.com` },
+  { id: 'drift-cache', navn: 'Drift: cache med mest "dynamic"', hash: 'drift?' + dom, rul: '#drift-cache' },
+  { id: 'drift-samlet', navn: 'Drift for alle domæner', hash: 'drift?samlet=1' },
+  { id: 'drift-uden-fejl', navn: 'Drift uden fejl', hash: 'drift?' + dom, ekstra: D_ROLIG_SVAR },
+  { id: 'drift-ikke-hentet', navn: 'Drift, før tallene er hentet ("–", aldrig 0)', hash: 'drift?' + dom, ekstra: D_IKKE_SVAR },
+  { id: 'drift-overblik', navn: 'Overblik med timespændet i Hvorfor', hash: 'overblik', ekstra: D_OV },
 );

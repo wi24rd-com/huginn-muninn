@@ -73,6 +73,15 @@ If the two connections have the same name (both have the account's name at Cloud
 
 **My subdomain is not there.** The section **Subdomains** only shows names with traffic in the chosen period, and only traffic that goes through Cloudflare. Check in Cloudflare’s DNS whether the name has the orange cloud. If it is “DNS only” (grey cloud), the traffic goes straight to the server, and Cloudflare has no figures for it. If the domain only has traffic on one name, the section is not shown at all. The program has figures per subdomain from about 30 days before the update; older days have no figures per subdomain, and then **Per subdomain from …** is shown.
 
+## Health
+
+| The text | Means | Do |
+|---|---|---|
+| **The figures have not been fetched for the period yet.** or **–** with **Not fetched** on a tile (in [Health](40-visninger/drift.md)) | Errors per hour and cache have not been fetched for the days in the period. They are fetched in the background after the other figures, and after the update the last 30 days or so take a little while. Days older than what Cloudflare keeps never get figures. A **–** is never 0. | Wait until the footer says everything has been fetched. Choose a shorter period if it goes further back than the line **Errors per hour from …**. |
+| **Cloudflare rejected the request for errors and cache for a domain. The program tries again the next time it starts.** | Cloudflare did not accept the question about the new figures for the domain, e.g. because the plan lacks one of the fields. All other figures are fetched and shown as before. | Nothing. The program asks again at the next start. |
+| **{n} days are not included: Cloudflare sent more rows than the program can fetch at once.** (in Health) | Those days had so many different responses that Cloudflare's answer was at the highest number of rows. The program would rather show no figure for those days than one that is too low. | Nothing. |
+| **Not available per subdomain** | Hours with errors, the front page and your server's own errors only exist for the whole domain. | Remove the filter per subdomain (**×** on the chip). |
+
 ## It is not an error
 
 - **Status "Unknown"** or **"No figures yet – fetching"**: the domain was just chosen. Wait for the fetch.

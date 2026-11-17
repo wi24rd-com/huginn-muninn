@@ -33,7 +33,7 @@ The columns:
 
 Some domains get a label next to the status: **Looks targeted**, **Looks like reconnaissance** or **Looks like DNS reconnaissance**. The labels say something about the pattern, not the amount, and always as "looks", never as a certain verdict. In the overview the last two are shown short as **Recon** and **DNS recon**; elsewhere the name is written in full. What they mean is in the [Glossary](../99-ordliste.md) and in the advice behind **What does it mean? →**.
 
-The Overview can also tell you that a domain is paused at Cloudflare, not active, suspected of phishing or in Development Mode, and that your server is not answering (errors 520–527). Under Why it may say "Follows the global trend" or "The world was normal yesterday, so the rise is yours"; that compares with the whole world and does not change the status.
+The Overview can also tell you that a domain is paused at Cloudflare, not active, suspected of phishing or in Development Mode, and that your server is not answering: a large part of yesterday's responses were errors because Cloudflare could not reach or find your server (errors 520–527 and 530). If three or more hours in a row had errors, the explanation names the time span in your local time, e.g. "between 01.00 and 05.00". A yellow line, **Your server is not answering:**, then stands above the table with the domain; a click on the domain opens [Health](drift.md) for the domain and the day, where the hours are shown. Under Why it may say "Follows the global trend" or "The world was normal yesterday, so the rise is yours"; that compares with the whole world and does not change the status.
 
 ## Gaps in the history
 
@@ -53,6 +53,7 @@ If a new domain appears on your Cloudflare account, the Overview shows a discree
 | **Choose domains** (in the band) | The dialog **Domains**; see [Settings](../50-indstillinger.md) |
 | **Notifications** (the bell in the band) | The dialog **Notifications per domain** |
 | **What do I do?** / **What does it mean? →** | Plain-language advice for that very situation |
+| The domain in the line **Your server is not answering:** | [Health](drift.md) for the domain and the day |
 | **more** | The rest of the explanation |
 | A CVE number in the explanation | The CVE's page on cve.org in your browser |
 | The line at the bottom about cleared domains | The dialog **Domains** |

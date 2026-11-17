@@ -12,6 +12,8 @@
 
 **Browser check (challenged)** · Cloudflare asked the visitor to prove it is a real browser. A robot cannot.
 
+**Cache (Cloudflare's store)** · Cloudflare stores copies of your files (images, CSS, JavaScript) and can answer with them without asking your server. The pages themselves are not stored by default. [Health](40-visninger/drift.md) shows how often the answer came from the store. The cache covers the whole domain.
+
 **Calm** · The status when nothing is unusual.
 
 **Connection** · One API Token and a name in the program, one per Cloudflare account. The name is the account's name at Cloudflare until you give the connection your own with **Rename…**. The domains from all connections are shown together.
@@ -27,6 +29,8 @@
 **Drill-down** · The old name for the filters in Attacks: the saved figures for exactly what you clicked.
 
 **Edge – first line of defence** · Cloudflare's network of data centres. Your site answers from all of them (anycast), so an attack is stopped near the attacker, long before it reaches your server. Only applies to DNS records with the orange cloud.
+
+**Errors 520–527 and 530** · Cloudflare's own response codes when Cloudflare could not reach or find your server; the program calls them "Could not be reached". 520: the server answered, but the answer could not be used. 521: the server refused Cloudflare. 522: Cloudflare could not connect in time. 523: Cloudflare could not find a route to the server. 524: the server took too long to answer. 525: the secure connection to the server could not be set up. 526: the server's certificate is not valid. 527 is not on Cloudflare's page of the errors, but counts. 530: Cloudflare could not look up the server's name. If they are a large part of the responses on a day, the Overview says **Your server is not answering**. Responses 500–599 from the server itself are something else: the server was up, but a program on it failed.
 
 **Gap** · A day the program never fetched, typically because the computer was off. Never drawn as 0.
 
