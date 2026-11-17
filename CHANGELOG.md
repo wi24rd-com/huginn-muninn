@@ -4,23 +4,23 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-11-17
+
+Anden udgave til macOS: flere API Tokens side om side, subdomæner i Besøgende og Angreb og fanen Drift med fejl pr. time og cache; den lokale database opgraderes til skema 21.
+
 ### 2026-11-17 23:30 — Fanen Drift: fejl pr. time og cache
 #### Tilføjet
 - **Fanen Drift** (⌘8, Windows Ctrl+8), den ottende fane, med to afsnit. **Svarede dit website?** viser svar med fejl pr. dag og pr. time: fliserne **Kunne ikke nås**, **Dit website svarede med en fejl**, **Timer med fejl** og **Forsiden svarede ikke**, en graf, hvor et klik på en dag viser dagens 24 timer i lokal tid, og en tabel med fejlen i klart sprog og første og sidste time. Tre eller flere timer i træk med fejl giver linjen **Mellem kl. … og … kunne Cloudflare ikke nå din server.** Svarede forsiden med en fejl uden for sådan et tidsrum, står der **Dit website svarede ikke hver gang: forsiden svarede med en fejl … gange.** **Hvor meget Cloudflare klarede selv** viser, hvor stor en del af forespørgslerne Cloudflare svarede på fra sit lager, hvor meget data dit website slap for at sende, og hvad der skete med resten.
 - **Begge slags websites læses rigtigt:** et med egen server bag Cloudflare og et, der ligger hos Cloudflare (Workers eller Pages) uden server. **Kunne ikke nås** kræver en server og er 0 for et website hos Cloudflare; **Dit website svarede med en fejl** tæller alle andre svar med fejl, også en Worker eller Pages-funktion, der fejler, og hvert svar tælles én gang. En note i hvert afsnit siger det ligeud.
-- **En graf uden tal har ingen skala:** når alle dage er 0, står kun nullinjen, og er det største tal 1, står mærket kun én gang. Det gælder alle søjlediagrammer i programmet.
+- **En graf uden tal har ingen skala og er lav:** når alle dage er 0, eller tallene ikke er hentet, står kun nullinjen og datoerne på en lav flade, og er det største tal 1, står mærket kun én gang. Det gælder alle søjlediagrammer i programmet.
 - **Fejl pr. subdomæne:** har ét domæne fejl på mindst to navne, står tabellen **Subdomæner med fejl**, og et klik viser fejlene for det subdomæne. Cachen gælder altid hele domænet.
 - Et tal, der ikke er hentet, står som **–** eller "Ikke hentet", aldrig som 0. API Tokenet skal ikke have flere rettigheder.
 #### Ændret
 - **Fejl 530 tæller med i "Din server svarer ikke"** sammen med 520–527: Cloudflare kunne ikke slå serverens navn op. Grænserne er de samme (mindst 20 % af mindst 50 svar), og det giver stadig Hold øje, aldrig Handl.
 - **Beskeden og Hvorfor nævner tidsrummet**, når tre eller flere timer i træk havde fejl: "mellem kl. 01.00 og 05.00", i din lokale tid. Linjen **Din server svarer ikke** i Overblik åbner Drift for domænet og dagen.
-- **Den lokale database opgraderes et trin** (skema 21) ved første start: én ny tabel over, hvilke dage der er hentet med fejl og cache. Ingen gemte tal ændres.
+- **Den lokale database opgraderes et trin** (skema 21) ved første start: én ny tabel over, hvilke dage der er hentet med fejl og cache. Ingen gemte tal ændres. Version 1.0.0 siger bagefter "(skema 21)".
 - **Fejl og cache hentes ca. 30 dage tilbage ved opgraderingen**, én gang pr. domæne i det langsomme tempo. Ældre dage har ingen af tallene.
 - Vejledningen har et nyt kapitel om Drift og beskriver ændringerne i Overblik, Notifikationer, Data og historik, Fejlfinding, Tastaturgenveje og ordlisten.
-
-## [1.1.0] — 2026-11-16
-
-Anden udgave til macOS: flere API Tokens side om side og subdomæner i Besøgende og Angreb; den lokale database opgraderes til skema 20.
 
 ### 2026-11-16 23:30 — Subdomæner i Besøgende og Angreb
 #### Tilføjet
@@ -31,7 +31,7 @@ Anden udgave til macOS: flere API Tokens side om side og subdomæner i Besøgend
 - Noterne **Pr. subdomæne fra …**, **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.**, **Cloudflare svarede ikke på subdomænerne for dette domæne.** og **{n} dage er ikke med: Cloudflare sendte flere rækker, end programmet kan hente på én gang.**
 - **Et tal pr. subdomæne, der ikke er hentet endnu, står som –, aldrig som 0:** de gemte tal vises, mens dagene hentes igen, og en linje under tabellen siger **Henter besøg og forespørgsler pr. subdomæne …** eller **Henter {n} dage endnu.**, indtil køen er færdig. Det gælder også det filtrerede og de første minutter efter en opdatering.
 #### Ændret
-- **Den lokale database opgraderes endnu et trin** (skema 20) ved første start: to nye tabeller over, hvilke dage der er hentet pr. subdomæne. Ingen gemte tal ændres. Version 1.0.0 siger bagefter "(skema 20)".
+- **Den lokale database opgraderes endnu et trin** (skema 20) ved første start: to nye tabeller over, hvilke dage der er hentet pr. subdomæne. Ingen gemte tal ændres.
 - **Mest besøgte sider skelner mellem subdomæner:** samme sti på to subdomæner står som to rækker, med subdomænet ved stien, og et klik viser stien på det subdomæne. Står svaret på Cloudflares loft, siger en note, at kun de mest besøgte sider er med.
 - **Historik pr. subdomæne fra ca. 30 dage før opgraderingen:** første start henter de sidste ca. 30 dage én gang pr. domæne. Ældre dage har ingen tal pr. subdomæne.
 - Afviser Cloudflare subdomænets navn i hentningen af angrebene, hentes domænets tal uden det, som før, resten af døgnet (UTC); næste døgn prøves der med navnet igen.

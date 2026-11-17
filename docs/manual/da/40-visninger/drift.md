@@ -18,7 +18,7 @@ Fliserne:
 
 | Flise | Betyder |
 |---|---|
-| **Kunne ikke nås** | Svar, hvor Cloudflare ikke kunne nå eller finde din server (Cloudflares fejl 520–527 og 530). Linjen under siger, hvor stor en del af alle svar det var. De fejl kræver en server: ligger dit website hos Cloudflare, er tallet 0. |
+| **Kunne ikke nås** | Svar, hvor Cloudflare ikke kunne nå eller finde din server (Cloudflares fejl 520–527 og 530). Linjen under siger, hvor stor en del af alle svar det var. De fejl kræver en server: et website, der ligger hos Cloudflare (Workers eller Pages), får dem ikke. |
 | **Dit website svarede med en fejl** | Alle andre svar med fejl: din server var oppe, men svarede selv med en fejl (svar 500–599), eller dit website hos Cloudflare (Workers eller Pages) fejlede. Det er oftest et program, der fejler, ikke et nedbrud. Hvert svar tælles én gang, så de to første fliser tilsammen er alle svar med fejl. |
 | **Timer med fejl** | Antal timer, hvor mindst 5 svar ikke kunne nås, og de var mindst 20 % af timens svar. |
 | **Forsiden svarede ikke** | **Ja**, hvis forsiden (`/`) svarede med en fejl mindst én gang i perioden; ellers **Nej**. |
@@ -31,7 +31,7 @@ Under fliserne kan der stå en gul linje: **Mellem kl. 01.00 og 05.00 kunne Clou
 
 Tabellen har kolonnerne **Domæne**, **Hvad skete der**, **Svar** og **Første og sidste time**. Hver række er én slags fejl på ét domæne, flest svar først, og fejlen står i klart sprog med svarkoden i parentes, fx "Cloudflare kunne ikke få forbindelse til din server i tide (svar 522)" eller "Din server svarede med en fejl (svar 502)". Et almindeligt fejlsvar, hvor ingen server svarede, står som "Ingen server svarede: dit website hos Cloudflare fejlede, eller Cloudflare selv svarede med en fejl (svar 500)". Andre koder står som "Den besøgende fik en fejl" med koden. Med **Alle domæner** åbner domænet Drift for det domæne. De 10 største står fremme, resten bag **Vis alle … rækker**.
 
-Nederst i afsnittet står altid to noter. Den første: **Har du din egen server, er »dit website« den. Ligger dit website hos Cloudflare (Workers eller Pages), er der ingen server at nå: Cloudflare svarer selv, og derfor er »Kunne ikke nås« 0.** Den anden: **Programmet ser kun trafik, der går gennem Cloudflare. Svarer Cloudflare med en gammel kopi, ser den besøgende siden, selv om dit website er nede.**
+Nederst i afsnittet står altid to noter. Den første: **Har du din egen server, er »dit website« den. Fejlene i »Kunne ikke nås« kan kun ske, når der er en server bag. Et website, der ligger hos Cloudflare (Workers eller Pages), har ingen server og får dem derfor ikke.** Den anden: **Programmet ser kun trafik, der går gennem Cloudflare. Svarer Cloudflare med en gammel kopi, ser den besøgende siden, selv om dit website er nede.**
 
 ### Subdomæner med fejl
 

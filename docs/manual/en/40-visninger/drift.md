@@ -18,7 +18,7 @@ The tiles:
 
 | Tile | Means |
 |---|---|
-| **Could not be reached** | Responses where Cloudflare could not reach or find your server (Cloudflare's errors 520–527 and 530). The line below says how large a part of all responses it was. These errors need a server: if your website is hosted at Cloudflare, the figure is 0. |
+| **Could not be reached** | Responses where Cloudflare could not reach or find your server (Cloudflare's errors 520–527 and 530). The line below says how large a part of all responses it was. These errors need a server: a website hosted at Cloudflare (Workers or Pages) does not get them. |
 | **Your website answered with an error** | All other responses with errors: your server was up, but answered with an error itself (response 500–599), or your website at Cloudflare (Workers or Pages) failed. It is usually a program that fails, not an outage. Each response is counted once, so the first two tiles together are all responses with errors. |
 | **Hours with errors** | The number of hours where at least 5 responses could not be reached, and they were at least 20% of the responses in that hour. |
 | **The front page did not answer** | **Yes** if the front page (`/`) answered with an error at least once in the period; otherwise **No**. |
@@ -31,7 +31,7 @@ Below the tiles there may be a yellow line: **Between 01.00 and 05.00, Cloudflar
 
 The table has the columns **Domain**, **What happened**, **Responses** and **First and last hour**. Each row is one kind of error on one domain, most responses first, and the error is in plain language with the response code in brackets, e.g. "Cloudflare could not connect to your server in time (response 522)" or "Your server answered with an error (response 502)". An ordinary error response where no server answered is shown as "No server answered: your website at Cloudflare failed, or Cloudflare itself answered with an error (response 500)". Other codes are shown as "The visitor got an error" with the code. With **All domains**, the domain opens Health for that domain. The 10 largest are shown, the rest behind **Show all … rows**.
 
-At the bottom of the section there are always two notes. The first: **If you have your own server, “your website” is that server. If your website is hosted at Cloudflare (Workers or Pages), there is no server to reach: Cloudflare answers itself, and that is why “Could not be reached” is 0.** The second: **The program only sees traffic that goes through Cloudflare. If Cloudflare answers with an old copy, the visitor sees the page even though your website is down.**
+At the bottom of the section there are always two notes. The first: **If you have your own server, “your website” is that server. The errors in “Could not be reached” can only happen when there is a server behind the website. A website hosted at Cloudflare (Workers or Pages) has no server, so it does not get them.** The second: **The program only sees traffic that goes through Cloudflare. If Cloudflare answers with an old copy, the visitor sees the page even though your website is down.**
 
 ### Subdomains with errors
 

@@ -232,6 +232,8 @@ button.moenster-maerke:hover { box-shadow: var(--hover-shadow); }
 .vg-tavle-top .dyk-celle { color: inherit; }
 .dyk-diagram { position: relative; padding: 0 calc(var(--font-size-xs) * 3.6) calc(var(--font-size-xs) * 2) 0; }
 .dyk-soejler { display: block; width: 100%; height: 170px; }
+/* V-DRIFT.1 FIX 2: en søjlegraf uden tal (alle 0 eller ikke hentet) er lav, så siden ikke får et stort hul. Nullinjen står i bunden af fladen, og datoerne under den. */
+.dyk-diagram-tom .dyk-soejler { height: 40px; }
 .dyk-flade { fill: transparent; }
 .dyk-soejle { outline: none; }
 .dyk-uhentet .dyk-flade { fill: var(--data-grid); opacity: .5; stroke: var(--text-muted); stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }

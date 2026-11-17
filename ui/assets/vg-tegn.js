@@ -489,12 +489,14 @@
      måneden ved første søjle i en ny måned i stedet for datoer). Kun dage med tal kan åbnes. ── */
   /* FIX 1 (V-DRIFT.1): hjælpelinjerne og deres mærker. Den øverste linje står ved det største tal og den midterste ved det halve. Er det halve afrundet
      det samme som det største (største tal 1) eller 0 (ingen tal: alle dage er 0 eller ikke hentet), står den midterste hverken som linje eller mærke,
-     så samme tal aldrig står to gange. Uden tal overhovedet står kun nullinjen: en skala uden tal siger intet. */
+     så samme tal aldrig står to gange. Uden tal overhovedet står kun nullinjen: en skala uden tal siger intet.
+     FIX 2: en graf uden tal får klassen dyk-diagram-tom, som gør fladen lav (vagt.css), så siden ikke får et stort hul. Nullinjen og datoerne står stadig. */
   function yAkse(maks, harTal, linje) {
     const midt = Math.round(maks / 2), medTop = harTal, medMidt = harTal && midt > 0 && midt < maks;
     return {
       linjer: [...(medTop ? [linje(maks, 'vg-akse')] : []), ...(medMidt ? [linje(maks / 2, 'vg-akse')] : []), linje(0, 'vg-akse vg-nul')],
       maerker: [...(medTop ? [el('span', { className: 'dyk-y dyk-y-top', textContent: tal(maks) })] : []), ...(medMidt ? [el('span', { className: 'dyk-y dyk-y-midt', textContent: tal(midt) })] : [])],
+      klasse: harTal ? '' : ' dyk-diagram-tom',
     };
   }
   function soejler(dage, opt) {
@@ -516,7 +518,7 @@
     const maerke = opt.akse ? opt.akse : opt.maaneder ? (d, i) => (i > 0 && d.dag.slice(0, 7) !== dage[i - 1].dag.slice(0, 7) ? S.maaned(d.dag) : '') : (d, i) => ((n - 1 - i) % hver === 0 ? datoKort(d.dag) : '');
     const x = el('div', { className: 'dyk-x' }, ...dage.map((d, i) => { const t = maerke(d, i); return el('span', {}, ...(t ? [el('b', { textContent: t })] : [])); }));
     x.setAttribute('aria-hidden', 'true');
-    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${opt.hit || HIT}px + var(--font-size-xs) * 3.6);`) }, ...ya.maerker, s, x);
+    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${opt.hit || HIT}px + var(--font-size-xs) * 3.6);`) + ya.klasse }, ...ya.maerker, s, x);
   }
 
   /* ── tre søjler pr. dag, side om side: serier = [{ felt, klasse }]. De står aldrig oven på hinanden, for tallene må ikke lægges
@@ -541,7 +543,7 @@
     const hver = n <= 8 ? 1 : n <= 31 ? 7 : Math.ceil(n / 5);
     const akse = el('div', { className: 'dyk-x' }, ...dage.map((d, i) => el('span', {}, ...((n - 1 - i) % hver === 0 ? [el('b', { textContent: datoKort(d.dag) })] : []))));
     akse.setAttribute('aria-hidden', 'true');
-    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${HIT}px + var(--font-size-xs) * 3.6);`) }, ...ya.maerker, s, akse);
+    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${HIT}px + var(--font-size-xs) * 3.6);`) + ya.klasse }, ...ya.maerker, s, akse);
   }
 
   /* ── kurver på én akse (indeks): dage = [{ dag, ... }], serier = [{ felt, klasse }]. opt: titel, tekst(dag), maal(dag) → query eller intet,
