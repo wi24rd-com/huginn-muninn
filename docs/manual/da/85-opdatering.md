@@ -16,7 +16,7 @@ Udgaven med flere forbindelser opgraderer den lokale database af sig selv, førs
 
 Tallene pr. subdomæne i Besøgende og Angreb kommer i løbet af de første minutter efter en opdatering; indtil da står **–**, som betyder "ikke hentet endnu", ikke 0.
 
-Bagefter kan version 1.0.0 ikke åbne databasen. Den siger "Den lokale database er fra en nyere version af programmet (skema 20)." og lader filen være.
+Bagefter kan version 1.0.0 ikke åbne databasen. Den siger "Den lokale database er fra en nyere version af programmet (skema 21)." og lader filen være.
 
 **Vil du måske tilbage til 1.0.0?** Så tag en kopi af databasefilen `huginn-muninn.sqlite`, før du åbner den nye udgave første gang. Programmet skal være lukket, mens du kopierer. Hvor filen ligger, står i [Data og historik](70-data.md).
 

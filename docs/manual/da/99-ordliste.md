@@ -14,7 +14,7 @@
 
 **Browsertjek (udfordret)** · Cloudflare bad den besøgende bevise, at den er en rigtig browser. En robot klarer det ikke.
 
-**Cache (Cloudflares lager)** · Cloudflare gemmer kopier af dine filer (billeder, CSS, JavaScript) og kan svare med dem uden at spørge din server. Selve siderne gemmes som standard ikke. [Drift](40-visninger/drift.md) viser, hvor ofte svaret kom fra lageret. Cachen gælder hele domænet.
+**Cache (Cloudflares lager)** · Cloudflare gemmer kopier af dine filer (billeder, CSS, JavaScript) og kan svare med dem uden at spørge dit website. Selve siderne gemmes som standard ikke. [Drift](40-visninger/drift.md) viser, hvor ofte svaret kom fra lageret. Cachen gælder hele domænet.
 
 **CVE** · Et nummer for et kendt sikkerhedshul, fx CVE-2025-55182. Et klik åbner hullets side på cve.org.
 
@@ -28,7 +28,7 @@
 
 **Edge – første forsvarslinje** · Cloudflares netværk af datacentre. Dit site svarer fra dem alle (anycast), så et angreb stoppes nær angriberen, længe før det når din server. Gælder kun DNS-poster med orange sky.
 
-**Fejl 520–527 og 530** · Cloudflares egne svarkoder, når Cloudflare ikke kunne nå eller finde din server; programmet kalder dem "Kunne ikke nås". 520: serveren svarede, men svaret kunne ikke bruges. 521: serveren afviste Cloudflare. 522: Cloudflare kunne ikke få forbindelse i tide. 523: Cloudflare kunne ikke finde vej til serveren. 524: serveren var for længe om at svare. 525: den sikre forbindelse til serveren kunne ikke oprettes. 526: serverens certifikat er ikke gyldigt. 527 står ikke på Cloudflares side over fejlene, men tæller med. 530: Cloudflare kunne ikke slå serverens navn op. Er de en stor del af svarene på en dag, står der **Din server svarer ikke** i Overblik. Svar 500–599 fra serveren selv er noget andet: serveren var oppe, men et program på den fejlede.
+**Fejl 520–527 og 530** · Cloudflares egne svarkoder, når Cloudflare ikke kunne nå eller finde din server; programmet kalder dem "Kunne ikke nås". 520: serveren svarede, men svaret kunne ikke bruges. 521: serveren afviste Cloudflare. 522: Cloudflare kunne ikke få forbindelse i tide. 523: Cloudflare kunne ikke finde vej til serveren. 524: serveren var for længe om at svare. 525: den sikre forbindelse til serveren kunne ikke oprettes. 526: serverens certifikat er ikke gyldigt. 527 står ikke på Cloudflares side over fejlene, men tæller med. 530: Cloudflare kunne ikke slå serverens navn op. Er de en stor del af svarene på en dag, står der **Din server svarer ikke** i Overblik. De kræver en server: ligger dit website hos Cloudflare (Workers eller Pages), er der ingen at nå, og tallet er 0. Svar 500–599 fra serveren selv er noget andet: serveren var oppe, men et program på den fejlede. Dem, og fejl fra et website hos Cloudflare, tæller [Drift](40-visninger/drift.md) under **Dit website svarede med en fejl**.
 
 **Forbindelse** · Ét API Token og et navn i programmet, én pr. Cloudflare-konto. Navnet er kontoens navn hos Cloudflare, indtil du giver forbindelsen dit eget med **Omdøb…**. Domænerne fra alle forbindelser vises samlet.
 

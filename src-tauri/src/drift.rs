@@ -21,7 +21,7 @@ use crate::vaert::{FEJL_ARTER, V_AFSKAARET, V_FEJL, V_FEJL_AFSKAARET, V_FEJL_AFV
 /// de to sammen, og reglen for en time med fejl (`overblik::SERVER_KODER`) har begge med (B2, D4).
 pub const KUNNE_IKKE: RangeInclusive<i64> = 520..=527;
 pub const KODE_530: i64 = 530;
-/// "Serveren svarede med en fejl": origin 500–599. Ændrer aldrig status (D5).
+/// Origin 500–599: en server bag Cloudflare svarede selv med en fejl. Bruges kun til rækkens tekst (`FejlRaekke::server`). Ændrer aldrig status (D5).
 pub const SERVER_FEJL: RangeInclusive<i64> = 500..=599;
 /// En time med fejl: mindst så mange svar med `overblik::SERVER_KODER` (520–527 og 530, samme regel som "Din server svarer ikke") og mindst så mange
 /// procent af timens svar (INVESTIGATION Q2).
@@ -76,8 +76,10 @@ pub struct DriftDag {
     pub kunne_ikke: Option<i64>,
     /// Kant 530, talt for sig.
     pub kunne_ikke_530: Option<i64>,
-    /// Origin 500–599.
-    pub server_fejl: Option<i64>,
+    /// FIX 1: "Dit website svarede med en fejl": alle svar med fejl, der ikke er "kunne ikke nås" (`overblik::SERVER_KODER`, 520–527 og 530). Både en
+    /// klassisk servers egne fejl (origin 500–599) og et website hos Cloudflare (Workers, Pages), der fejler (kant ≥ 500 med origin 0). Hvert svar tælles
+    /// én gang: `kunne_ikke + kunne_ikke_530 + website_fejl == fejl`. Ændrer aldrig status (D5).
+    pub website_fejl: Option<i64>,
     /// B2: alle svar med kant eller origin ≥ 500 (hvert svar én gang), til grafen pr. dag.
     pub fejl: Option<i64>,
     /// Svarede forsiden (`/`) med kant ≥ 500 mindst én gang?
@@ -421,7 +423,7 @@ pub fn regn(l: &Laest, fra: &str, til: &str) -> DriftUd {
             svar: sum("d_time", &|d| d.timer.iter().sum()),
             kunne_ikke: sum("d_fejl", &|d| d.fejl_sum(|k, _| KUNNE_IKKE.contains(&k))),
             kunne_ikke_530: sum("d_fejl", &|d| d.fejl_sum(|k, _| k == KODE_530)),
-            server_fejl: sum("d_fejl", &|d| d.fejl_sum(|_, o| SERVER_FEJL.contains(&o))),
+            website_fejl: sum("d_fejl", &|d| d.fejl_sum(|k, _| !SERVER_KODER.contains(&k))),
             fejl: sum("d_fejl", &|d| d.fejl_sum(|_, _| true)),
             forside_fejl: sum("d_forside", &|d| d.forside.iter().sum()).map(|n| n > 0),
             timer_med_fejl: timer_med_fejl.into_iter().collect(),
@@ -573,7 +575,9 @@ pub struct FejlRaekke {
     pub origin: i64,
     /// Kanten er en af `overblik::SERVER_KODER`: "kunne ikke nås".
     pub naa: bool,
-    /// Origin 500–599: "din server svarede med en fejl".
+    /// FIX 1: et svar med fejl, der ikke er "kunne ikke nås": rækkerne bag flisen "Dit website svarede med en fejl". Aldrig sammen med `naa`.
+    pub website: bool,
+    /// Origin 500–599: en server bag Cloudflare svarede selv med en fejl (kun til rækkens tekst; kan stå sammen med `naa`).
     pub server: bool,
     pub svar: i64,
     /// Så mange af svarene faldt i en time med fejl (`TIME_MIN_SVAR`/`TIME_PROCENT`).
@@ -710,6 +714,7 @@ pub fn regn_fejl(l: &Laest, fra: &str, til: &str) -> FejlUd {
             kant,
             origin,
             naa: slags != "forside" && SERVER_KODER.contains(&kant),
+            website: slags == "kode" && !SERVER_KODER.contains(&kant),
             server: slags == "kode" && SERVER_FEJL.contains(&origin),
             svar: a.svar,
             i_fejltimer: a.i_fejltimer,

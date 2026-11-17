@@ -103,7 +103,7 @@
     const naa = x => (x.kunne_ikke === null || x.kunne_ikke_530 === null ? null : x.kunne_ikke + x.kunne_ikke_530);
     const sNaa = sum(d.dage, naa), begge = d.dage.filter(x => naa(x) !== null && x.svar !== null), svar = begge.reduce((a, x) => a + x.svar, 0);
     boks.append(talFlise(sNaa, D.kunneIkke, 'naa', 'drift-f-naa', sNaa && svar ? fmt(D.kunneIkkeUnder, { p: procent(begge.reduce((a, x) => a + naa(x), 0), svar) }) : ''));
-    boks.append(talFlise(sum(d.dage, x => x.server_fejl), D.serverFejl, 'server', 'drift-f-server'));
+    boks.append(talFlise(sum(d.dage, x => x.website_fejl), D.serverFejl, 'server', 'drift-f-server'));
     const hentet = d.dage.filter(x => x.hentet && !x.afskaaret.includes('d_time') && !x.afskaaret.includes('d_fejl'));
     boks.append(talFlise(hentet.length ? { n: hentet.reduce((a, x) => a + x.timer_med_fejl.length, 0), med: hentet.length, dage: d.dage.length } : null, D.timer, 'timer', 'drift-f-timer'));
     const fs = d.dage.filter(x => x.forside_fejl !== null), ja = fs.some(x => x.forside_fejl);
@@ -164,7 +164,10 @@
   function hvad(r) {
     if (r.slags === 'forside') return D.forsideRk;
     if (r.naa) { const t = fmt(D.kodeTal, { t: D.kode[r.kant] || D.kodeNaa, kode: r.kant }); return r.server ? fmt(D.ogServer, { t, kode: r.origin }) : t; }
-    return r.server ? fmt(D.kodeServer, { kode: r.origin }) : fmt(D.kodeAnden, { kode: r.kant });
+    /* FIX 1: uden "kunne ikke nås". En server bag Cloudflare svarede selv med en fejl (origin 500–599); eller ingen server svarede (origin 0) med et
+       almindeligt fejlsvar (500–511): et website hos Cloudflare, der fejlede, eller Cloudflares egen fejl. Alt andet står med koden alene. */
+    if (r.server) return fmt(D.kodeServer, { kode: r.origin });
+    return fmt(r.origin === 0 && r.kant >= 500 && r.kant <= 511 ? D.kodeUden : D.kodeAnden, { kode: r.kant });
   }
   function hvornaar(r) {
     const en = t => (r.slags === 'vaert' ? V.datoKort(t) : fmt(D.kl, { d: V.datoKort(lokalDag(t)), t: kl(t) }));
@@ -174,7 +177,7 @@
     const hh = timen(), v = vis(), vaert = vaertHost() !== null;
     let rk = f.raekker.filter(r => (vaert ? r.slags === 'vaert' : v === 'forside' ? r.slags === 'forside' : r.slags === 'kode'));
     if (v === 'naa') rk = rk.filter(r => r.naa);
-    if (!vaert && v === 'server') rk = rk.filter(r => r.server);
+    if (!vaert && v === 'server') rk = rk.filter(r => r.website);
     if (!vaert && v === 'timer') rk = rk.filter(r => r.i_fejltimer > 0);
     const n = r => (hh && !vaert ? (r.timer.find(t => t.time === hh) || { svar: 0 }).svar : v === 'timer' && !vaert ? r.i_fejltimer : r.svar);
     return rk.map(r => ({ r, n: n(r) })).filter(x => x.n > 0).sort((a, b) => b.n - a.n);
@@ -213,6 +216,10 @@
       ud.push(el('p', { className: 'vg-advarsel vg-gul drift-mellem', textContent: foran ? fmt(D.medForan, { p: foran, t }) : t }));
     }
     if (f.spaend.length > MAKS_SPAEND) ud.push(el('p', { className: 'vg-note drift-mellem-flere', textContent: fmt(D.flereSpaend, { n: f.spaend.length - MAKS_SPAEND }) }));
+    /* FIX 1: forsiden svarede med en fejl uden for et spænd (fx et website hos Cloudflare, der fejler: ingen time med fejl, for de tæller kun "kunne
+       ikke nås"). Linjen siger, at websitet ikke svarede, uden at påstå, at Cloudflare ikke kunne nå en server. */
+    const forsideN = f.raekker.filter(r => r.slags === 'forside').reduce((a, r) => a + r.svar, 0);
+    if (forsideN > 0 && !f.spaend.some(s => s.forside_fejlede)) ud.push(el('p', { className: 'vg-advarsel vg-gul drift-forside-linje', textContent: fmt(D.forsideLinje, { n: forsideN }) }));
     const fejl = sum(d.dage, x => x.fejl), fs = d.dage.filter(x => x.forside_fejl !== null);
     if (!f.spaend.length && fejl && fejl.n > 0 && fs.length && !fs.some(x => x.forside_fejl)) ud.push(el('p', { className: 'vg-note drift-nogle', textContent: D.nogle }));
     return ud;
@@ -228,7 +235,7 @@
     const afsk = vaert ? (d.vaert ? d.vaert.afskaaret.length : 0) : d.afskaaret.length;
     if (afsk) dele.push(el('p', { className: 'vg-note drift-afskaaret', textContent: fmt(D.afskaaret, { n: tal(afsk) }) }));
     if (d.afvist || (vaert && d.vaert && d.vaert.afvist_nu)) dele.push(el('p', { className: 'vg-advarsel vg-gul drift-afvist', textContent: D.afvist }));
-    dele.push(el('p', { className: 'vg-note drift-ser', textContent: D.ser }));
+    dele.push(el('p', { className: 'vg-note drift-note', textContent: D.note }), el('p', { className: 'vg-note drift-ser', textContent: D.ser }));
     const s = V.blok(D.fejlH, D.fejlP, ...dele);
     s.id = 'drift-fejl';
     return s;
@@ -295,7 +302,7 @@
         dele.push(V.tabelRul(V.laeseTabel('drift-cache-tabel', [th(D.thStatus), th(D.thForesp, 'tal-kol'), th(D.thData, 'tal-kol')], tr), D.cacheTabelH));
         if (c.stale > 0) dele.push(el('p', { className: 'vg-advarsel vg-gul drift-gammel', textContent: fmt(D.gammel, { n: tal(c.stale) }) }));
       }
-      dele.push(el('p', { className: 'vg-note drift-dynamisk', textContent: D.dynamisk }), el('p', { className: 'vg-note drift-data-note', textContent: D.dataNote }));
+      dele.push(el('p', { className: 'vg-note drift-cache-note', textContent: D.cacheNote }), el('p', { className: 'vg-note drift-dynamisk', textContent: D.dynamisk }), el('p', { className: 'vg-note drift-data-note', textContent: D.dataNote }));
     }
     const s = V.blok(D.cacheH, vaertHost() !== null ? '' : D.cacheP, ...dele);
     s.id = 'drift-cache';

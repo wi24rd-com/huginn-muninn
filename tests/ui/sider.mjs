@@ -275,6 +275,7 @@ SIDER.push(
    periode, subdomæne) og få tal, der passer sammen. zoner: { id: { dag: { timer: svar pr. time (tal eller liste med 24), fejl: [[time, kant, origin, n]],
    forside: [[time, n]], cache: { status: [svar, bytes] }, afskaaret: [arter] } } }; en dag, der mangler, er ikke hentet. vaerter: { id: { dag: [[vært,
    kant, n]] } }. Reglerne er Rusts: en time med fejl har mindst 5 svar 520–527/530 og mindst 20 % af timens svar; tre timer i træk er et spænd. ── */
+/* FIX 1: website_fejl er alle svar med fejl, der ikke er 520–527/530 (hvert svar én gang), og rækkerne bag den flise har website. */
 const D_NAA = k => (k >= 520 && k <= 527) || k === 530;
 const D_GRP = { hit: ['lager', 'lager'], stale: ['lager', 'lager'], updating: ['lager', 'lager'], revalidated: ['server', 'lager'], none: ['selv', 'selv'], unknown: ['selv', 'selv'], miss: ['server', 'server'], expired: ['server', 'server'], bypass: ['server', 'server'], dynamic: ['server', 'server'] };
 export const driftCache = m => {
@@ -310,13 +311,13 @@ export function driftModel(zoner, vaerter = {}, x = {}) {
     let cacheDage = 0;
     const ud = dage.map(dag => {
       const tal = z.map(id => (zoner[id] || {})[dag]), alle = z.length > 0 && tal.every(Boolean);
-      if (!alle) return { dag, hentet: false, svar: null, kunne_ikke: null, kunne_ikke_530: null, server_fejl: null, fejl: null, forside_fejl: null, timer_med_fejl: [], cache: null, afskaaret: [] };
+      if (!alle) return { dag, hentet: false, svar: null, kunne_ikke: null, kunne_ikke_530: null, website_fejl: null, fejl: null, forside_fejl: null, timer_med_fejl: [], cache: null, afskaaret: [] };
       const afsk = [...new Set(tal.flatMap(d => d.afskaaret || []))], med = art => !afsk.includes(art);
       const fejl = p => (med('d_fejl') ? tal.reduce((n, d) => n + (d.fejl || []).filter(p).reduce((b, f) => b + f[3], 0), 0) : null);
       const c = {};
       if (med('d_cache')) { for (const d of tal) for (const [s, [n, b]] of Object.entries(d.cache || {})) { for (const m of [c, periodeCache]) { m[s] ||= [0, 0]; m[s][0] += n; m[s][1] += b; } } cacheDage++; }
       return { dag, hentet: true, svar: med('d_time') ? tal.reduce((n, d) => n + timer(d).reduce((b, y) => b + y, 0), 0) : null, kunne_ikke: fejl(f => f[1] >= 520 && f[1] <= 527), kunne_ikke_530: fejl(f => f[1] === 530),
-        server_fejl: fejl(f => f[2] >= 500 && f[2] <= 599), fejl: fejl(() => true), forside_fejl: med('d_forside') ? tal.some(d => (d.forside || []).length > 0) : null,
+        website_fejl: fejl(f => !D_NAA(f[1])), fejl: fejl(() => true), forside_fejl: med('d_forside') ? tal.some(d => (d.forside || []).length > 0) : null,
         timer_med_fejl: [...new Set(tal.flatMap(d => Array.from({ length: 24 }, (_, t) => t).filter(t => medFejl(d, t)).map(to)))].sort(), cache: med('d_cache') ? driftCache(c) : null, afskaaret: afsk };
     });
     const en = dage.length === 1 && ud[0].hentet ? z.map(id => zoner[id][dage[0]]) : null;
@@ -344,14 +345,14 @@ export function driftModel(zoner, vaerter = {}, x = {}) {
     for (const id of z) for (const dag of dage) {
       const d = (zoner[id] || {})[dag];
       if (!d) continue;
-      if (har(d, 'd_fejl')) for (const [t, k, o, n] of d.fejl || []) laeg(`${id}|kode|${k}|${o}`, { zone: id, slags: 'kode', kant: k, origin: o, naa: D_NAA(k), server: o >= 500 && o <= 599 }, `${dag}T${to(t)}`, n, medFejl(d, t), t);
-      if (har(d, 'd_forside')) for (const [t, n] of d.forside || []) laeg(`${id}|forside`, { zone: id, slags: 'forside', kant: 0, origin: 0, naa: false, server: false }, `${dag}T${to(t)}`, n, medFejl(d, t), t);
+      if (har(d, 'd_fejl')) for (const [t, k, o, n] of d.fejl || []) laeg(`${id}|kode|${k}|${o}`, { zone: id, slags: 'kode', kant: k, origin: o, naa: D_NAA(k), website: !D_NAA(k), server: o >= 500 && o <= 599 }, `${dag}T${to(t)}`, n, medFejl(d, t), t);
+      if (har(d, 'd_forside')) for (const [t, n] of d.forside || []) laeg(`${id}|forside`, { zone: id, slags: 'forside', kant: 0, origin: 0, naa: false, website: false, server: false }, `${dag}T${to(t)}`, n, medFejl(d, t), t);
     }
     const vs = new Map();
     if (z.length === 1) for (const dag of dage.filter(dag => vaertHentet(z[0], dag))) for (const [v, k, n] of (vaerter[z[0]] || {})[dag] || []) {
       const s = vs.get(v) || vs.set(v, { vaert: v, svar: 0, kunne_ikke: 0 }).get(v);
       s.svar += n; if (D_NAA(k)) s.kunne_ikke += n;
-      if (a.vaert === v) laeg(`${z[0]}|vaert|${k}`, { zone: z[0], slags: 'vaert', kant: k, origin: 0, naa: D_NAA(k), server: false }, dag, n, false, null);
+      if (a.vaert === v) laeg(`${z[0]}|vaert|${k}`, { zone: z[0], slags: 'vaert', kant: k, origin: 0, naa: D_NAA(k), website: false, server: false }, dag, n, false, null);
     }
     const raekker = [...rk.values()].filter(r => (r.slags === 'vaert') === (a.vaert != null)).map(r => ({ ...r, timer: [...r.timer.entries()].sort().map(([time, svar]) => ({ time, svar })) })).sort((p, q) => q.svar - p.svar);
     return { raekker, spaend: z.flatMap(id => spaendFor(id, dage)), vaerter: [...vs.values()].sort((p, q) => q.svar - p.svar || (p.vaert < q.vaert ? -1 : 1)) };
@@ -385,8 +386,15 @@ export const D_VAERTER = { z1: { [D_NAT]: [['www', 522, 96], ['', 522, 20], ['sh
 export const DRIFT_NAT = driftModel({ z1: D_Z1, z2: D_ROLIGE, z3: D_ROLIGE }, D_VAERTER, { vaertFra: '2026-10-07' });
 export const DRIFT_ROLIG = driftModel({ z1: D_ROLIGE, z2: D_ROLIGE, z3: D_ROLIGE }, {}, { vaertFra: '2026-10-07' });
 export const DRIFT_IKKE = driftModel({ z1: {}, z2: {}, z3: {} });
+/* FIX 1: et website uden egen server (Workers eller Pages). Natten til den 3. november svarede forsiden 500 i fire timer (kant 500, origin 0): ingen
+   "kunne ikke nås", ingen timer med fejl. Cachen er mest Cloudflares eget svar (none) og kopier fra lageret; intet er hentet hos en server. */
+const D_UDEN = { none: [700, 9_800_000], hit: [480, 38_400_000] };
+const D_ZW = Object.fromEntries(D_DAGE.map(dag => [dag, dDag([], [], D_UDEN)]));
+D_ZW[D_NAT] = dDag([1, 2, 3, 4].map(t => [t, 500, 0, 30]), [[1, 5], [2, 6], [3, 6], [4, 4]], D_UDEN, natTimer);
+D_ZW['2026-11-01'] = dDag([[14, 503, 0, 2]], [], D_UDEN);
+export const DRIFT_UDEN = driftModel({ z1: D_ZW, z2: D_ROLIGE, z3: D_ROLIGE }, {}, { vaertFra: '2026-10-07' });
 const D_SAET = [['z1', ...D_UGE, null], ['z1', D_NAT, D_NAT, null], ['z1', ...D_UGE, 'www'], [null, ...D_UGE, null]];
-const D_NAT_SVAR = driftSvarFor(DRIFT_NAT, D_SAET), D_ROLIG_SVAR = driftSvarFor(DRIFT_ROLIG, D_SAET), D_IKKE_SVAR = driftSvarFor(DRIFT_IKKE, D_SAET);
+const D_NAT_SVAR = driftSvarFor(DRIFT_NAT, D_SAET), D_ROLIG_SVAR = driftSvarFor(DRIFT_ROLIG, D_SAET), D_IKKE_SVAR = driftSvarFor(DRIFT_IKKE, D_SAET), D_UDEN_SVAR = driftSvarFor(DRIFT_UDEN, D_SAET);
 /* Natten med 522 er standardsvaret, så Drift med fejl også er med i de kørsler, der kun tager poster uden ekstra (kontrasten med Reduce motion). */
 Object.assign(svar, D_NAT_SVAR);
 /* Overblik med timespændet i "Hvorfor" (og linjen "Din server svarer ikke", der åbner Drift for domænet og dagen). */
@@ -403,4 +411,8 @@ SIDER.push(
   { id: 'drift-uden-fejl', navn: 'Drift uden fejl', hash: 'drift?' + dom, ekstra: D_ROLIG_SVAR },
   { id: 'drift-ikke-hentet', navn: 'Drift, før tallene er hentet ("–", aldrig 0)', hash: 'drift?' + dom, ekstra: D_IKKE_SVAR },
   { id: 'drift-overblik', navn: 'Overblik med timespændet i Hvorfor', hash: 'overblik', ekstra: D_OV },
+  { id: 'drift-uden-server', navn: 'Drift (FIX 1): et website uden egen server, en nat hvor forsiden svarede 500', hash: 'drift?' + dom, ekstra: D_UDEN_SVAR },
+  { id: 'drift-uden-server-tabel', navn: 'Drift (FIX 1): website uden server, grafen, tabellen og noten', hash: 'drift?' + dom, rul: '#drift-graf', rulTekst: true, ekstra: D_UDEN_SVAR },
+  { id: 'drift-uden-server-cache', navn: 'Drift (FIX 1): website uden server, cache (intet hentet hos en server)', hash: 'drift?' + dom, rul: '#drift-cache', ekstra: D_UDEN_SVAR },
+  { id: 'drift-tom-graf', navn: 'Drift (FIX 1): den tomme graf uden to ens mærker', hash: 'drift?' + dom, rul: '#drift-graf', rulTekst: true, ekstra: D_ROLIG_SVAR },
 );

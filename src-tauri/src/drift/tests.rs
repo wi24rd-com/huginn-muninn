@@ -127,8 +127,8 @@ fn forsiden_som_vidne() {
     assert_eq!(uden.timer[11].forside, Some(0), "hentet og nul");
 }
 
-/// Origin 5xx uden kant-fejl er "serveren svarede med en fejl": ingen time med fejl, intet "kunne ikke nås". 530 tælles for sig i svaret, og fra B2 (D4)
-/// er den med i reglen for en time med fejl.
+/// Origin 5xx uden kant-fejl er "websitet svarede med en fejl": ingen time med fejl, intet "kunne ikke nås". 530 tælles for sig i svaret, og fra B2 (D4)
+/// er den med i reglen for en time med fejl. FIX 1: 520 med origin 503 er "kunne ikke nås" og tælles ikke én gang til som websitets fejl.
 #[test]
 fn origin_5xx_uden_kant_fejl_og_530_for_sig() {
     let r = vec![
@@ -140,7 +140,8 @@ fn origin_5xx_uden_kant_fejl_og_530_for_sig() {
     ];
     let s = lager(&[("z", "2026-11-03", r)]);
     let d = &regn_for(&s, &["z"], "2026-11-03", "2026-11-03").dage[0];
-    assert_eq!(d.server_fejl, Some(43), "origin 500–599, uanset kant");
+    assert_eq!(d.website_fejl, Some(40), "kun 200/503: 520/503 er allerede talt som kunne ikke nås");
+    assert_eq!(d.fejl, Some(73), "hvert svar én gang");
     assert_eq!(d.kunne_ikke, Some(3));
     assert_eq!(d.kunne_ikke_530, Some(30));
     assert_eq!(
@@ -174,6 +175,61 @@ fn timer_med_fejl_foelger_reglen_med_530() {
     let u = regn_for(&s, &["z"], "2026-11-03", "2026-11-03");
     assert_eq!(u.dage[0].timer_med_fejl, ["01", "03"]);
     assert_eq!((u.dage[0].kunne_ikke, u.dage[0].kunne_ikke_530), (Some(9), Some(9)));
+}
+
+/// FIX 1: fordelingen i de to fliser. En klassisk servers 502 (origin 502), et website hos Cloudflare, der fejler (kant 500, origin 0), en fejl, hvor
+/// Cloudflare ikke fik et brugbart svar (kant 520, origin 0), en fejl fra serveren, som den besøgende ikke fik som fejl (kant 200, origin 503), og 530.
+/// De to flisers sum er dagens svar med fejl, og intet svar tælles to gange. Timer med fejl og spænd følger stadig kun "kunne ikke nås".
+#[test]
+fn fordelingen_i_de_to_fliser() {
+    let r = vec![
+        rk("d_time", "03", 100),
+        rk("d_fejl", "03\t502\t502", 11), // klassisk server: websitet
+        rk("d_fejl", "03\t500\t0", 30),   // Worker eller Pages, der fejler: websitet
+        rk("d_fejl", "03\t520\t0", 7),    // kunne ikke nås
+        rk("d_fejl", "03\t200\t503", 5),  // serveren fejlede, kanten svarede 200: websitet
+        rk("d_fejl", "03\t530\t0", 3),    // kunne ikke nås (530)
+        rk("d_time", "04", 40),
+        rk("d_fejl", "04\t500\t0", 40), // hele timen fejlede med 500: stadig ingen time med fejl
+        rk("d_time", "05", 40),
+        rk("d_fejl", "05\t500\t0", 40),
+        rk("d_time", "06", 40),
+        rk("d_fejl", "06\t500\t0", 40),
+        rk("d_forside", "04\t500", 12),
+    ];
+    let s = lager(&[("z", "2026-11-03", r)]);
+    let u = regn_for(&s, &["z"], "2026-11-03", "2026-11-03");
+    let d = &u.dage[0];
+    assert_eq!((d.kunne_ikke, d.kunne_ikke_530), (Some(7), Some(3)));
+    assert_eq!(d.website_fejl, Some(11 + 30 + 5 + 120));
+    assert_eq!(d.fejl, Some(176));
+    assert_eq!(
+        d.kunne_ikke.unwrap() + d.kunne_ikke_530.unwrap() + d.website_fejl.unwrap(),
+        d.fejl.unwrap(),
+        "de to flisers sum er dagens svar med fejl"
+    );
+    assert_eq!(d.forside_fejl, Some(true));
+    assert!(
+        d.timer_med_fejl.is_empty() && u.spaend.is_empty(),
+        "websitets egne fejl giver hverken timer med fejl eller spænd (D5)"
+    );
+    // Rækkerne: hver i præcis én flise, og summerne er flisernes.
+    let f = fejl_for(&s, &["z"], "2026-11-03", "2026-11-03", None);
+    let koder: Vec<_> = f.raekker.iter().filter(|r| r.slags == "kode").collect();
+    assert_eq!(koder.len(), 5);
+    assert!(koder.iter().all(|r| r.naa != r.website));
+    let sum = |p: &dyn Fn(&FejlRaekke) -> bool| koder.iter().filter(|r| p(r)).map(|r| r.svar).sum::<i64>();
+    assert_eq!((sum(&|r| r.naa), sum(&|r| r.website)), (10, 166));
+    let par = |k: i64, o: i64| koder.iter().find(|r| r.kant == k && r.origin == o).unwrap();
+    assert_eq!((par(502, 502).website, par(502, 502).server), (true, true));
+    assert_eq!((par(500, 0).website, par(500, 0).server, par(500, 0).svar), (true, false, 150));
+    assert_eq!((par(520, 0).naa, par(520, 0).website), (true, false));
+    assert_eq!((par(200, 503).website, par(200, 503).server), (true, true));
+    assert_eq!((par(530, 0).naa, par(530, 0).website), (true, false));
+    assert!(f.spaend.is_empty());
+    // Ikke hentet er aldrig 0.
+    let tom = regn_for(&s, &["z"], "2026-11-04", "2026-11-04");
+    assert_eq!(tom.dage[0].website_fejl, None);
 }
 
 /// B2: spændet i lokal tid. Hen over midnat, ved skiftet til vintertid og til sommertid, det længste spænd vinder, og uden timetal er der intet.
@@ -266,7 +322,7 @@ fn ikke_hentet_er_aldrig_0() {
         [time("05", 10, 2), vec![rk("d_afskaaret", "d_fejl", 10_000)]].concat(),
     )]);
     let d = &regn_for(&s, &["a"], "2026-11-03", "2026-11-03").dage[0];
-    assert!(d.hentet && d.svar == Some(10) && d.kunne_ikke.is_none() && d.server_fejl.is_none());
+    assert!(d.hentet && d.svar == Some(10) && d.kunne_ikke.is_none() && d.website_fejl.is_none());
     assert_eq!(d.afskaaret, ["d_fejl"]);
 }
 
@@ -472,7 +528,8 @@ fn fejl_for(s: &Store, zoner: &[&str], fra: &str, til: &str, vaert: Option<&str>
 }
 
 /// Én række pr. domæne og kode-par med første og sidste time; forsiden for sig; svarene i timer med fejl; timerne kun for én dag. Summen af rækkerne
-/// er dagens `fejl`, "kunne ikke nås" er rækkerne med `naa`, og "serveren svarede med en fejl" er rækkerne med `server`.
+/// er dagens `fejl`, "kunne ikke nås" er rækkerne med `naa`, og "websitet svarede med en fejl" er rækkerne med `website` (FIX 1: resten, hver række i
+/// præcis én af de to).
 #[test]
 fn tabellen_har_et_kodepar_pr_domaene_med_foerste_og_sidste_time() {
     let a3: Vec<_> = [
@@ -502,26 +559,34 @@ fn tabellen_har_et_kodepar_pr_domaene_med_foerste_og_sidste_time() {
             .unwrap_or_else(|| panic!("{zone} {slags} {kant}/{origin}"))
     };
     let x = r("a", "kode", 522, 0);
-    assert_eq!((x.svar, x.i_fejltimer, x.naa, x.server), (19, 18, true, false));
+    assert_eq!((x.svar, x.i_fejltimer, x.naa, x.server, x.website), (19, 18, true, false, false));
     assert_eq!((x.foerste.as_str(), x.sidste.as_str()), ("2026-11-03T02", "2026-11-04T23"));
     assert!(x.timer.is_empty(), "flere dage: ingen timer");
     let x = r("a", "kode", 520, 503);
     assert_eq!(
-        (x.svar, x.i_fejltimer, x.naa, x.server),
-        (2, 2, true, true),
-        "begge: kunne ikke nås, og serveren svarede 503"
+        (x.svar, x.i_fejltimer, x.naa, x.server, x.website),
+        (2, 2, true, true, false),
+        "kunne ikke nås, og serveren svarede 503: teksten nævner begge, men svaret tælles kun som kunne ikke nås"
     );
     let x = r("a", "kode", 200, 500);
-    assert_eq!((x.svar, x.i_fejltimer, x.naa, x.server), (4, 0, false, true));
+    assert_eq!((x.svar, x.i_fejltimer, x.naa, x.server, x.website), (4, 0, false, true, true));
     let x = r("a", "kode", 502, 0);
-    assert_eq!((x.naa, x.server), (false, false), "en anden fejl");
+    assert_eq!(
+        (x.naa, x.server, x.website),
+        (false, false, true),
+        "en fejl uden svar fra en server: websitets fejl"
+    );
     let x = r("a", "forside", 0, 0);
     assert_eq!(
         (x.svar, x.i_fejltimer, x.foerste.as_str(), x.sidste.as_str()),
         (2, 2, "2026-11-03T03", "2026-11-03T03")
     );
-    assert!(!x.naa && !x.server);
+    assert!(!x.naa && !x.server && !x.website);
     assert!(r("b", "kode", 530, 0).naa);
+    assert!(
+        u.raekker.iter().filter(|r| r.slags == "kode").all(|r| r.naa != r.website),
+        "hver række i præcis én flise"
+    );
     assert_eq!(u.raekker[0].svar, 19, "flest svar først");
     // Summerne passer med `regn`.
     let d = regn_for(&s, &["a", "b"], "2026-11-03", "2026-11-04");
@@ -529,7 +594,12 @@ fn tabellen_har_et_kodepar_pr_domaene_med_foerste_og_sidste_time() {
     let dage = |f: &dyn Fn(&DriftDag) -> Option<i64>| d.dage.iter().map(|x| f(x).unwrap()).sum::<i64>();
     assert_eq!(sum(&|_| true), dage(&|x| x.fejl));
     assert_eq!(sum(&|r| r.naa), dage(&|x| Some(x.kunne_ikke? + x.kunne_ikke_530?)));
-    assert_eq!(sum(&|r| r.server), dage(&|x| x.server_fejl));
+    assert_eq!(sum(&|r| r.website), dage(&|x| x.website_fejl));
+    assert_eq!(
+        sum(&|r| r.naa) + sum(&|r| r.website),
+        dage(&|x| x.fejl),
+        "de to flisers sum er svarene med fejl"
+    );
     assert_eq!(d.dage[0].fejl, Some(25));
     // Spændet har domænet med.
     assert_eq!(

@@ -487,12 +487,23 @@
   /* ── søjlerne: dage = [{ dag, n, hentet? }]. opt: titel, dyk(dag) → forespørgsel, { gaa } eller intet, klasse (ekstra klasse på søjlen, fx Besøgendes blå),
      tekst(d) → hvad mærket siger (ellers "dato: tal"; bruges til uger), akse(d, i) → tekst under søjlen (ellers datoer; bruges til Drifts timer), hit (mindste bredde pr. søjle i px, ellers HIT) og maaneder (aksen viser
      måneden ved første søjle i en ny måned i stedet for datoer). Kun dage med tal kan åbnes. ── */
+  /* FIX 1 (V-DRIFT.1): hjælpelinjerne og deres mærker. Den øverste linje står ved det største tal og den midterste ved det halve. Er det halve afrundet
+     det samme som det største (største tal 1) eller 0 (ingen tal: alle dage er 0 eller ikke hentet), står den midterste hverken som linje eller mærke,
+     så samme tal aldrig står to gange. Uden tal overhovedet står kun nullinjen: en skala uden tal siger intet. */
+  function yAkse(maks, harTal, linje) {
+    const midt = Math.round(maks / 2), medTop = harTal, medMidt = harTal && midt > 0 && midt < maks;
+    return {
+      linjer: [...(medTop ? [linje(maks, 'vg-akse')] : []), ...(medMidt ? [linje(maks / 2, 'vg-akse')] : []), linje(0, 'vg-akse vg-nul')],
+      maerker: [...(medTop ? [el('span', { className: 'dyk-y dyk-y-top', textContent: tal(maks) })] : []), ...(medMidt ? [el('span', { className: 'dyk-y dyk-y-midt', textContent: tal(midt) })] : [])],
+    };
+  }
   function soejler(dage, opt) {
     const W = 1000, H = 170, top = 6, n = dage.length, bw = W / Math.max(1, n), maks = Math.max(1, ...dage.map(d => d.n || 0));
     const y = v => top + (H - top) * (1 - v / maks);
     const linje = (v, k) => svg('line', { class: k, 'vector-effect': 'non-scaling-stroke', x1: 0, x2: W, y1: y(v).toFixed(1), y2: y(v).toFixed(1) });
     const klik = dage.filter(d => d.n && d.hentet !== false && opt.dyk).length, sidste = [...dage].reverse().find(d => d.n && d.hentet !== false);
-    const s = svg('svg', { class: 'dyk-soejler', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', role: klik ? 'group' : 'img', 'aria-label': opt.titel }, linje(maks, 'vg-akse'), linje(maks / 2, 'vg-akse'), linje(0, 'vg-akse vg-nul'));
+    const ya = yAkse(maks, dage.some(d => d.hentet !== false && d.n), linje);
+    const s = svg('svg', { class: 'dyk-soejler', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', role: klik ? 'group' : 'img', 'aria-label': opt.titel }, ...ya.linjer);
     dage.forEach((d, i) => {
       const uhentet = d.hentet === false, v = uhentet ? 0 : d.n || 0, x = i * bw;
       const tekst = opt.tekst ? opt.tekst(d) : uhentet ? fmt(opt.hul || T.dykIkkeHentet, { d: datoLang(d.dag) }) : `${datoLang(d.dag)}: ${tal(v)}`;
@@ -505,7 +516,7 @@
     const maerke = opt.akse ? opt.akse : opt.maaneder ? (d, i) => (i > 0 && d.dag.slice(0, 7) !== dage[i - 1].dag.slice(0, 7) ? S.maaned(d.dag) : '') : (d, i) => ((n - 1 - i) % hver === 0 ? datoKort(d.dag) : '');
     const x = el('div', { className: 'dyk-x' }, ...dage.map((d, i) => { const t = maerke(d, i); return el('span', {}, ...(t ? [el('b', { textContent: t })] : [])); }));
     x.setAttribute('aria-hidden', 'true');
-    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${opt.hit || HIT}px + var(--font-size-xs) * 3.6);`) }, el('span', { className: 'dyk-y dyk-y-top', textContent: tal(maks) }), el('span', { className: 'dyk-y dyk-y-midt', textContent: tal(Math.round(maks / 2)) }), s, x);
+    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${opt.hit || HIT}px + var(--font-size-xs) * 3.6);`) }, ...ya.maerker, s, x);
   }
 
   /* ── tre søjler pr. dag, side om side: serier = [{ felt, klasse }]. De står aldrig oven på hinanden, for tallene må ikke lægges
@@ -515,8 +526,8 @@
     const sum = d => serier.some(x => d[x.felt]), maks = Math.max(1, ...dage.flatMap(d => serier.map(x => d[x.felt] || 0)));
     const y = v => top + (H - top) * (1 - v / maks);
     const linje = (v, k) => svg('line', { class: k, 'vector-effect': 'non-scaling-stroke', x1: 0, x2: W, y1: y(v).toFixed(1), y2: y(v).toFixed(1) });
-    const sidste = [...dage].reverse().find(sum);
-    const s = svg('svg', { class: 'dyk-soejler', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', role: sidste ? 'group' : 'img', 'aria-label': opt.titel }, linje(maks, 'vg-akse'), linje(maks / 2, 'vg-akse'), linje(0, 'vg-akse vg-nul'));
+    const sidste = [...dage].reverse().find(sum), ya = yAkse(maks, Boolean(sidste), linje);
+    const s = svg('svg', { class: 'dyk-soejler', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', role: sidste ? 'group' : 'img', 'aria-label': opt.titel }, ...ya.linjer);
     dage.forEach((d, i) => {
       const x = i * bw, uhentet = d.hentet === false, tekst = uhentet ? fmt(T.dykIkkeHentet, { d: datoLang(d.dag) }) : opt.tekst(d);
       const g = svg('g', { class: 'dyk-soejle' + (uhentet ? ' dyk-uhentet' : '') }, titel(tekst), svg('rect', { class: 'dyk-flade', x: x.toFixed(1), y: 0, width: bw.toFixed(1), height: H }));
@@ -530,7 +541,7 @@
     const hver = n <= 8 ? 1 : n <= 31 ? 7 : Math.ceil(n / 5);
     const akse = el('div', { className: 'dyk-x' }, ...dage.map((d, i) => el('span', {}, ...((n - 1 - i) % hver === 0 ? [el('b', { textContent: datoKort(d.dag) })] : []))));
     akse.setAttribute('aria-hidden', 'true');
-    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${HIT}px + var(--font-size-xs) * 3.6);`) }, el('span', { className: 'dyk-y dyk-y-top', textContent: tal(maks) }), el('span', { className: 'dyk-y dyk-y-midt', textContent: tal(Math.round(maks / 2)) }), s, akse);
+    return el('div', { className: 'dyk-diagram ' + klasse(`min-width: calc(${n} * ${HIT}px + var(--font-size-xs) * 3.6);`) }, ...ya.maerker, s, akse);
   }
 
   /* ── kurver på én akse (indeks): dage = [{ dag, ... }], serier = [{ felt, klasse }]. opt: titel, tekst(dag), maal(dag) → query eller intet,
