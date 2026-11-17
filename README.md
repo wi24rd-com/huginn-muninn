@@ -111,9 +111,9 @@ You can check that the file you downloaded is the one that was published, and th
 ```
 shasum -a 256 ~/Downloads/Huginn-Muninn-1.1.0.zip
 ```
-The line must begin with the SHA-256 stated in the [release notes](https://github.com/wi24rd-com/huginn-muninn/releases/latest). GitHub shows the same value next to the file under **Assets**. For 1.0.0 it is:
+The line must begin with the SHA-256 stated in the [release notes](https://github.com/wi24rd-com/huginn-muninn/releases/latest). GitHub shows the same value next to the file under **Assets**. For 1.1.0 it is:
 ```
-f599bac0d5c61ad4a9355880979d583c8bea246712327f2ca35b0c342a5bb70b
+83587a0e465b86a6b7410a880ff1af7bb2d426980e69ca2844d1efea176e657c
 ```
 
 **2. The signature and the notarisation of the app**

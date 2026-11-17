@@ -111,9 +111,9 @@ Du kan tjekke, at den fil, du har hentet, er den, der blev udgivet, og at progra
 ```
 shasum -a 256 ~/Downloads/Huginn-Muninn-1.1.0.zip
 ```
-Linjen skal begynde med den SHA-256, der står i [udgivelsesteksten](https://github.com/wi24rd-com/huginn-muninn/releases/latest). GitHub viser samme værdi ved filen under **Assets**. For 1.0.0 er den:
+Linjen skal begynde med den SHA-256, der står i [udgivelsesteksten](https://github.com/wi24rd-com/huginn-muninn/releases/latest). GitHub viser samme værdi ved filen under **Assets**. For 1.1.0 er den:
 ```
-f599bac0d5c61ad4a9355880979d583c8bea246712327f2ca35b0c342a5bb70b
+83587a0e465b86a6b7410a880ff1af7bb2d426980e69ca2844d1efea176e657c
 ```
 
 **2. Programmets signatur og notarisering**
