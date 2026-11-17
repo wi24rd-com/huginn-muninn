@@ -4118,14 +4118,45 @@ const DOMV = (fravalgte = [], x) => {
         v.klasser = [...kl]; return v;
       }
       await sov(1200);
-      const ud = [], sider = [];
+      const ud = [], sider = [], trin = [], igen = []; let afsluttet = 0;
+      /* V-CIFIX.1 F1: trinnene venter på deres element (højst 3 s virtuel tid) i stedet for en fast pause, og et trin, der ikke finder
+         sit element, skrives i trin og fejler K7 med vælgerens navn. Før sprang "if (e)" stille over, og en dialog blev ikke åbnet. */
+      const vent = async (ok, ms = 3000) => { for (const t0 = performance.now(); !ok(); await sov(20)) if (performance.now() - t0 > ms) return false; return true; };
+      const synlig = e => Boolean(e && e.isConnected && e.checkVisibility({ visibilityProperty: true }));
+      const iLukketDialog = q => { const r = document.querySelector(q), d = r && r.closest('dialog'); return Boolean(d && !d.open); };
+      const rodKlar = q => synlig(document.querySelector(q)) && !iLukketDialog(q);
+      const aabn = async h => {
+        for (const s of h.aabn) {
+          const [q, t] = Array.isArray(s) ? s : [s, null];
+          if (!await vent(() => synlig(document.querySelector(q)))) { trin.push(h.navn + ': aabn fandt ikke ' + q + (document.querySelector(q) ? ' (findes, men er ikke synlig)' : '')); return false; }
+          const e = document.querySelector(q); if (t == null) e.click(); else e.value = t;
+        }
+        /* Roden skal være synlig og, står den i en dialog, skal dialogen være åben. Derefter en kort pause, så indholdet er tegnet. */
+        const ok = !h.rod || await vent(() => rodKlar(h.rod));
+        await sov(100);
+        return ok;
+      };
       for (const h of H) {
         if (h.hash !== undefined) { location.hash = h.hash; await sov(900); }
-        /* Et trin er en vælger, der klikkes, eller [vælger, tekst] til et felt (som i fotobogen). */
-        if (h.aabn) { for (const s of h.aabn) { const [q, t] = Array.isArray(s) ? s : [s, null], e = document.querySelector(q); if (e) { if (t == null) e.click(); else e.value = t; await sov(t == null ? 300 : 0); } } }
+        /* Et trin er en vælger, der klikkes, eller [vælger, tekst] til et felt (som i fotobogen). Det næste trin venter på sit eget element.
+           I headless Chrome med virtuel tid kan close-hændelsen fra en dialog, som forrige visning lukkede, komme først nu (først ved
+           næste frame). Popuppens vedLuk (ryd) lukker så den dialog, der lige er åbnet. Står roden derfor i en lukket dialog efter
+           pausen, køres trinnene én gang til; det tælles i igen og skrives i loggen. Lykkes det heller ikke, fejler K7 med navnet. */
+        if (h.aabn && await aabn(h) && h.rod && iLukketDialog(h.rod)) { igen.push(h.navn); await aabn(h); }
+        if (h.rod && !rodKlar(h.rod)) { const r = document.querySelector(h.rod), d = r && r.closest('dialog'); trin.push(h.navn + ': rod ' + h.rod + (!r ? ' findes ikke' : d && !d.open ? ' står i #' + d.id + ', som ikke er åben' : ' er ikke synlig')); }
         const rod = h.rod ? document.querySelector(h.rod) : document.body;
+        if (!rod) { sider.push({ hvad: h.navn, n: 0, undtaget: 0, klasser: [] }); continue; }
+        /* Sluttilstanden måles (V-CIFIX.1): med Reduce motion (app.css) får alt en overgang på .01 ms, og i headless Chrome med
+           virtuel tid kan den blive stående ved start (en knap, der lige er slået til, står så stadig ved .5). Kun overgange:
+           finish() kaster på uendelige animationer. */
+        for (const a of document.getAnimations()) if (a instanceof CSSTransition) { a.finish(); afsluttet++; }
         sider.push(mal(rod, h.navn, ud));
-        if (h.luk) { const e = document.querySelector(h.luk); if (e) { e.click(); await sov(200); } }
+        /* luk: knappen skal findes, og står den i en dialog, skal dialogen være lukket bagefter (tilstanden; close-hændelsen kan komme sent). */
+        if (h.luk) {
+          const e = document.querySelector(h.luk), d = e && e.closest('dialog');
+          if (!e) trin.push(h.navn + ': luk fandt ikke ' + h.luk);
+          else { e.click(); await sov(200); if (d && d.open) trin.push(h.navn + ': luk ' + h.luk + ' lukkede ikke #' + d.id); }
+        }
       }
       /* Kontrolprøve: samme farve (3,69:1) skal fejle som lille tekst og bestå som stor, ellers måler testen ikke det, den siger. */
       const proeve = document.createElement('div'), kontrol = [];
@@ -4133,15 +4164,15 @@ const DOMV = (fravalgte = [], x) => {
       for (const [navn, css] of [['lille', 'font:400 14px sans-serif'], ['fed', 'font:700 19px sans-serif'], ['stor', 'font:400 24px sans-serif']]) { const e = document.createElement('p'); e.textContent = navn; e.style.cssText = css; proeve.append(e); }
       document.body.append(proeve);
       mal(proeve, 'kontrolprøve', kontrol);
-      document.body.textContent = 'MAALT:' + JSON.stringify({ sider, ud, baand, kontrol: kontrol.map(k => k.t) }) + ':SLUT';
+      document.body.textContent = 'MAALT:' + JSON.stringify({ sider, ud, baand, kontrol: kontrol.map(k => k.t), reduceret: matchMedia('(prefers-reduced-motion: reduce)').matches, afsluttet, trin, igen }) + ':SLUT';
     })();`;
     const vaern = vaernUd(), MED = SIDER.filter(s => !s.ekstra), OPS = SIDER.find(s => s.id === 'opsaetning'), G1 = SIDER.find(s => s.id === 'guide-1'), G2 = SIDER.find(s => s.id === 'guide-2'), FRA = SIDER.find(s => s.id === 'alle-fra'), EST = SIDER.find(s => s.id === 'angreb-estimat');
-    const koer = (navn, tema, ekstra, sider, bredde = 1400, tekst = 'normal') => {
+    const koer = (navn, tema, ekstra, sider, bredde = 1400, tekst = 'normal', flag = []) => {
       const stub = `<script>localStorage.setItem('hm-sprog','da');localStorage.setItem('hm-tekst',${JSON.stringify(tekst)});localStorage.setItem('hm-tema',${JSON.stringify(tema)});window.__HM_PLATFORM__='macos';window.__HM_MAAL__=${JSON.stringify(sider)};const SVAR=${JSON.stringify({ ...svar, ...ekstra })};window.__TAURI__={core:{invoke:async(c,a)=>{const k=c==='dyk'&&a.filtre.some(f=>f.dim==='regel')?'dyk_regel':${BES_NOEGLE};return k in SVAR?JSON.parse(JSON.stringify(SVAR[k])):null}},event:{listen:async()=>()=>{}},app:{getVersion:async()=>'9.8.7'}};</script>`;
       const html = ui('index.html').replace('<script src="assets/gamle-valg.js"></script>', UR_STUB + stub + '<script src="assets/gamle-valg.js"></script>').replace('</body>', `<script>addEventListener('load',()=>{${maal}});</script></body>`);
       const fil = path.join(mappe, 'ui', `kontrast-${navn}-${tema}.html`);
       fs.writeFileSync(fil, html);
-      const p = spawnSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${path.join(mappe, `p-${navn}-${tema}`)}`, `--window-size=${bredde},1600`, '--virtual-time-budget=40000', '--dump-dom', pathToFileURL(fil).href], { encoding: 'utf8', timeout: 120000, maxBuffer: 1 << 26 });
+      const p = spawnSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${path.join(mappe, `p-${navn}-${tema}`)}`, `--window-size=${bredde},1600`, '--virtual-time-budget=40000', ...flag, '--dump-dom', pathToFileURL(fil).href], { encoding: 'utf8', timeout: 120000, maxBuffer: 1 << 26 });
       const m = /MAALT:(.*):SLUT/s.exec(p.stdout || '');
       return m ? JSON.parse(m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')) : null;
     };
@@ -4168,6 +4199,15 @@ const DOMV = (fravalgte = [], x) => {
       tjek(`K7 ${tema}: "for Cloudflare®" i titellinjen er lille tekst og har mindst 4,5:1`, lille.length > 0 && lille.every(b => !b.stor) && lav(lille) >= 4.5, JSON.stringify(lille.slice(0, 3)));
       const set = new Map(); for (const f of ud) { const k = `${f.e} ${f.fg}/${f.bg}`; if (!set.has(k) || set.get(k).k > f.k) set.set(k, f); }
       tjek(`K7 ${tema}: al tekst undtagen --text-disabled har mindst 4,5:1 mod sin faktiske baggrund (stor tekst 3:1)`, ud.length === 0, [...set.values()].sort((a, b) => a.k - b.k).slice(0, 60).map(f => `${f.hvad}: ${f.e} ${f.fg}/${f.bg} ${f.k} »${f.t}«`).join('\n  '));
+      /* Kontrolkørsel (V-CIFIX.1): GitHubs macOS-runner har Reduce motion slået til, så samme visninger måles også sådan her. */
+      const RM = koer('alt-rm', tema, {}, MED, 1400, 'normal', ['--force-prefers-reduced-motion']);
+      console.log(`     kontrast ${tema} med Reduce motion: ${RM ? `${RM.sider.length} visninger, ${RM.afsluttet} overgange afsluttet før måling` : 'ingen måling'}`);
+      tjek(`K7 ${tema}: kontrolkørslen har Reduce motion (prefers-reduced-motion: reduce), og alle ${MED.length} visninger er målt`, Boolean(RM && RM.reduceret && RM.sider.length === MED.length), RM && `reduceret=${RM.reduceret} visninger=${RM.sider.length}`);
+      tjek(`K7 ${tema}: med Reduce motion har al tekst også mindst 4,5:1 (stor tekst 3:1)`, Boolean(RM && RM.ud.length === 0), RM && RM.ud.slice(0, 20).map(f => `${f.hvad}: ${f.e} ${f.fg}/${f.bg} ${f.k} »${f.t}«`).join('\n  '));
+      /* V-CIFIX.1 F1: et trin, der ikke fandt sit element, eller en dialog, der ikke var åben, fejler her med vælgerens navn. */
+      const trin = [...r, ...smalle, RM].flatMap(x => (x ? x.trin : [])), igen = [...r, ...smalle, RM].flatMap(x => (x ? x.igen : []));
+      console.log(`     trin ${tema}: ${igen.length} visninger fik trinnene kørt igen, fordi en sen close-hændelse lukkede dialogen${igen.length ? ': ' + igen.join(' · ') : ''}`);
+      tjek(`K7 ${tema}: hvert trin i aabn og luk fandt sit element, og hver rod var synlig (en dialog åben), før der blev målt`, trin.length === 0, trin.join('\n  '));
     }
     /* ── Alle visninger med appens egen CSP som rigtig header, og ingen inline-script i testsiden. En kontrolprøve viser, at lytteren virker. ── */
     const CSP = JSON.parse(fs.readFileSync(path.join(repo, 'src-tauri', 'tauri.conf.json'), 'utf8')).app.security.csp;
