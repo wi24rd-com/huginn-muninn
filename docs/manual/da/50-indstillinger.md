@@ -13,7 +13,7 @@ Vinduet har syv grupper: **Udseende og sprog**, **Dato og land**, **Start**, **N
 | **Sprog** | Systemets sprog · Dansk · English | Systemets sprog | Sproget i hele programmet, i menuen ved ravne-ikonet og i notifikationerne. |
 | **Datoformat** | Følg sproget · Følg systemet · ISO (2026-11-04) | Følg sproget | Gælder alle datoer i programmet og notifikationerne. |
 | **Land** | Liste over lande, og evt. knappen **Skift til …** | Fra din tidszone, derefter systemets sprog | Bruges i **… lige nu**. **Skift til …** vises, når mindst halvdelen af dine besøgende tydeligt kommer fra et andet land. |
-| **Udseende** | System · Lys · Mørk | System | Følger systemet, eller vælg selv. |
+| **Udseende** | System · Lys · Mørk | System | Følger systemet, eller vælg selv. Farver og skrifter kommer fra Wi24rd UI Kit 2. |
 | **Tekststørrelse** | Lille · Normal · Stor | Normal | Gælder teksten i hele programmet. Også ⌘+ ⌘− ⌘0 (Windows: Ctrl). |
 | **Start ved login** | Kontakt | Til (slås til første gang en færdigbygget udgave starter) | Programmet starter i menulinjen, når du logger ind, og henter i baggrunden. Huginn starter også selv én gang om dagen og henter, hvis det ikke kører. Kontakten slår begge dele til og fra. Slå det fra, før du sletter programmet. |
 

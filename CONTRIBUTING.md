@@ -26,6 +26,8 @@ npm install
 npm run tauri dev
 ```
 
+On macOS, `sh tools/signer.sh proeve` makes a debug build signed with your own Developer ID, without notarisation.
+
 ## Tests
 
 Run these before you open a pull request. The same commands run in CI (`.github/workflows/ci.yml`).

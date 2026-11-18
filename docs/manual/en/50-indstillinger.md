@@ -13,7 +13,7 @@ The window has seven groups: **Appearance and language**, **Date and country**, 
 | **Language** | System language · Dansk · English | System language | The language in the whole program, in the menu at the raven icon and in the notifications. |
 | **Date format** | Follow the language · Follow the system · ISO (2026-11-04) | Follow the language | Applies to all dates in the program and the notifications. |
 | **Country** | A list of countries, and possibly the button **Switch to …** | From your time zone, then the system language | Used in **… now**. **Switch to …** appears when at least half of your visitors clearly come from another country. |
-| **Appearance** | System · Light · Dark | System | Follows the system, or choose for yourself. |
+| **Appearance** | System · Light · Dark | System | Follows the system, or choose for yourself. The colours and fonts come from Wi24rd UI Kit 2. |
 | **Text size** | Small · Normal · Large | Normal | Applies to the text in the whole program. Also ⌘+ ⌘− ⌘0 (Windows: Ctrl). |
 | **Start at login** | Switch | On (turned on the first time a built version starts) | The program starts in the menu bar when you log in and fetches in the background. Huginn also starts by itself once a day and fetches if it is not running. The switch turns both on and off. Turn it off before you delete the program. |
 

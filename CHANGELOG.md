@@ -4,6 +4,10 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-18 23:30 — En kortere forside
+#### Ændret
+- **README er kortet ned, så den handler om brugeren; programmet er uændret.** Forsiden har nu på begge sprog, i samme rækkefølge: hvad programmet er med billedet af Overblik, privatliv (hvad programmet sender, og hvorhen), en kort liste med én linje pr. fane plus flere API Tokens og subdomæner med de tre andre billeder, installation og krav, kontrol af den hentede fil (uændret ordlyd og kontrolsum), brugervejledning, hjælp og bidrag samt licens. Afsnittet om at bygge programmet er flyttet til CONTRIBUTING.md, som også har fået linjen om `sh tools/signer.sh proeve`. De lange afsnit om enkelte faner står i brugervejledningen, der har fået de få detaljer, den manglede: vinduets opbygning, den daglige start, kortets mindste lande og vurderingens grænser.
+
 ### 2026-11-18 23:30 — Værktøjerne har to faste vinduer
 #### Ændret
 - **Værktøjerne har to faste vinduer; programmet er uændret.** Med `git config fasttid.vinduer` (fx `06:30-07:30,19:30-20:30`) signerer og notariserer `tools/signer.sh udgiv` i et hvilket som helst af vinduerne, filtiderne i pakken er vinduets start, `status` viser alle vinduer og det næste, og `planlaeg` kører ved hvert vindues start. Vedligeholderens lokale hooks giver commits vinduets start som tid og nægter push uden for vinduerne. Er indstillingen ikke sat, er alt som før. RELEASING.md har et afsnit om vinduerne.

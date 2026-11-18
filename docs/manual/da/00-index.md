@@ -36,6 +36,10 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 
 Resten er for dig, der vil forstå mere. Alt i programmet, der har tal bag sig, kan klikkes, så du kan se, hvad tallet består af.
 
+## Vinduet
+
+Øverst står en titellinje med programmets navn, tilbage og frem, **Vejledning** (denne vejledning på wi24rd.com i din browser), **?** (hjælp: forklaringerne til visningen og genvejene), tandhjulet (**Indstillinger**) og **i** (Om). Under den står fanerne og et bånd med knapperne til den visning, du står i, med **Hent nu** først. Til venstre står listen **Domæner**, hvor du vælger ét domæne eller **Alle domæner**. Fodlinjen nederst viser status, fx "Henter 3 af 7" eller "Opdateret 08.01", og versionen.
+
 ![Hjælpepanelet åbnet oven på Overblik](../img/hjaelp--light-da-1200x860.webp)
 *Knappen **?** øverst til højre åbner hjælpen til den visning, du står i, og viser genvejene. **Åbn vejledningen** øverst i hjælpen åbner denne vejledning på wi24rd.com i din browser. Esc lukker den igen.*
 

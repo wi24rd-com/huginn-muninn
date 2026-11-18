@@ -36,6 +36,10 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 
 The rest is for those who want to understand more. Everything in the program that has figures behind it can be clicked, so you can see what the figure is made of.
 
+## The window
+
+At the top is a title bar with the program's name, back and forward, **Guide** (this guide on wi24rd.com in your browser), **?** (help: the explanations for the view and the shortcuts), the gear (**Settings**) and **i** (About). Below it are the tabs and a band with the buttons for the view you are in, with **Fetch now** first. On the left is the list **Domains**, where you choose one domain or **All domains**. The footer at the bottom shows the status, for example "Fetching 3 of 7" or "Updated 08:01", and the version.
+
 ![The help panel opened over the Overview](../img/hjaelp--light-en-1200x860.webp)
 *The **?** button at the top right opens the help for the view you are in and lists the shortcuts. **Open the guide** at the top of the help opens this guide on wi24rd.com in your browser. Esc closes it again.*
 
