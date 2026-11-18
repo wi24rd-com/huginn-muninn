@@ -4,6 +4,10 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-18 23:30 — Værktøjerne har to faste vinduer
+#### Ændret
+- **Værktøjerne har to faste vinduer; programmet er uændret.** Med `git config fasttid.vinduer` (fx `06:30-07:30,19:30-20:30`) signerer og notariserer `tools/signer.sh udgiv` i et hvilket som helst af vinduerne, filtiderne i pakken er vinduets start, `status` viser alle vinduer og det næste, og `planlaeg` kører ved hvert vindues start. Vedligeholderens lokale hooks giver commits vinduets start som tid og nægter push uden for vinduerne. Er indstillingen ikke sat, er alt som før. RELEASING.md har et afsnit om vinduerne.
+
 ### 2026-11-18 23:30 — Skærmbilleder i README
 #### Tilføjet
 - **README har fået skærmbilleder:** fire billeder af programmet (Overblik, Angreb, Besøgende med subdomæner og Drift) i README.md på engelsk og README.da.md på dansk. Hvert billede findes i lys og mørk og følger læserens tema. Tallene og navnene i billederne er opdigtede.

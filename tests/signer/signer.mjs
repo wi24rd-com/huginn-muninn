@@ -52,6 +52,7 @@ case " $* " in *" --debug "*) p=debug ;; *) p=release ;; esac
 a="src-tauri/target/$p/bundle/macos/Huginn and Muninn.app"
 rm -rf "$a"; mkdir -p "$a/Contents/MacOS" "$a/Contents/Resources"
 printf '%s' "\${STUB_BINAER:-opdigtet binaer}" > "$a/Contents/MacOS/huginn-muninn"
+[ -z "\${STUB_BYG_TIL:-}" ] || printf '%s' "$STUB_BYG_TIL" > "$STUB_NU_FIL"
 printf '<plist/>' > "$a/Contents/Info.plist"
 printf 'ikon' > "$a/Contents/Resources/icon.icns"
 ln -s ../Info.plist "$a/Contents/Resources/link"
@@ -79,6 +80,21 @@ exit 0
 echo "launchctl $*" >> "$STUB_LOG"
 [ "$1" = print ] && exit 113
 exit 0
+`,
+  // date (V-VINDUE.1): uden STUB_NU er det det ægte ur. Med STUB_NU ("ÅÅÅÅ-MM-DD TT:MM:SS") svarer date, som om klokken
+  // var dét; findes filen i STUB_NU_FIL, gælder dens indhold i stedet (npm-stubben kan stille uret frem med STUB_BYG_TIL,
+  // som om bygningen tog tid). Kald med -f (scriptets egne omregninger af en given dato) går uændret til det ægte date.
+  // Stubben kalder altid det ægte date med -j, så uret aldrig kan blive stillet.
+  date: `#!/bin/sh
+if [ -n "\${STUB_NU_FIL:-}" ] && [ -f "$STUB_NU_FIL" ]; then STUB_NU=$(cat "$STUB_NU_FIL"); fi
+if [ -z "\${STUB_NU:-}" ]; then exec /bin/date "$@"; fi
+for a; do if [ "$a" = -f ]; then exec /bin/date "$@"; fi; done
+fmt=""
+for a; do
+  shift
+  case $a in +*) fmt=$a ;; *) set -- "$@" "$a" ;; esac
+done
+exec /bin/date -j -f '%Y-%m-%d %H:%M:%S' "$@" "$STUB_NU" \${fmt:+"$fmt"}
 `,
 };
 
@@ -110,8 +126,13 @@ function git(r, ...args) {
   return execFileSync("git", args, { cwd: r.repo, env: gitMiljoe(r), encoding: "utf8" });
 }
 
-function koer(r, args, { klokken = IND, miljoe = {}, lokal = null } = {}) {
+// vinduer: værdien af git config fasttid.vinduer (null: ikke sat, som i alle tjek fra før V-VINDUE.1).
+// nu: "ÅÅÅÅ-MM-DD TT:MM:SS" til date-stubben (null: det ægte ur).
+function koer(r, args, { klokken = IND, miljoe = {}, lokal = null, vinduer = null, nu = null } = {}) {
   git(r, "config", "fasttid.klokken", klokken);
+  if (vinduer === null) spawnSync("git", ["config", "--unset-all", "fasttid.vinduer"], { cwd: r.repo, env: gitMiljoe(r) });
+  else git(r, "config", "fasttid.vinduer", vinduer);
+  fs.rmSync(path.join(r.rod, "nu.txt"), { force: true });
   const lokalSti = path.join(r.repo, "tools/signer.lokal");
   if (lokal === null) fs.rmSync(lokalSti, { force: true });
   else fs.writeFileSync(lokalSti, lokal);
@@ -122,6 +143,8 @@ function koer(r, args, { klokken = IND, miljoe = {}, lokal = null } = {}) {
     LANG: "en_US.UTF-8",
     STUB_LOG: r.log,
     APPLE_SIGNING_IDENTITY: IDENTITET,
+    STUB_NU: nu ?? undefined,
+    STUB_NU_FIL: path.join(r.rod, "nu.txt"),
     ...miljoe,
   };
   for (const [k, v] of Object.entries(env)) if (v === undefined) delete env[k];
@@ -471,6 +494,147 @@ try {
     tjek("N3: ugyldig grænse afvises", koer(r, ["koer"], { lokal: lokalProfil, miljoe: { SIGNER_GRAENSE: "x" } }).status !== 0);
     const kilde = fs.readFileSync(SCRIPT, "utf8");
     tjek("N3: intet timeout fra coreutils", !/\b(g?timeout)\s/.test(kilde.replace(/^\s*#.*$/gm, "")));
+  }
+  // ---- 18. V-VINDUE.1: to faste vinduer (git config fasttid.vinduer) ----
+  // Uret er date-stubben med et fast, opdigtet tidspunkt; intet tjek her afhænger af det ægte ur.
+  {
+    const V = "06:30-07:30,19:30-20:30";
+    const D = "2026-03-10";
+    const med = (args, tid, ekstra = {}) => koer(r, args, { lokal: lokalProfil, vinduer: V, nu: `${D} ${tid}`, ...ekstra });
+    const app = path.join(r.repo, "src-tauri/target/release/bundle/macos/Huginn and Muninn.app");
+    const ud = path.join(r.hjem, "Huginn-Muninn-udgivelser");
+    const touch = (k) => k.linjer.find((l) => l.startsWith("+ find ")) ?? "";
+
+    // Åbent i det første og i det andet vindue; filtiden er det åbne vindues start.
+    let k = med(["udgiv", "--toer"], "06:45:00");
+    tjek("vinduer: åbent i det første (06:45)", k.status === 0 && k.linjer.some((l) => l.startsWith("+ codesign --force --sign")), k.fejl);
+    tjek("vinduer: filtiden er det første vindues start", touch(k).includes("touch -h -t 202603100630.00 "), touch(k));
+    tjek("vinduer: tørkørslen i et vindue kører ingen værktøjer", k.stub.length === 0, k.stub.join(" | "));
+    k = med(["udgiv", "--toer"], "19:45:00");
+    tjek("vinduer: åbent i det andet (19:45)", k.status === 0 && k.linjer.some((l) => l.startsWith("+ xcrun notarytool submit")), k.fejl);
+    tjek("vinduer: filtiden er det andet vindues start", touch(k).includes("touch -h -t 202603101930.00 "), touch(k));
+    tjek("vinduer: SOURCE_DATE_EPOCH er vinduets start", k.linjer.some((l) => l === `+ export SOURCE_DATE_EPOCH=${Math.floor(new Date(2026, 2, 10, 19, 30, 0).getTime() / 1000)}`), k.linjer.find((l) => l.includes("SOURCE_DATE_EPOCH")) ?? "");
+
+    // Lukket imellem og om natten; fejlteksten nævner vinduerne og det næste.
+    const lukket = (navn, tid, naeste) => {
+      const x = med(["udgiv", "--toer"], tid);
+      tjek(`vinduer: lukket ${navn} (exit ≠ 0, intet bygget eller signeret)`, x.status !== 0 && x.linjer.length === 0 && x.stub.length === 0, x.linjer.join(" | "));
+      tjek(`vinduer: lukket ${navn}: fejlteksten nævner vinduerne, klokken og det næste`, x.fejl.includes("udgiv stoppet") && x.fejl.includes("06:30-07:30, 19:30-20:30") && x.fejl.includes(`klokken er ${tid.slice(0, 5)}`) && x.fejl.includes(naeste), x.fejl);
+    };
+    lukket("imellem (12:00)", "12:00:00", "næste vindue åbner kl. 19:30 i dag");
+    lukket("om aftenen (23:00)", "23:00:00", "næste vindue åbner kl. 06:30 i morgen");
+    lukket("om natten (03:00)", "03:00:00", "næste vindue åbner kl. 06:30 i dag");
+    k = med(["udgiv"], "12:00:00");
+    tjek("vinduer: lukket også uden --toer, og ingen værktøjer kørt", k.status !== 0 && k.stub.length === 0, k.stub.join(" | "));
+
+    // Grænserne: første og sidste minut i hvert vindue, og minuttet før og efter.
+    for (const [tid, aaben] of [["06:29:59", false], ["06:30:00", true], ["07:29:59", true], ["07:30:00", false], ["19:29:59", false], ["19:30:00", true], ["20:29:59", true], ["20:30:00", false]]) {
+      const x = med(["udgiv", "--toer"], tid);
+      tjek(`vinduer: grænse ${tid} er ${aaben ? "åben" : "lukket"}`, (x.status === 0) === aaben, x.fejl);
+    }
+
+    // --uden-vagt uden for vinduerne: advarsel, og filtiden er det næste vindues start (næste dag efter det sidste).
+    k = med(["udgiv", "--toer", "--uden-vagt"], "12:00:00");
+    tjek("vinduer: --uden-vagt tilsidesætter og advarer", k.status === 0 && k.fejl.includes("ADVARSEL") && k.fejl.includes("uden for vinduerne 06:30-07:30, 19:30-20:30") && k.linjer.some((l) => l.startsWith("+ codesign --force --sign")), k.fejl);
+    tjek("vinduer: --uden-vagt kl. 12:00: filtiden er 19:30 samme dag", touch(k).includes("touch -h -t 202603101930.00 "), touch(k));
+    k = med(["udgiv", "--toer", "--uden-vagt"], "23:00:00");
+    tjek("vinduer: --uden-vagt kl. 23:00: filtiden er 06:30 næste dag", touch(k).includes("touch -h -t 202603110630.00 "), touch(k));
+
+    // fasttid.klokken og signer.vindue bruges ikke, når fasttid.vinduer er sat.
+    git(r, "config", "signer.vindue", "600");
+    k = med(["udgiv", "--toer"], "12:00:00", { klokken: "11:59:00" });
+    tjek("vinduer: fasttid.klokken og signer.vindue åbner ikke et vindue", k.status !== 0 && k.fejl.includes("19:30"), k.fejl);
+    git(r, "config", "--unset", "signer.vindue");
+    k = med(["udgiv", "--toer"], "19:45:00", { vinduer: "19:30-20:30,06:30-07:30" });
+    tjek("vinduer: rækkefølgen i indstillingen er ligegyldig", k.status === 0 && touch(k).includes("202603101930.00"), k.fejl);
+    k = med(["udgiv", "--toer"], "07:45:00", { vinduer: "06:30-07:30,07:30-08:30" });
+    tjek("vinduer: to vinduer, der støder op til hinanden, overlapper ikke", k.status === 0 && touch(k).includes("202603100730.00"), k.fejl);
+
+    // Med stubbe: filtiderne i bundlen og zip-filen er det åbne vindues start, med dagens (opdigtede) dato.
+    for (const [tid, start] of [["19:45:00", "19:30:00"], ["06:45:00", "06:30:00"]]) {
+      fs.rmSync(ud, { recursive: true, force: true });
+      k = med(["udgiv"], tid);
+      tjek(`vinduer (stubbe) ${tid}: udgiv exit 0`, k.status === 0, k.fejl + k.ud);
+      const tider = lokalt("find", [app, "-exec", "stat", "-f", "%Sm", "-t", "%Y-%m-%d %H:%M:%S", "{}", "+"]).trim().split("\n");
+      tjek(`vinduer (stubbe) ${tid}: alle filtider i bundlen er ${D} ${start}`, tider.length >= 8 && tider.every((t) => t === `${D} ${start}`), tider.join(", "));
+      const zip = path.join(ud, `Huginn-Muninn-${VER}.zip`);
+      const poster = lokalt("unzip", ["-Z", "-T", zip]).split("\n").filter((l) => l.includes("Huginn and Muninn.app"));
+      tjek(`vinduer (stubbe) ${tid}: zip-filen og alle dens poster har ${start}`, lokalt("stat", ["-f", "%Sm", "-t", "%Y-%m-%d %H:%M:%S", zip]).trim() === `${D} ${start}` && poster.length >= 8 && poster.every((l) => l.includes(` 20260310.${start.replaceAll(":", "")} `)), poster.join(" | "));
+      tjek(`vinduer (stubbe) ${tid}: kontrollen af filtider nævner vinduets start`, k.ud.includes(`filtider: alle har klokkeslættet ${start}`), k.ud);
+      tjek(`vinduer (stubbe) ${tid}: tekstfilens filtid`, lokalt("stat", ["-f", "%Sm", "-t", "%H:%M:%S", path.join(ud, `Huginn-Muninn-${VER}.txt`)]).trim() === start);
+    }
+
+    // tjek af en færdig bundle: lavet i morgenvinduet, kontrolleret om aftenen; en filtid uden for et vindues start afvises.
+    k = med(["tjek", app], "19:45:00");
+    tjek("vinduer: tjek godtager en bundle fra et andet vindue", k.status === 0 && k.ud.includes("filtider: alle har starten på et vindue (06:30, 19:30)"), k.fejl + k.ud);
+    execFileSync("touch", ["-t", "202603101200.00", path.join(app, "Contents/Info.plist")]);
+    k = med(["tjek", app], "19:45:00");
+    tjek("vinduer: tjek afviser en filtid, der ikke er starten på et vindue", k.status !== 0 && k.fejl.includes("1 filtid(er)") && k.fejl.includes("starten på et vindue"), k.fejl);
+
+    // Vinduet lukker, mens der bygges: signeringen stoppes, også når et andet vindue er åbnet i mellemtiden.
+    fs.rmSync(ud, { recursive: true, force: true });
+    k = med(["udgiv"], "07:25:00", { miljoe: { STUB_BYG_TIL: `${D} 07:31:00` } });
+    tjek("vinduer: lukker under bygningen: intet signeret eller indsendt", k.status !== 0 && k.stub.some((l) => l.startsWith("npm run")) && !k.stub.some((l) => l.startsWith("codesign --force") || l.startsWith("xcrun")), k.stub.join(" | "));
+    tjek("vinduer: lukker under bygningen: fejlteksten nævner det næste vindue", k.fejl.includes("signering stoppet") && k.fejl.includes("næste vindue åbner kl. 19:30 i dag"), k.fejl);
+    k = med(["udgiv"], "07:25:00", { miljoe: { STUB_BYG_TIL: `${D} 19:35:00` } });
+    tjek("vinduer: et andet vindue tæller ikke for en kørsel, der startede i det første", k.status !== 0 && !k.stub.some((l) => l.startsWith("codesign --force")) && k.fejl.includes("vinduet 06:30-07:30, som kørslen hører til, er lukket") && k.fejl.includes("vinduet 19:30-20:30 er åbent nu"), k.fejl);
+
+    // status
+    k = med(["status"], "06:45:00");
+    tjek("vinduer: status viser alle vinduer og det åbne", k.status === 0 && k.ud.includes("vinduer:   06:30-07:30, 19:30-20:30") && k.ud.includes("nu:        vinduet 06:30-07:30 er åbent nu") && k.ud.includes(`profil:    ${PROFIL}`), k.ud + k.fejl);
+    k = med(["status"], "12:00:00");
+    tjek("vinduer: status viser, hvornår det næste åbner (i dag)", k.ud.includes("nu:        næste vindue åbner kl. 19:30 i dag"), k.ud);
+    k = med(["status"], "21:00:00");
+    tjek("vinduer: status viser, hvornår det næste åbner (i morgen)", k.ud.includes("nu:        næste vindue åbner kl. 06:30 i morgen"), k.ud);
+    tjek("vinduer: status har ingen linje om ét vindue", !/^vindue: /m.test(k.ud), k.ud);
+    k = med(["status"], "07:30:00");
+    tjek("vinduer: status i minuttet efter et vindue: lukket, det næste åbner 19:30", k.ud.includes("nu:        næste vindue åbner kl. 19:30 i dag"), k.ud);
+    k = med(["status"], "20:29:59");
+    tjek("vinduer: status i et vindues sidste minut: åbent", k.ud.includes("nu:        vinduet 19:30-20:30 er åbent nu"), k.ud);
+
+    // planlaeg: ét tidspunkt pr. vindue, og plisten er gyldig.
+    const plistAf = (x) => /<<PLIST\n(.*?)\nPLIST\n/s.exec(x.ud)?.[1] ?? "";
+    const lint = (indhold) => {
+      const f = path.join(r.rod, "proeve.plist");
+      fs.writeFileSync(f, indhold);
+      return spawnSync("plutil", ["-lint", f], { encoding: "utf8" }).status === 0;
+    };
+    k = med(["planlaeg", "--toer"], "12:00:00");
+    const pl = plistAf(k);
+    const tidspunkter = [...pl.matchAll(/<dict><key>Hour<\/key><integer>(\d+)<\/integer><key>Minute<\/key><integer>(\d+)<\/integer><\/dict>/g)].map((m) => `${m[1]}:${m[2]}`);
+    tjek("vinduer: planlaeg --toer exit 0, og intet skrives eller køres", k.status === 0 && k.stub.length === 0 && !fs.existsSync(path.join(r.hjem, "Library")), k.fejl);
+    tjek("vinduer: planlaeg har to tidspunkter, ét pr. vindue", tidspunkter.join(" ") === "6:30 19:30", tidspunkter.join(" "));
+    tjek("vinduer: tidspunkterne står i en liste under StartCalendarInterval", /<key>StartCalendarInterval<\/key>\s*<array>\s*<dict>.*<\/dict>\s*<dict>.*<\/dict>\s*<\/array>\s*<key>RunAtLoad<\/key>/s.test(pl), pl);
+    tjek("vinduer: plisten med to tidspunkter er gyldig (plutil -lint)", pl.length > 0 && lint(pl));
+    tjek("vinduer: planlaeg siger begge tidspunkter", k.ud.includes("planlagt: udgiv kl. 06:30, 19:30 (vinduerne 06:30-07:30, 19:30-20:30)"), k.ud);
+    k = koer(r, ["planlaeg", "--toer"], { klokken: "23:30:00" });
+    tjek("uden vinduer: plisten har ét tidspunkt uden liste og er gyldig", !plistAf(k).includes("<array>\n") && (plistAf(k).match(/<key>Hour<\/key>/g) ?? []).length === 1 && lint(plistAf(k)), plistAf(k));
+
+    // koer (launchd-jobbet): tidsgrænsen følger det vindue, jobbet startede i.
+    fs.rmSync(ud, { recursive: true, force: true });
+    k = med(["koer"], "19:45:00");
+    tjek("vinduer: koer i aftenvinduet: grænsen er til 20:30", k.status === 0 && k.ud.includes("tidsgrænse: 2700 s (vinduet lukker 20:30)") && k.ud.includes("udgiv lykkedes; jobbet fjernes"), k.ud + k.fejl);
+    fs.rmSync(ud, { recursive: true, force: true });
+    k = med(["koer"], "07:00:00");
+    tjek("vinduer: koer i morgenvinduet: grænsen er til 07:30", k.status === 0 && k.ud.includes("tidsgrænse: 1800 s (vinduet lukker 07:30)"), k.ud + k.fejl);
+    fs.rmSync(ud, { recursive: true, force: true });
+    k = med(["koer"], "12:00:00");
+    tjek("vinduer: koer uden for vinduerne: intet signeret, og jobbet bliver stående til næste vindue", k.status !== 0 && !k.stub.some((l) => l.startsWith("codesign") || l.startsWith("launchctl")) && k.ud.includes("jobbet prøver igen ved næste vindue (kl. 06:30, 19:30)") && k.fejl.includes("udgiv stoppet"), k.ud + k.fejl);
+    tjek("vinduer: koer uden for vinduerne: grænsen er den mindste (60 s), ikke tiden til det næste vindue lukker", k.ud.includes("tidsgrænse: 60 s"), k.ud);
+    tjek("vinduer: ingen vagt (sleep) bliver hængende efter koer", lokalt("pgrep", ["-f", "sleep 2700"]).trim() === "" && lokalt("pgrep", ["-f", "sleep 1800"]).trim() === "");
+
+    // Ugyldige værdier: klar fejl, intet gæt, og intet kørt.
+    for (const [vaerdi, ord] of [["abc", "ikke TT:MM-TT:MM"], ["06:30-07:30,07:00-08:00", "overlapper"], ["06:30-07:30,06:30-07:30", "overlapper"], ["22:00-01:00", "midnat"], ["24:00-25:00", "00-23"],
+      ["06:30-06:30", "tomt"], ["06:30-07:30,", "ugyldig"], ["", "ugyldig"], ["06:30-07:30, 19:30-20:30", "ikke TT:MM-TT:MM"], ["6:30-7:30", "ikke TT:MM-TT:MM"], ["06:30-07:30;19:30-20:30", "ikke TT:MM-TT:MM"]]) {
+      const x = med(["udgiv", "--toer"], "06:45:00", { vinduer: vaerdi });
+      tjek(`vinduer: ugyldig værdi "${vaerdi}" afvises med en klar fejl`, x.status !== 0 && x.linjer.length === 0 && x.fejl.includes("fasttid.vinduer") && x.fejl.includes(ord), x.fejl);
+    }
+    k = med(["status"], "06:45:00", { vinduer: "06:30-07:30,07:00-08:00" });
+    tjek("vinduer: også status og planlaeg afviser overlappende vinduer", k.status !== 0 && med(["planlaeg", "--toer"], "06:45:00", { vinduer: "06:30-07:30,07:00-08:00" }).status !== 0, k.fejl);
+
+    // Indstillingen fjernet igen: scriptet er tilbage ved ét klokkeslæt og ét vindue.
+    k = koer(r, ["status"], { lokal: lokalProfil, klokken: "23:30:00" });
+    tjek("uden vinduer igen: status viser ét vindue fra fasttid.klokken", k.status === 0 && /^vindue:    23:30-00:00 \((åbent|lukket) nu\)$/m.test(k.ud) && !k.ud.includes("vinduer:"), k.ud);
   }
 } finally {
   fs.rmSync(r.rod, { recursive: true, force: true });

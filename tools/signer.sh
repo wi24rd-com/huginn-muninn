@@ -4,23 +4,27 @@
 #   sh tools/signer.sh proeve [--toer]               # debug-bundle, Developer ID, hardened runtime, UDEN tidsstempel
 #   sh tools/signer.sh udgiv [--toer] [--uden-vagt] [--urent]  # release: bygning uden navne, signering, notarisering, hæftning
 #   sh tools/signer.sh tjek <sti til .app> [--toer]  # kun kontrollerne, ingen signering
-#   sh tools/signer.sh planlaeg|afplanlaeg|status [--toer]   # launchd kører udgiv kl. 23:30, til det er lykkedes
+#   sh tools/signer.sh planlaeg|afplanlaeg|status [--toer]   # launchd kører udgiv ved hvert vindues start, til det er lykkedes
 #   --toer: tørkørsel. Skriver kommandoerne (linjer med "+ "), kører dem ikke, skriver intet til disken.
 #
 # Identitet: $APPLE_SIGNING_IDENTITY, ellers identitet=… i tools/signer.lokal (git-ignoreret), ellers Developer ID nedenfor.
 # Notarisering: en Nøglering-profil, standard ham-notary (profil=… i signer.lokal vælger en anden, fx en profil, der
 # allerede findes til et andet program). Ingen adgangskode i filer, miljø eller log.
 # Udgivelser og notariseringslog: udgivelser=… i signer.lokal, ellers ~/Huginn-Muninn-udgivelser (aldrig i repoet).
-# Klokkeslæt: git config fasttid.klokken (som tools/fast-tid.sh, standard 23:30:00) · vindue: git config signer.vindue
-# (minutter, standard 30). udgiv nægter at signere og indsende uden for vinduet; Apples tidsstempel kan ikke vælges.
-# Er Mac'en i dvale kl. 23:30, kører launchd jobbet ved næste opvågning; så er vinduet lukket, og der prøves igen
-# næste aften. Kun macOS.
+# Vinduer: git config fasttid.vinduer (som tools/fast-tid.sh), en kommasepareret liste TT:MM-TT:MM i lokal tid, fx
+# 06:30-07:30,19:30-20:30. udgiv signerer og notariserer kun i et af vinduerne, og filtiderne i pakken er starten på
+# det vindue, kørslen startede i. Lukker det undervejs, stopper udgiv; et andet vindue tæller ikke for samme kørsel.
+# Ugyldig værdi, overlappende vinduer eller et vindue hen over midnat giver en fejl. Apples tidsstempel kan ikke vælges.
+# Er fasttid.vinduer ikke sat, gælder det gamle: ét klokkeslæt, git config fasttid.klokken (standard 23:30:00), og ét
+# vindue derfra, git config signer.vindue (minutter, standard 30); de to bruges ikke, når fasttid.vinduer er sat.
+# Er Mac'en i dvale ved et vindues start, kører launchd jobbet ved næste opvågning; er vinduet lukket da, prøves der
+# igen ved det næste vindue. Kun macOS.
 # udgiv kræver et rent arbejdstræ og at HEAD findes på origin (den sporede gren, som git sidst kendte den; intet hentes
 # fra nettet), før noget bygges. --urent tilsidesætter det med en advarsel (til prøver); --uden-vagt gør ikke. Version og
 # commit står i den sidste linje og i Huginn-Muninn-<version>.txt ved zip-filen. Bundlen hedder "Huginn and Muninn.app"
 # (med mellemrum); filerne i udgivelsesmappen har ingen mellemrum.
 # Jobbet (koer) har en tidsgrænse: når vinduet lukker, stoppes hele udgiv (bygning, codesign, notarytool), og der
-# efterlades ingen halv zip i udgivelsesmappen. Jobbet bliver stående til næste aften.
+# efterlades ingen halv zip i udgivelsesmappen. Jobbet bliver stående til næste vindue.
 set -eu
 
 ROD=$(cd "$(dirname "$0")/.." && pwd -P)
@@ -74,38 +78,113 @@ saet() { # $1 = navn, $2 = værdi, $3 = visning (valgfri) → export
   echo "+ export $1=${3:-$2}"
 }
 
-# ---- klokkeslæt og vindue ----
+# ---- klokkeslæt og vinduer ----
 heltal() { t=$1; while [ "${t#0}" != "$t" ]; do t=${t#0}; done; echo "${t:-0}"; }
-KLOKKEN=$(git -C "$ROD" config --get fasttid.klokken 2>/dev/null || echo "23:30:00")
-case $KLOKKEN in
-  [0-2][0-9]:[0-5][0-9]) KLOKKEN="$KLOKKEN:00" ;;
-  [0-2][0-9]:[0-5][0-9]:[0-5][0-9]) ;;
-  *) fejl "fasttid.klokken skal være TT:MM eller TT:MM:SS (fik $KLOKKEN)" ;;
-esac
-K_T=$(heltal "$(echo "$KLOKKEN" | cut -d: -f1)")
-K_M=$(heltal "$(echo "$KLOKKEN" | cut -d: -f2)")
-K_S=$(echo "$KLOKKEN" | cut -d: -f3)
-[ "$K_T" -le 23 ] || fejl "fasttid.klokken: timen skal være 00-23 (fik $KLOKKEN)"
-VINDUE=$(git -C "$ROD" config --get signer.vindue 2>/dev/null || echo 30)
-case $VINDUE in ''|*[!0-9]*) fejl "signer.vindue skal være et antal minutter (fik $VINDUE)" ;; esac
-FRA=$(( K_T * 60 + K_M )); TIL=$(( FRA + VINDUE ))
-
+hhmm() { printf '%02d:%02d' $(( ($1 / 60) % 24 )) $(( $1 % 60 )); }
 nu_min() { echo $(( $(heltal "$(date +%H)") * 60 + $(heltal "$(date +%M)") )); }
-i_vinduet() { # 0 hvis nu ligger i [klokken, klokken + vindue), også hen over midnat
+
+laes_vinduer() { # $1 = værdien af fasttid.vinduer → VINDUER ("fra til fra til …", minutter siden midnat, sorteret) og VINDUER_TEKST
+  raa=$1
+  hjaelp="skriv fx: git config fasttid.vinduer 06:30-07:30,19:30-20:30"
+  case $raa in ''|,*|*,|*,,*) fejl "fasttid.vinduer er ugyldig (fik '$raa'); $hjaelp" ;; esac
+  linjer=""
+  gl_ifs=$IFS; IFS=,; set -f; set -- $raa; set +f; IFS=$gl_ifs
+  for v in "$@"; do
+    case $v in
+      [0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]) ;;
+      *) fejl "fasttid.vinduer: '$v' er ikke TT:MM-TT:MM; $hjaelp" ;;
+    esac
+    fra=${v%-*}; til=${v#*-}
+    f_t=$(heltal "${fra%:*}"); t_t=$(heltal "${til%:*}")
+    { [ "$f_t" -le 23 ] && [ "$t_t" -le 23 ]; } || fejl "fasttid.vinduer: timen i '$v' skal være 00-23"
+    f=$(( f_t * 60 + $(heltal "${fra#*:}") )); t=$(( t_t * 60 + $(heltal "${til#*:}") ))
+    [ "$t" -ne "$f" ] || fejl "fasttid.vinduer: vinduet '$v' er tomt (samme start og slut)"
+    [ "$t" -gt "$f" ] || fejl "fasttid.vinduer: vinduet '$v' går hen over midnat; det kan et vindue ikke"
+    linjer="$linjer$f $t
+"
+  done
+  set -- $(printf '%s' "$linjer" | sort -n)
+  VINDUER="$*"; VINDUER_TEKST=""; STARTER=""; forrige_til=-1; forrige=""
+  while [ $# -ge 2 ]; do
+    denne="$(hhmm "$1")-$(hhmm "$2")"
+    [ "$1" -ge "$forrige_til" ] || fejl "fasttid.vinduer: vinduerne $forrige og $denne overlapper"
+    VINDUER_TEKST="${VINDUER_TEKST:+$VINDUER_TEKST, }$denne"
+    STARTER="${STARTER:+$STARTER, }$(hhmm "$1")"
+    forrige_til=$2; forrige=$denne
+    shift 2
+  done
+}
+find_vindue() { # $1 = minutter siden midnat → V_AABEN (1/0), V_FRA, V_TIL (det åbne, ellers det næste), V_IMORGEN (1: åbner først i morgen)
+  fv_n=$1
+  set -- $VINDUER
+  V_AABEN=0; V_IMORGEN=1; V_FRA=$1; V_TIL=$2
+  while [ $# -ge 2 ]; do
+    if [ "$fv_n" -ge "$1" ] && [ "$fv_n" -lt "$2" ]; then V_AABEN=1; V_IMORGEN=0; V_FRA=$1; V_TIL=$2; return 0; fi
+    if [ "$fv_n" -lt "$1" ]; then V_IMORGEN=0; V_FRA=$1; V_TIL=$2; return 0; fi
+    shift 2
+  done
+}
+naeste_tekst() { # hvad der gælder lige nu: et åbent vindue, eller hvornår det næste åbner
+  find_vindue "$(nu_min)"
+  if [ "$V_AABEN" = 1 ]; then echo "vinduet $(hhmm "$V_FRA")-$(hhmm "$V_TIL") er åbent nu"
+  elif [ "$V_IMORGEN" = 1 ]; then echo "næste vindue åbner kl. $(hhmm "$V_FRA") i morgen"
+  else echo "næste vindue åbner kl. $(hhmm "$V_FRA") i dag"; fi
+}
+
+if VINDUER_RAA=$(git -C "$ROD" config --get fasttid.vinduer 2>/dev/null); then
+  # Flere vinduer (V-VINDUE.1). Det vindue, der er åbent ved start (ellers det næste), gælder for hele kørslen:
+  # dets start er den faste tid til filtider, og dets slut er grænsen for vagten og for jobbet.
+  MED_VINDUER=1
+  laes_vinduer "$VINDUER_RAA"
+  NU_DAG=$(date +%Y%m%d)
+  find_vindue "$(nu_min)"
+  FRA=$V_FRA; TIL=$V_TIL
+  K_T=$(( FRA / 60 )); K_M=$(( FRA % 60 )); K_S=00
+  KLOKKEN="$(hhmm "$FRA"):00"
+  if [ "$V_IMORGEN" = 1 ]; then DAG=$(date -j -v+1d -f %Y%m%d "$NU_DAG" +%Y%m%d); else DAG=$NU_DAG; fi
+else
+  MED_VINDUER=0
+  KLOKKEN=$(git -C "$ROD" config --get fasttid.klokken 2>/dev/null || echo "23:30:00")
+  case $KLOKKEN in
+    [0-2][0-9]:[0-5][0-9]) KLOKKEN="$KLOKKEN:00" ;;
+    [0-2][0-9]:[0-5][0-9]:[0-5][0-9]) ;;
+    *) fejl "fasttid.klokken skal være TT:MM eller TT:MM:SS (fik $KLOKKEN)" ;;
+  esac
+  K_T=$(heltal "$(echo "$KLOKKEN" | cut -d: -f1)")
+  K_M=$(heltal "$(echo "$KLOKKEN" | cut -d: -f2)")
+  K_S=$(echo "$KLOKKEN" | cut -d: -f3)
+  [ "$K_T" -le 23 ] || fejl "fasttid.klokken: timen skal være 00-23 (fik $KLOKKEN)"
+  VINDUE=$(git -C "$ROD" config --get signer.vindue 2>/dev/null || echo 30)
+  case $VINDUE in ''|*[!0-9]*) fejl "signer.vindue skal være et antal minutter (fik $VINDUE)" ;; esac
+  FRA=$(( K_T * 60 + K_M )); TIL=$(( FRA + VINDUE ))
+  # Den faste tid til filtider: dagens dato + klokkeslættet (gårsdagens, hvis vinduet er gået hen over midnat).
+  if [ "$(nu_min)" -lt "$FRA" ] && [ "$TIL" -gt 1440 ] && [ "$(nu_min)" -lt $(( TIL - 1440 )) ]; then
+    DAG=$(date -v-1d +%Y%m%d)
+  else
+    DAG=$(date +%Y%m%d)
+  fi
+fi
+TS=$(printf '%s%02d%02d.%s' "$DAG" "$K_T" "$K_M" "$K_S")   # touch -t CCYYMMDDhhmm.SS
+TILLADTE=$KLOKKEN; KLOKKE_TEKST="klokkeslættet $KLOKKEN"    # hvad tjek_filtider godtager (tjek med vinduer: alle starter)
+
+i_vinduet() { # 0 hvis nu ligger i [FRA, TIL): kørslens vindue; uden fasttid.vinduer også hen over midnat
   n=$(nu_min)
   { [ "$n" -ge "$FRA" ] && [ "$n" -lt "$TIL" ]; } || { [ "$TIL" -gt 1440 ] && [ "$n" -lt $(( TIL - 1440 )) ]; }
 }
-hhmm() { printf '%02d:%02d' $(( ($1 / 60) % 24 )) $(( $1 % 60 )); }
-# Den faste tid til filtider: dagens dato + klokkeslættet (gårsdagens, hvis vinduet er gået hen over midnat).
-if [ "$(nu_min)" -lt "$FRA" ] && [ "$TIL" -gt 1440 ] && [ "$(nu_min)" -lt $(( TIL - 1440 )) ]; then
-  DAG=$(date -v-1d +%Y%m%d)
-else
-  DAG=$(date +%Y%m%d)
-fi
-TS=$(printf '%s%02d%02d.%s' "$DAG" "$K_T" "$K_M" "$K_S")   # touch -t CCYYMMDDhhmm.SS
 
 vagt() { # $1 = hvad der skal ske nu
   if i_vinduet; then return 0; fi
+  if [ "$MED_VINDUER" = 1 ]; then
+    if [ "$UDEN_VAGT" = 1 ]; then
+      echo "signer: ADVARSEL: $1 uden for vinduerne $VINDUER_TEKST (--uden-vagt); $(naeste_tekst). Apples tidsstempel og notariseringen viser det rigtige klokkeslæt." >&2
+      return 0
+    fi
+    nt=$(naeste_tekst)
+    case $nt in
+      vinduet*) fejl "$1 stoppet: vinduet $(hhmm "$FRA")-$(hhmm "$TIL"), som kørslen hører til, er lukket, og klokken er $(date +%H:%M). Start udgiv igen ($nt). Bevidst nu: --uden-vagt (røber tidspunktet)" ;;
+    esac
+    fejl "$1 stoppet: udgiv kører kun i vinduerne $VINDUER_TEKST, og klokken er $(date +%H:%M); $nt. Planlæg: sh tools/signer.sh planlaeg · bevidst nu: --uden-vagt (røber tidspunktet)"
+  fi
   if [ "$UDEN_VAGT" = 1 ]; then
     echo "signer: ADVARSEL: $1 uden for vinduet $(hhmm "$FRA")-$(hhmm "$TIL") (--uden-vagt). Apples tidsstempel og notariseringen viser det rigtige klokkeslæt." >&2
     return 0
@@ -158,10 +237,10 @@ filtider() { # $1 = sti → alle filtider (også mapper og links) sættes til de
 }
 
 tjek_filtider() { # $1 = sti → fejler, hvis en filtid ikke har det faste klokkeslæt
-  if [ "$TOER" = 1 ]; then echo "+ (kontrol) alle filtider i $1 har klokkeslættet $KLOKKEN"; return 0; fi
-  forkerte=$(find "$1" -exec stat -f '%Sm' -t '%H:%M:%S' '{}' + | grep -v -c -x -F "$KLOKKEN" || true)
-  [ "$forkerte" = 0 ] || fejl "$forkerte filtid(er) i $1 har ikke klokkeslættet $KLOKKEN"
-  echo "filtider: alle har klokkeslættet $KLOKKEN"
+  if [ "$TOER" = 1 ]; then echo "+ (kontrol) alle filtider i $1 har $KLOKKE_TEKST"; return 0; fi
+  forkerte=$(find "$1" -exec stat -f '%Sm' -t '%H:%M:%S' '{}' + | grep -v -c -x -F -e "$TILLADTE" || true)
+  [ "$forkerte" = 0 ] || fejl "$forkerte filtid(er) i $1 har ikke $KLOKKE_TEKST"
+  echo "filtider: alle har $KLOKKE_TEKST"
 }
 
 tjek_navne() { # $1 = sti → fejler, hvis brugernavn, hjemmemappe eller maskinnavn står i en fil (værdierne skrives ikke)
@@ -283,6 +362,11 @@ tjek() {
   [ -n "$MAAL" ] || fejl "brug: sh tools/signer.sh tjek <sti til .app> [--toer]"
   [ "$TOER" = 1 ] || [ -d "$MAAL" ] || fejl "findes ikke: $MAAL"
   koer codesign -dvv "$MAAL"
+  if [ "$MED_VINDUER" = 1 ]; then # en færdig pakke kan være lavet i et hvilket som helst af vinduerne
+    TILLADTE=$(echo "$STARTER" | sed 's/, /:00\
+/g; s/$/:00/')
+    KLOKKE_TEKST="starten på et vindue ($STARTER)"
+  fi
   tjek_navne "$MAAL"
   tjek_filtider "$MAAL"
   kontrol "$MAAL"
@@ -291,6 +375,19 @@ tjek() {
 etiket() { echo "com.wi24rd.signer.$(basename "$ROD" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9\n' '-')"; }
 plist() { echo "$HOME/Library/LaunchAgents/$(etiket).plist"; }
 logfil() { echo "$HOME/Library/Logs/$(etiket).log"; }
+plist_tider() { # StartCalendarInterval: ét tidspunkt uden fasttid.vinduer, ellers ét pr. vindue (dets start)
+  if [ "$MED_VINDUER" = 0 ]; then
+    echo "  <dict><key>Hour</key><integer>$K_T</integer><key>Minute</key><integer>$K_M</integer></dict>"
+    return 0
+  fi
+  echo "  <array>"
+  set -- $VINDUER
+  while [ $# -ge 2 ]; do
+    echo "    <dict><key>Hour</key><integer>$(( $1 / 60 ))</integer><key>Minute</key><integer>$(( $1 % 60 ))</integer></dict>"
+    shift 2
+  done
+  echo "  </array>"
+}
 plist_indhold() {
   cat <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -304,7 +401,7 @@ plist_indhold() {
   <key>EnvironmentVariables</key>
   <dict><key>PATH</key><string>$PATH</string></dict>
   <key>StartCalendarInterval</key>
-  <dict><key>Hour</key><integer>$K_T</integer><key>Minute</key><integer>$K_M</integer></dict>
+$(plist_tider)
   <key>RunAtLoad</key><false/>
   <key>StandardOutPath</key><string>$(logfil)</string>
   <key>StandardErrorPath</key><string>$(logfil)</string>
@@ -324,7 +421,11 @@ planlaeg() {
   fi
   if [ "$TOER" = 1 ]; then vis launchctl bootout "gui/$(id -u)/$(etiket)"; else launchctl bootout "gui/$(id -u)/$(etiket)" 2>/dev/null || true; fi
   koer launchctl bootstrap "gui/$(id -u)" "$p"
-  echo "planlagt: udgiv kl. $(hhmm "$FRA") (vindue $VINDUE min), indtil det lykkes. Log: $(logfil)"
+  if [ "$MED_VINDUER" = 1 ]; then
+    echo "planlagt: udgiv kl. $STARTER (vinduerne $VINDUER_TEKST), indtil det lykkes. Log: $(logfil)"
+  else
+    echo "planlagt: udgiv kl. $(hhmm "$FRA") (vindue $VINDUE min), indtil det lykkes. Log: $(logfil)"
+  fi
 }
 
 afplanlaeg() {
@@ -337,7 +438,12 @@ status() {
   if [ -f "$(plist)" ]; then p=planlagt; else p="ikke planlagt"; fi
   if launchctl print "gui/$(id -u)/$(etiket)" >/dev/null 2>&1; then l=indlæst; else l="ikke indlæst"; fi
   echo "job:       $(etiket) ($p, $l)"
-  echo "vindue:    $(hhmm "$FRA")-$(hhmm "$TIL") ($( i_vinduet && echo åbent nu || echo lukket nu ))"
+  if [ "$MED_VINDUER" = 1 ]; then
+    echo "vinduer:   $VINDUER_TEKST"
+    echo "nu:        $(naeste_tekst)"
+  else
+    echo "vindue:    $(hhmm "$FRA")-$(hhmm "$TIL") ($( i_vinduet && echo åbent nu || echo lukket nu ))"
+  fi
   echo "identitet: $IDENTITET"
   echo "profil:    $PROFIL"
   echo "ud:        $UD"
@@ -349,11 +455,19 @@ graense_sek() { # sekunder, til vinduet lukker (mindst 60, så vagtens besked ka
     case $SIGNER_GRAENSE in ''|*[!0-9]*) fejl "SIGNER_GRAENSE skal være et antal sekunder (fik $SIGNER_GRAENSE)" ;; esac
     echo "$SIGNER_GRAENSE"; return 0
   fi
+  # Med fasttid.vinduer er FRA-TIL det vindue, jobbet startede i. Startede det uden for et vindue (Mac'en sov), stopper
+  # udgiv selv ved vagten; grænsen er da den mindste.
+  if [ "$MED_VINDUER" = 1 ] && ! i_vinduet; then echo 60; return 0; fi
   n=$(( $(heltal "$(date +%H)") * 3600 + $(heltal "$(date +%M)") * 60 + $(heltal "$(date +%S)") ))
   if [ "$TIL" -gt 1440 ] && [ "$n" -lt $(( (TIL - 1440) * 60 )) ]; then n=$(( n + 86400 )); fi
   r=$(( TIL * 60 - n ))
   [ "$r" -ge 60 ] || r=60
   echo "$r"
+}
+
+naar_igen() { if [ "$MED_VINDUER" = 1 ]; then echo "i næste vindue"; else echo "næste aften"; fi; }
+kl_igen() { # hvornår launchd starter jobbet igen
+  if [ "$MED_VINDUER" = 1 ]; then echo "ved næste vindue (kl. $STARTER)"; else echo "kl. $(hhmm "$FRA")"; fi
 }
 
 koer_job() { # kaldes af launchd: udgiv i en ny proces (så set -e gælder fuldt) med tidsgrænse, og afplanlæg efter succes
@@ -384,9 +498,9 @@ koer_job() { # kaldes af launchd: udgiv i en ny proces (så set -e gælder fuldt
     done
     echo "tidsgrænse: udgiv afbrudt efter $g s, fordi vinduet lukkede (exit $rc). Fjernet:${halv:- intet}."
     case $halv in
-      *til-notarisering*) echo "tidsgrænse: zip-filen til notarisering var lavet. Var den indsendt, gør Apple den færdig, men den bruges ikke; næste aften bygges, signeres og indsendes en ny." ;;
+      *til-notarisering*) echo "tidsgrænse: zip-filen til notarisering var lavet. Var den indsendt, gør Apple den færdig, men den bruges ikke; $(naar_igen) bygges, signeres og indsendes en ny." ;;
     esac
-    echo "udgiv lykkedes ikke; jobbet prøver igen kl. $(hhmm "$FRA")"
+    echo "udgiv lykkedes ikke; jobbet prøver igen $(kl_igen)"
     exit 1
   fi
   if [ "$rc" = 0 ]; then
@@ -394,7 +508,7 @@ koer_job() { # kaldes af launchd: udgiv i en ny proces (så set -e gælder fuldt
     rm -f "$(plist)"
     launchctl bootout "gui/$(id -u)/$(etiket)" 2>/dev/null || true
   else
-    echo "udgiv lykkedes ikke; jobbet prøver igen kl. $(hhmm "$FRA")"
+    echo "udgiv lykkedes ikke; jobbet prøver igen $(kl_igen)"
     exit 1
   fi
 }

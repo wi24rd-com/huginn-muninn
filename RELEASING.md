@@ -4,6 +4,12 @@ How a release of Wi24rd Huginn and Muninn is made. The app is built, signed and 
 
 The order matters: the release is created as a **draft**, the finished file is attached, and only then is it published. A published release is not changed afterwards; a mistake is fixed with a new version.
 
+## Time windows
+
+Everything that can be seen from outside happens inside a fixed time window. A commit carries the start time of a window, and pushing, signing and notarising, tagging and publishing the release are all done while a window is open. The windows are set per repository with `git config fasttid.vinduer`, for example `git config fasttid.vinduer 06:30-07:30,19:30-20:30` (local time). `sh tools/signer.sh status` shows the windows and which one is open or opens next, and `sh tools/signer.sh planlaeg` runs `udgiv` at the start of each window until it has succeeded.
+
+There are two deliberate ways around a closed window, and both cost the same: the real time becomes public and cannot be taken back. `sh tools/signer.sh udgiv --uden-vagt` signs outside a window; Apple's signing timestamp and the notarisation then show when it really happened. `FAST_TID_UDEN_VINDUE=1 git push` lets the maintainer's local push hook pass outside a window; GitHub then shows the real time of the push in Actions, in the activity feed and on the release.
+
 ## 1. Prepare
 
 1. The version is the same in `package.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and `src-tauri/tauri.conf.json`, and `CHANGELOG.md` has a section for it.
