@@ -5787,5 +5787,21 @@ const DOMV = (fravalgte = [], x) => {
   tjek('FIX2 kurverne (Robotter, Besøgendes indeks) er ikke rørt: de får aldrig klassen', !erTom(w.hmTegn.kurver([{ dag: '2026-11-01' }], [{ felt: 'v', klasse: 'vg-k-mit' }], { titel: 't', tekst: () => 't', maal: () => null })));
 }
 
+// ── V-README.1: skærmbilleder på forsiden ──
+{
+  /* Hvert billede står i et <picture> med en mørk kilde og et lyst <img>, så GitHub viser det, der passer til læserens tema. */
+  const laes = f => { const t = fs.readFileSync(path.join(repo, f), 'utf8'), blokke = t.match(/<picture>[\s\S]*?<\/picture>/g) || [];
+    return { f, t, billeder: blokke.map(b => ({ moerk: (/<source\s+media="\(prefers-color-scheme: dark\)"\s+srcset="([^"]+)"\s*\/?>/.exec(b) || [])[1], lys: (/<img\s[^>]*\bsrc="([^"]+)"/.exec(b) || [])[1], alt: (/<img\s[^>]*\balt="([^"]*)"/.exec(b) || [])[1], bredde: (/<img\s[^>]*\bwidth="(\d+)"/.exec(b) || [])[1] })) }; };
+  const en = laes('README.md'), da = laes('README.da.md'), begge = [en, da], findes = s => !!s && !/^([a-z]+:|\/)|\.\./i.test(s) && fs.existsSync(path.join(repo, s));
+  const stier = r => [...r.t.matchAll(/(?:src|srcset)="([^"]+)"|!\[[^\]]*\]\(([^)\s]+)\)/g)].map(m => m[1] || m[2]).filter(s => !/^https?:/.test(s));
+  const mangler = begge.flatMap(r => stier(r).filter(s => !findes(s)).map(s => `${r.f}: ${s}`));
+  tjek('V-README.1 hver billedsti i de to README-filer er relativ og findes i repoet', begge.every(r => stier(r).length >= 9) && mangler.length === 0, mangler.join(' | '));
+  const halve = begge.flatMap(r => r.billeder.filter(b => !b.moerk || !b.lys || !b.alt || b.alt.trim().length < 20 || !(Number(b.bredde) > 0)).map(b => `${r.f}: ${b.lys || b.moerk || '?'}`));
+  tjek('V-README.1 hvert <picture> har mørk kilde og lyst <img> med alt og width', begge.every(r => r.billeder.length > 0) && halve.length === 0, halve.join(' | '));
+  tjek('V-README.1 de to README-filer har lige mange billeder (fire), og ingen <img> står uden for et <picture>', en.billeder.length === 4 && da.billeder.length === 4 && begge.every(r => (r.t.match(/<img\s/g) || []).length === r.billeder.length), `${en.billeder.length} og ${da.billeder.length}`);
+  const forkert = begge.flatMap(r => r.billeder.filter(b => !new RegExp(`^docs/manual/img/readme-[a-z-]+--dark-${r.f === 'README.md' ? 'en' : 'da'}\\.webp$`).test(b.moerk || '') || (b.lys || '') !== (b.moerk || '').replace('--dark-', '--light-')).map(b => `${r.f}: ${b.lys}`));
+  tjek('V-README.1 engelske billeder i README.md og danske i README.da.md, og lys og mørk er samme visning', forkert.length === 0 && en.billeder.map(b => b.lys.replace('-en.webp', '')).join() === da.billeder.map(b => b.lys.replace('-da.webp', '')).join(), forkert.join(' | '));
+}
+
 console.log(`\n${ok} bestået, ${fejl} fejlet`);
 process.exit(fejl ? 1 : 0);

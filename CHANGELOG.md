@@ -4,6 +4,10 @@ Posterne står efter dato, nyeste først.
 
 ## [Unreleased]
 
+### 2026-11-18 23:30 — Skærmbilleder i README
+#### Tilføjet
+- **README har fået skærmbilleder:** fire billeder af programmet (Overblik, Angreb, Besøgende med subdomæner og Drift) i README.md på engelsk og README.da.md på dansk. Hvert billede findes i lys og mørk og følger læserens tema. Tallene og navnene i billederne er opdigtede.
+
 ## [1.1.0] — 2026-11-17
 
 Anden udgave til macOS: flere API Tokens side om side, subdomæner i Besøgende og Angreb og fanen Drift med fejl pr. time og cache; den lokale database opgraderes til skema 21.

@@ -19,6 +19,11 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - **Huginn (tanke):** det, der sker nu — angrebene, hvad der blev stoppet og hvordan.
 - **Muninn (hukommelse):** det, der er sket — hver færdig dag gemmes lokalt.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/manual/img/readme-overblik--dark-da.webp">
+  <img src="docs/manual/img/readme-overblik--light-da.webp" alt="Fanen Overblik: en domslinje, der siger, at ét domæne skal holdes øje med, og en tabel med én række pr. domæne med status, hvorfor, afviste forespørgsler og angreb." width="1000">
+</picture>
+
 **Privatliv:** programmet taler kun med `api.cloudflare.com` med dit eget API Token, der kun kan læse (ét pr. Cloudflare-konto, hvis du har flere), gemt i styresystemets nøglering. Intet sendes til Wi24rd. Ingen telemetri.
 
 **Status:** version 1.1.0 til macOS (Apple silicon), signeret med Developer ID og notariseret af Apple. Hent den under [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). Windows-udgaven er ikke udgivet endnu, og der findes ingen Linux-udgave.
@@ -42,7 +47,27 @@ Et skrivebordsprogram (Tauri), der viser, hvad der faktisk sker mod **dine egne*
 - **Tekststørrelse:** Lille, Normal eller Stor under **Indstillinger**, eller ⌘+ ⌘− ⌘0 (Windows: Ctrl). Valget huskes.
 - **Nulstil historik** under **Indstillinger** › **Data** sletter alle tal på din computer og henter dem forfra. Cloudflare har kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år — alt ældre er væk for altid; dialogen siger hvilke datoer, og hvor mange dage der forsvinder.
 
+**Besøgende med subdomæner:** besøg, forespørgsler og angreb pr. subdomæne for ét domæne.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/manual/img/readme-besoegende-subdomaener--dark-da.webp">
+  <img src="docs/manual/img/readme-besoegende-subdomaener--light-da.webp" alt="Fanen Besøgende for ét domæne: tabellen Subdomæner med besøg, forespørgsler, angreb og andel pr. subdomæne, og under den besøg pr. land." width="800">
+</picture>
+
+**Drift:** en nat, hvor websitet ikke svarede.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/manual/img/readme-drift--dark-da.webp">
+  <img src="docs/manual/img/readme-drift--light-da.webp" alt="Fanen Drift for ét domæne: fire fliser med fejl, en gul linje, der siger, at websitet ikke svarede mellem kl. 01.00 og 05.00 den 3. november, og et søjlediagram med svar med fejl pr. dag." width="800">
+</picture>
+
 ## Angreb
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/manual/img/readme-angreb--dark-da.webp">
+  <img src="docs/manual/img/readme-angreb--light-da.webp" alt="Fanen Angreb for ét domæne: fliser med afviste forespørgsler i går, på 7 dage og på 30 dage, hvordan de blev stoppet, og toppen af verdenskortet med, hvor angrebene kom fra." width="800">
+</picture>
+
 - **Afviste som Cloudflares estimat:** antallet af afviste er summen af Cloudflares stikprøve-vægt, ikke antallet af rækker, så det kan være højere end på wi24rd.com.
 - **Én side pr. domæne:** alt om angrebene står på samme side, og overskriften siger fx "Angreb · wi24rd.com". Siden viser 7 hele dage som standard. Vælg **30 dage**, **Hele historikken** eller **Fra** og **Til** i båndet.
 - **Filtre:** et klik på et tal, et land, en regel eller en sti forudindstiller perioden og filtret på samme side. Filtrene står som chips under overskriften: × fjerner ét, og **Nulstil** i båndet fjerner dem alle. **Vis** skifter mellem **Alt**, **Kun angreb** og **Kun rutine**. Tilbage og frem går ét trin ad gangen.

@@ -19,6 +19,11 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - **Huginn (thought):** what is happening now — the attacks, what was stopped and how.
 - **Muninn (memory):** what has happened — every finished day is kept locally.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/manual/img/readme-overblik--dark-en.webp">
+  <img src="docs/manual/img/readme-overblik--light-en.webp" alt="The Overview tab: a verdict line saying one domain needs watching, and a table with one row per domain showing status, why, refused requests and attacks." width="1000">
+</picture>
+
 **Privacy:** the app talks only to `api.cloudflare.com` with your own read-only API Token (one per Cloudflare account, if you have several), stored in your OS keychain. Nothing is sent to Wi24rd. No telemetry.
 
 **Status:** version 1.1.0 for macOS (Apple silicon), signed with Developer ID and notarised by Apple. Download it from [Releases](https://github.com/wi24rd-com/huginn-muninn/releases/latest). The Windows version is not released yet, and there is no Linux version.
@@ -42,7 +47,27 @@ A desktop app (Tauri) that shows you what is actually happening against **your o
 - **Text size:** Small, Normal or Large under **Settings**, or ⌘+ ⌘− ⌘0 (Windows: Ctrl). The choice is remembered.
 - **Reset history** under **Settings** › **Data** deletes all figures on your computer and fetches them again. Cloudflare only has security events for the last month and traffic figures for the last year — anything older is gone for good; the dialog tells you which dates, and how many days are lost.
 
+**Visitors with subdomains:** visits, requests and attacks per subdomain for one domain.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/manual/img/readme-besoegende-subdomaener--dark-en.webp">
+  <img src="docs/manual/img/readme-besoegende-subdomaener--light-en.webp" alt="The Visitors tab for one domain: the Subdomains table with visits, requests, attacks and share per subdomain, and below it visits per country." width="800">
+</picture>
+
+**Health:** a night when the website did not answer.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/manual/img/readme-drift--dark-en.webp">
+  <img src="docs/manual/img/readme-drift--light-en.webp" alt="The Health tab for one domain: four tiles with errors, a yellow line saying the website did not answer between 01.00 and 05.00 on 3 November, and a bar chart of responses with errors per day." width="800">
+</picture>
+
 ## Attacks
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/manual/img/readme-angreb--dark-en.webp">
+  <img src="docs/manual/img/readme-angreb--light-en.webp" alt="The Attacks tab for one domain: tiles with refused requests yesterday, in 7 days and in 30 days, how they were stopped, and the top of the world map showing where the attacks came from." width="800">
+</picture>
+
 - **Refused as Cloudflare's estimate:** the number refused is the sum of Cloudflare's sample weight, not the number of rows, so it can be higher than on wi24rd.com.
 - **One page per domain:** everything about the attacks is on one page, and the heading says, for example, "Attacks · wi24rd.com". The page shows 7 whole days by default. Choose **30 days**, **All history**, or **From** and **To** in the band.
 - **Filters:** clicking a figure, a country, a rule or a path presets the period and the filter on the same page. The filters are chips under the heading: × removes one, and **Reset** in the band removes them all. **Show** switches between **All**, **Attacks only** and **Routine only**. Back and forward go one step at a time.
