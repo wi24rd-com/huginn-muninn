@@ -24,6 +24,9 @@ With a country as a filter the tile is called **Visits from Denmark in 30 days**
 
 **Unique visitors per day** is a chart of the period. The bars are blue, so they do not look like attacks. For **One year** (and periods over 90 days) there is one bar per week, Monday to Sunday, and the whole year fits at once with the months on the axis; if days are missing in a week, the tooltip says for example "3 of 7 days". A day or week without figures is empty; it is not 0, it just has not been fetched.
 
+![Visitors for wi24rd.com with One year](../../img/besoegende--light-en-1200x860.webp)
+*Visitors with **One year**: the tiles under **The last days**, and the chart with one bar per week. Weeks without figures are empty.*
+
 **Where the visits came from** is a table of country, visits and share in the period. The 10 largest are shown, the rest behind **Show all**.
 
 **Known robots** shows visits from robots Cloudflare has verified, in the same groups as [Robots](robotter.md) (search engines, AI training, monitoring …). Above the table it says how large a part of the traffic in the last year came from known robots and scanners.
@@ -36,17 +39,23 @@ That is why **Answered with the site’s ordinary page** is below the 404 list: 
 
 If the domain has traffic on at least two names in the period, e.g. `wi24rd.com`, `www.wi24rd.com` and `shop.wi24rd.com`, the section **Subdomains** is shown below the graph. It is only shown when one domain is selected, and only without a filter. A domain without subdomains looks as before.
 
-The table has the columns **Subdomain**, **Visits**, **Requests**, **Attacks** and **Share** (the share of the requests). The domain itself is shown with its own name, `www` as `www.<domain>`. If the domain has more than 20 names, the rest are in a last row **Other (n)**, and the names can be opened under **Show n more subdomains**. Three rows are not names and cannot be opened: **Called by IP address** (someone called the site by its IP address instead of its name), **Other name** (a name outside the domain) and **Invalid name**.
+The table has the columns **Subdomain**, **Visits**, **Requests**, **Attacks** and **Share** (the share of the requests). The domain itself is shown with its own name, `www` as `www.<domain>`. If the domain has more than 20 names, the rest are in a last row **Other (n)**, and the names can be opened under **Show … more subdomains**. Three rows are not names and cannot be opened: **Called by IP address** (someone called the site by its IP address instead of its name), **Other name** (a name outside the domain) and **Invalid name**.
 
-The table follows the selected period. The program has figures per subdomain from about 30 days before the update to this version. When the period goes further back, **Per subdomain from {date}.** is shown below the table, and the figures only cover the days from then. Below the table it always says: **Only traffic through Cloudflare. A subdomain set to “DNS only” has no numbers here.** A name with a grey cloud in Cloudflare’s DNS does not go through Cloudflare, so Cloudflare has no figures for it.
+The table follows the selected period. The program has figures per subdomain from about 30 days before the update to this version. When the period goes further back, **Per subdomain from …** is shown below the table, and the figures only cover the days from then. Below the table it always says: **Only traffic through Cloudflare. A subdomain set to “DNS only” has no numbers here.** A name with a grey cloud in Cloudflare’s DNS does not go through Cloudflare, so Cloudflare has no figures for it.
+
+![The section Subdomains in Visitors](../../img/subdom-besoegende--light-en-1200x860.webp)
+*The section Subdomains for wi24rd.com: visits, requests, attacks and share per name, the row **Called by IP address** and the notes below the table.*
 
 Click a subdomain (the name, **Visits** or **Requests**), and Visitors shows only that one. The chip **Subdomain: shop.wi24rd.com** is shown at the top. The tiles and graphs show visits and requests per day on the subdomain. **Where the visits came from** and **Known robots** show the subdomain’s own figures, with the same table and clicks as for the domain: a country shows the visits from that country per day on the subdomain. **Most visited pages** shows only the subdomain’s pages. If the subdomain has no figures for a section in the period, the section is not shown.
+
+![Visitors filtered to shop.wi24rd.com](../../img/subdom-besoegende-filter--light-en-1200x860.webp)
+*Filtered to shop.wi24rd.com: the chip **Subdomain: shop.wi24rd.com**, the line about unique visitors and the charts for the subdomain.*
 
 Unique visitors and the IP classes do not exist per subdomain at Cloudflare. They are not shown at all, never with the whole domain’s figures. A line below the chip says so: **Unique visitors are not available per subdomain. See them for all of wi24rd.com.** Clicking **all of wi24rd.com** removes the filter, like **×** on the chip.
 
 The figure under **Attacks** in the table opens [Attacks](vaernet.md) for the subdomain with the same period (**A year** becomes **All history**). A figure that is 0 cannot be clicked.
 
-Countries and known robots per subdomain exist from the update to this version and about 30 days back. The program fetches those days once more per domain. Right after an update, the figures per subdomain arrive within the first few minutes: until then **–** (not fetched yet) is shown instead of a figure, and below the table it says **Fetching visits and requests per subdomain …** or **Still fetching {n} days.**
+Countries and known robots per subdomain exist from the update to this version and about 30 days back. The program fetches those days once more per domain. Right after an update, the figures per subdomain arrive during the first while, at the same slow pace as the other extra figures: until then **–** (not fetched yet) is shown instead of a figure, and below the table it says **Fetching visits and requests per subdomain …** or **Still fetching … days.**
 
 In **Most visited pages**, the same path on two subdomains is two rows. The row for a subdomain has the name next to the path, e.g. `/` with `shop.wi24rd.com`. Days saved before the update that are older than about 30 days cannot be told apart and count as the domain itself. If Cloudflare sent the highest number of rows for a day, the note **Only the most visited pages are included: Cloudflare sent at most 10,000 rows.** is shown.
 
@@ -77,7 +86,7 @@ In **Most visited pages**, the same path on two subdomains is two rows. The row 
 - A **path under Most visited pages**, **Pages that do not exist** or **Answered with the site’s ordinary page** puts a filter: the chart shows views of the page per day, and the Visits tile follows the page.
 - A **subdomain under Subdomains** (the name, **Visits** or **Requests**) shows Visitors for that subdomain, with the chip **Subdomain: …**. The figure under **Attacks** shows Attacks for the subdomain with the same period. The filter is in the address, so back and forward work, and it is reset when you choose another domain.
 - A **path on a subdomain** under Most visited pages shows the views of the path on that subdomain. With a subdomain chosen, a country, a robot group or a path can be combined with it; the figures are the subdomain’s.
-- **all of {domain}** in the line below the chip removes the subdomain filter.
+- **all of wi24rd.com** in the line below the chip removes the subdomain filter.
 - Otherwise there is at most one filter at a time. **×** on the chip removes it.
 - A tile without figures, a day without figures or with 0, the figures and shares in the tables, the percentage lines and the notes lead nowhere and do not look clickable. This also applies to **Share**, **Other (n)**, the rows **Called by IP address**, **Other name** and **Invalid name**, a figure under Subdomains that is 0, and the notes under Subdomains.
 

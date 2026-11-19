@@ -4,7 +4,7 @@ Så længe der ikke er gemt noget API Token, kan fanerne ikke bruges. Første ga
 
 Guiden har fire trin:
 
-- **Velkommen**: navnet, **Det her kan du forvente** med fem linjer om, hvad programmet gør, og **Wi24rd – vores filosofi**.
+- **Velkommen**: navnet, **Det her kan du forvente** med fem linjer om, hvad programmet gør, og **Wi24rd — vores filosofi**.
 - **Dit API Token**: knappen **Opret API Token hos Cloudflare**, der åbner Cloudflares side med navn og de to rettigheder udfyldt; **Sådan opretter du et API Token** med trinene, foldet sammen; feltet **API Token (kun læsning)** og knappen **Gem og forbind**. **Næste** er først fri, når API Tokenet er gemt og virker.
 - **Dine domæner**: en kontakt pr. domæne.
 - **Besked**: dit første valg af, hvornår du vil have besked, og **Start ved login**.

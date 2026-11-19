@@ -42,7 +42,11 @@ cd src-tauri && cargo fmt --check && cd ..     # formatting
 
 `npm run test:ui` reads a file from Cargo's registry, so run `cargo fetch --locked` in `src-tauri/` once first. On a slow machine, `HM_SOV=2 npm run test:ui` doubles the waits.
 
-`npm run test:foto` takes the screenshots for the user guide (it needs Chrome). It is not part of CI.
+`npm run test:foto` takes the screenshots for the user guide (it needs Chrome). It is not part of CI. The screenshots are PNG; the guide uses webp. `node tools/png-til-webp.mjs <shot.png>=<docs/manual/img/name.webp> …` converts them with Chrome's own webp encoder (quality 0.9, `--kvalitet` changes it) and keeps only the image data, so the files carry no metadata. Then update the file's `sha256` in `docs/manual/manual.json`; `npm run test:ui` checks it. For example, after `HM_FOTO_SIDER=drift-nat HM_FOTO_STR=1200x860 npm run test:foto`:
+
+```
+node tools/png-til-webp.mjs tests/ui/out/<date>/fotobog/drift-nat--light-da-1200x860.png=docs/manual/img/drift-nat--light-da-1200x860.webp
+```
 
 The files in `ui/assets/kit2/` are copies of the Wi24rd UI Kit 2 package and are never edited by hand.
 

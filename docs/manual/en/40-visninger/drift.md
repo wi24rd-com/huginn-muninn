@@ -27,15 +27,33 @@ A tile with a figure shows its rows in the table, and one more click shows all e
 
 Below the tiles there may be a yellow line: **Between 01.00 and 05.00, Cloudflare could not reach your server.** It is shown when three or more hours in a row had errors. If the front page also failed in those hours, the line says instead **Between 01.00 and 05.00, your website did not answer: Cloudflare could not reach your server.** The times are your local time. With several days or several domains, the day and the domain stand in front. If the front page answered with an error outside such a time span, it says instead **Your website did not answer every time: the front page answered with an error … times.** That is the line a website hosted at Cloudflare gets when it fails: it does not say that Cloudflare could not reach a server, because there is none. If there were errors but no hours in a row, and the front page worked, it says **Some pages answered with errors, but the front page worked.**
 
+![Health for wi24rd.com with a night with errors](../../img/drift-nat--light-en-1200x860.webp)
+*The night to 3 November: **Could not be reached** is 123, the front page did not answer, and the yellow line gives the time span in your local time. The bars show the errors per day.*
+
 **Responses with errors per day** is a chart of the period. The bars are yellow, so they do not look like attacks. A click on a day shows the 24 hours of that day in the same chart (**Responses with errors per hour on …**), with times in your local time. A click on an hour shows the errors in that hour in the table. **Back to the period** above the chart leads back, and **See the traffic that day under Attacks** opens **Traffic on …** under [Attacks](vaernet.md). For **One year** (and periods over 90 days) there is one bar per week, Monday to Sunday, and a click on a week shows the week. A day without figures is empty; it is not 0, it has just not been fetched.
+
+![Health for 3 November with the 24 hours of the day](../../img/drift-timer--light-en-1200x860.webp)
+*A click on 3 November shows the 24 hours of the day in your local time: the errors were between 01.00 and 05.00. **Back to the period** and **See the traffic that day under Attacks** are above the chart.*
 
 The table has the columns **Domain**, **What happened**, **Responses** and **First and last hour**. Each row is one kind of error on one domain, most responses first, and the error is in plain language with the response code in brackets, e.g. "Cloudflare could not connect to your server in time (response 522)" or "Your server answered with an error (response 502)". An ordinary error response where no server answered is shown as "No server answered: your website at Cloudflare failed, or Cloudflare itself answered with an error (response 500)". Other codes are shown as "The visitor got an error" with the code. With **All domains**, the domain opens Health for that domain. The 10 largest are shown, the rest behind **Show all … rows**.
 
+![Health: the chart per day and the table of errors](../../img/drift-nat-tabel--light-en-1200x860.webp)
+*The table below the chart: each kind of error in plain language with the response code in brackets, most responses first, and below it the two notes.*
+
 At the bottom of the section there are always two notes. The first: **If you have your own server, “your website” is that server. The errors in “Could not be reached” can only happen when there is a server behind the website. A website hosted at Cloudflare (Workers or Pages) has no server, so it does not get them.** The second: **The program only sees traffic that goes through Cloudflare. If Cloudflare answers with an old copy, the visitor sees the page even though your website is down.**
+
+![Health for a website at Cloudflare without its own server](../../img/drift-uden-server--light-en-1200x860.webp)
+*A website at Cloudflare (Workers or Pages): **Could not be reached** is 0, the errors are under **Your website answered with an error**, and the line says the front page answered with an error 21 times.*
+
+![Health before the figures have been fetched](../../img/drift-ikke-hentet--light-en-1200x860.webp)
+*Before the figures have been fetched: the tiles show **–** and **Not fetched**, the chart is empty and low, and it says **The figures have not been fetched for the period yet.** A – is never 0.*
 
 ### Subdomains with errors
 
 If one domain has errors on at least two names in the period, e.g. `wi24rd.com` and `www.wi24rd.com`, the table **Subdomains with errors** is shown with the columns **Subdomain**, **Responses with errors** and **Could not be reached**. It is only shown when one domain is chosen. The rows **Called by IP address**, **Other name**, **Invalid name** and **Other subdomains** are not names and cannot be opened.
+
+![The table Subdomains with errors](../../img/drift-sub--light-en-1200x860.webp)
+*Subdomains with errors for wi24rd.com: most errors were on www.wi24rd.com. A click on a name shows the errors for that subdomain.*
 
 Click a subdomain, and Health shows only its errors. The chip **Subdomain: www.wi24rd.com** is shown at the top. Per subdomain there is only **Could not be reached** and the errors per day; the table shows **First and last day** instead of hours. The three other tiles show **–** with **Not available per subdomain**, and a line says: **Hours with errors, the front page and the website’s own errors are not available per subdomain. See them for all of wi24rd.com.** **×** on the chip or **all of wi24rd.com** removes the filter, and it is reset when you choose another domain.
 
@@ -55,6 +73,9 @@ The tiles:
 A tile shows its rows in the table. Below the tiles the shares stand on one line; they always add up to 100%.
 
 The chart shows requests per day with two bars side by side: **From Cloudflare’s store** (green) and **Fetched from your website** (blue). A click on a day shows the day.
+
+![The section How much Cloudflare handled itself](../../img/drift-cache--light-en-1200x860.webp)
+*How much Cloudflare handled itself: the four tiles, the shares on one line, the chart per day and the start of the table **What Cloudflare did**.*
 
 The table **What Cloudflare did** shows what happened to the requests, with the number of requests and the data:
 

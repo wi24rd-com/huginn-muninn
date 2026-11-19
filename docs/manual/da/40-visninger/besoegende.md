@@ -24,6 +24,9 @@ Med et land som filter hedder flisen **Besøg fra Danmark på 30 dage** (og med 
 
 **Unikke besøgende pr. dag** er en graf over perioden. Søjlerne er blå, så de ikke ligner angreb. Ved **Et år** (og perioder over 90 dage) er der én søjle pr. uge, mandag til søndag, og hele året ses på én gang med månederne på aksen; mangler der dage i en uge, siger værktøjstippet fx "3 af 7 dage". En dag eller uge uden tal står tom; den er ikke 0, den er bare ikke hentet.
 
+![Besøgende for wi24rd.com med Et år](../../img/besoegende--light-da-1200x860.webp)
+*Besøgende med **Et år**: fliserne under **De seneste dage**, og grafen med én søjle pr. uge. Uger uden tal står tomme.*
+
 **Hvor besøgene kom fra** er en tabel med land, besøg og andel i perioden. De 10 største står fremme, resten bag **Vis alle**.
 
 **Kendte robotter** viser besøg fra robotter, Cloudflare har verificeret, fordelt på de samme grupper som [Robotter](robotter.md) (søgemaskiner, AI-træning, overvågning …). Over tabellen står, hvor stor en del af trafikken det seneste år der kom fra kendte robotter og scannere.
@@ -36,17 +39,23 @@ Derfor står der under 404-listen **Svarede med sidens almindelige side**: stier
 
 Har domænet trafik på mindst to navne i perioden, fx `wi24rd.com`, `www.wi24rd.com` og `shop.wi24rd.com`, står afsnittet **Subdomæner** under grafen. Det står kun, når ét domæne er valgt, og kun uden filter. Et domæne uden subdomæner ser ud som før.
 
-Tabellen har kolonnerne **Subdomæne**, **Besøg**, **Forespørgsler**, **Angreb** og **Andel** (andelen af forespørgslerne). Domænet selv står med sit eget navn, `www` som `www.<domæne>`. Har domænet flere end 20 navne, står resten i en sidste række **Andre (n)**, og navnene kan åbnes under **Vis n subdomæner mere**. Tre rækker er ikke navne og kan ikke åbnes: **Kaldt med IP-adresse** (nogen kaldte sitet med IP-adressen i stedet for navnet), **Andet navn** (et navn uden for domænet) og **Ugyldigt navn**.
+Tabellen har kolonnerne **Subdomæne**, **Besøg**, **Forespørgsler**, **Angreb** og **Andel** (andelen af forespørgslerne). Domænet selv står med sit eget navn, `www` som `www.<domæne>`. Har domænet flere end 20 navne, står resten i en sidste række **Andre (n)**, og navnene kan åbnes under **Vis … subdomæner mere**. Tre rækker er ikke navne og kan ikke åbnes: **Kaldt med IP-adresse** (nogen kaldte sitet med IP-adressen i stedet for navnet), **Andet navn** (et navn uden for domænet) og **Ugyldigt navn**.
 
-Tabellen følger den valgte periode. Programmet har tal pr. subdomæne fra ca. 30 dage før opdateringen til denne version. Når perioden går længere tilbage, står **Pr. subdomæne fra {dato}.** under tabellen, og tallene gælder kun dagene derfra. Under tabellen står altid: **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.** Et navn, hvor skyen er grå i Cloudflares DNS, går ikke gennem Cloudflare, så Cloudflare har ingen tal for det.
+Tabellen følger den valgte periode. Programmet har tal pr. subdomæne fra ca. 30 dage før opdateringen til denne version. Når perioden går længere tilbage, står **Pr. subdomæne fra …** under tabellen, og tallene gælder kun dagene derfra. Under tabellen står altid: **Kun trafik gennem Cloudflare. Et subdomæne, der er «DNS only», har ingen tal her.** Et navn, hvor skyen er grå i Cloudflares DNS, går ikke gennem Cloudflare, så Cloudflare har ingen tal for det.
+
+![Afsnittet Subdomæner i Besøgende](../../img/subdom-besoegende--light-da-1200x860.webp)
+*Afsnittet Subdomæner for wi24rd.com: besøg, forespørgsler, angreb og andel pr. navn, rækken **Kaldt med IP-adresse** og noterne under tabellen.*
 
 Klik på et subdomæne (navnet, **Besøg** eller **Forespørgsler**), og Besøgende viser kun det. Øverst står chippen **Subdomæne: shop.wi24rd.com**. Fliserne og graferne viser besøg og forespørgsler pr. dag på subdomænet. **Hvor besøgene kom fra** og **Kendte robotter** viser subdomænets egne tal, med samme tabel og klik som for domænet: et land viser besøgene fra det land pr. dag på subdomænet. **Mest besøgte sider** viser kun subdomænets sider. Har subdomænet ingen tal for et afsnit i perioden, står afsnittet ikke.
+
+![Besøgende filtreret til shop.wi24rd.com](../../img/subdom-besoegende-filter--light-da-1200x860.webp)
+*Filtreret til shop.wi24rd.com: chippen **Subdomæne: shop.wi24rd.com**, linjen om unikke besøgende og graferne for subdomænet.*
 
 Unikke besøgende og IP-klasserne findes ikke pr. subdomæne hos Cloudflare. De står slet ikke, aldrig med hele domænets tal. En linje under chippen siger det: **Unikke besøgende findes ikke pr. subdomæne. Se dem for hele wi24rd.com.** Et klik på **hele wi24rd.com** fjerner filteret, ligesom **×** på chippen.
 
 Tallet under **Angreb** i tabellen åbner [Angreb](vaernet.md) for subdomænet med samme periode (**Et år** bliver **Hele historikken**). Et tal, der er 0, kan ikke klikkes.
 
-Lande og kendte robotter pr. subdomæne findes fra opdateringen til denne version og ca. 30 dage tilbage. Programmet henter de dage én gang igen pr. domæne. Lige efter en opdatering kommer tallene pr. subdomæne i løbet af de første minutter: indtil da står **–** (ikke hentet endnu) i stedet for et tal, og under tabellen står **Henter besøg og forespørgsler pr. subdomæne …** eller **Henter {n} dage endnu.**
+Lande og kendte robotter pr. subdomæne findes fra opdateringen til denne version og ca. 30 dage tilbage. Programmet henter de dage én gang igen pr. domæne. Lige efter en opdatering kommer tallene pr. subdomæne i løbet af den første tid, i samme langsomme tempo som de andre ekstra tal: indtil da står **–** (ikke hentet endnu) i stedet for et tal, og under tabellen står **Henter besøg og forespørgsler pr. subdomæne …** eller **Henter … dage endnu.**
 
 I **Mest besøgte sider** er samme sti på to subdomæner to rækker. Rækken for et subdomæne har navnet ved stien, fx `/` med `shop.wi24rd.com`. Dage, der er gemt før opdateringen og er ældre end ca. 30 dage, kan ikke skilles ad og tæller som domænet selv. Sendte Cloudflare det højeste antal rækker for en dag, står noten **Kun de mest besøgte sider er med: Cloudflare sendte højst 10.000 rækker.**
 
@@ -77,7 +86,7 @@ I **Mest besøgte sider** er samme sti på to subdomæner to rækker. Rækken fo
 - En **sti under Mest besøgte sider**, **Sider, der ikke findes** eller **Svarede med sidens almindelige side** lægger et filter: grafen viser visninger af siden pr. dag, og flisen Besøg følger siden.
 - Et **subdomæne under Subdomæner** (navnet, **Besøg** eller **Forespørgsler**) viser Besøgende for det subdomæne, med chippen **Subdomæne: …**. Tallet under **Angreb** viser Angreb for subdomænet med samme periode. Filteret står i adressen, så tilbage og frem virker, og det nulstilles, når du vælger et andet domæne.
 - En **sti på et subdomæne** under Mest besøgte sider viser visningerne af stien på det subdomæne. Med et subdomæne valgt kan et land, en robotgruppe eller en sti stå sammen med det; tallene er subdomænets.
-- **hele {domæne}** i linjen under chippen fjerner filteret pr. subdomæne.
+- **hele wi24rd.com** i linjen under chippen fjerner filteret pr. subdomæne.
 - Der er ellers højst ét filter ad gangen. **×** på chippen fjerner det.
 - En flise uden tal, en dag uden tal eller med 0, tallene og andelene i tabellerne, procentlinjerne og noterne fører ingen steder hen og ser ikke klikbare ud. Det gælder også **Andel**, **Andre (n)**, rækkerne **Kaldt med IP-adresse**, **Andet navn** og **Ugyldigt navn**, et tal under Subdomæner, der er 0, og noterne under Subdomæner.
 

@@ -26,7 +26,7 @@ Om natten (til kl. 03 UTC), før i går er hentet færdigt, viser den status for
 |---|---|
 | Et domænekort | [Angreb](vaernet.md) for domænet |
 | Chippen med status eller mærke ("Handl", "Ligner …") | Guiden: hvad det betyder, og hvad du gør |
-| En samlelinje ("2 domæner: alt roligt") | [Overblik](overblik.md) |
+| En samlelinje ("2 domæner: intet usædvanligt") | [Overblik](overblik.md) |
 | **Din server svarede ikke: se timerne i Drift** (på et domæne, hvor serveren ikke svarede) | [Drift](drift.md) for domænet og dagen |
 | Linjen om en ny AI-robot | Robotten i [Angreb](vaernet.md) |
 | **Til overblikket** | [Overblik](overblik.md) |

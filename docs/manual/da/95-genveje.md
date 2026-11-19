@@ -2,6 +2,9 @@
 
 Genvejene står også i hjælpen (**?** øverst til højre) og i menuen **Vis** på macOS.
 
+![Hjælpen med genvejene](../img/hjaelp-genveje--light-da-1200x860.webp)
+*Hjælpen (**?**) rullet ned til **Genveje**: ⌘1–⌘8 til de otte faner, ⌘, til Indstillinger og ⌘R til Hent nu.*
+
 | Handling | macOS | Windows |
 |---|---|---|
 | Overblik | ⌘1 | Ctrl+1 |

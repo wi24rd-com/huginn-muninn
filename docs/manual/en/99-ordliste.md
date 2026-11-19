@@ -2,7 +2,7 @@
 
 **Act** · The status when there were unusually many attacks yesterday compared with the week before, or something got through. Notifies you by default.
 
-**API Token** · A key you create in your Cloudflare account that lets a program do certain things. The program's API Token can only read: **Zone › Read** and **Analytics › Read**.
+**API Token** · A key you create in your Cloudflare account that lets a program do certain things. The program's API Token can only read: **Zone › Read** and **Analytics › Read**, and if you like the optional **Account Security Center Insights › Read**.
 
 **Attacks** · Requests Cloudflare's rules stopped because they looked like an attack: known holes, your own rules, DDoS. Routine (bot checks) is not counted.
 
@@ -66,7 +66,7 @@
 
 **Snoopers** · Requests for files that do not exist: scanners looking for known holes.
 
-**Subdomain** · A name below your domain, e.g. `www.wi24rd.com` or `shop.wi24rd.com` below `wi24rd.com`. The domain itself (with nothing in front) is also called the *apex*. The program shows traffic and attacks per subdomain in [Visitors](40-visninger/besoegende.md) and [Attacks](40-visninger/vaernet.md) when the traffic goes through Cloudflare (orange cloud), not when the name is “DNS only”.
+**Subdomain** · A name below your domain, e.g. `www.wi24rd.com` or `shop.wi24rd.com` below `wi24rd.com`. The domain itself (with nothing in front) is also called the *apex*. The program shows traffic and attacks per subdomain in [Visitors](40-visninger/besoegende.md) and [Attacks](40-visninger/vaernet.md) and errors per subdomain in [Health](40-visninger/drift.md) when the traffic goes through Cloudflare (orange cloud), not when the name is “DNS only”.
 
 **Unique visitors** · The number of different IP addresses that visited the site on a day. Robots count, and several people behind the same router count as one. A sum over several days counts the same visitor once per day.
 

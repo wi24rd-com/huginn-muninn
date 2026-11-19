@@ -5810,5 +5810,32 @@ const DOMV = (fravalgte = [], x) => {
   tjek('V-README.1 engelske billeder i README.md og danske i README.da.md, og lys og mørk er samme visning', forkert.length === 0 && en.billeder.map(b => b.lys.replace('-en.webp', '')).join() === da.billeder.map(b => b.lys.replace('-da.webp', '')).join(), forkert.join(' | '));
 }
 
+// ── V-DOK.1: brugervejledningens billeder (docs/manual) ──
+{
+  const { createHash } = await import('node:crypto');
+  const rod = path.join(repo, 'docs', 'manual'), manual = JSON.parse(fs.readFileSync(path.join(rod, 'manual.json'), 'utf8'));
+  const imgMappe = path.join(rod, 'img'), relativ = (kapitel, url) => path.relative(rod, path.resolve(path.dirname(path.join(rod, kapitel)), url)).split(path.sep).join('/');
+  /* Billederne, et kapitel henviser til, som stier fra docs/manual (img/…). */
+  const billederI = kapitel => [...fs.readFileSync(path.join(rod, kapitel), 'utf8').matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)].map(m => relativ(kapitel, m[1]));
+  const sider = manual.sider.map(s => ({ id: s.id, da: billederI(s.da.fil), en: billederI(s.en.fil), billeder: s.billeder }));
+  const mangler = sider.flatMap(s => [...s.da, ...s.en].filter(f => !fs.existsSync(path.join(rod, f))).map(f => `${s.id}: ${f}`));
+  tjek('V-DOK.1 hvert billede, et kapitel henviser til, findes under docs/manual/img (da, en)', sider.reduce((n, s) => n + s.da.length, 0) >= 60 && mangler.length === 0, mangler.join(' | '));
+  const sha = f => createHash('sha256').update(fs.readFileSync(path.join(rod, f))).digest('hex');
+  const forkertSha = sider.flatMap(s => s.billeder.filter(b => !fs.existsSync(path.join(rod, b.fil)) || sha(b.fil) !== b.sha256).map(b => `${s.id}: ${b.fil}`));
+  tjek('V-DOK.1 hvert billede i manual.json findes med den rigtige sha256', sider.every(s => s.billeder.every(b => /^[0-9a-f]{64}$/.test(b.sha256))) && forkertSha.length === 0, forkertSha.join(' | '));
+  /* manual.json lister netop de billeder, kapitlet viser: dansk og engelsk i deres sprog, Cloudflares egne billeder én gang som "begge". */
+  const listet = sider.filter(s => JSON.stringify([...new Set([...s.da, ...s.en])].sort()) !== JSON.stringify([...new Set(s.billeder.map(b => b.fil))].sort())).map(s => s.id);
+  tjek('V-DOK.1 manual.json lister de samme billeder, som kapitlet viser', listet.length === 0, listet.join(', '));
+  const skaev = sider.filter(s => s.da.length !== s.en.length || s.da.filter(f => /-da-\d+x\d+\.webp$/.test(f)).length !== s.en.filter(f => /-en-\d+x\d+\.webp$/.test(f)).length || s.da.some(f => /-en-\d+x\d+\.webp$/.test(f)) || s.en.some(f => /-da-\d+x\d+\.webp$/.test(f))).map(s => `${s.id}: ${s.da.length}/${s.en.length}`);
+  tjek('V-DOK.1 de to sprog har lige mange billeder pr. kapitel, og hvert sprog bruger sine egne', skaev.length === 0, skaev.join(' | '));
+  const brugt = new Set(sider.flatMap(s => [...s.da, ...s.en]));
+  const loese = fs.readdirSync(imgMappe).filter(f => !f.startsWith('readme-') && !brugt.has('img/' + f));
+  tjek('V-DOK.1 ingen fil under docs/manual/img er uden henvisning fra et kapitel (ud over readme-*)', loese.length === 0, loese.join(', '));
+  /* Fotobogens billeder i vejledningen har samme opbygning som de øvrige: én 'VP8 '-chunk, ingen metadata, 1200×860. */
+  const fotobog = fs.readdirSync(imgMappe).filter(f => /--(light|dark)-(da|en)-1200x860\.webp$/.test(f));
+  const daarlig = fotobog.filter(f => { const b = fs.readFileSync(path.join(imgMappe, f)), v = b.subarray(20); return b.toString('latin1', 0, 4) !== 'RIFF' || b.readUInt32LE(4) + 8 !== b.length || b.toString('latin1', 8, 16) !== 'WEBPVP8 ' || b.readUInt32LE(16) + 20 + (b.readUInt32LE(16) & 1) !== b.length || (v.readUInt16LE(6) & 0x3fff) !== 1200 || (v.readUInt16LE(8) & 0x3fff) !== 860; });
+  tjek('V-DOK.1 fotobogens webp-billeder i vejledningen er 1200×860 med kun én VP8-chunk (ingen metadata)', fotobog.length >= 90 && daarlig.length === 0, `${fotobog.length} filer; ${daarlig.join(', ')}`);
+}
+
 console.log(`\n${ok} bestået, ${fejl} fejlet`);
 process.exit(fejl ? 1 : 0);

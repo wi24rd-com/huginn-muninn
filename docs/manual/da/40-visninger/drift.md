@@ -27,15 +27,33 @@ En flise med et tal viser sine rækker i tabellen, og et klik mere viser alle fe
 
 Under fliserne kan der stå en gul linje: **Mellem kl. 01.00 og 05.00 kunne Cloudflare ikke nå din server.** Den står, når tre eller flere timer i træk havde fejl. Fejlede forsiden også i de timer, siger linjen i stedet **Mellem kl. 01.00 og 05.00 svarede dit website ikke: Cloudflare kunne ikke nå din server.** Klokkeslættene er din lokale tid. Med flere dage eller flere domæner står dagen og domænet foran. Svarede forsiden med en fejl uden for sådan et tidsrum, står der i stedet **Dit website svarede ikke hver gang: forsiden svarede med en fejl … gange.** Det er linjen, et website hos Cloudflare får, når det fejler: den siger ikke, at Cloudflare ikke kunne nå en server, for der er ingen. Var der fejl, men ingen timer i træk, og forsiden virkede, står der **Nogle sider svarede med fejl, men forsiden virkede.**
 
+![Drift for wi24rd.com med en nat med fejl](../../img/drift-nat--light-da-1200x860.webp)
+*Natten til 3. november: **Kunne ikke nås** er 123, forsiden svarede ikke, og den gule linje siger tidsrummet i din lokale tid. Søjlerne viser fejlene pr. dag.*
+
 **Svar med fejl pr. dag** er en graf over perioden. Søjlerne er gule, så de ikke ligner angreb. Et klik på en dag viser dagens 24 timer i samme graf (**Svar med fejl pr. time den …**), med klokkeslæt i din lokale tid. Et klik på en time viser timens fejl i tabellen. **Tilbage til perioden** over grafen fører tilbage, og **Se trafikken den dag på Angreb** åbner **Trafik den …** på [Angreb](vaernet.md). Ved **Et år** (og perioder over 90 dage) er der én søjle pr. uge, mandag til søndag, og et klik på en uge viser ugen. En dag uden tal står tom; den er ikke 0, den er bare ikke hentet.
+
+![Drift for 3. november med dagens 24 timer](../../img/drift-timer--light-da-1200x860.webp)
+*Et klik på 3. november viser dagens 24 timer i din lokale tid: fejlene lå mellem kl. 01.00 og 05.00. **Tilbage til perioden** og **Se trafikken den dag på Angreb** står over grafen.*
 
 Tabellen har kolonnerne **Domæne**, **Hvad skete der**, **Svar** og **Første og sidste time**. Hver række er én slags fejl på ét domæne, flest svar først, og fejlen står i klart sprog med svarkoden i parentes, fx "Cloudflare kunne ikke få forbindelse til din server i tide (svar 522)" eller "Din server svarede med en fejl (svar 502)". Et almindeligt fejlsvar, hvor ingen server svarede, står som "Ingen server svarede: dit website hos Cloudflare fejlede, eller Cloudflare selv svarede med en fejl (svar 500)". Andre koder står som "Den besøgende fik en fejl" med koden. Med **Alle domæner** åbner domænet Drift for det domæne. De 10 største står fremme, resten bag **Vis alle … rækker**.
 
+![Drift: grafen pr. dag og tabellen med fejlene](../../img/drift-nat-tabel--light-da-1200x860.webp)
+*Tabellen under grafen: hver slags fejl i klart sprog med svarkoden i parentes, flest svar først, og under den de to noter.*
+
 Nederst i afsnittet står altid to noter. Den første: **Har du din egen server, er »dit website« den. Fejlene i »Kunne ikke nås« kan kun ske, når der er en server bag. Et website, der ligger hos Cloudflare (Workers eller Pages), har ingen server og får dem derfor ikke.** Den anden: **Programmet ser kun trafik, der går gennem Cloudflare. Svarer Cloudflare med en gammel kopi, ser den besøgende siden, selv om dit website er nede.**
+
+![Drift for et website hos Cloudflare uden egen server](../../img/drift-uden-server--light-da-1200x860.webp)
+*Et website hos Cloudflare (Workers eller Pages): **Kunne ikke nås** er 0, fejlene står under **Dit website svarede med en fejl**, og linjen siger, at forsiden svarede med en fejl 21 gange.*
+
+![Drift, før tallene er hentet](../../img/drift-ikke-hentet--light-da-1200x860.webp)
+*Før tallene er hentet: fliserne viser **–** og **Ikke hentet**, grafen er tom og lav, og der står **Tallene er ikke hentet for perioden endnu.** Et – er aldrig 0.*
 
 ### Subdomæner med fejl
 
 Har ét domæne fejl på mindst to navne i perioden, fx `wi24rd.com` og `www.wi24rd.com`, står tabellen **Subdomæner med fejl** med kolonnerne **Subdomæne**, **Svar med fejl** og **Kunne ikke nås**. Den står kun, når ét domæne er valgt. Rækkerne **Kaldt med IP-adresse**, **Andet navn**, **Ugyldigt navn** og **Andre subdomæner** er ikke navne og kan ikke åbnes.
+
+![Tabellen Subdomæner med fejl](../../img/drift-sub--light-da-1200x860.webp)
+*Subdomæner med fejl for wi24rd.com: de fleste fejl var på www.wi24rd.com. Et klik på et navn viser fejlene for det subdomæne.*
 
 Klik på et subdomæne, og Drift viser kun dets fejl. Øverst står chippen **Subdomæne: www.wi24rd.com**. Pr. subdomæne findes kun **Kunne ikke nås** og fejlene pr. dag; tabellen viser **Første og sidste dag** i stedet for timer. De tre andre fliser viser **–** med **Findes ikke pr. subdomæne**, og en linje siger: **Timer med fejl, forsiden og websitets egne fejl findes ikke pr. subdomæne. Se dem for hele wi24rd.com.** **×** på chippen eller **hele wi24rd.com** fjerner filteret, og det nulstilles, når du vælger et andet domæne.
 
@@ -55,6 +73,9 @@ Fliserne:
 En flise viser sine rækker i tabellen. Under fliserne står andelene på én linje; de summer altid til 100 %.
 
 Grafen viser forespørgsler pr. dag med to søjler side om side: **Fra Cloudflares lager** (grøn) og **Hentet hos dit website** (blå). Et klik på en dag viser dagen.
+
+![Afsnittet Hvor meget Cloudflare klarede selv](../../img/drift-cache--light-da-1200x860.webp)
+*Hvor meget Cloudflare klarede selv: de fire fliser, andelene på én linje, grafen pr. dag og begyndelsen af tabellen **Hvad Cloudflare gjorde**.*
 
 Tabellen **Hvad Cloudflare gjorde** viser, hvad der skete med forespørgslerne, med antal forespørgsler og data:
 

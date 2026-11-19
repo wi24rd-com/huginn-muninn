@@ -2,7 +2,7 @@
 
 This chapter shows with screenshots how to create the API Token the program needs. The pictures are from Cloudflare's dashboard in November 2026 on an account with three example domains (`wi24rd.com`, `abe.wi24rd.com` and `xyz.wi24rd.com`). Cloudflare changes its dashboard now and then, so the buttons may have moved a little, but the fields are the same.
 
-**What you should end up with:** an API Token named *Huginn and Muninn*, exactly two permissions (**Zone › Read** and **Analytics › Read**) and access to the domains Huginn should see. Nothing else.
+**What you should end up with:** an API Token named *Huginn and Muninn*, the two required permissions (**Zone › Read** and **Analytics › Read**), if you like the optional **Account Security Center Insights › Read** (see step 2), and access to the domains Huginn should see. Nothing else.
 
 ## Step 1 – Open Cloudflare's page with the fields filled in
 

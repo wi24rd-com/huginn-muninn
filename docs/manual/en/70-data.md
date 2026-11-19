@@ -28,7 +28,7 @@ What is **not** kept: IP addresses (never fetched), the query part of paths, lon
 
 ## How far back
 
-- Cloudflare keeps **security events for a month** and **traffic figures for a year**. That is what the program can fetch.
+- Cloudflare keeps **security events for a month**, **errors per hour and cache for about 30 days** and **traffic figures for a year**. That is what the program can fetch.
 - The program keeps **everything it has fetched, for as long as you like**. Nothing is deleted by itself. So after a year you have a year of security events, even though Cloudflare only has a month.
 - **What is available** under Settings › Data says how far back each kind of figure reaches, and **Oldest day** is the first day with figures.
 
@@ -74,4 +74,4 @@ With more than one connection: **Settings** › **Connections** › **Forget…*
 
 If you open a database made by a newer version of the program, the program says "The local database is from a newer version of the program (schema …)". Update the program; the file is not touched.
 
-The version with more than one connection and subdomains upgrades the database the first time it starts: first to schema 19 (the connections), then to schema 20 (two new tables of which days have been fetched per subdomain; no saved figures change). After that, version 1.0.0 cannot open it and says "(schema 20)". The version with the Health tab upgrades one more step, to schema 21 (one new table of which days have been fetched with errors and cache; no saved figures change), and an older version then says "(schema 21)". If you want to be able to go back, take a copy of the file first; see [Updating](85-opdatering.md).
+Version 1.1.0 upgrades the database from version 1.0.0 (schema 18) the first time it starts, in three steps: schema 19 (the connections), schema 20 (two new tables of which days have been fetched per subdomain) and schema 21 (one new table of which days have been fetched with errors and cache). No saved figures change. After that, version 1.0.0 cannot open it and says "(schema 21)". If you want to be able to go back, take a copy of the file first; see [Updating](85-opdatering.md).

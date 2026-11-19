@@ -416,3 +416,12 @@ SIDER.push(
   { id: 'drift-uden-server-cache', navn: 'Drift (FIX 1): website uden server, cache (intet hentet hos en server)', hash: 'drift?' + dom, rul: '#drift-cache', ekstra: D_UDEN_SVAR },
   { id: 'drift-tom-graf', navn: 'Drift (FIX 1): den tomme graf uden to ens mærker', hash: 'drift?' + dom, rul: '#drift-graf', rulTekst: true, ekstra: D_ROLIG_SVAR },
 );
+/* V-DOK.1: tre billeder til vejledningen, som ingen anden post viser. Tilføj API Token… med to forbindelser (formularen under rækken, feltet har fokus),
+   hjælpen rullet ned til genvejene (⌘1–⌘8), og Overblik med linjen "Din server svarer ikke" og Hvorfor foldet ud, så tidsrummet ses. Tilføj er en kontakt, og
+   kontrasttesten kører poster med samme ekstra i én side og kører trinnene igen efter en sen close: en kopi af KONTI giver posten sin egen side. Samme opdigtede data
+   som ovenfor; posten hedder ikke drift-…, for de poster tælles for sig. */
+SIDER.push(
+  { id: 'konti-tilfoej', navn: 'Tilføj API Token… med to forbindelser: formularen med fokus i feltet', hash: 'overblik', aabn: ['#indst-knap', '#forb-tilfoej'], rod: '#skift-form', fokus: '#skift-felt', luk: '#indst-luk', ekstra: { ...KONTI } },
+  { id: 'hjaelp-genveje', navn: 'hjælpen rullet ned til genvejene', hash: 'overblik', aabn: ['#hjaelp-knap'], rul: '#hjaelp h3[data-t="genvejeH"]', rulTekst: true, rod: '#genveje', luk: '#hjaelp-luk' },
+  { id: 'overblik-server', navn: 'Overblik med "Din server svarer ikke" og tidsrummet i Hvorfor (foldet ud)', hash: 'overblik', aabn: ['#overblik-rul .hv-mere'], rod: '#overblik-rul', ekstra: D_OV },
+);

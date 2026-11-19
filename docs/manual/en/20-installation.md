@@ -32,7 +32,7 @@ The program is built to run on Windows (the same shortcuts with Ctrl, the notifi
 
 ## Linux
 
-A Linux version is planned but does not exist yet.
+There is no Linux version.
 
 ## What happens the first time you open the program
 
@@ -49,7 +49,7 @@ The program only runs once at a time. If you start it again, the window that is 
 |---|---|---|
 | The application | `/Applications/Huginn and Muninn.app` (if you put it there) | At installation |
 | Data folder with the database | `~/Library/Application Support/com.wi24rd.huginn-muninn/` | First start |
-| API Token | macOS Keychain, the item `com.wi24rd.huginn-muninn` | When you connect |
+| API Tokens | macOS Keychain under `com.wi24rd.huginn-muninn`, one item per connection | When you connect or add an API Token |
 | Start at login | `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` | First start of a built version |
 | Daily start | `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist` | Together with Start at login |
 

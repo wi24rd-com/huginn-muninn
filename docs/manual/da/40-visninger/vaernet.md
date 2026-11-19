@@ -68,9 +68,15 @@ Alle afsnit følger perioden og filtrene. Et afsnit, der ikke kan følge filtret
 
 ## Subdomæner
 
-Har domænet tal på mindst to navne i perioden, fx `wi24rd.com` og `shop.wi24rd.com`, står afsnittet **Subdomæner** efter søjlerne. Det står kun for ét domæne og kun uden filtre; et domæne uden subdomæner ser ud som før. Tabellen er den samme som i [Besøgende](besoegende.md): **Subdomæne**, **Besøg**, **Forespørgsler**, **Angreb** og **Andel** (andelen af forespørgslerne), med **Andre (n)** efter de 20 største, rækkerne **Kaldt med IP-adresse**, **Andet navn** og **Ugyldigt navn**, noten **Pr. subdomæne fra {dato}.**, når perioden går længere tilbage end tallene pr. subdomæne, og noten om «DNS only». **Angreb** tælles som resten af siden: uden Cloudflares rutine.
+Har domænet tal på mindst to navne i perioden, fx `wi24rd.com` og `shop.wi24rd.com`, står afsnittet **Subdomæner** efter søjlerne. Det står kun for ét domæne og kun uden filtre; et domæne uden subdomæner ser ud som før. Tabellen er den samme som i [Besøgende](besoegende.md): **Subdomæne**, **Besøg**, **Forespørgsler**, **Angreb** og **Andel** (andelen af forespørgslerne), med **Andre (n)** efter de 20 største, rækkerne **Kaldt med IP-adresse**, **Andet navn** og **Ugyldigt navn**, noten **Pr. subdomæne fra …**, når perioden går længere tilbage end tallene pr. subdomæne, og noten om «DNS only». **Angreb** tælles som resten af siden: uden Cloudflares rutine.
+
+![Afsnittet Subdomæner i Angreb](../../img/subdom-angreb--light-da-1200x860.webp)
+*Afsnittet Subdomæner på Angreb for wi24rd.com, med noterne under tabellen: dage, der ikke er med, **Pr. subdomæne fra 7. oktober.** og «DNS only».*
 
 Klik på et subdomæne, og Angreb viser kun det, med chippen **Subdomæne: shop.wi24rd.com** under overskriften. Så står fliserne **Angreb på …** og **Afviste på …** for perioden, og søjlerne viser angreb og afviste pr. dag. Et klik på en dag viser dagen for samme subdomæne. Reglerne, lande, stier, **De seneste** og **Cloudflares egne fund** findes ikke pr. subdomæne. De står ikke, aldrig med hele domænets tal. En linje under chippen siger det: **Regler, lande og stier vises for hele wi24rd.com, ikke pr. subdomæne.** Et klik på **hele wi24rd.com** fjerner filteret, ligesom **×** på chippen. Filteret kan ikke stå sammen med andre filtre, det står i adressen (tilbage og frem virker), og det nulstilles, når du vælger et andet domæne.
+
+![Angreb filtreret til shop.wi24rd.com](../../img/subdom-angreb-filter--light-da-1200x860.webp)
+*Filtreret til shop.wi24rd.com: fliserne **Angreb på shop.wi24rd.com** og **Afviste på shop.wi24rd.com**, linjen om regler, lande og stier, og søjlerne pr. dag.*
 
 I tabellen åbner navnet og tallet under **Angreb** Angreb for subdomænet. **Besøg** og **Forespørgsler** åbner [Besøgende](besoegende.md) for subdomænet med samme periode (**Hele historikken** bliver **Et år**, og én dag bliver **Fra** og **Til** samme dag). Et tal, der er 0, kan ikke klikkes. Stod Cloudflares svar på loftet for nogle dage i perioden, står fx **2 dage er ikke med: Cloudflare sendte flere rækker, end programmet kan hente på én gang.** under tabellen.
 
@@ -98,7 +104,7 @@ Klikker du på en dag med **usædvanlig meget trafik** (fra Overblik, en notifik
 
 ## Klik videre
 
-Alt med data bag sig lægger et filter eller en periode på samme side: fliserne, fordelingen, lande, ringe og buer på kortet, søjler, lister, regelkortene, "Hvad de ledte efter" og "De seneste". Tilbage og frem øverst til højre (⌘[ og ⌘]) går ét trin ad gangen, også gennem filtre. Et klik på et CVE-nummer åbner CVE'ens side på cve.org i din browser; programmet henter intet derfra. **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md). Et subdomæne under **Subdomæner** (navnet eller tallet under **Angreb**) viser Angreb for det subdomæne; **Besøg** og **Forespørgsler** viser Besøgende for det. **hele {domæne}** i linjen under chippen fjerner filteret pr. subdomæne. **Andel**, **Andre (n)**, et tal, der er 0, rækkerne uden et navn og noterne under tabellen fører ingen steder hen.
+Alt med data bag sig lægger et filter eller en periode på samme side: fliserne, fordelingen, lande, ringe og buer på kortet, søjler, lister, regelkortene, "Hvad de ledte efter" og "De seneste". Tilbage og frem øverst til højre (⌘[ og ⌘]) går ét trin ad gangen, også gennem filtre. Et klik på et CVE-nummer åbner CVE'ens side på cve.org i din browser; programmet henter intet derfra. **Ret teknologier** åbner [Teknologi pr. domæne](teknologi.md). Et subdomæne under **Subdomæner** (navnet eller tallet under **Angreb**) viser Angreb for det subdomæne; **Besøg** og **Forespørgsler** viser Besøgende for det. **hele wi24rd.com** i linjen under chippen fjerner filteret pr. subdomæne. **Andel**, **Andre (n)**, et tal, der er 0, rækkerne uden et navn og noterne under tabellen fører ingen steder hen.
 
 Tastatur: kortet er ét Tab-stop; piletasterne flytter mellem landene og ringene, og Enter eller mellemrum åbner det valgte.
 
@@ -108,7 +114,7 @@ Tastatur: kortet er ét Tab-stop; piletasterne flytter mellem landene og ringene
 - Edge er Cloudflares netværk af datacentre. Dit site svarer fra dem alle, så et angreb stoppes i det datacenter, der ligger nærmest angriberen, længe før det når din server. Det gælder kun DNS-poster med orange sky. Kender en angriber serverens egen IP-adresse, kan den gå uden om edge, medmindre serveren kun tager imod trafik fra Cloudflare.
 - Labyrinten stopper ikke robotten; den viser falske sider. Cloudflare regner den ikke for en blokering, og det gør programmet heller ikke.
 - Stier står uden forespørgselsdel, og lange koder er skjult. IP-adresser findes ikke i programmet.
-- Tallene kommer fra Cloudflares GraphQL Analytics API. Antallet af afviste er Cloudflares estimat ud fra en stikprøve, så det kan være højere end antallet af enkelte hændelser og højere end på wi24rd.com. Dage, som Cloudflare ikke længere havde, da programmet første gang hentede efter opdateringen, er talte rækker. Går perioden over grænsen, siger en note det, fx "Før 10. oktober er tallene talte rækker, derefter Cloudflares estimat."
+- Tallene kommer fra Cloudflares GraphQL Analytics API. Antallet af afviste er Cloudflares estimat ud fra en stikprøve, så det kan være højere end antallet af enkelte hændelser. Dage, som Cloudflare ikke længere havde, da programmet første gang hentede efter opdateringen, er talte rækker. Går perioden over grænsen, siger en note det, fx "Før 10. oktober er tallene talte rækker, derefter Cloudflares estimat."
 - Står en dag på Cloudflares grænse på 10.000 hændelser, mangler dagens ældste timer, og siden siger "Der er mindst …".
 
 ![Grænsen på 10.000 hændelser og noten om talte rækker](../../img/angreb-estimat--light-da-1200x860.webp)

@@ -28,7 +28,7 @@ Det, der **ikke** gemmes: IP-adresser (hentes aldrig), forespørgselsdelen af st
 
 ## Hvor langt tilbage
 
-- Cloudflare gemmer **sikkerhedshændelser i en måned** og **trafiktal i et år**. Det er det, programmet kan hente.
+- Cloudflare gemmer **sikkerhedshændelser i en måned**, **fejl pr. time og cache i ca. 30 dage** og **trafiktal i et år**. Det er det, programmet kan hente.
 - Programmet gemmer **alt, det har hentet, så længe du vil**. Intet slettes af sig selv. Så efter et år har du et års sikkerhedshændelser, selv om Cloudflare kun har en måned.
 - **Hvad der findes** under Indstillinger › Data siger, hvor langt tilbage hver slags tal rækker, og **Ældste dag** er den første dag med tal.
 
@@ -74,4 +74,4 @@ Med flere forbindelser: **Indstillinger** › **Forbindelser** › **Glem…** i
 
 Åbner du en database, der er lavet af en nyere udgave af programmet, siger programmet "Den lokale database er fra en nyere version af programmet (skema …)". Opdatér programmet; filen røres ikke.
 
-Udgaven med flere forbindelser og subdomæner opgraderer databasen første gang, den starter: først til skema 19 (forbindelserne), så til skema 20 (to nye tabeller over, hvilke dage der er hentet pr. subdomæne; ingen gemte tal ændres). Bagefter kan version 1.0.0 ikke åbne den og siger "(skema 20)". Udgaven med fanen Drift opgraderer et trin mere, til skema 21 (én ny tabel over, hvilke dage der er hentet med fejl og cache; ingen gemte tal ændres), og en ældre udgave siger derefter "(skema 21)". Vil du kunne gå tilbage, så tag en kopi af filen først; se [Opdatering](85-opdatering.md).
+Version 1.1.0 opgraderer databasen fra version 1.0.0 (skema 18) første gang, den starter, i tre trin: skema 19 (forbindelserne), skema 20 (to nye tabeller over, hvilke dage der er hentet pr. subdomæne) og skema 21 (én ny tabel over, hvilke dage der er hentet med fejl og cache). Ingen gemte tal ændres. Bagefter kan version 1.0.0 ikke åbne den og siger "(skema 21)". Vil du kunne gå tilbage, så tag en kopi af filen først; se [Opdatering](85-opdatering.md).

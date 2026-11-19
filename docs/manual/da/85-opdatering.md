@@ -12,9 +12,9 @@ Din historik, dine indstillinger og dit API Token bliver, hvor de er. Selve udsk
 
 ## Databasen opgraderes ved første start
 
-Udgaven med flere forbindelser opgraderer den lokale database af sig selv, første gang den starter. Intet går tabt: dit API Token bliver forbindelse 1 med alle dine valg.
+Version 1.1.0 opgraderer den lokale database af sig selv, første gang den starter. Intet går tabt: dit API Token bliver forbindelse 1 med alle dine valg.
 
-Tallene pr. subdomæne i Besøgende og Angreb kommer i løbet af de første minutter efter en opdatering; indtil da står **–**, som betyder "ikke hentet endnu", ikke 0.
+Tallene pr. subdomæne i Besøgende og Angreb og fejl og cache i Drift kommer i løbet af den første tid efter opdateringen: de hentes i det langsomme tempo efter de andre tal, ca. 30 dage tilbage. Indtil da står **–**, som betyder "ikke hentet endnu", ikke 0.
 
 Bagefter kan version 1.0.0 ikke åbne databasen. Den siger "Den lokale database er fra en nyere version af programmet (skema 21)." og lader filen være.
 

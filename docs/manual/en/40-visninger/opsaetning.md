@@ -4,7 +4,7 @@ As long as no API Token is saved, the tabs cannot be used. The first time, the g
 
 The guide has four steps:
 
-- **Welcome**: the name, **What to expect** with five lines on what the program does, and **Wi24rd – our philosophy**.
+- **Welcome**: the name, **What to expect** with five lines on what the program does, and **Wi24rd — our philosophy**.
 - **Your API Token**: the button **Create API Token at Cloudflare**, which opens Cloudflare's page with the name and the two permissions filled in; **How to create an API Token** with the steps, folded; the field **API Token (read only)** and the button **Save and connect**. **Next** is only available once the API Token is saved and works.
 - **Your domains**: one switch per domain.
 - **Notifications**: your first choice of when you want to be told, and **Start at login**.

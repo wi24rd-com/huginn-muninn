@@ -32,7 +32,7 @@ Programmet er bygget til at kunne køre på Windows (de samme genveje med Ctrl, 
 
 ## Linux
 
-En Linux-udgave er planlagt, men findes ikke endnu.
+Der findes ingen Linux-udgave.
 
 ## Hvad der sker, første gang du åbner programmet
 
@@ -49,7 +49,7 @@ Programmet kører kun én gang ad gangen. Starter du det igen, vises det vindue,
 |---|---|---|
 | Programmet | `/Applications/Huginn and Muninn.app` (hvis du lægger det der) | Ved installation |
 | Datamappe med database | `~/Library/Application Support/com.wi24rd.huginn-muninn/` | Første start |
-| API Token | macOS Nøglering, posten `com.wi24rd.huginn-muninn` | Når du forbinder |
+| API Tokens | macOS Nøglering under `com.wi24rd.huginn-muninn`, én post pr. forbindelse | Når du forbinder eller tilføjer et API Token |
 | Start ved login | `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.plist` | Første start af en færdigbygget udgave |
 | Daglig start | `~/Library/LaunchAgents/com.wi24rd.huginn-muninn.dagligt.plist` | Sammen med Start ved login |
 

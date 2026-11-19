@@ -11,7 +11,7 @@ The menu at the raven icon in the menu bar:
 | **Open Huginn** | Opens the window. |
 | **Since last time** | Opens the window on [Since last time](40-visninger/siden-sidst.md). |
 | **Fetch now** | Fetches new figures at once. |
-| The status line | For example "Fetching 3/16" or "Fetched 12 min ago". Cannot be clicked. |
+| The status line | For example "Fetching 3/16" or "Fetched 12 min ago". Clicking it opens the window on the [Overview](40-visninger/overblik.md). |
 | **Quit** | Closes the program completely. Nothing is fetched until you start it again. |
 
 **⌘Q** while the window is open also closes the program completely. Clicking the red close icon only closes the window.

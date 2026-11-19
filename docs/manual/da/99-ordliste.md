@@ -4,7 +4,7 @@
 
 **Angreb** · Forespørgsler, Cloudflares regler stoppede, fordi de lignede et angreb: kendte huller, dine egne regler, DDoS. Rutine (bot-tjek) tæller ikke med.
 
-**API Token** · En nøgle, du opretter i din Cloudflare-konto, og som giver et program lov til bestemte ting. Programmets API Token kan kun læse: **Zone › Read** og **Analytics › Read**.
+**API Token** · En nøgle, du opretter i din Cloudflare-konto, og som giver et program lov til bestemte ting. Programmets API Token kan kun læse: **Zone › Read** og **Analytics › Read**, og eventuelt den valgfri **Account Security Center Insights › Read**.
 
 **Besøg** · Cloudflares egen definition: en sidevisning, der kom fra et andet site eller et direkte link. Det samme tal som "Visits" i Cloudflares dashboard, og Cloudflares estimat ud fra en stikprøve. Står på Besøgende pr. land.
 
@@ -68,7 +68,7 @@
 
 **Sti** · Delen af en adresse efter domænet, fx `/wp-login.php`. Gemmes uden forespørgselsdel.
 
-**Subdomæne** · Et navn under dit domæne, fx `www.wi24rd.com` eller `shop.wi24rd.com` under `wi24rd.com`. Domænet selv (uden noget foran) kaldes også *apex*. Programmet viser trafik og angreb pr. subdomæne i [Besøgende](40-visninger/besoegende.md) og [Angreb](40-visninger/vaernet.md), når trafikken går gennem Cloudflare (orange sky), ikke når navnet er «DNS only».
+**Subdomæne** · Et navn under dit domæne, fx `www.wi24rd.com` eller `shop.wi24rd.com` under `wi24rd.com`. Domænet selv (uden noget foran) kaldes også *apex*. Programmet viser trafik og angreb pr. subdomæne i [Besøgende](40-visninger/besoegende.md) og [Angreb](40-visninger/vaernet.md) og fejl pr. subdomæne i [Drift](40-visninger/drift.md), når trafikken går gennem Cloudflare (orange sky), ikke når navnet er «DNS only».
 
 **Udklædt** · En robot, der kalder sig fx Googlebot uden at være det.
 

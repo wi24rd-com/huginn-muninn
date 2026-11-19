@@ -69,7 +69,7 @@ Later you change the choice on **Overview** with the button **Choose domains** i
 
 A domain you clear is no longer fetched, is not shown anywhere and gives no notifications. Its figures stay, and if you choose it again, what is missing is fetched, at most the last 30 days.
 
-If a new domain appears on your Cloudflare account later, it is not chosen by itself. The Overview shows a discreet line: "1 new domain on your Cloudflare account: … – **Choose** · **Not now**". There is no notification about it.
+If a new domain appears on your Cloudflare account later, it is not chosen by itself. The Overview shows a discreet line: "1 new domain on your Cloudflare account: … — **Choose** · **Not now**". There is no notification about it.
 
 ## Step 4 – Notifications and start-up
 

@@ -60,6 +60,9 @@ A connection is one API Token and a name. You have one connection per Cloudflare
 
 Each connection has its own row. Below the rows is **Add API Token…**.
 
+![Settings with two connections](../img/konti-forbindelser--light-en-1200x860.webp)
+*Two connections, each with its own row: the name, the number of domains, **Connected**, **Rename…**, **Change API Token…** and **Forget…**. Below them is **Add API Token…**.*
+
 | Field | What it does |
 |---|---|
 | The name | The connection's name. Cannot be clicked. |
@@ -71,11 +74,17 @@ Each connection has its own row. Below the rows is **Add API Token…**.
 
 If you forget the last connection, it is exactly as with one connection: the program asks **Forget the API Token?**, setup and the guide are shown again, and the history stays.
 
+![The dialog Forget the connection](../img/konti-glem--light-en-1200x860.webp)
+*Forget… on one of several connections: the heading names the connection.*
+
 If two connections see the same domain (for example an API Token for the whole account and one for one of its domains), it is shown once in the Overview and the other views. It is fetched only with the oldest connection's API Token. If that one is forgotten or rejected, the next one takes over. In the dialog [Domains](#domains), the domain stands under each connection that sees it.
 
 ### Change and add
 
 **Add API Token…** opens the same form as in the guide: the field **API Token (read only)**, the button **Save and connect** and the help **Create API Token at Cloudflare** with the steps. The program checks the API Token with Cloudflare, stores it in the keychain and fetches the new connection's domains.
+
+![The form Add API Token](../img/konti-tilfoej--light-en-1200x860.webp)
+*Add API Token… opens the form below the row **More Cloudflare accounts**, with the cursor in the field.*
 
 The new connection's domains are not chosen by themselves. If it sees exactly one domain the program did not know, that one is chosen for you. If it sees more, the dialog **Domains** opens at the connection's group so you can choose.
 
@@ -88,6 +97,9 @@ If the API Token sees exactly the same domains as a connection you already have,
 ### The name
 
 **Rename…** opens the dialog **Rename the connection** with one field, **Name**, and the note "Empty: the name from Cloudflare." Save with **Save**. If you empty the field, the name from Cloudflare is shown again. Afterwards "The name is saved." stands in the connection's row, and **Rename…** has the focus again.
+
+![The dialog Rename the connection](../img/konti-omdoeb--light-en-1200x860.webp)
+*The dialog **Rename the connection** with the field **Name** and the note about the name from Cloudflare.*
 
 The program shows:
 

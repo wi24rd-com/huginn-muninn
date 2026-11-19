@@ -60,6 +60,9 @@ En forbindelse er ét API Token og et navn. Du har én forbindelse pr. Cloudflar
 
 Hver forbindelse har sin egen række. Under rækkerne står **Tilføj API Token…**.
 
+![Indstillinger med to forbindelser](../img/konti-forbindelser--light-da-1200x860.webp)
+*To forbindelser, hver med sin række: navnet, antal domæner, **Forbundet**, **Omdøb…**, **Skift API Token…** og **Glem…**. Under dem står **Tilføj API Token…**.*
+
 | Felt | Hvad det gør |
 |---|---|
 | Navnet | Forbindelsens navn. Kan ikke klikkes. |
@@ -71,11 +74,17 @@ Hver forbindelse har sin egen række. Under rækkerne står **Tilføj API Token�
 
 Glemmer du den sidste forbindelse, er det præcis som med én forbindelse: programmet spørger **Glem API Tokenet?**, opsætningen og guiden vises igen, og historikken bliver.
 
+![Dialogen Glem forbindelsen](../img/konti-glem--light-da-1200x860.webp)
+*Glem… på en af flere forbindelser: overskriften nævner forbindelsens navn.*
+
 Ser to forbindelser det samme domæne (fx et API Token til hele kontoen og et til ét af dens domæner), vises det én gang i Overblik og de andre visninger. Det hentes kun med den ældste forbindelses API Token. Bliver den glemt eller afvist, overtager den næste. I dialogen [Domæner](#domæner) står domænet under hver forbindelse, der ser det.
 
 ### Skift og tilføj
 
 **Tilføj API Token…** åbner samme formular som i guiden: feltet **API Token (kun læsning)**, knappen **Gem og forbind** og hjælpen **Opret API Token hos Cloudflare** med trinene. Programmet tjekker API Tokenet hos Cloudflare, gemmer det i nøgleringen og henter den nye forbindelses domæner.
+
+![Formularen Tilføj API Token](../img/konti-tilfoej--light-da-1200x860.webp)
+*Tilføj API Token… åbner formularen under rækken **Flere Cloudflare-konti**, med markøren i feltet.*
 
 Den nye forbindelses domæner er ikke valgt af sig selv. Ser den præcis ét domæne, programmet ikke kendte, vælges det for dig. Ser den flere, åbner dialogen **Domæner** ved forbindelsens gruppe, så du kan vælge.
 
@@ -88,6 +97,9 @@ Ser API Tokenet præcis de samme domæner som en forbindelse, du allerede har, t
 ### Navnet
 
 **Omdøb…** åbner dialogen **Omdøb forbindelsen** med ét felt, **Navn**, og noten "Tomt felt: navnet fra Cloudflare." Gem med **Gem**. Tømmer du feltet, vises navnet fra Cloudflare igen. Bagefter står "Navnet er gemt." i forbindelsens række, og **Omdøb…** har fokus igen.
+
+![Dialogen Omdøb forbindelsen](../img/konti-omdoeb--light-da-1200x860.webp)
+*Dialogen **Omdøb forbindelsen** med feltet **Navn** og noten om navnet fra Cloudflare.*
 
 Programmet viser:
 

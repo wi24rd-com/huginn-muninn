@@ -2,6 +2,9 @@
 
 The shortcuts are also listed in the help (**?** at the top right) and in the **View** menu on macOS.
 
+![The help with the shortcuts](../img/hjaelp-genveje--light-en-1200x860.webp)
+*The help (**?**) scrolled down to **Shortcuts**: ⌘1–⌘8 for the eight tabs, ⌘, for Settings and ⌘R for Fetch now.*
+
 | Action | macOS | Windows |
 |---|---|---|
 | Overview | ⌘1 | Ctrl+1 |

@@ -69,7 +69,7 @@ Senere ændrer du valget på **Overblik** med knappen **Vælg domæner** i bånd
 
 Et domæne, du fravælger, hentes ikke længere, vises ingen steder og giver ingen notifikationer. Dets tal bliver liggende, og vælger du det igen, hentes det, der mangler, højst de seneste 30 dage.
 
-Kommer der senere et nyt domæne på din Cloudflare-konto, er det ikke valgt af sig selv. Overblik viser en diskret linje: "1 nyt domæne på din Cloudflare-konto: … – **Vælg** · **Ikke nu**". Der kommer ingen notifikation om det.
+Kommer der senere et nyt domæne på din Cloudflare-konto, er det ikke valgt af sig selv. Overblik viser en diskret linje: "1 nyt domæne på din Cloudflare-konto: … — **Vælg** · **Ikke nu**". Der kommer ingen notifikation om det.
 
 ## Trin 4 – Besked og start
 

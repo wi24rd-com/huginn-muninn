@@ -2,9 +2,9 @@
 
 ## Hvad programmet gør
 
-Huginn and Muninn henter tal fra din egen Cloudflare-konto og viser dem som et overblik over alle dine domæner: hvor mange angreb Cloudflare stoppede, hvilke robotter der læser dit site, hvad der skete på dine login-sider, og hvordan det ser ud i resten af dit land og i verden. Hvert domæne får en status i klart sprog: **Roligt**, **Hold øje**, **Handl** eller **Ukendt** (ingen tal endnu).
+Huginn and Muninn henter tal fra din egen Cloudflare-konto og viser dem som et overblik over alle dine domæner: hvor mange angreb Cloudflare stoppede, hvilke robotter der læser dit site, hvad der skete på dine login-sider, hvem der besøger dit site, om dit website svarede, og hvordan det ser ud i resten af dit land og i verden. Hvert domæne får en status i klart sprog: **Roligt**, **Hold øje**, **Handl** eller **Ukendt** (ingen tal endnu).
 
-Hver færdig dag gemmes på din computer. Cloudflare gemmer kun sikkerhedshændelser for den seneste måned og trafiktal for det seneste år; programmet gemmer, så længe du vil.
+Hver færdig dag gemmes på din computer. Cloudflare gemmer kun sikkerhedshændelser for den seneste måned, fejl pr. time og cache i ca. 30 dage og trafiktal for det seneste år; programmet gemmer, så længe du vil.
 
 ## Hvad programmet ikke gør
 
@@ -23,9 +23,9 @@ Et IT-firma kan oprette ét API Token pr. kunde, der kun ser kundens domæne, og
 
 | | |
 |---|---|
-| **Computer** | macOS (udviklingsbuilds i dag). Windows og Linux er planlagt; se [Installation](20-installation.md). |
+| **Computer** | macOS 11 eller nyere på en Mac med Apple silicon. Version 1.1.0 er signeret og notariseret af Apple. Windows-udgaven er ikke udgivet endnu, og der findes ingen Linux-udgave; se [Installation](20-installation.md). |
 | **Cloudflare** | En Cloudflare-konto med mindst ét domæne (en zone). Alle planer, også Free, kan bruges. |
-| **Rettigheder** | Et API Token med præcis to rettigheder: **Zone › Read** og **Analytics › Read**. Programmet beder ikke om mere. |
+| **Rettigheder** | Et API Token med to påkrævede rettigheder, der kun kan læse: **Zone › Read** og **Analytics › Read**. Én rettighed mere er valgfri: **Account Security Center Insights › Read**, hvis du vil se Cloudflares egne fund under Angreb. Programmet beder ikke om mere. |
 | **Internet** | Programmet henter fra Cloudflare, mens det kører. Det kører kun, når computeren er tændt. |
 | **Plads** | Den lokale database er lille (få megabyte efter en måned med få domæner). Du kan se størrelsen under **Indstillinger** › **Data**. |
 
@@ -35,7 +35,7 @@ Nogle tal kræver mere hos Cloudflare: tallene for **Mails sendt i dit domænes 
 
 | Hvad | Hvor | Hvem ser det |
 |---|---|---|
-| API Token | Din computers nøglering (macOS Nøglering eller Windows Credential Manager) | Kun programmets Rust-del. Vinduet kan ikke hente det tilbage. |
+| API Tokens (ét pr. forbindelse) | Din computers nøglering (macOS Nøglering eller Windows Credential Manager), én post pr. forbindelse | Kun programmets Rust-del. Vinduet kan ikke hente dem tilbage. |
 | Tallene (historikken) | En SQLite-fil i programmets datamappe på din computer, se [Data og historik](70-data.md) | Kun dig |
 | Dine valg (domæner, notifikationer, sprog) | Samme database | Kun dig |
 | Notifikationer | Din egen computers notifikationstjeneste | Kun dig. Ingen mail, ingen webhook, ingen server. |

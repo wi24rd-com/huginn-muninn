@@ -12,9 +12,9 @@ Your history, your settings and your API Token stay where they are. Replacing th
 
 ## The database is upgraded on first start
 
-The version with more than one connection upgrades the local database by itself the first time it starts. Nothing is lost: your API Token becomes connection 1 with all your choices.
+Version 1.1.0 upgrades the local database by itself the first time it starts. Nothing is lost: your API Token becomes connection 1 with all your choices.
 
-The figures per subdomain in Visitors and Attacks arrive within the first few minutes after an update; until then **–** is shown, which means "not fetched yet", not 0.
+The figures per subdomain in Visitors and Attacks and the errors and cache in Health arrive during the first while after the update: they are fetched at the slow pace after the other figures, about 30 days back. Until then **–** is shown, which means "not fetched yet", not 0.
 
 Afterwards version 1.0.0 cannot open the database. It says "The local database is from a newer version of the program (schema 21)." and leaves the file alone.
 

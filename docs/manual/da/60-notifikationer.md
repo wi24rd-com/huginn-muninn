@@ -11,7 +11,7 @@ Menuen ved ravne-ikonet i menulinjen:
 | **Åbn Huginn** | Åbner vinduet. |
 | **Siden sidst** | Åbner vinduet på [Siden sidst](40-visninger/siden-sidst.md). |
 | **Hent nu** | Henter nye tal med det samme. |
-| Statuslinjen | Fx "Henter 3/16" eller "Hentet for 12 min. siden". Kan ikke klikkes. |
+| Statuslinjen | Fx "Henter 3/16" eller "Hentet for 12 min. siden". Et klik åbner vinduet på [Overblik](40-visninger/overblik.md). |
 | **Afslut** | Lukker programmet helt. Så hentes der ikke, før du starter det igen. |
 
 **⌘Q**, mens vinduet er åbent, lukker også programmet helt. Et klik på det røde lukkeikon lukker kun vinduet.
