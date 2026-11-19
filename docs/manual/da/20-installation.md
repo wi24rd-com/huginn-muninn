@@ -1,6 +1,6 @@
 # Installation
 
-> **Status i dag:** Version 1.1.0 findes til macOS på en Mac med Apple silicon. Der findes endnu ingen udgave til Windows eller Linux.
+> **Status i dag:** Version 1.1.0 findes til macOS på en Mac med Apple silicon. Den er signeret og notariseret af Apple, og du kan selv kontrollere det, du har hentet. Der findes endnu ingen udgave til Windows eller Linux.
 
 ## macOS
 
@@ -13,7 +13,20 @@ Kræver macOS 11 eller nyere og en Mac med Apple silicon.
 
 Programmet er signeret med Developer ID og notariseret af Apple. macOS åbner det derfor uden advarslen om en ukendt udvikler. Første gang kan macOS spørge, om du vil åbne et program, der er hentet fra internettet.
 
-### Byg programmet selv
+## Kontrollér det, du har hentet
+
+Vil du selv se, at programmet er det ægte, så kør de fire kommandoer i Terminal, når programmet ligger i Programmer, og zip-filen ligger i Overførsler:
+
+```
+codesign --verify --deep --strict --verbose=2 "/Applications/Huginn and Muninn.app"
+codesign -dv "/Applications/Huginn and Muninn.app" 2>&1 | grep TeamIdentifier      # TeamIdentifier=5DAVNFA355
+spctl --assess --type execute --verbose "/Applications/Huginn and Muninn.app"      # accepted, source=Notarized Developer ID
+shasum -a 256 ~/Downloads/Huginn-Muninn-1.1.0.zip
+```
+
+De første tre linjer kontrollerer Apples signatur og notarisering. Står der en SHA-256 i udgivelsens noter, skal den sidste linje give samme værdi. Appens navn har mellemrum, så stien skal stå i anførselstegn som ovenfor.
+
+## Byg programmet selv
 
 Du kan også bygge programmet fra kildekoden. Du skal bruge Rust (installeret med rustup) og Node 20 eller nyere. I en kopi af kildekoden:
 

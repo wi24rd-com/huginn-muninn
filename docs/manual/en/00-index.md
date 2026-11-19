@@ -14,7 +14,7 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 | Chapter | Read it when you … |
 |---|---|
 | [Before you start](10-foer-du-starter.md) | want to know what the program does, does not do, and what it needs |
-| [Installation](20-installation.md) | need the program on your computer |
+| [Installation](20-installation.md) | need the program on your computer and want to check what you downloaded |
 | [Setup](30-opsaetning.md) | need to connect the program to Cloudflare and choose domains |
 | [Create an API Token at Cloudflare](31-cloudflare.md) | want to see step by step, with screenshots, what to do in Cloudflare's dashboard |
 | [The views](40-visninger/overblik.md) | use the program day to day: Overview, Since last time, Attacks, Robots, Login, your country, Visitors, Health, Technology |
@@ -26,6 +26,23 @@ Huginn and Muninn is a program for your own computer that shows what is actually
 | [Uninstalling](90-afinstallation.md) | want to remove the program completely, without leftovers |
 | [Keyboard shortcuts](95-genveje.md) | want to drive the program from the keyboard |
 | [Glossary](99-ordliste.md) | meet a word you do not know |
+
+## The views
+
+| View | Read it when you … |
+|---|---|
+| [Overview](40-visninger/overblik.md) | want the status of all your domains on one page and to know if anything needs action |
+| [Since last time](40-visninger/siden-sidst.md) | want to see what happened yesterday and which domains need action or watching |
+| [Attacks](40-visninger/vaernet.md) | want to see what Cloudflare stopped at the Edge, how, by which rules and from where |
+| [Robots](40-visninger/robotter.md) | want to know which search engines, AI robots and other bots read your site |
+| [Login](40-visninger/login.md) | want to see the attempts on your site's login pages and how many reached your server |
+| [Your country now and the World](40-visninger/land.md) | want to compare the attacks on your domains with your country and the world |
+| [Visitors](40-visninger/besoegende.md) | want to see how many visit your site, from where, and which pages they see |
+| [Health](40-visninger/drift.md) | want to know whether your website answered and how much Cloudflare handled itself |
+| [Drill-down](40-visninger/dyk.md) | want to dig into a figure, a country, a rule, a robot or a path on Attacks |
+| [Technology by domain](40-visninger/teknologi.md) | want to tell the program what your site runs, so the status hits the right attacks |
+| [Connect to Cloudflare (setup)](40-visninger/opsaetning.md) | need to connect the program to Cloudflare the first time with the guide |
+| [Settings (the view)](40-visninger/indstillinger.md) | want to find language, appearance, domains, notifications, API Tokens or About |
 
 ## The short version
 

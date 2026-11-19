@@ -14,7 +14,7 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 | Kapitel | Læs det, når du … |
 |---|---|
 | [Før du starter](10-foer-du-starter.md) | vil vide, hvad programmet gør, ikke gør, og hvad det kræver |
-| [Installation](20-installation.md) | skal have programmet på din computer |
+| [Installation](20-installation.md) | skal have programmet på din computer og vil kontrollere det, du har hentet |
 | [Opsætning](30-opsaetning.md) | skal forbinde programmet med Cloudflare og vælge domæner |
 | [Opret API Token hos Cloudflare](31-cloudflare.md) | vil se trin for trin med skærmbilleder, hvad du gør i Cloudflares dashboard |
 | [Visningerne](40-visninger/overblik.md) | bruger programmet i hverdagen: Overblik, Siden sidst, Angreb, Robotter, Login, dit land, Besøgende, Drift, Teknologi |
@@ -26,6 +26,23 @@ Huginn and Muninn er et program til din egen computer, der viser, hvad der fakti
 | [Afinstallation](90-afinstallation.md) | vil fjerne programmet helt, uden rester |
 | [Tastaturgenveje](95-genveje.md) | vil styre programmet fra tastaturet |
 | [Ordliste](99-ordliste.md) | støder på et ord, du ikke kender |
+
+## Visningerne
+
+| Visning | Læs det, når du … |
+|---|---|
+| [Overblik](40-visninger/overblik.md) | vil se status for alle dine domæner på én side og vide, om noget kræver handling |
+| [Siden sidst](40-visninger/siden-sidst.md) | vil se, hvad der skete i går, og hvilke domæner der skal handles på eller holdes øje med |
+| [Angreb](40-visninger/vaernet.md) | vil se, hvad Cloudflare stoppede ved Edge, hvordan, efter hvilke regler og hvorfra |
+| [Robotter](40-visninger/robotter.md) | vil vide, hvilke søgemaskiner, AI-robotter og andre robotter der læser dit site |
+| [Login](40-visninger/login.md) | vil se forsøgene på dit sites login-sider, og hvor mange der nåede din server |
+| [Dit land lige nu og Verden](40-visninger/land.md) | vil sammenligne angrebene mod dine domæner med resten af dit land og verden |
+| [Besøgende](40-visninger/besoegende.md) | vil se, hvor mange der besøger dit site, hvorfra, og hvilke sider de ser |
+| [Drift](40-visninger/drift.md) | vil vide, om dit website svarede, og hvor meget Cloudflare klarede selv |
+| [Dyk](40-visninger/dyk.md) | vil grave ned i et tal, et land, en regel, en robot eller en sti på Angreb |
+| [Teknologi pr. domæne](40-visninger/teknologi.md) | vil fortælle programmet, hvad dit site kører, så status rammer de rigtige angreb |
+| [Forbind med Cloudflare (opsætningen)](40-visninger/opsaetning.md) | skal forbinde programmet med Cloudflare første gang med guiden |
+| [Indstillinger (visningen)](40-visninger/indstillinger.md) | vil finde sprog, udseende, domæner, notifikationer, API Tokens eller Om |
 
 ## Den korte version
 
